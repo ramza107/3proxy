@@ -29,8 +29,8 @@ export function Home() {
         <h1 className="brand">{brand.name}</h1>
         <p>{brand.tagline}</p>
         <div className="cta-row">
-          <Link className="btn btn-primary" to="/bible">
-            Читати Біблію
+          <Link className="btn btn-primary" to="/library">
+            Бібліотека
           </Link>
           <Link className="btn btn-ghost" to="/radio">
             Слухати радіо
@@ -48,9 +48,9 @@ export function Home() {
       <div className="stack">
         {[
           {
-            to: '/bible',
-            title: 'Повна Біблія',
-            text: '66 книг українською (Огієнко), зручне читання розділів.',
+            to: '/library',
+            title: 'Бібліотека',
+            text: 'Біблія, акафісти, молитвослов і духовне читання.',
             accent: true,
           },
           {

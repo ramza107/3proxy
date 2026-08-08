@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { assetUrl } from '../lib/assetUrl'
 
@@ -17,10 +17,18 @@ type IndexData = {
   books: BookMeta[]
 }
 
+type TestamentFilter = 'Усі' | 'Старий Завіт' | 'Новий Завіт'
+
+function parseTestament(value: string | null): TestamentFilter {
+  if (value === 'Старий Завіт' || value === 'Новий Завіт') return value
+  return 'Усі'
+}
+
 export function Bible() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [index, setIndex] = useState<IndexData | null>(null)
   const [q, setQ] = useState('')
-  const [testament, setTestament] = useState<'Усі' | 'Старий Завіт' | 'Новий Завіт'>('Усі')
+  const testament = parseTestament(searchParams.get('testament'))
 
   useEffect(() => {
     fetch(assetUrl('scripture/index.json'))
@@ -38,12 +46,24 @@ export function Bible() {
     })
   }, [index, q, testament])
 
+  const setTestament = (t: TestamentFilter) => {
+    if (t === 'Усі') setSearchParams({})
+    else setSearchParams({ testament: t })
+  }
+
   return (
-    <div className="page">
+    <div className="page library-page">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="section-title">Біблія</h1>
+        <div className="topbar">
+          <Link className="icon-btn" to="/library" aria-label="До бібліотеки">
+            ←
+          </Link>
+          <h1 className="section-title" style={{ margin: 0, fontSize: '1.7rem' }}>
+            {testament === 'Усі' ? 'Біблія' : testament}
+          </h1>
+        </div>
         <p className="section-lead">
-          {index ? `${index.translation} · ${index.books.length} книг` : 'Завантаження…'}
+          {index ? `${index.translation} · ${books.length} книг` : 'Завантаження…'}
         </p>
         <input
           className="search"

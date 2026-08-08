@@ -11,8 +11,8 @@ const items = [
     ),
   },
   {
-    to: '/bible',
-    label: 'Біблія',
+    to: '/library',
+    label: 'Бібліотека',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M5 4.5h11a3 3 0 0 1 3 3V20H8a3 3 0 0 0-3 3V4.5Z" />

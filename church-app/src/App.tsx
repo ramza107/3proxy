@@ -2,6 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { RadioPlayerProvider } from './context/RadioPlayerContext'
 import { Home } from './pages/Home'
+import { Library } from './pages/Library'
+import { LibrarySection } from './pages/LibrarySection'
+import { LibraryReader } from './pages/LibraryReader'
 import { Bible } from './pages/Bible'
 import { BibleReader } from './pages/BibleReader'
 import { CalendarPage } from './pages/CalendarPage'
@@ -19,6 +22,9 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
+            <Route path="library" element={<Library />} />
+            <Route path="library/read/:textId" element={<LibraryReader />} />
+            <Route path="library/:categoryId" element={<LibrarySection />} />
             <Route path="bible" element={<Bible />} />
             <Route path="bible/:bookId/:chapter" element={<BibleReader />} />
             <Route path="radio" element={<Radio />} />

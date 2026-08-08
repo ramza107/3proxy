@@ -45,7 +45,7 @@ export function BibleReader() {
   return (
     <div className="page">
       <div className="topbar">
-        <Link className="icon-btn" to="/bible" aria-label="Назад до книг">
+        <Link className="icon-btn" to="/library" aria-label="До бібліотеки">
           ←
         </Link>
         <div style={{ flex: 1 }}>
