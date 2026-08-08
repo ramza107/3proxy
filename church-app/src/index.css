@@ -689,6 +689,19 @@ h3,
   font-weight: 700;
 }
 
+.free-book-tile {
+  gap: 4px;
+}
+
+.free-book-meta {
+  font-size: 0.78rem !important;
+  color: rgba(26, 26, 26, 0.45) !important;
+}
+
+.free-book-reader {
+  max-height: none;
+}
+
 .support-entry-cta {
   margin-top: 4px;
   color: var(--gold-deep);

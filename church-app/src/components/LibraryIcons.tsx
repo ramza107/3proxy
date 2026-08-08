@@ -1,4 +1,13 @@
-type IconName = 'tablets' | 'cross' | 'angel' | 'saint' | 'lyre' | 'beads' | 'book' | 'quill'
+type IconName =
+  | 'tablets'
+  | 'cross'
+  | 'angel'
+  | 'saint'
+  | 'lyre'
+  | 'beads'
+  | 'book'
+  | 'quill'
+  | 'shelf'
 
 const gold = '#D4B56A'
 const ink = '#1A1A1A'
@@ -73,6 +82,15 @@ export function LibraryIcon({ name }: { name: IconName }) {
           <ellipse cx="24" cy="42" rx="10" ry="7" fill={gold} stroke={ink} strokeWidth="1.8" />
           <path d="M28 38c8-10 18-20 26-26-2 10-10 22-22 30" fill="none" stroke={ink} strokeWidth="2.2" />
           <path d="M48 14l4-2" stroke={ink} strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      )
+    case 'shelf':
+      return (
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="12" y="14" width="10" height="28" rx="1.5" fill={gold} stroke={ink} strokeWidth="1.8" />
+          <rect x="24" y="18" width="10" height="24" rx="1.5" fill="#f7f1e4" stroke={ink} strokeWidth="1.8" />
+          <rect x="36" y="12" width="10" height="30" rx="1.5" fill={gold} stroke={ink} strokeWidth="1.8" />
+          <path d="M10 44h44M10 50h44" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
         </svg>
       )
   }

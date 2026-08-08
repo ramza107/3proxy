@@ -1,8 +1,8 @@
 export type LibraryCategory = {
   id: string
   title: string
-  kind: 'bible-ot' | 'bible-nt' | 'bible-psa' | 'texts'
-  icon: 'tablets' | 'cross' | 'angel' | 'saint' | 'lyre' | 'beads' | 'book' | 'quill'
+  kind: 'bible-ot' | 'bible-nt' | 'bible-psa' | 'texts' | 'free-books'
+  icon: 'tablets' | 'cross' | 'angel' | 'saint' | 'lyre' | 'beads' | 'book' | 'quill' | 'shelf'
 }
 
 export type LibraryText = {
@@ -22,6 +22,7 @@ export const libraryCategories: LibraryCategory[] = [
   { id: 'prayerbook', title: 'Молитвослов', kind: 'texts', icon: 'beads' },
   { id: 'liturgical', title: 'Богослужбові книги', kind: 'texts', icon: 'book' },
   { id: 'spiritual', title: 'Духовна література', kind: 'texts', icon: 'quill' },
+  { id: 'free-books', title: 'Вільні книги', kind: 'free-books', icon: 'shelf' },
 ]
 
 /** Короткі демо-тексти; повні збірки можна підключити пізніше з ліцензією */
