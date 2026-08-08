@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getUpcoming } from '../data/calendar'
-import { brand, nameIdeas } from '../brand'
+import { brand } from '../brand'
 
 const fade = {
   hidden: { opacity: 0, y: 16 },
@@ -106,18 +106,6 @@ export function Home() {
         })}
       </div>
 
-      <h2 className="section-title" style={{ marginTop: 28, fontSize: '1.55rem' }}>
-        Як назвати застосунок?
-      </h2>
-      <p className="section-lead">Зараз робоча назва — {brand.name}. Інші сильні варіанти:</p>
-      <div className="stack">
-        {nameIdeas.map((idea) => (
-          <div key={idea.name} className={`tile${idea.name === brand.name ? ' tile-accent' : ''}`}>
-            <strong>{idea.name}</strong>
-            <span>{idea.why}</span>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
