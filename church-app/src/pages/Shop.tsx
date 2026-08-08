@@ -19,8 +19,8 @@ export function Shop() {
 
       <div className="stack" style={{ marginBottom: 18 }}>
         <Link className="tile tile-accent support-entry" to="/support">
-          <strong>Підтримка</strong>
-          <span>Підтримка розробки або допомога дитячим будинкам.</span>
+          <strong>Підтримка проєкту</strong>
+          <span>Добровільна допомога на розвиток застосунку.</span>
           <span className="support-entry-cta">Відкрити →</span>
         </Link>
       </div>

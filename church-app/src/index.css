@@ -618,37 +618,6 @@ h3,
   padding: 28px 10px;
 }
 
-.support-simple-btn {
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-
-.support-simple-btn.is-open {
-  border-color: rgba(184, 145, 63, 0.45);
-}
-
-.support-simple-kids {
-  background: linear-gradient(135deg, rgba(47, 107, 90, 0.14), rgba(255, 255, 255, 0.72));
-  border-color: rgba(47, 107, 90, 0.2);
-}
-
-.support-simple-kids.is-open {
-  border-color: rgba(47, 107, 90, 0.45);
-}
-
-.support-amount-box {
-  margin-top: 12px;
-}
-
-.support-amount-label {
-  margin: 0 0 8px;
-  font-weight: 700;
-  font-size: 0.92rem;
-}
-
 .support-pay {
   width: 100%;
   text-align: center;
