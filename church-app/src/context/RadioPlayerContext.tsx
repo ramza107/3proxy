@@ -18,6 +18,8 @@ type RadioPlayerContextValue = {
   play: (station: RadioStation) => void
   toggle: () => void
   stop: () => void
+  playPrev: () => void
+  playNext: () => void
 }
 
 const RadioPlayerContext = createContext<RadioPlayerContextValue | null>(null)
@@ -108,9 +110,24 @@ export function RadioPlayerProvider({ children }: { children: ReactNode }) {
     setError('')
   }, [])
 
+  const playAtOffset = useCallback(
+    (offset: number) => {
+      if (!stations.length) return
+      const currentIndex = station
+        ? Math.max(0, stations.findIndex((s) => s.id === station.id))
+        : 0
+      const nextIndex = (currentIndex + offset + stations.length) % stations.length
+      play(stations[nextIndex])
+    },
+    [play, station],
+  )
+
+  const playPrev = useCallback(() => playAtOffset(-1), [playAtOffset])
+  const playNext = useCallback(() => playAtOffset(1), [playAtOffset])
+
   const value = useMemo(
-    () => ({ station, playing, loading, error, play, toggle, stop }),
-    [station, playing, loading, error, play, toggle, stop],
+    () => ({ station, playing, loading, error, play, toggle, stop, playPrev, playNext }),
+    [station, playing, loading, error, play, toggle, stop, playPrev, playNext],
   )
 
   return <RadioPlayerContext.Provider value={value}>{children}</RadioPlayerContext.Provider>
