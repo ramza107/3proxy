@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { brand } from '../brand'
 import { plans, products } from '../data/shop'
@@ -14,7 +15,17 @@ export function Shop() {
   return (
     <div className="page">
       <h1 className="section-title">Крамниця</h1>
-      <p className="section-lead">Комерційний напрям: курси, підписка й підтримка парафії.</p>
+      <p className="section-lead">Курси, підписка та окрема сторінка підтримки.</p>
+
+      <div className="stack" style={{ marginBottom: 18 }}>
+        <Link className="tile tile-accent support-entry" to="/support">
+          <strong>Підтримка та благодійність</strong>
+          <span>
+            Дві окремі дії: підтримати застосунок (автору) або зробити благодійний внесок (парафії/фонду).
+          </span>
+          <span className="support-entry-cta">Відкрити →</span>
+        </Link>
+      </div>
 
       <div className="stack">
         {plans.map((plan) => (
@@ -62,7 +73,7 @@ export function Shop() {
             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
               <span className={`badge${p.premium ? ' premium' : ''}`}>{p.tag}</span>
               <button className="btn btn-dark" type="button" onClick={() => buy(p.title)}>
-                {p.tag === 'пожертва' ? 'Пожертвувати' : 'Купити'}
+                Купити
               </button>
             </div>
           </motion.article>

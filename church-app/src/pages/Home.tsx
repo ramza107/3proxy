@@ -71,12 +71,18 @@ export function Home() {
           },
           {
             to: '/shop',
-            title: 'Курси та підтримка',
-            text: `Преміум-навчання, книги й пожертви — підписка ${brand.plus}.`,
+            title: 'Курси та підписка',
+            text: `Преміум-навчання й книги — підписка ${brand.plus}.`,
+          },
+          {
+            to: '/support',
+            title: 'Підтримка та благодійність',
+            text: 'Окремо: підтримати застосунок або зробити благодійний внесок.',
+            accent: true,
           },
         ].map((item, i) => (
           <motion.div key={item.to} custom={i + 3} variants={fade} initial="hidden" animate="show">
-            <Link className={`tile${item.accent ? ' tile-accent' : ''}`} to={item.to}>
+            <Link className={`tile${'accent' in item && item.accent ? ' tile-accent' : ''}`} to={item.to}>
               <strong>{item.title}</strong>
               <span>{item.text}</span>
             </Link>

@@ -7,6 +7,7 @@ import { BibleReader } from './pages/BibleReader'
 import { CalendarPage } from './pages/CalendarPage'
 import { Kids } from './pages/Kids'
 import { Shop } from './pages/Shop'
+import { Support } from './pages/Support'
 import { Radio } from './pages/Radio'
 
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="kids" element={<Kids />} />
             <Route path="shop" element={<Shop />} />
+            <Route path="support" element={<Support />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

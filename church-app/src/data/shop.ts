@@ -40,13 +40,6 @@ export const products: Product[] = [
     priceUah: 229,
     tag: 'курс',
   },
-  {
-    id: 'donate-temple',
-    title: 'Пожертва на парафію',
-    subtitle: 'Підтримайте служіння, дітей і соціальні ініціативи',
-    priceUah: 100,
-    tag: 'пожертва',
-  },
 ]
 
 export const plans = [
