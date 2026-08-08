@@ -9,10 +9,12 @@ import { Kids } from './pages/Kids'
 import { Shop } from './pages/Shop'
 import { Radio } from './pages/Radio'
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined
+
 export default function App() {
   return (
     <RadioPlayerProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
