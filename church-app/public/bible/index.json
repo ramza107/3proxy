@@ -1,0 +1,468 @@
+{
+  "translation": "Іван Огієнко (укр.)",
+  "attribution": "Текст Біблії українською (переклад І. Огієнка). Перевірте ліцензію для комерційного використання (Українське Біблійне Товариство / джерело USFM).",
+  "books": [
+    {
+      "id": "gen",
+      "name": "Буття",
+      "testament": "Старий Завіт",
+      "chapterCount": 50,
+      "verseCount": 1530
+    },
+    {
+      "id": "exo",
+      "name": "Вихід",
+      "testament": "Старий Завіт",
+      "chapterCount": 40,
+      "verseCount": 1213
+    },
+    {
+      "id": "lev",
+      "name": "Левит",
+      "testament": "Старий Завіт",
+      "chapterCount": 27,
+      "verseCount": 855
+    },
+    {
+      "id": "num",
+      "name": "Числа",
+      "testament": "Старий Завіт",
+      "chapterCount": 36,
+      "verseCount": 1283
+    },
+    {
+      "id": "deu",
+      "name": "Повторення Закону",
+      "testament": "Старий Завіт",
+      "chapterCount": 34,
+      "verseCount": 956
+    },
+    {
+      "id": "jos",
+      "name": "Ісус Навин",
+      "testament": "Старий Завіт",
+      "chapterCount": 24,
+      "verseCount": 658
+    },
+    {
+      "id": "jdg",
+      "name": "Судді",
+      "testament": "Старий Завіт",
+      "chapterCount": 21,
+      "verseCount": 618
+    },
+    {
+      "id": "rut",
+      "name": "Рут",
+      "testament": "Старий Завіт",
+      "chapterCount": 4,
+      "verseCount": 85
+    },
+    {
+      "id": "1sa",
+      "name": "1 Самуїла",
+      "testament": "Старий Завіт",
+      "chapterCount": 31,
+      "verseCount": 811
+    },
+    {
+      "id": "2sa",
+      "name": "2 Самуїла",
+      "testament": "Старий Завіт",
+      "chapterCount": 24,
+      "verseCount": 696
+    },
+    {
+      "id": "1ki",
+      "name": "1 Царів",
+      "testament": "Старий Завіт",
+      "chapterCount": 22,
+      "verseCount": 817
+    },
+    {
+      "id": "2ki",
+      "name": "2 Царів",
+      "testament": "Старий Завіт",
+      "chapterCount": 25,
+      "verseCount": 719
+    },
+    {
+      "id": "1ch",
+      "name": "1 Хронік",
+      "testament": "Старий Завіт",
+      "chapterCount": 29,
+      "verseCount": 942
+    },
+    {
+      "id": "2ch",
+      "name": "2 Хронік",
+      "testament": "Старий Завіт",
+      "chapterCount": 36,
+      "verseCount": 822
+    },
+    {
+      "id": "ezr",
+      "name": "Ездра",
+      "testament": "Старий Завіт",
+      "chapterCount": 10,
+      "verseCount": 280
+    },
+    {
+      "id": "neh",
+      "name": "Неемія",
+      "testament": "Старий Завіт",
+      "chapterCount": 13,
+      "verseCount": 406
+    },
+    {
+      "id": "est",
+      "name": "Естер",
+      "testament": "Старий Завіт",
+      "chapterCount": 10,
+      "verseCount": 167
+    },
+    {
+      "id": "job",
+      "name": "Йов",
+      "testament": "Старий Завіт",
+      "chapterCount": 42,
+      "verseCount": 1069
+    },
+    {
+      "id": "psa",
+      "name": "Псалми",
+      "testament": "Старий Завіт",
+      "chapterCount": 150,
+      "verseCount": 2457
+    },
+    {
+      "id": "pro",
+      "name": "Приповісті",
+      "testament": "Старий Завіт",
+      "chapterCount": 31,
+      "verseCount": 914
+    },
+    {
+      "id": "ecc",
+      "name": "Еклезіяст",
+      "testament": "Старий Завіт",
+      "chapterCount": 12,
+      "verseCount": 222
+    },
+    {
+      "id": "sng",
+      "name": "Пісня над піснями",
+      "testament": "Старий Завіт",
+      "chapterCount": 8,
+      "verseCount": 116
+    },
+    {
+      "id": "isa",
+      "name": "Ісая",
+      "testament": "Старий Завіт",
+      "chapterCount": 66,
+      "verseCount": 1293
+    },
+    {
+      "id": "jer",
+      "name": "Єремія",
+      "testament": "Старий Завіт",
+      "chapterCount": 52,
+      "verseCount": 1364
+    },
+    {
+      "id": "lam",
+      "name": "Плач Єремії",
+      "testament": "Старий Завіт",
+      "chapterCount": 5,
+      "verseCount": 154
+    },
+    {
+      "id": "ezk",
+      "name": "Єзекіїль",
+      "testament": "Старий Завіт",
+      "chapterCount": 48,
+      "verseCount": 1273
+    },
+    {
+      "id": "dan",
+      "name": "Даниїл",
+      "testament": "Старий Завіт",
+      "chapterCount": 12,
+      "verseCount": 357
+    },
+    {
+      "id": "hos",
+      "name": "Осія",
+      "testament": "Старий Завіт",
+      "chapterCount": 14,
+      "verseCount": 197
+    },
+    {
+      "id": "jol",
+      "name": "Йоїл",
+      "testament": "Старий Завіт",
+      "chapterCount": 3,
+      "verseCount": 73
+    },
+    {
+      "id": "amo",
+      "name": "Амос",
+      "testament": "Старий Завіт",
+      "chapterCount": 9,
+      "verseCount": 146
+    },
+    {
+      "id": "oba",
+      "name": "Авдій",
+      "testament": "Старий Завіт",
+      "chapterCount": 1,
+      "verseCount": 21
+    },
+    {
+      "id": "jon",
+      "name": "Йона",
+      "testament": "Старий Завіт",
+      "chapterCount": 4,
+      "verseCount": 48
+    },
+    {
+      "id": "mic",
+      "name": "Михей",
+      "testament": "Старий Завіт",
+      "chapterCount": 7,
+      "verseCount": 105
+    },
+    {
+      "id": "nam",
+      "name": "Наум",
+      "testament": "Старий Завіт",
+      "chapterCount": 3,
+      "verseCount": 47
+    },
+    {
+      "id": "hab",
+      "name": "Авакум",
+      "testament": "Старий Завіт",
+      "chapterCount": 3,
+      "verseCount": 56
+    },
+    {
+      "id": "zep",
+      "name": "Софонія",
+      "testament": "Старий Завіт",
+      "chapterCount": 3,
+      "verseCount": 53
+    },
+    {
+      "id": "hag",
+      "name": "Аггей",
+      "testament": "Старий Завіт",
+      "chapterCount": 2,
+      "verseCount": 38
+    },
+    {
+      "id": "zec",
+      "name": "Захарія",
+      "testament": "Старий Завіт",
+      "chapterCount": 14,
+      "verseCount": 211
+    },
+    {
+      "id": "mal",
+      "name": "Малахія",
+      "testament": "Старий Завіт",
+      "chapterCount": 4,
+      "verseCount": 55
+    },
+    {
+      "id": "mat",
+      "name": "Від Матвія",
+      "testament": "Новий Завіт",
+      "chapterCount": 28,
+      "verseCount": 1071
+    },
+    {
+      "id": "mrk",
+      "name": "Від Марка",
+      "testament": "Новий Завіт",
+      "chapterCount": 16,
+      "verseCount": 678
+    },
+    {
+      "id": "luk",
+      "name": "Від Луки",
+      "testament": "Новий Завіт",
+      "chapterCount": 24,
+      "verseCount": 1151
+    },
+    {
+      "id": "jhn",
+      "name": "Від Івана",
+      "testament": "Новий Завіт",
+      "chapterCount": 21,
+      "verseCount": 879
+    },
+    {
+      "id": "act",
+      "name": "Дії апостолів",
+      "testament": "Новий Завіт",
+      "chapterCount": 28,
+      "verseCount": 1007
+    },
+    {
+      "id": "rom",
+      "name": "До римлян",
+      "testament": "Новий Завіт",
+      "chapterCount": 16,
+      "verseCount": 433
+    },
+    {
+      "id": "1co",
+      "name": "1 до коринтян",
+      "testament": "Новий Завіт",
+      "chapterCount": 16,
+      "verseCount": 437
+    },
+    {
+      "id": "2co",
+      "name": "2 до коринтян",
+      "testament": "Новий Завіт",
+      "chapterCount": 13,
+      "verseCount": 256
+    },
+    {
+      "id": "gal",
+      "name": "До галатів",
+      "testament": "Новий Завіт",
+      "chapterCount": 6,
+      "verseCount": 149
+    },
+    {
+      "id": "eph",
+      "name": "До ефесян",
+      "testament": "Новий Завіт",
+      "chapterCount": 6,
+      "verseCount": 155
+    },
+    {
+      "id": "php",
+      "name": "До филип'ян",
+      "testament": "Новий Завіт",
+      "chapterCount": 4,
+      "verseCount": 103
+    },
+    {
+      "id": "col",
+      "name": "До колосян",
+      "testament": "Новий Завіт",
+      "chapterCount": 4,
+      "verseCount": 95
+    },
+    {
+      "id": "1th",
+      "name": "1 до солунян",
+      "testament": "Новий Завіт",
+      "chapterCount": 5,
+      "verseCount": 89
+    },
+    {
+      "id": "2th",
+      "name": "2 до солунян",
+      "testament": "Новий Завіт",
+      "chapterCount": 3,
+      "verseCount": 47
+    },
+    {
+      "id": "1ti",
+      "name": "1 до Тимофія",
+      "testament": "Новий Завіт",
+      "chapterCount": 6,
+      "verseCount": 113
+    },
+    {
+      "id": "2ti",
+      "name": "2 до Тимофія",
+      "testament": "Новий Завіт",
+      "chapterCount": 4,
+      "verseCount": 83
+    },
+    {
+      "id": "tit",
+      "name": "До Тита",
+      "testament": "Новий Завіт",
+      "chapterCount": 3,
+      "verseCount": 46
+    },
+    {
+      "id": "phm",
+      "name": "До Филимона",
+      "testament": "Новий Завіт",
+      "chapterCount": 1,
+      "verseCount": 25
+    },
+    {
+      "id": "heb",
+      "name": "До євреїв",
+      "testament": "Новий Завіт",
+      "chapterCount": 13,
+      "verseCount": 303
+    },
+    {
+      "id": "jas",
+      "name": "Якова",
+      "testament": "Новий Завіт",
+      "chapterCount": 5,
+      "verseCount": 108
+    },
+    {
+      "id": "1pe",
+      "name": "1 Петра",
+      "testament": "Новий Завіт",
+      "chapterCount": 5,
+      "verseCount": 105
+    },
+    {
+      "id": "2pe",
+      "name": "2 Петра",
+      "testament": "Новий Завіт",
+      "chapterCount": 3,
+      "verseCount": 61
+    },
+    {
+      "id": "1jn",
+      "name": "1 Івана",
+      "testament": "Новий Завіт",
+      "chapterCount": 5,
+      "verseCount": 105
+    },
+    {
+      "id": "2jn",
+      "name": "2 Івана",
+      "testament": "Новий Завіт",
+      "chapterCount": 1,
+      "verseCount": 13
+    },
+    {
+      "id": "3jn",
+      "name": "3 Івана",
+      "testament": "Новий Завіт",
+      "chapterCount": 1,
+      "verseCount": 15
+    },
+    {
+      "id": "jud",
+      "name": "Юди",
+      "testament": "Новий Завіт",
+      "chapterCount": 1,
+      "verseCount": 25
+    },
+    {
+      "id": "rev",
+      "name": "Об'явлення",
+      "testament": "Новий Завіт",
+      "chapterCount": 22,
+      "verseCount": 404
+    }
+  ]
+}
