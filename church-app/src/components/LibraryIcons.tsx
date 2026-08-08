@@ -8,6 +8,7 @@ type IconName =
   | 'book'
   | 'quill'
   | 'shelf'
+  | 'rites'
 
 const gold = '#D4B56A'
 const ink = '#1A1A1A'
@@ -91,6 +92,15 @@ export function LibraryIcon({ name }: { name: IconName }) {
           <rect x="24" y="18" width="10" height="24" rx="1.5" fill="#f7f1e4" stroke={ink} strokeWidth="1.8" />
           <rect x="36" y="12" width="10" height="30" rx="1.5" fill={gold} stroke={ink} strokeWidth="1.8" />
           <path d="M10 44h44M10 50h44" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+        </svg>
+      )
+    case 'rites':
+      return (
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M20 18h24v6c0 8-5 14-12 16-7-2-12-8-12-16v-6z" fill={gold} stroke={ink} strokeWidth="2" />
+          <path d="M24 40h16v6H24z" fill="#f7f1e4" stroke={ink} strokeWidth="1.8" />
+          <path d="M22 50h20" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M32 10v8M28 14h8" stroke={ink} strokeWidth="2.2" strokeLinecap="round" />
         </svg>
       )
   }
