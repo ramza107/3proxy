@@ -1,45 +1,26 @@
 export type SupportChannel = {
-  id: 'app' | 'charity'
+  id: 'dev' | 'kids'
   title: string
-  shortTitle: string
-  badge: string
   description: string
-  whereGoes: string
-  notCharity: boolean
   amounts: number[]
-  /** LiqPay / Fondy / банка — можна з плейсхолдером {amount} */
+  /** LiqPay / Fondy / банка — можна {amount} */
   paymentUrl: string
-  recipientName?: string
 }
 
-/** Куди реально підуть гроші — замініть реквізити перед продакшеном */
-export const supportChannels: Record<'app' | 'charity', SupportChannel> = {
-  app: {
-    id: 'app',
-    title: 'Підтримати застосунок',
-    shortTitle: 'Застосунок',
-    badge: 'розвиток',
-    description:
-      'Добровільна підтримка автора й розвитку Благовіст: сервери, новий контент, оновлення.',
-    whereGoes:
-      'Кошти надходять як підтримка проєкту (дохід ФОП/автора). Їх можна витрачати на розвиток застосунку та особисті потреби автора після сплати податків.',
-    notCharity: true,
-    amounts: [50, 100, 200, 500],
+export const supportChannels: Record<'dev' | 'kids', SupportChannel> = {
+  dev: {
+    id: 'dev',
+    title: 'Підтримка розробки',
+    description: 'На розвиток застосунку: сервери, оновлення, новий контент.',
+    amounts: [50, 100, 200],
     paymentUrl: '',
   },
-  charity: {
-    id: 'charity',
-    title: 'Благодійність',
-    shortTitle: 'Благодійність',
-    badge: 'допомога',
-    description:
-      'Цільова допомога парафії / благодійному фонду: служіння, діти, соціальні ініціативи.',
-    whereGoes:
-      'Кошти йдуть на окремий благодійний рахунок парафії або фонду. Автор застосунку не забирає їх собі. Звітність — у отримувача допомоги.',
-    notCharity: false,
-    amounts: [100, 200, 500, 1000],
+  kids: {
+    id: 'kids',
+    title: 'Допомога дитячим будинкам',
+    description: 'Цільова допомога дітям. Кошти йдуть на благодійний рахунок, не автору застосунку.',
+    amounts: [100, 200, 500],
     paymentUrl: '',
-    recipientName: 'Парафія / благодійний фонд (вкажіть назву)',
   },
 }
 

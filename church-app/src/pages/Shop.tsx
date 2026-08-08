@@ -19,10 +19,8 @@ export function Shop() {
 
       <div className="stack" style={{ marginBottom: 18 }}>
         <Link className="tile tile-accent support-entry" to="/support">
-          <strong>Підтримка та благодійність</strong>
-          <span>
-            Дві окремі дії: підтримати застосунок (автору) або зробити благодійний внесок (парафії/фонду).
-          </span>
+          <strong>Підтримка</strong>
+          <span>Підтримка розробки або допомога дитячим будинкам.</span>
           <span className="support-entry-cta">Відкрити →</span>
         </Link>
       </div>
