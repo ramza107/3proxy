@@ -1,0 +1,6 @@
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+
+/bible/*
+  Cache-Control: public, max-age=86400

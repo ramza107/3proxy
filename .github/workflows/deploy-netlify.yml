@@ -1,0 +1,53 @@
+name: Deploy Благовіст to Netlify
+
+on:
+  push:
+    branches: [main, cursor/church-app-ukrainian-d578]
+    paths:
+      - 'church-app/**'
+      - '.github/workflows/deploy-netlify.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: church-app
+    steps:
+      - name: Check Netlify secrets
+        id: check
+        env:
+          TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$SITE" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID ще не задані — деплой пропущено."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != 'true'
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.skip != 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: church-app/package-lock.json
+      - run: npm ci
+        if: steps.check.outputs.skip != 'true'
+      - run: npm run build
+        if: steps.check.outputs.skip != 'true'
+      - name: Deploy to Netlify
+        if: steps.check.outputs.skip != 'true'
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './church-app/dist'
+          production-deploy: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: 'Deploy Благовіст'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 5

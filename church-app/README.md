@@ -27,6 +27,15 @@ npm run build
 npm run preview
 ```
 
+## Постійний сайт (Netlify)
+
+1. Зберіть `npm run build` і задеплойте на Netlify (або закріпіть Drop-сайт через Claim).
+2. Для автодеплою з GitHub додайте секрети репозиторію:
+   - `NETLIFY_AUTH_TOKEN`
+   - `NETLIFY_SITE_ID`
+3. Workflow: `.github/workflows/deploy-netlify.yml`
+
+
 ## Ліцензія тексту Біблії
 
 Текст у `public/bible/` зібрано з USFM-джерела перекладу І. Огієнка. Перед комерційним релізом узгодьте права з Українським Біблійним Товариством / правовласником обраного перекладу.
