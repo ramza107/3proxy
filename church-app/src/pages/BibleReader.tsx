@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { assetUrl } from '../lib/assetUrl'
 
 type Verse = { n: string; t: string }
 type Book = {
@@ -20,7 +21,7 @@ export function BibleReader() {
   useEffect(() => {
     setBook(null)
     setError('')
-    fetch(`/bible/${bookId}.json`)
+    fetch(assetUrl(`scripture/${bookId}.json`))
       .then((r) => {
         if (!r.ok) throw new Error('not found')
         return r.json()

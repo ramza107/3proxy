@@ -2,7 +2,7 @@ name: Deploy Благовіст to GitHub Pages
 
 on:
   push:
-    branches: [main, cursor/church-app-ukrainian-d578]
+    branches: [main]
     paths:
       - 'church-app/**'
       - '.github/workflows/deploy-github-pages.yml'

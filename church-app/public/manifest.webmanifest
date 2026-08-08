@@ -2,14 +2,15 @@
   "name": "Благовіст — церковний застосунок",
   "short_name": "Благовіст",
   "description": "Біблія українською, церковний календар, радіо, навчання дітей і духовні курси",
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0B1F2A",
   "theme_color": "#0B1F2A",
   "lang": "uk",
   "icons": [
     {
-      "src": "/cross.svg",
+      "src": "./cross.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

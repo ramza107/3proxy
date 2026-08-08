@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { assetUrl } from '../lib/assetUrl'
 
 type BookMeta = {
   id: string
@@ -22,7 +23,7 @@ export function Bible() {
   const [testament, setTestament] = useState<'Усі' | 'Старий Завіт' | 'Новий Завіт'>('Усі')
 
   useEffect(() => {
-    fetch('/bible/index.json')
+    fetch(assetUrl('scripture/index.json'))
       .then((r) => r.json())
       .then(setIndex)
       .catch(() => setIndex(null))
