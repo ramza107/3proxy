@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getUpcoming } from '../data/calendar'
+import { brand, nameIdeas } from '../brand'
 
 const fade = {
   hidden: { opacity: 0, y: 16 },
@@ -25,14 +26,14 @@ export function Home() {
         <p style={{ letterSpacing: '0.14em', textTransform: 'uppercase', fontSize: '0.72rem', marginBottom: 8 }}>
           Церковний застосунок
         </p>
-        <h1 className="brand">Світло</h1>
-        <p>Біблія українською, церковний календар і навчання дітей — у вашій парафійній кишені.</p>
+        <h1 className="brand">{brand.name}</h1>
+        <p>{brand.tagline}</p>
         <div className="cta-row">
           <Link className="btn btn-primary" to="/bible">
             Читати Біблію
           </Link>
-          <Link className="btn btn-ghost" to="/shop">
-            Світло+
+          <Link className="btn btn-ghost" to="/radio">
+            Слухати радіо
           </Link>
         </div>
       </motion.section>
@@ -53,6 +54,12 @@ export function Home() {
             accent: true,
           },
           {
+            to: '/radio',
+            title: 'Церковне радіо',
+            text: 'Безкоштовні ефіри: Світле, Дзвони, Марія, Світанок та інші.',
+            accent: true,
+          },
+          {
             to: '/calendar',
             title: 'Церковний календар',
             text: 'Свята, пости й памʼятні дні українського церковного року.',
@@ -65,7 +72,7 @@ export function Home() {
           {
             to: '/shop',
             title: 'Курси та підтримка',
-            text: 'Преміум-навчання, книги й пожертви на служіння парафії.',
+            text: `Преміум-навчання, книги й пожертви — підписка ${brand.plus}.`,
           },
         ].map((item, i) => (
           <motion.div key={item.to} custom={i + 3} variants={fade} initial="hidden" animate="show">
@@ -97,6 +104,19 @@ export function Home() {
             </Link>
           )
         })}
+      </div>
+
+      <h2 className="section-title" style={{ marginTop: 28, fontSize: '1.55rem' }}>
+        Як назвати застосунок?
+      </h2>
+      <p className="section-lead">Зараз робоча назва — {brand.name}. Інші сильні варіанти:</p>
+      <div className="stack">
+        {nameIdeas.map((idea) => (
+          <div key={idea.name} className={`tile${idea.name === brand.name ? ' tile-accent' : ''}`}>
+            <strong>{idea.name}</strong>
+            <span>{idea.why}</span>
+          </div>
+        ))}
       </div>
     </div>
   )

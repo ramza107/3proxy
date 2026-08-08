@@ -21,6 +21,18 @@ const items = [
     ),
   },
   {
+    to: '/radio',
+    label: 'Радіо',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M5 9.5h14a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7.5a2 2 0 0 1 2-2Z" />
+        <path d="M7 9.5 16 4" />
+        <circle cx="9" cy="15.5" r="1.6" />
+        <path d="M13 14.2h4M13 16.8h3" />
+      </svg>
+    ),
+  },
+  {
     to: '/calendar',
     label: 'Календар',
     icon: (

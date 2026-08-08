@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { brand } from '../brand'
 import { lessons, type Lesson } from '../data/kids'
 
 type AgeFilter = 'Усі' | Lesson['age']
@@ -61,7 +62,7 @@ export function Kids() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                   <strong>{lesson.title}</strong>
                   <span className={`badge${lesson.premium ? ' premium' : ''}`}>
-                    {lesson.premium ? 'Світло+' : 'Безкоштовно'}
+                    {lesson.premium ? brand.plus : 'Безкоштовно'}
                   </span>
                 </div>
                 <span>

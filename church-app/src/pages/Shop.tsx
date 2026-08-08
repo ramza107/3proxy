@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { brand } from '../brand'
 import { plans, products } from '../data/shop'
 
 export function Shop() {
@@ -34,7 +35,7 @@ export function Shop() {
                 style={{ marginTop: 12, width: 'fit-content' }}
                 onClick={() => buy(plan.name)}
               >
-                Оформити Світло+
+                Оформити {brand.plus}
               </button>
             )}
           </article>

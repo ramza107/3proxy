@@ -1,3 +1,5 @@
+import { brand } from '../brand'
+
 export type Product = {
   id: string
   title: string
@@ -18,8 +20,8 @@ export const products: Product[] = [
   },
   {
     id: 'family-sub',
-    title: 'Сімейна підписка Світло+',
-    subtitle: 'Календар, аудіо-Біблія, нові уроки щотижня',
+    title: `Сімейна підписка ${brand.plus}`,
+    subtitle: 'Календар, радіо, аудіо-Біблія, нові уроки щотижня',
     priceUah: 149,
     tag: 'підписка',
     premium: true,
@@ -56,8 +58,8 @@ export const plans = [
   },
   {
     id: 'plus',
-    name: 'Світло+',
+    name: brand.plus,
     price: '149 ₴/міс',
-    perks: ['Усі дитячі курси', 'Аудіо та офлайн-читання', 'Сімейний прогрес'],
+    perks: ['Усі дитячі курси', 'Радіо без реклами в застосунку', 'Аудіо та офлайн-читання', 'Сімейний прогрес'],
   },
 ]
