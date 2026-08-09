@@ -456,12 +456,6 @@ h3,
   cursor: default;
 }
 
-.cta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .quiz-option {
   text-align: left;
   width: 100%;
