@@ -1,7 +1,7 @@
 export type LibraryCategory = {
   id: string
   title: string
-  kind: 'bible-ot' | 'bible-nt' | 'bible-psa' | 'texts' | 'free-books'
+  kind: 'bible-ot' | 'bible-nt' | 'bible-psa' | 'texts' | 'free-books' | 'canons'
   icon:
     | 'tablets'
     | 'cross'
@@ -27,7 +27,7 @@ export const libraryCategories: LibraryCategory[] = [
   { id: 'ot', title: 'Старий Завіт', kind: 'bible-ot', icon: 'tablets' },
   { id: 'nt', title: 'Новий Завіт', kind: 'bible-nt', icon: 'cross' },
   { id: 'akathists', title: 'Акафісти', kind: 'texts', icon: 'angel' },
-  { id: 'canons', title: 'Канони', kind: 'texts', icon: 'saint' },
+  { id: 'canons', title: 'Канони', kind: 'canons', icon: 'saint' },
   { id: 'psalter', title: 'Псалтир', kind: 'bible-psa', icon: 'lyre' },
   { id: 'prayerbook', title: 'Молитвослов', kind: 'texts', icon: 'beads' },
   { id: 'liturgical', title: 'Богослужбові книги', kind: 'texts', icon: 'book' },
@@ -55,16 +55,6 @@ export const libraryTexts: LibraryText[] = [
     subtitle: 'Уривок',
     body: [
       'Кондак 1. Взбранній Воєводі переможная, яко избавившися від злих, благодарственная восписуєм Ти раби Твої, Богородице, але яко імущая державу непереможну, від всяких нас бід свободи, хай зовем Ти: Радуйся, Невісто Неневісная.',
-    ],
-  },
-  {
-    id: 'canon-repentance',
-    categoryId: 'canons',
-    title: 'Канон покаянний',
-    subtitle: 'Уривок',
-    body: [
-      'Пісня 1. Ірмос: Яко по суху пішоходив Ізраїль по безодні стопами, гонителя фараона видя потопляєма, Богу переможную пісню співаємо, взиваючи.',
-      'Приспів: Помилуй мене, Боже, помилуй мене. Нині приступих аз грішний і обтяжений до Тебе, Владико і Бога мого.',
     ],
   },
   {

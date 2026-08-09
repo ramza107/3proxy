@@ -1,0 +1,223 @@
+{
+  "title": "Канони та молитовні правила",
+  "description": "Повні тексти канонів (включно з Великим каноном Андрія Критського), правила до Причастя, ранкові й вечірні молитви.",
+  "attribution": "Тексти зібрано з відкритих публікацій на blagovist.info. Для парафіяльного вжитку звіряйте з благословенним молитвословом вашої Церкви. Якщо українська вкладка на джерелі неповна — подано транслітерацію.",
+  "items": [
+    {
+      "id": "velykyy-kanon-vivtorok",
+      "title": "Великий канон Андрія Критського — вівторок",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/velykyy-pokaiannyy-kanon-transliteratsiia/vivtorok",
+      "language": "uk-translit",
+      "chars": 14151
+    },
+    {
+      "id": "velykyy-kanon-ponedilok",
+      "title": "Великий канон Андрія Критського — понеділок",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/velykyy-pokaiannyy-kanon-transliteratsiia/ponedilok",
+      "language": "uk-translit",
+      "chars": 14422
+    },
+    {
+      "id": "velykyy-kanon-sereda",
+      "title": "Великий канон Андрія Критського — середа",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/velykyy-pokaiannyy-kanon-transliteratsiia/sereda",
+      "language": "uk-translit",
+      "chars": 14415
+    },
+    {
+      "id": "velykyy-kanon-chetver",
+      "title": "Великий канон Андрія Критського — четвер",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/velykyy-pokaiannyy-kanon-transliteratsiia/chetver",
+      "language": "uk-translit",
+      "chars": 15006
+    },
+    {
+      "id": "velykyy-kanon-mariine-stoiannia",
+      "title": "Великий канон — Маріїне стояння",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/velykyy-pokaiannyy-kanon-transliteratsiia/mariine-stoiannia",
+      "language": "uk-translit",
+      "chars": 110259
+    },
+    {
+      "id": "kanon-anhelu-khranyteliu",
+      "title": "Канон Ангелу Охоронцю",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/kanon-anhelu-khranyteliu",
+      "language": "uk",
+      "chars": 9121
+    },
+    {
+      "id": "kanon-voskresinnia-khrystovoho-paskhy",
+      "title": "Канон Воскресіння Христового (Пасхи)",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/kanon-voskresinnia-khrystovoho-paskhy",
+      "language": "uk",
+      "chars": 12968
+    },
+    {
+      "id": "kanon-za-spochylykh",
+      "title": "Канон за спочилих",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/kanon-za-spochylykh",
+      "language": "uk",
+      "chars": 8373
+    },
+    {
+      "id": "kanon-molebnyy-do-presviatoi-bohorodytsi",
+      "title": "Канон молебний до Пресвятої Богородиці",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/kanon-molebnyy-do-presviatoi-bohorodytsi",
+      "language": "uk",
+      "chars": 8295
+    },
+    {
+      "id": "kanon-pokaiannyy-hospodu-nashomu-iisusu-khrystu",
+      "title": "Канон покаянний до Господа нашого Ісуса Христа",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/kanon-pokaiannyy-hospodu-nashomu-iisusu-khrystu",
+      "language": "uk",
+      "chars": 9521
+    },
+    {
+      "id": "kanon-sviatyteliu-mykolaiu-chudotvortsiu",
+      "title": "Канон святителю Миколаю Чудотворцю",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/kanon-sviatyteliu-mykolaiu-chudotvortsiu",
+      "language": "uk",
+      "chars": 8796
+    },
+    {
+      "id": "kanon-usim-sviatym",
+      "title": "Канон усім святим",
+      "category": "canon",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/kanon-usim-sviatym",
+      "language": "uk",
+      "chars": 7358
+    },
+    {
+      "id": "podiachni-molytvy-pislia-sviatoho-prychastia",
+      "title": "Подячні молитви після Святого Причастя",
+      "category": "rule",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/podiachni-molytvy-pislia-sviatoho-prychastia",
+      "language": "uk-translit",
+      "chars": 8095
+    },
+    {
+      "id": "pravylo-do-prychastia",
+      "title": "Послідування (правило) до Святого Причастя",
+      "category": "rule",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/pravylo-do-prychastia",
+      "language": "uk",
+      "chars": 27101
+    },
+    {
+      "id": "iisusova-molytva",
+      "title": "Ісусова молитва",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/iisusova-molytva",
+      "language": "uk",
+      "chars": 205
+    },
+    {
+      "id": "bohorodytse-divo-raduysia",
+      "title": "Богородице Діво, радуйся",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/bohorodytse-divo-raduysia",
+      "language": "uk",
+      "chars": 205
+    },
+    {
+      "id": "molytvy-vechirni",
+      "title": "Вечірні молитви",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/molytvy-vechirni",
+      "language": "uk",
+      "chars": 18233
+    },
+    {
+      "id": "molytva-za-voiniv",
+      "title": "Молитва за воїнів",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/molytva-za-voiniv",
+      "language": "uk-translit",
+      "chars": 603
+    },
+    {
+      "id": "otche-nash",
+      "title": "Отче наш",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/otche-nash",
+      "language": "uk",
+      "chars": 304
+    },
+    {
+      "id": "chasy-paskhalni",
+      "title": "Пасхальні часи",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/chasy-paskhalni",
+      "language": "uk",
+      "chars": 2464
+    },
+    {
+      "id": "molytvy-ranishni",
+      "title": "Ранкові молитви",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/molytvy-ranishni",
+      "language": "uk",
+      "chars": 15340
+    },
+    {
+      "id": "symvol-viry",
+      "title": "Символ віри",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/symvol-viry",
+      "language": "uk",
+      "chars": 1003
+    },
+    {
+      "id": "tsariu-nebesnyy",
+      "title": "Царю Небесний",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/tsariu-nebesnyy",
+      "language": "uk",
+      "chars": 210
+    },
+    {
+      "id": "chyn-spivu-12-ty-psalmiv",
+      "title": "Чин співу 12-ти псалмів",
+      "category": "prayer",
+      "source": "Благовіст (blagovist.info)",
+      "sourceUrl": "https://blagovist.info/molytvoslov/chyn-spivu-12-ty-psalmiv",
+      "language": "uk",
+      "chars": 23362
+    }
+  ]
+}

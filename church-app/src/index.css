@@ -702,6 +702,34 @@ h3,
   max-height: none;
 }
 
+.canon-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.canon-filter {
+  border: 1px solid rgba(26, 26, 26, 0.12);
+  background: #fffdf6;
+  color: #3a3428;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.canon-filter.is-active {
+  background: #2c261c;
+  border-color: #2c261c;
+  color: #f7f1e4;
+}
+
+.canon-reader .canon-heading {
+  color: #7a4e1d;
+  font-weight: 700;
+}
+
 .support-entry-cta {
   margin-top: 4px;
   color: var(--gold-deep);

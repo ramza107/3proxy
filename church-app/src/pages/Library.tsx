@@ -9,6 +9,7 @@ function categoryTo(id: string, kind: string) {
   if (kind === 'bible-nt') return '/bible?testament=Новий%20Завіт'
   if (kind === 'bible-psa') return '/bible/psa/1'
   if (kind === 'free-books') return '/library/free-books'
+  if (kind === 'canons') return '/library/canons'
   return `/library/${id}`
 }
 

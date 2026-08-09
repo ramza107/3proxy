@@ -7,6 +7,8 @@ import { LibrarySection } from './pages/LibrarySection'
 import { LibraryReader } from './pages/LibraryReader'
 import { FreeBooks } from './pages/FreeBooks'
 import { FreeBookReader } from './pages/FreeBookReader'
+import { Canons } from './pages/Canons'
+import { CanonReader } from './pages/CanonReader'
 import { Bible } from './pages/Bible'
 import { BibleReader } from './pages/BibleReader'
 import { CalendarPage } from './pages/CalendarPage'
@@ -27,6 +29,8 @@ export default function App() {
             <Route path="library" element={<Library />} />
             <Route path="library/free-books" element={<FreeBooks />} />
             <Route path="library/free-books/:bookId" element={<FreeBookReader />} />
+            <Route path="library/canons" element={<Canons />} />
+            <Route path="library/canons/:canonId" element={<CanonReader />} />
             <Route path="library/read/:textId" element={<LibraryReader />} />
             <Route path="library/:categoryId" element={<LibrarySection />} />
             <Route path="bible" element={<Bible />} />
