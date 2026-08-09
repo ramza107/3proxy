@@ -456,6 +456,24 @@ h3,
   cursor: default;
 }
 
+.course-questions {
+  margin: 0 0 8px;
+  padding-left: 1.2rem;
+  line-height: 1.55;
+}
+
+.course-questions li {
+  margin-bottom: 8px;
+}
+
+.course-schedule .tile {
+  gap: 4px;
+}
+
+.course-schedule strong {
+  font-size: 0.95rem;
+}
+
 .quiz-option {
   text-align: left;
   width: 100%;

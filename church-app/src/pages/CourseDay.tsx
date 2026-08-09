@@ -15,8 +15,17 @@ type Day = {
   day: number
   title: string
   reading: string
+  scripture?: string
+  minutes?: number
+  lesson?: string[]
   story: string[]
+  questions?: string[]
   reflect: string
+  schedule?: {
+    morning: string
+    midday: string
+    evening: string
+  }
   practice: string
   prayer: string
   quiz?: Quiz
@@ -91,6 +100,9 @@ export function CourseDay() {
     )
   }
 
+  const paragraphs = day.lesson?.length ? day.lesson : day.story
+  const questions =
+    day.questions?.length ? day.questions : day.reflect ? [day.reflect] : []
   const prev = day.day > 1 ? day.day - 1 : null
   const next = day.day < course.daysCount ? day.day + 1 : null
 
@@ -106,6 +118,7 @@ export function CourseDay() {
           </h1>
           <p className="section-lead" style={{ margin: 0 }}>
             {course.title}
+            {day.minutes ? ` · ${day.minutes} хв` : ''}
           </p>
         </div>
       </div>
@@ -117,21 +130,47 @@ export function CourseDay() {
         key={day.day}
       >
         <div className="kids-verse">
-          <p>Читання: {day.reading}</p>
+          <p>«{day.scripture || day.reading}»</p>
+          <span>{day.reading}</span>
         </div>
 
-        <h3 className="kids-h">Заняття</h3>
-        {day.story.map((p, i) => (
+        <h3 className="kids-h">Урок дня</h3>
+        {paragraphs.map((p, i) => (
           <p key={i} className="kids-p">
             {p}
           </p>
         ))}
 
-        <h3 className="kids-h">Для роздуму</h3>
-        <p className="kids-p">{day.reflect}</p>
+        {!!questions.length && (
+          <>
+            <h3 className="kids-h">Питання для роздуму</h3>
+            <ol className="course-questions">
+              {questions.map((q) => (
+                <li key={q}>{q}</li>
+              ))}
+            </ol>
+          </>
+        )}
 
-        <h3 className="kids-h">Практика сьогодні</h3>
-        <p className="kids-p">{day.practice}</p>
+        <h3 className="kids-h">На весь день</h3>
+        {day.schedule ? (
+          <div className="stack course-schedule">
+            <div className="tile">
+              <strong>Ранок</strong>
+              <span>{day.schedule.morning}</span>
+            </div>
+            <div className="tile">
+              <strong>День</strong>
+              <span>{day.schedule.midday}</span>
+            </div>
+            <div className="tile">
+              <strong>Вечір</strong>
+              <span>{day.schedule.evening}</span>
+            </div>
+          </div>
+        ) : (
+          <p className="kids-p">{day.practice}</p>
+        )}
 
         <h3 className="kids-h">Молитва</h3>
         <p className="kids-p" style={{ fontStyle: 'italic' }}>
