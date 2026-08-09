@@ -430,6 +430,38 @@ h3,
   padding: 14px 0 4px;
 }
 
+.course-card {
+  position: relative;
+  overflow: hidden;
+  gap: 6px;
+}
+
+.course-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.course-bar {
+  display: block;
+  height: 4px;
+  width: 48px;
+  border-radius: 999px;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
+.course-day-locked {
+  opacity: 0.72;
+  cursor: default;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .quiz-option {
   text-align: left;
   width: 100%;

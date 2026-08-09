@@ -3,22 +3,33 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { brand } from '../brand'
 import { plans, products } from '../data/shop'
+import { activatePlusDemo, ownCourse } from '../lib/courseAccess'
 
 export function Shop() {
   const [toast, setToast] = useState('')
 
-  const buy = (title: string) => {
-    setToast(`«${title}» додано до демо-кошика. Оплату підключимо пізніше (LiqPay / Stripe).`)
+  const buy = (title: string, opts?: { courseId?: string; plus?: boolean }) => {
+    if (opts?.plus) activatePlusDemo()
+    if (opts?.courseId) ownCourse(opts.courseId)
+    setToast(`«${title}» відкрито в демо-режимі. Оплату підключимо пізніше (LiqPay / Stripe).`)
     window.setTimeout(() => setToast(''), 3200)
   }
+
+  const courseProducts = products.filter((p) => p.tag === 'курс')
+  const otherProducts = products.filter((p) => p.tag !== 'курс')
 
   return (
     <div className="page">
       <h1 className="section-title">Крамниця</h1>
-      <p className="section-lead">Курси, підписка та окрема сторінка підтримки.</p>
+      <p className="section-lead">Місячні курси з заняттям на кожен день, підписка та підтримка.</p>
 
       <div className="stack" style={{ marginBottom: 18 }}>
-        <Link className="tile tile-accent support-entry" to="/support">
+        <Link className="tile tile-accent support-entry" to="/shop/courses">
+          <strong>Курси на місяць</strong>
+          <span>30–40 днів програми: діти, молитва, родина, піст, Євангеліє.</span>
+          <span className="support-entry-cta">Відкрити каталог →</span>
+        </Link>
+        <Link className="tile support-entry" to="/support">
           <strong>Підтримка проєкту</strong>
           <span>Добровільна допомога на розвиток застосунку.</span>
           <span className="support-entry-cta">Відкрити →</span>
@@ -42,7 +53,7 @@ export function Shop() {
                 className="btn btn-primary"
                 type="button"
                 style={{ marginTop: 12, width: 'fit-content' }}
-                onClick={() => buy(plan.name)}
+                onClick={() => buy(plan.name, { plus: true })}
               >
                 Оформити {brand.plus}
               </button>
@@ -52,10 +63,46 @@ export function Shop() {
       </div>
 
       <h2 className="section-title" style={{ marginTop: 28, fontSize: '1.6rem' }}>
-        Пропозиції
+        Місячні курси
       </h2>
       <div className="stack" style={{ marginTop: 12 }}>
-        {products.map((p, i) => (
+        {courseProducts.map((p, i) => (
+          <motion.article
+            key={p.id}
+            className="tile"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <strong>{p.title}</strong>
+              <span className="price">{p.priceUah} ₴</span>
+            </div>
+            <span>{p.subtitle}</span>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className={`badge${p.premium ? ' premium' : ''}`}>{p.tag}</span>
+              {p.courseId && (
+                <Link className="btn btn-outline" to={`/shop/courses/${p.courseId}`}>
+                  Програма
+                </Link>
+              )}
+              <button
+                className="btn btn-dark"
+                type="button"
+                onClick={() => buy(p.title, { courseId: p.courseId })}
+              >
+                Купити
+              </button>
+            </div>
+          </motion.article>
+        ))}
+      </div>
+
+      <h2 className="section-title" style={{ marginTop: 28, fontSize: '1.6rem' }}>
+        Інше
+      </h2>
+      <div className="stack" style={{ marginTop: 12 }}>
+        {otherProducts.map((p, i) => (
           <motion.article
             key={p.id}
             className="tile"
@@ -70,7 +117,11 @@ export function Shop() {
             <span>{p.subtitle}</span>
             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
               <span className={`badge${p.premium ? ' premium' : ''}`}>{p.tag}</span>
-              <button className="btn btn-dark" type="button" onClick={() => buy(p.title)}>
+              <button
+                className="btn btn-dark"
+                type="button"
+                onClick={() => buy(p.title, { plus: p.tag === 'підписка' })}
+              >
                 Купити
               </button>
             </div>

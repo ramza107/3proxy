@@ -14,6 +14,9 @@ import { BibleReader } from './pages/BibleReader'
 import { CalendarPage } from './pages/CalendarPage'
 import { Kids } from './pages/Kids'
 import { Shop } from './pages/Shop'
+import { Courses } from './pages/Courses'
+import { CourseDetail } from './pages/CourseDetail'
+import { CourseDay } from './pages/CourseDay'
 import { Support } from './pages/Support'
 import { Radio } from './pages/Radio'
 
@@ -39,6 +42,9 @@ export default function App() {
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="kids" element={<Kids />} />
             <Route path="shop" element={<Shop />} />
+            <Route path="shop/courses" element={<Courses />} />
+            <Route path="shop/courses/:courseId" element={<CourseDetail />} />
+            <Route path="shop/courses/:courseId/day/:dayNumber" element={<CourseDay />} />
             <Route path="support" element={<Support />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
