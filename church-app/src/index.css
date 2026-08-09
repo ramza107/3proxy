@@ -391,6 +391,45 @@ h3,
   color: #8a6a22;
 }
 
+.kids-h {
+  margin: 22px 0 8px;
+  font-family: "Cormorant Infant", Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #2c261c;
+}
+
+.kids-p {
+  margin: 0 0 12px;
+  line-height: 1.65;
+  font-size: 1.05rem;
+}
+
+.kids-verse {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border-left: 3px solid #b8893a;
+  background: rgba(255, 253, 246, 0.7);
+}
+
+.kids-verse p {
+  margin: 0 0 6px;
+  font-family: "Cormorant Infant", Georgia, serif;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  font-style: italic;
+}
+
+.kids-verse span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.kids-result {
+  margin-top: 8px;
+  padding: 14px 0 4px;
+}
+
 .quiz-option {
   text-align: left;
   width: 100%;
