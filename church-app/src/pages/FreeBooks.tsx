@@ -6,13 +6,16 @@ import { assetUrl } from '../lib/assetUrl'
 type FreeBook = {
   id: number
   title: string
+  titleUk: string
   authors: string
-  languages: string[]
+  authorsUk: string
+  blurbUk?: string
   subjects: string[]
   downloadCount: number
-  textUrl: string
-  htmlUrl?: string | null
-  epubUrl?: string | null
+  originalUrl: string
+  localEn: string
+  localUa: string
+  hasTranslation: boolean
   source: string
   license: string
 }
@@ -30,7 +33,7 @@ export function FreeBooks() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetch(assetUrl('free-books/catalog.json'))
+    fetch(assetUrl('free-books/curated.json'))
       .then((r) => {
         if (!r.ok) throw new Error('fail')
         return r.json()
@@ -44,7 +47,7 @@ export function FreeBooks() {
     const query = q.trim().toLowerCase()
     if (!query) return catalog.books
     return catalog.books.filter((b) => {
-      const blob = `${b.title} ${b.authors} ${b.subjects.join(' ')}`.toLowerCase()
+      const blob = `${b.titleUk} ${b.title} ${b.authorsUk} ${b.authors} ${b.blurbUk ?? ''}`.toLowerCase()
       return blob.includes(query)
     })
   }, [catalog, q])
@@ -62,13 +65,13 @@ export function FreeBooks() {
 
       <p className="section-lead">
         {catalog
-          ? `${catalog.books.length} безкоштовних християнських книг (public domain), доступних до читання й поширення.`
+          ? `${catalog.books.length} класичних християнських книг: український переклад у застосунку + посилання на оригінал.`
           : 'Завантаження каталогу…'}
       </p>
 
       <input
         className="search"
-        placeholder="Пошук: Augustine, prayer, Bible…"
+        placeholder="Пошук: Августин, молитва, пілігрим…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         aria-label="Пошук книг"
@@ -77,7 +80,7 @@ export function FreeBooks() {
       {error && <p className="empty">{error}</p>}
 
       <div className="stack" style={{ marginTop: 14 }}>
-        {books.slice(0, 200).map((book, i) => (
+        {books.map((book, i) => (
           <motion.div
             key={book.id}
             initial={{ opacity: 0, y: 8 }}
@@ -85,11 +88,11 @@ export function FreeBooks() {
             transition={{ delay: Math.min(i, 20) * 0.02 }}
           >
             <Link className="tile free-book-tile" to={`/library/free-books/${book.id}`}>
-              <strong>{book.title}</strong>
-              <span>{book.authors}</span>
+              <strong>{book.titleUk}</strong>
+              <span>{book.authorsUk}</span>
+              {book.blurbUk && <span style={{ color: 'var(--muted)' }}>{book.blurbUk}</span>}
               <span className="free-book-meta">
-                Project Gutenberg · #{book.id}
-                {book.languages?.length ? ` · ${book.languages.join(', ')}` : ''}
+                Українською в застосунку · оригінал: {book.title}
               </span>
             </Link>
           </motion.div>

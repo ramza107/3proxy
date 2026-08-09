@@ -3,50 +3,40 @@ import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { assetUrl } from '../lib/assetUrl'
 
-type FreeBook = {
+type CatalogBook = {
   id: number
   title: string
+  titleUk: string
   authors: string
-  textUrl: string
-  htmlUrl?: string | null
-  epubUrl?: string | null
+  authorsUk: string
+  blurbUk?: string
+  originalUrl: string
+  localEn: string
+  localUa: string
   license: string
   source: string
-  subjects: string[]
 }
 
-function stripGutenbergBoilerplate(raw: string): string {
-  const startMarkers = [
-    '*** START OF THE PROJECT GUTENBERG EBOOK',
-    '*** START OF THIS PROJECT GUTENBERG EBOOK',
-    '***START OF THE PROJECT GUTENBERG EBOOK',
-  ]
-  const endMarkers = [
-    '*** END OF THE PROJECT GUTENBERG EBOOK',
-    '*** END OF THIS PROJECT GUTENBERG EBOOK',
-    '***END OF THE PROJECT GUTENBERG EBOOK',
-  ]
-  let text = raw.replace(/\r\n/g, '\n')
-  for (const m of startMarkers) {
-    const i = text.indexOf(m)
-    if (i >= 0) {
-      const nl = text.indexOf('\n', i)
-      text = text.slice(nl >= 0 ? nl + 1 : i + m.length)
-      break
-    }
-  }
-  for (const m of endMarkers) {
-    const i = text.indexOf(m)
-    if (i >= 0) text = text.slice(0, i)
-  }
-  return text.trim()
+type BookDoc = {
+  id: number
+  language: string
+  title: string
+  authors: string
+  paragraphs: string[]
+  note?: string
 }
+
+type Lang = 'uk' | 'en'
+
+const PAGE = 40
 
 export function FreeBookReader() {
   const { bookId = '' } = useParams()
   const id = Number(bookId)
-  const [book, setBook] = useState<FreeBook | null>(null)
-  const [text, setText] = useState('')
+  const [meta, setMeta] = useState<CatalogBook | null>(null)
+  const [lang, setLang] = useState<Lang>('uk')
+  const [docs, setDocs] = useState<Partial<Record<Lang, BookDoc>>>({})
+  const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -54,25 +44,32 @@ export function FreeBookReader() {
     let cancelled = false
     setLoading(true)
     setError('')
-    setText('')
+    setPage(0)
+    setLang('uk')
+    setDocs({})
 
-    fetch(assetUrl('free-books/catalog.json'))
-      .then((r) => r.json())
-      .then(async (catalog: { books: FreeBook[] }) => {
+    fetch(assetUrl('free-books/curated.json'))
+      .then((r) => {
+        if (!r.ok) throw new Error('catalog')
+        return r.json()
+      })
+      .then(async (catalog: { books: CatalogBook[] }) => {
         const found = catalog.books.find((b) => b.id === id)
         if (!found) throw new Error('not-found')
-        if (!cancelled) setBook(found)
+        if (cancelled) return
+        setMeta(found)
 
-        // Спробуємо прочитати текст у застосунку (може блокуватись CORS)
-        try {
-          const res = await fetch(found.textUrl)
-          if (!res.ok) throw new Error('text-fail')
-          const raw = await res.text()
-          if (!cancelled) setText(stripGutenbergBoilerplate(raw))
-        } catch {
-          if (!cancelled) {
-            setError('Текст відкривається на Project Gutenberg (обмеження браузера).')
-          }
+        const [uaRes, enRes] = await Promise.all([
+          fetch(assetUrl(found.localUa)),
+          fetch(assetUrl(found.localEn)),
+        ])
+        const next: Partial<Record<Lang, BookDoc>> = {}
+        if (uaRes.ok) next.uk = await uaRes.json()
+        if (enRes.ok) next.en = await enRes.json()
+        if (!cancelled) {
+          setDocs(next)
+          if (!next.uk && next.en) setLang('en')
+          if (!next.uk && !next.en) setError('Текст книги ще готується')
         }
       })
       .catch(() => {
@@ -87,12 +84,17 @@ export function FreeBookReader() {
     }
   }, [id])
 
-  const preview = useMemo(() => {
-    if (!text) return []
-    return text.split(/\n{2,}/).filter(Boolean).slice(0, 80)
-  }, [text])
+  const active = docs[lang]
+  const paragraphs = active?.paragraphs ?? []
+  const totalPages = Math.max(1, Math.ceil(paragraphs.length / PAGE))
+  const slice = useMemo(() => {
+    const start = page * PAGE
+    return paragraphs.slice(start, start + PAGE)
+  }, [paragraphs, page])
 
-  const gutenbergPage = book ? `https://www.gutenberg.org/ebooks/${book.id}` : ''
+  useEffect(() => {
+    setPage(0)
+  }, [lang])
 
   return (
     <div className="page library-page">
@@ -102,61 +104,114 @@ export function FreeBookReader() {
         </Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1 className="section-title" style={{ margin: 0, fontSize: '1.25rem' }}>
-            {book?.title ?? 'Книга'}
+            {meta ? (lang === 'uk' ? meta.titleUk : meta.title) : 'Книга'}
           </h1>
-          {book && (
+          {meta && (
             <p className="section-lead" style={{ margin: 0 }}>
-              {book.authors}
+              {lang === 'uk' ? meta.authorsUk : meta.authors}
             </p>
           )}
         </div>
       </div>
 
       {loading && <p className="empty">Завантаження…</p>}
+      {error && <p className="empty">{error}</p>}
 
-      {book && (
+      {meta && (
         <div className="stack" style={{ marginBottom: 14 }}>
           <article className="tile">
+            {meta.blurbUk && (
+              <p style={{ margin: '0 0 10px', color: 'var(--muted)', fontSize: '0.92rem' }}>
+                {meta.blurbUk}
+              </p>
+            )}
             <span className="badge">public domain</span>
-            <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: '0.9rem' }}>
-              {book.license}. Джерело: {book.source}.
+            <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: '0.85rem' }}>
+              {meta.license}. Джерело оригіналу: {meta.source}.
             </p>
+
+            <div className="canon-filters" style={{ marginTop: 12 }} role="tablist" aria-label="Мова">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={lang === 'uk'}
+                className={`canon-filter${lang === 'uk' ? ' is-active' : ''}`}
+                onClick={() => setLang('uk')}
+                disabled={!docs.uk}
+              >
+                Переклад (UA)
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={lang === 'en'}
+                className={`canon-filter${lang === 'en' ? ' is-active' : ''}`}
+                onClick={() => setLang('en')}
+                disabled={!docs.en}
+              >
+                Оригінал (EN)
+              </button>
+            </div>
+
             <div className="cta-row" style={{ marginTop: 12 }}>
-              <a className="btn btn-primary" href={gutenbergPage} target="_blank" rel="noreferrer">
-                Читати на Gutenberg
+              <a className="btn btn-outline" href={meta.originalUrl} target="_blank" rel="noreferrer">
+                Оригінал (Gutenberg)
               </a>
-              {book.epubUrl && (
-                <a className="btn btn-outline" href={book.epubUrl} target="_blank" rel="noreferrer">
-                  EPUB
-                </a>
-              )}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setLang('uk')
+                  setPage(0)
+                  document.getElementById('book-text')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                disabled={!docs.uk}
+              >
+                Переклад у застосунку
+              </button>
             </div>
           </article>
         </div>
       )}
 
-      {error && !text && (
-        <p className="tile" style={{ color: 'var(--muted)' }}>
-          {error}
-        </p>
-      )}
-
-      {!!preview.length && (
+      {!!slice.length && (
         <motion.article
+          id="book-text"
           className="reader free-book-reader"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          key={`${lang}-${page}`}
         >
-          {preview.map((p, i) => (
-            <p key={i} style={{ margin: '0 0 12px', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+          {active?.note && lang === 'uk' && (
+            <p style={{ color: 'var(--muted)', marginBottom: 14, fontSize: '0.85rem' }}>{active.note}</p>
+          )}
+          {slice.map((p, i) => (
+            <p key={i} style={{ margin: '0 0 12px', whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
               {p}
             </p>
           ))}
-          {text.split(/\n{2,}/).length > preview.length && (
-            <p style={{ color: 'var(--muted)' }}>
-              Показано початок книги. Повний текст — на Project Gutenberg.
-            </p>
-          )}
+
+          <div className="cta-row" style={{ marginTop: 18, alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              disabled={page <= 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              ← Назад
+            </button>
+            <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+              Стор. {page + 1} / {totalPages}
+            </span>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={page + 1 >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Далі →
+            </button>
+          </div>
         </motion.article>
       )}
     </div>
