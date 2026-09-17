@@ -83,7 +83,7 @@ export default function ChatScreen() {
         />
 
         {messages.some((m) => m.role === 'assistant') && (
-          <Pressable style={styles.viewPlan} onPress={() => router.push('/(tabs)/tasks')}>
+          <Pressable style={styles.viewPlan} onPress={() => router.push('/tasks')}>
             <Text style={styles.viewPlanText}>View plan</Text>
           </Pressable>
         )}
