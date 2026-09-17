@@ -13,24 +13,54 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { ChatBubble } from '../../components/ChatBubble'
-import { colors, spacing } from '../../constants/theme'
+import { colors, radii, spacing } from '../../constants/theme'
 import { useNovaStore } from '../../lib/store'
 import { sendNovaMessage } from '../../services/ai'
+import type { AIAction } from '../../types'
+
+type SavedItem = {
+  title: string
+  where: string
+}
+
+function describeWhere(action: AIAction): SavedItem | null {
+  if (action.type === 'create_task') {
+    const today = new Date().toISOString().slice(0, 10)
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+    let where = 'Tasks → Upcoming'
+    if (action.date === today) where = 'Tasks → Today'
+    else if (action.date === tomorrow) where = 'Tasks → Tomorrow'
+    else if (action.date) where = `Tasks → Upcoming`
+    return {
+      title: action.title + (action.time ? ` · ${action.time}` : ''),
+      where,
+    }
+  }
+  if (action.type === 'create_reminder') {
+    return {
+      title: action.title + (action.time ? ` · ${action.time}` : ''),
+      where: 'Tasks → Tomorrow',
+    }
+  }
+  return null
+}
 
 export default function ChatScreen() {
   const router = useRouter()
   const messages = useNovaStore((s) => s.messages)
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const [loading, setLoading] = useState(false)
+  const [saved, setSaved] = useState<SavedItem[]>([])
   const listRef = useRef<FlatList>(null)
 
   const onSend = async (text: string) => {
     setLoading(true)
     try {
       const res = await sendNovaMessage(text)
-      if (res.actions?.some((a) => a.type === 'create_task' || a.type === 'create_reminder')) {
-        // soft nudge toward plan
-      }
+      const items = (res.actions || [])
+        .map(describeWhere)
+        .filter((x): x is SavedItem => Boolean(x))
+      setSaved(items)
     } catch (e) {
       Alert.alert('NOVA', e instanceof Error ? e.message : 'AI unavailable')
     } finally {
@@ -61,7 +91,7 @@ export default function ChatScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>Hi {name}</Text>
               <Text style={styles.emptyText}>
-                Tell me what you need to get done. I&apos;ll turn it into tasks and reminders.
+                Tell me what you need to get done. I&apos;ll save it under the Tasks tab.
               </Text>
               <Pressable
                 style={styles.chip}
@@ -82,10 +112,23 @@ export default function ChatScreen() {
           renderItem={({ item }) => <ChatBubble role={item.role} content={item.content} />}
         />
 
-        {messages.some((m) => m.role === 'assistant') && (
-          <Pressable style={styles.viewPlan} onPress={() => router.push('/tasks')}>
-            <Text style={styles.viewPlanText}>View plan</Text>
-          </Pressable>
+        {saved.length > 0 && (
+          <View style={styles.savedCard}>
+            <Text style={styles.savedLabel}>SAVED</Text>
+            {saved.map((item, i) => (
+              <Text key={`${item.title}-${i}`} style={styles.savedItem}>
+                • {item.title}
+              </Text>
+            ))}
+            <Text style={styles.savedWhere}>{saved[0]?.where}</Text>
+            <Pressable
+              accessibilityRole="button"
+              style={styles.savedBtn}
+              onPress={() => router.push('/tasks')}
+            >
+              <Text style={styles.savedBtnText}>Open Tasks</Text>
+            </Pressable>
+          </View>
         )}
 
         <View style={styles.inputWrap}>
@@ -123,7 +166,36 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   chipText: { color: colors.accentStrong },
-  viewPlan: { alignSelf: 'center', marginBottom: 8 },
-  viewPlanText: { color: colors.accentStrong, fontWeight: '700' },
+  savedCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.accentSoft,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    padding: spacing.md,
+    gap: 6,
+  },
+  savedLabel: {
+    color: colors.accentStrong,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+  },
+  savedItem: { color: colors.text, fontSize: 15, lineHeight: 22 },
+  savedWhere: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  savedBtn: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accent,
+    borderRadius: radii.full,
+    paddingHorizontal: 16,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // @ts-expect-error web-only
+    cursor: 'pointer',
+  },
+  savedBtnText: { color: '#0B0D12', fontWeight: '800' },
   inputWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
 })

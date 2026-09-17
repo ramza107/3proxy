@@ -118,25 +118,37 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.json(local)
     }
 
-    const openai = new OpenAI({ apiKey: openaiKey })
-    const completion = await openai.chat.completions.create({
-      model,
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'system', content: context },
-        ...input.history.map((h) => ({ role: h.role, content: h.content })),
-        { role: 'user', content: input.message },
-      ],
-    })
+    try {
+      const openai = new OpenAI({ apiKey: openaiKey })
+      const completion = await openai.chat.completions.create({
+        model,
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: context },
+          ...input.history.map((h) => ({ role: h.role, content: h.content })),
+          { role: 'user', content: input.message },
+        ],
+      })
 
-    const content = completion.choices[0]?.message?.content || '{"reply":"I could not process that.","actions":[]}'
-    const json = safeParseModelJson(content)
-    if (!json.reply || !Array.isArray(json.actions)) {
-      return res.status(502).json({ error: 'Malformed AI response', raw: json })
+      const content =
+        completion.choices[0]?.message?.content ||
+        '{"reply":"I could not process that.","actions":[]}'
+      const json = safeParseModelJson(content)
+      if (!json.reply || !Array.isArray(json.actions)) {
+        return res.status(502).json({ error: 'Malformed AI response', raw: json })
+      }
+      return res.json(json)
+    } catch (openaiError) {
+      console.warn('OpenAI unavailable, using local AI:', openaiError)
+      const local = localAI(
+        input.message,
+        input.tasks,
+        input.current_date || new Date().toISOString().slice(0, 10),
+      )
+      return res.json({ ...local, fallback: true })
     }
-    return res.json(json)
   } catch (error) {
     console.error(error)
     return res.status(500).json({

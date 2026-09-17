@@ -1,5 +1,5 @@
 import { addDays, format, parseISO } from 'date-fns'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Pressable,
@@ -38,10 +38,31 @@ export default function TasksScreen() {
     return {
       today: open.filter((t) => t.date === today),
       tomorrow: open.filter((t) => t.date === tomorrow),
-      upcoming: open.filter((t) => !t.date || (t.date > tomorrow)),
+      upcoming: open.filter((t) => !t.date || t.date > tomorrow),
       completed: sortTasks(tasks.filter((t) => t.completed)),
     }
   }, [tasks, today, tomorrow])
+
+  useEffect(() => {
+    if (grouped[section].length > 0) return
+    if (grouped.today.length > 0) {
+      setSection('today')
+      return
+    }
+    if (grouped.tomorrow.length > 0) {
+      setSection('tomorrow')
+      return
+    }
+    if (grouped.upcoming.length > 0) {
+      setSection('upcoming')
+    }
+  }, [
+    section,
+    grouped.today.length,
+    grouped.tomorrow.length,
+    grouped.upcoming.length,
+    grouped.completed.length,
+  ])
 
   const visible = grouped[section]
 
@@ -78,10 +99,10 @@ export default function TasksScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {(
           [
-            ['today', 'Today'],
-            ['tomorrow', 'Tomorrow'],
-            ['upcoming', 'Upcoming'],
-            ['completed', 'Completed'],
+            ['today', `Today (${grouped.today.length})`],
+            ['tomorrow', `Tomorrow (${grouped.tomorrow.length})`],
+            ['upcoming', `Upcoming (${grouped.upcoming.length})`],
+            ['completed', `Completed (${grouped.completed.length})`],
           ] as const
         ).map(([id, label]) => (
           <Pressable
