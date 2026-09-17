@@ -47,7 +47,7 @@ export default function RootLayout() {
         if (session.user.user_metadata?.name) {
           updateSettings({ name: session.user.user_metadata.name })
         }
-      } else {
+      } else if (!useNovaStore.getState().demoMode) {
         clearSession()
       }
     })

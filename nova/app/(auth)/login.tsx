@@ -102,6 +102,17 @@ export default function LoginScreen() {
       <Link href="/signup" style={styles.link}>
         Create an account
       </Link>
+
+      <Pressable
+        accessibilityRole="button"
+        style={styles.demoBtn}
+        onPress={() => {
+          setDemoSession('demo@nova.local', 'Friend')
+          router.replace('/welcome')
+        }}
+      >
+        <Text style={styles.demoText}>Continue in demo mode</Text>
+      </Pressable>
     </KeyboardAvoidingView>
   )
 }
@@ -148,4 +159,12 @@ const styles = StyleSheet.create({
   error: { color: colors.danger },
   hint: { color: colors.textDim, fontSize: 12, textAlign: 'center', marginTop: 4 },
   link: { color: colors.accentStrong, textAlign: 'center', fontWeight: '600', fontSize: 15 },
+  demoBtn: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    // @ts-expect-error web-only
+    cursor: 'pointer',
+  },
+  demoText: { color: colors.textMuted, fontWeight: '600', fontSize: 14 },
 })
