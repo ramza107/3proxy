@@ -1,28 +1,40 @@
-import * as Device from 'expo-device'
-import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
 import type { Task } from '../types'
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-})
+let Notifications: typeof import('expo-notifications') | null = null
+
+async function getNotifications() {
+  if (Platform.OS === 'web') return null
+  if (!Notifications) {
+    Notifications = await import('expo-notifications')
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    })
+  }
+  return Notifications
+}
 
 export async function ensureNotificationPermissions(): Promise<boolean> {
-  if (!Device.isDevice && Platform.OS !== 'web') {
+  if (Platform.OS === 'web') return false
+  try {
+    const Device = await import('expo-device')
+    const NotificationsMod = await getNotifications()
+    if (!NotificationsMod) return false
+    if (!Device.isDevice) return false
+
+    const current = await NotificationsMod.getPermissionsAsync()
+    if (current.granted) return true
+    const asked = await NotificationsMod.requestPermissionsAsync()
+    return asked.granted
+  } catch {
     return false
   }
-
-  const current = await Notifications.getPermissionsAsync()
-  if (current.granted) return true
-
-  const asked = await Notifications.requestPermissionsAsync()
-  return asked.granted
 }
 
 function taskTriggerDate(task: Task): Date | null {
@@ -38,30 +50,34 @@ export async function scheduleTaskNotification(
   task: Task,
   enabled: boolean,
 ): Promise<string | null> {
-  if (!enabled || task.completed) return null
+  if (Platform.OS === 'web' || !enabled || task.completed) return null
   const when = taskTriggerDate(task)
   if (!when) return null
 
   const granted = await ensureNotificationPermissions()
   if (!granted) return null
 
-  return Notifications.scheduleNotificationAsync({
+  const NotificationsMod = await getNotifications()
+  if (!NotificationsMod) return null
+
+  return NotificationsMod.scheduleNotificationAsync({
     content: {
       title: 'NOVA',
       body: `Time to ${task.title.toLowerCase()} ✨`,
       data: { taskId: task.id },
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
       date: when,
     },
   })
 }
 
 export async function cancelNotification(notificationId?: string | null) {
-  if (!notificationId) return
+  if (Platform.OS === 'web' || !notificationId) return
   try {
-    await Notifications.cancelScheduledNotificationAsync(notificationId)
+    const NotificationsMod = await getNotifications()
+    await NotificationsMod?.cancelScheduledNotificationAsync(notificationId)
   } catch {
     // ignore
   }

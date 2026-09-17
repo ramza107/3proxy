@@ -13,7 +13,30 @@ Personal AI assistant for everyday life. You tell NOVA what you need to do — i
 - AsyncStorage / Zustand local cache
 - Offline local AI fallback when the server or OpenAI key is missing
 
-## Quick start
+## Quick start (website demo)
+
+After deploy to GitHub Pages:
+
+**https://ramza107.github.io/3proxy/nova/**
+
+Locally in the browser:
+
+```bash
+cd nova
+npm install --legacy-peer-deps
+npx expo start --web
+```
+
+Or static export:
+
+```bash
+npx expo export --platform web
+npx serve dist
+```
+
+Demo mode works in the browser without OpenAI/Supabase keys (local AI fallback + AsyncStorage).
+
+## Quick start (mobile / Expo Go)
 
 ```bash
 cd nova

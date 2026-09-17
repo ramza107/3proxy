@@ -1,10 +1,11 @@
-name: Deploy Благовіст to GitHub Pages
+name: Deploy Благовіст + NOVA to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
       - 'church-app/**'
+      - 'nova/**'
       - '.github/workflows/deploy-github-pages.yml'
   workflow_dispatch:
 
@@ -20,25 +21,43 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: church-app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: church-app/package-lock.json
-      - run: npm ci
-      - name: Build for GitHub Pages
+          cache-dependency-path: |
+            church-app/package-lock.json
+            nova/package-lock.json
+
+      - name: Build church-app (Благовіст)
+        working-directory: church-app
         env:
           GITHUB_PAGES: 'true'
           VITE_BASE: /3proxy/
-        run: npm run build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build NOVA web demo
+        working-directory: nova
+        run: |
+          npm ci --legacy-peer-deps
+          npx expo export --platform web
+          # SPA fallback for Expo Router deep links on GitHub Pages
+          cp dist/index.html dist/404.html
+
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -R church-app/dist/. site/
+          mkdir -p site/nova
+          cp -R nova/dist/. site/nova/
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: church-app/dist
+          path: site
 
   deploy:
     needs: build
