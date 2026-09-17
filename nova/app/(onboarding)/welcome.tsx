@@ -7,14 +7,18 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.glow} />
+      <View style={styles.glow} pointerEvents="none" />
       <Text style={styles.emoji}>👋</Text>
       <Text style={styles.title}>Hi</Text>
       <Text style={styles.body}>
         I&apos;m NOVA.{"\n"}
         Tell me what you need to get done.
       </Text>
-      <Pressable style={styles.btn} onPress={() => router.push('/(onboarding)/name')}>
+      <Pressable
+        accessibilityRole="button"
+        style={styles.btn}
+        onPress={() => router.push('/name')}
+      >
         <Text style={styles.btnText}>Get started</Text>
       </Pressable>
     </View>
@@ -47,6 +51,9 @@ const styles = StyleSheet.create({
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
+    // @ts-expect-error web-only
+    cursor: 'pointer',
+    zIndex: 2,
   },
   btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 17 },
 })

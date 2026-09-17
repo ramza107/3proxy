@@ -1,11 +1,15 @@
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
-import { ActivityIndicator, View } from 'react-native'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { ActivityIndicator, Platform, View } from 'react-native'
 import { colors } from '../constants/theme'
 import { isSupabaseConfigured, getSupabase } from '../lib/supabase'
 import { useNovaStore } from '../lib/store'
+
+const RootView =
+  Platform.OS === 'web'
+    ? View
+    : require('react-native-gesture-handler').GestureHandlerRootView
 
 export default function RootLayout() {
   const router = useRouter()
@@ -53,21 +57,22 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!hydrated) return
-    const inAuth = segments[0] === '(auth)'
-    const inOnboarding = segments[0] === '(onboarding)'
+    const root = segments[0]
+    const inAuth = root === '(auth)'
+    const inOnboarding = root === '(onboarding)'
 
     if (!sessionUserId) {
-      if (!inAuth && !inOnboarding) router.replace('/(auth)/login')
+      if (!inAuth) router.replace('/login')
       return
     }
 
     if (!onboardingComplete) {
-      if (!inOnboarding) router.replace('/(onboarding)/welcome')
+      if (!inOnboarding) router.replace('/welcome')
       return
     }
 
-    if (inAuth || inOnboarding || segments[0] === undefined) {
-      router.replace('/(tabs)/home')
+    if (inAuth || inOnboarding || root === undefined) {
+      router.replace('/home')
     }
   }, [hydrated, sessionUserId, onboardingComplete, segments, router])
 
@@ -80,9 +85,9 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bg }}>
+    <RootView style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
-    </GestureHandlerRootView>
+    </RootView>
   )
 }

@@ -45,7 +45,7 @@ export default function SettingsScreen() {
       await getSupabase()?.auth.signOut()
     }
     clearSession()
-    router.replace('/(auth)/login')
+    router.replace('/login')
   }
 
   return (
