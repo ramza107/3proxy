@@ -1,7 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
+
+const ssrSafeStorage = {
+  getItem: async (_name: string) => null as string | null,
+  setItem: async (_name: string, _value: string) => undefined,
+  removeItem: async (_name: string) => undefined,
+}
+
+function storeStorage() {
+  if (Platform.OS === 'web' && typeof window === 'undefined') {
+    return createJSONStorage(() => ssrSafeStorage)
+  }
+  return createJSONStorage(() => AsyncStorage)
+}
 
 function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`
@@ -125,7 +139,7 @@ export const useNovaStore = create<NovaState>()(
     }),
     {
       name: 'nova-store-v1',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: storeStorage(),
       partialize: (s) => ({
         demoMode: s.demoMode,
         sessionUserId: s.sessionUserId,
