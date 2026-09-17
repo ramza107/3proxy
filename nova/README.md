@@ -1,0 +1,125 @@
+# NOVA — AI Life Assistant (MVP)
+
+Personal AI assistant for everyday life. You tell NOVA what you need to do — it turns that into tasks, reminders, and a calm daily plan.
+
+> NOVA should feel like an AI that happens to have a task list — not a task manager with AI bolted on.
+
+## Stack
+
+- Expo + React Native + TypeScript + Expo Router
+- Supabase (Auth + Postgres + RLS)
+- Express AI backend (`POST /api/ai/chat`) with OpenAI
+- Expo Notifications
+- AsyncStorage / Zustand local cache
+- Offline local AI fallback when the server or OpenAI key is missing
+
+## Quick start
+
+```bash
+cd nova
+cp .env.example .env
+npm install --legacy-peer-deps
+npm --prefix server install
+
+# Terminal 1 — AI server
+npm run server
+
+# Terminal 2 — Expo app
+npm start
+```
+
+### Demo mode (no credentials)
+
+Leave `.env` placeholders as-is.
+
+1. Open the app
+2. Sign up / sign in with any email + password (6+ chars)
+3. Complete onboarding
+4. In Chat, try:
+   - `Remind me to call Mom tomorrow at 7 PM`
+   - `I need to clean my apartment, buy food and do laundry tomorrow`
+   - `What do I need to do today?`
+   - `I finished buying food`
+
+Tasks appear on **Home** and **Tasks**. Timed tasks schedule local notifications when permissions allow.
+
+## Configure Supabase + OpenAI
+
+1. Create a Supabase project
+2. Run `supabase/schema.sql` in the SQL editor
+3. Enable Email auth
+4. Fill `.env`:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=...
+EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+EXPO_PUBLIC_API_URL=http://localhost:8787
+OPENAI_API_KEY=sk-...
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+5. Restart Expo and the AI server
+
+> Never put `OPENAI_API_KEY` in the mobile app. Only the server uses it.
+
+## Project structure
+
+```
+nova/
+├── app/                 # Expo Router screens
+├── components/
+├── lib/                 # supabase, api, store, notifications
+├── services/            # AI action application
+├── server/              # Express OpenAI endpoint
+├── supabase/schema.sql
+├── types/
+├── .env.example
+└── README.md
+```
+
+## AI contract
+
+`POST /api/ai/chat`
+
+```json
+{
+  "message": "Tomorrow at 6 PM remind me to buy groceries",
+  "user_id": "...",
+  "tasks": [],
+  "history": []
+}
+```
+
+Response:
+
+```json
+{
+  "reply": "Done. I'll remind you tomorrow at 6 PM.",
+  "actions": [
+    {
+      "type": "create_reminder",
+      "title": "Buy groceries",
+      "date": "2026-09-18",
+      "time": "18:00"
+    }
+  ]
+}
+```
+
+Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`, `create_reminder`.
+
+## Screens
+
+- **Home** — greeting, today plan, AI suggestion, composer
+- **Chat** — primary AI interface
+- **Tasks** — Today / Tomorrow / Upcoming / Completed
+- **Settings** — name, notifications, AI tone, sign out
+
+## Voice
+
+Mic button is present and wired for future speech-to-text. MVP accepts typed text (or pasted transcripts) through the same AI pipeline.
+
+## MVP boundaries
+
+Not included yet: banking, shopping, email/WhatsApp automation, maps, bookings, social, subscriptions, ads.
