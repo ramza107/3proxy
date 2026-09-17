@@ -157,6 +157,6 @@ app.post('/api/ai/chat', async (req, res) => {
   }
 })
 
-app.listen(Port, () => {
-  console.log(`NOVA AI server listening on http://localhost:${Port}`)
+app.listen(Port, '0.0.0.0', () => {
+  console.log(`NOVA AI server listening on http://0.0.0.0:${Port}`)
 })

@@ -86,6 +86,57 @@ SUPABASE_SERVICE_ROLE_KEY=...
 
 > Never put `OPENAI_API_KEY` in the mobile app. Only the server uses it.
 
+## Deploy AI server (Render)
+
+Самый простой вариант для продакшена — [Render](https://render.com) (есть free tier).
+
+### 1. Запушь репозиторий на GitHub
+Убедись, что ветка с `nova/server` уже на GitHub.
+
+### 2. Создай Web Service на Render
+1. [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**
+2. Подключи репозиторий `ramza107/3proxy`
+3. Настройки:
+   - **Root Directory:** `nova/server`
+   - **Runtime:** Node
+   - **Build Command:** `npm ci`
+   - **Start Command:** `npm start`
+   - **Health Check Path:** `/health`
+4. Environment variables:
+   - `OPENAI_API_KEY` = твой `sk-...`
+   - `OPENAI_MODEL` = `gpt-4o-mini`
+   - `SUPABASE_URL` = `https://xxxx.supabase.co` (опционально)
+   - `SUPABASE_SERVICE_ROLE_KEY` = service role key (опционально)
+
+Или через Blueprint: в корне репо есть `render.yaml` → **New** → **Blueprint**.
+
+### 3. Проверь
+После деплоя Render даст URL вида `https://nova-ai-xxxx.onrender.com`.
+
+```bash
+curl https://YOUR-SERVICE.onrender.com/health
+# {"ok":true,"openai":true}
+```
+
+### 4. Подключи приложение
+В `nova/.env` (и в GitHub Pages / EAS secrets):
+
+```env
+EXPO_PUBLIC_API_URL=https://YOUR-SERVICE.onrender.com
+```
+
+Пересобери веб/приложение. Чат пойдёт на сервер → OpenAI.
+
+> Free tier на Render «засыпает» без трафика (~50с cold start). Для продакшена лучше платный Starter.
+
+### Docker (любой хост)
+
+```bash
+cd nova/server
+docker build -t nova-ai .
+docker run -p 8787:8787 -e OPENAI_API_KEY=sk-... nova-ai
+```
+
 ## Project structure
 
 ```
