@@ -30,15 +30,7 @@ export function TaskCard({ task, dateLabel, expanded, onToggle, onPress }: Props
   const meta = bits.join(' · ')
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        task.completed && styles.done,
-        expanded && styles.expanded,
-        pressed && styles.pressed,
-      ]}
-    >
+    <View style={[styles.card, task.completed && styles.done, expanded && styles.expanded]}>
       <Pressable
         onPress={onToggle}
         hitSlop={12}
@@ -50,14 +42,22 @@ export function TaskCard({ task, dateLabel, expanded, onToggle, onPress }: Props
           {task.completed ? <Text style={styles.checkMark}>✓</Text> : null}
         </View>
       </Pressable>
-      <View style={styles.body}>
+      <Pressable onPress={onPress} style={styles.body} accessibilityRole="button">
         <Text style={[styles.title, task.completed && styles.titleDone]} numberOfLines={2}>
           {task.title}
         </Text>
         {!!meta && <Text style={styles.meta}>{meta}</Text>}
-      </View>
+      </Pressable>
+      <Pressable
+        onPress={onPress}
+        style={styles.expandBtn}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Hide details' : 'Show list and repeat'}
+      >
+        <Text style={styles.expandText}>{expanded ? '▴' : '▾'}</Text>
+      </Pressable>
       <View style={[styles.priority, { backgroundColor: colors[task.priority] }]} />
-    </Pressable>
+    </View>
   )
 }
 
