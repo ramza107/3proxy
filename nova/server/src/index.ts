@@ -1,8 +1,19 @@
 import cors from 'cors'
+import crypto from 'crypto'
 import dotenv from 'dotenv'
 import express from 'express'
 import OpenAI from 'openai'
 import { z } from 'zod'
+import { buildDigest, demoDigest } from './email/digest.js'
+import {
+  buildAuthUrl,
+  exchangeCode,
+  gmailConfigured,
+  getAppReturnUrl,
+  listOvernightMessages,
+  parseOAuthState,
+} from './email/gmail.js'
+import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
 import { SYSTEM_PROMPT } from './prompt.js'
 
@@ -14,6 +25,8 @@ app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 
 const Port = Number(process.env.PORT || 8787)
+/** Short-lived OAuth CSRF nonces: nonce → userId */
+const oauthNonces = new Map<string, { userId: string; expires: number }>()
 
 const groqKey = process.env.GROQ_API_KEY || ''
 const openaiKey = process.env.OPENAI_API_KEY || ''
@@ -136,7 +149,122 @@ app.get('/health', (_req, res) => {
     model: provider?.model || null,
     groq: Boolean(groqKey && !groqKey.includes('your-groq')),
     openai: Boolean(openaiKey && !openaiKey.includes('your-openai')),
+    gmail: gmailConfigured(),
   })
+})
+
+app.get('/api/email/status', async (req, res) => {
+  try {
+    const userId = String(req.query.user_id || '')
+    if (!userId) return res.status(400).json({ error: 'user_id required' })
+    const conn = await getConnection(userId)
+    return res.json({
+      configured: gmailConfigured(),
+      connected: Boolean(conn),
+      email: conn?.email || null,
+      provider: conn?.provider || null,
+    })
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'status failed',
+    })
+  }
+})
+
+app.get('/api/email/connect', (req, res) => {
+  const userId = String(req.query.user_id || '')
+  if (!userId) return res.status(400).json({ error: 'user_id required' })
+  if (!gmailConfigured()) {
+    return res.status(503).json({
+      error: 'Gmail OAuth not configured',
+      hint: 'Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI on the AI server',
+    })
+  }
+  const nonce = crypto.randomBytes(16).toString('hex')
+  oauthNonces.set(nonce, { userId, expires: Date.now() + 10 * 60 * 1000 })
+  return res.redirect(buildAuthUrl(userId, nonce))
+})
+
+app.get('/api/email/callback', async (req, res) => {
+  const appUrl = getAppReturnUrl().replace(/\/?$/, '/')
+  try {
+    const code = String(req.query.code || '')
+    const state = String(req.query.state || '')
+    const parsed = parseOAuthState(state)
+    if (!code || !parsed) {
+      return res.redirect(`${appUrl}settings?gmail=error`)
+    }
+    const nonceRow = oauthNonces.get(parsed.nonce)
+    oauthNonces.delete(parsed.nonce)
+    if (!nonceRow || nonceRow.userId !== parsed.userId || nonceRow.expires < Date.now()) {
+      return res.redirect(`${appUrl}settings?gmail=error`)
+    }
+
+    const tokens = await exchangeCode(code)
+    await saveConnection({
+      userId: parsed.userId,
+      provider: 'gmail',
+      email: tokens.email,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiryDate: tokens.expiryDate,
+      updatedAt: new Date().toISOString(),
+    })
+    return res.redirect(`${appUrl}settings?gmail=connected`)
+  } catch (error) {
+    console.error('gmail callback', error)
+    return res.redirect(`${appUrl}settings?gmail=error`)
+  }
+})
+
+app.post('/api/email/disconnect', async (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '')
+    if (!userId) return res.status(400).json({ error: 'user_id required' })
+    await deleteConnection(userId)
+    return res.json({ ok: true })
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'disconnect failed',
+    })
+  }
+})
+
+app.get('/api/email/digest', async (req, res) => {
+  try {
+    const userId = String(req.query.user_id || '')
+    const allowDemo = String(req.query.demo || '') === '1'
+    if (!userId) return res.status(400).json({ error: 'user_id required' })
+
+    const conn = await getConnection(userId)
+    if (!conn) {
+      if (allowDemo) return res.json(demoDigest())
+      return res.json({
+        connected: false,
+        email: null,
+        demo: false,
+        total: 0,
+        senders: [],
+        summary: 'Connect Gmail in Settings to get a morning inbox brief.',
+        highlights: [],
+        generatedAt: new Date().toISOString(),
+      })
+    }
+
+    const messages = await listOvernightMessages(userId)
+    const provider = resolveProvider()
+    const digest = await buildDigest({
+      messages,
+      email: conn.email,
+      provider: provider ? { client: provider.client, model: provider.model } : null,
+    })
+    return res.json(digest)
+  } catch (error) {
+    console.error('digest', error)
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'digest failed',
+    })
+  }
 })
 
 app.post('/api/ai/chat', async (req, res) => {

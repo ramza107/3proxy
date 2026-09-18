@@ -100,3 +100,28 @@ drop trigger if exists tasks_set_updated_at on public.tasks;
 create trigger tasks_set_updated_at
   before update on public.tasks
   for each row execute procedure public.set_updated_at();
+
+-- Gmail OAuth tokens for morning inbox digest (server writes via service role)
+create table if not exists public.email_connections (
+  user_id uuid primary key references public.users (id) on delete cascade,
+  provider text not null default 'gmail' check (provider in ('gmail')),
+  email text not null,
+  access_token text not null,
+  refresh_token text not null,
+  expiry_date bigint,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.email_connections enable row level security;
+
+-- Users can see connection status (not tokens) via a view if needed later.
+-- Tokens are only accessed by the AI server with the service role key.
+drop policy if exists "Users can read own email connection meta" on public.email_connections;
+create policy "Users can read own email connection meta"
+  on public.email_connections for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own email connection" on public.email_connections;
+create policy "Users can delete own email connection"
+  on public.email_connections for delete
+  using (auth.uid() = user_id);

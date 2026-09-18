@@ -117,17 +117,20 @@ async function cancelByIdentifier(identifier: string) {
   }
 }
 
-function morningBody(tasks: Task[]) {
+function morningBody(tasks: Task[], emailDigestEnabled?: boolean) {
   const today = tasksForDay(tasks, todayISO())
+  const inboxHint = emailDigestEnabled
+    ? '\nAlso: open Wahrly for who wrote overnight.'
+    : ''
   if (!today.length) {
-    return 'Good morning. Your day looks clear — open Wahrly if you want to add something.'
+    return `Good morning. Your day looks clear — open Wahrly if you want to add something.${inboxHint}`
   }
   const preview = today
     .slice(0, 4)
     .map((t, i) => `${i + 1}. ${t.title}${t.time ? ` (${t.time})` : ''}`)
     .join('\n')
   const more = today.length > 4 ? `\n+${today.length - 4} more` : ''
-  return `Good morning — today's list:\n${preview}${more}`
+  return `Good morning — today's list:\n${preview}${more}${inboxHint}`
 }
 
 export async function syncDailyRitualNotifications(
@@ -164,7 +167,7 @@ export async function syncDailyRitualNotifications(
       await NotificationsMod.scheduleNotificationAsync({
         content: {
           title: 'Wahrly · Morning brief',
-          body: morningBody(tasks),
+          body: morningBody(tasks, settings.emailDigestEnabled !== false),
           data: { ritualId: MORNING_ID_KEY, kind: 'morning' },
         },
         trigger: {

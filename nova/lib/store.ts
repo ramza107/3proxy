@@ -62,6 +62,7 @@ const defaultSettings: UserSettings = {
   morningBriefEnabled: true,
   eveningClearTime: '21:30',
   eveningClearEnabled: true,
+  emailDigestEnabled: true,
 }
 
 export const useNovaStore = create<NovaState>()(

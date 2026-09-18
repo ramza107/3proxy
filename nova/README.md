@@ -195,10 +195,22 @@ Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`,
 
 ## Screens
 
-- **Home** — greeting, today plan, AI suggestion, composer
+- **Home** — greeting, morning inbox brief, today plan, composer
 - **Chat** — primary AI interface
 - **Tasks** — Today / Tomorrow / Upcoming / Completed
-- **Settings** — name, notifications, AI tone, sign out
+- **Settings** — name, Gmail connect, morning/evening rituals, AI tone, sign out
+
+## Morning inbox (Gmail)
+
+Login is already email + password (Supabase). Separately, **Connect Gmail** in Settings lets Wahrly read overnight senders (names + subjects only) and show a **Morning inbox** card on Home.
+
+1. Enable **Gmail API** in Google Cloud
+2. Create an OAuth **Web** client; redirect URI = `https://YOUR_AI_SERVER/api/email/callback`
+3. Set on Render: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `PUBLIC_APP_URL`
+4. Re-run `supabase/schema.sql` (adds `email_connections`)
+5. Tap **Connect Gmail** in Settings
+
+Until OAuth keys are set, Home shows a **demo** morning inbox preview.
 
 ## Voice
 
@@ -206,4 +218,4 @@ Mic button is present and wired for future speech-to-text. MVP accepts typed tex
 
 ## MVP boundaries
 
-Not included yet: banking, shopping, email/WhatsApp automation, maps, bookings, social, subscriptions, ads.
+Not included yet: banking, shopping, WhatsApp automation, maps, bookings, social, subscriptions, ads. Gmail is read-only digest (who wrote), not full inbox automation.

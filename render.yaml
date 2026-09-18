@@ -22,3 +22,13 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        value: https://threeproxy-x9bi.onrender.com/api/email/callback
+      - key: PUBLIC_API_URL
+        value: https://threeproxy-x9bi.onrender.com
+      - key: PUBLIC_APP_URL
+        value: https://ramza107.github.io/3proxy/nova/

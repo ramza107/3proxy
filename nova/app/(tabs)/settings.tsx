@@ -1,7 +1,8 @@
-import { useRouter } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Alert,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +16,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import {
+  disconnectEmail,
+  emailConnectUrl,
+  fetchEmailStatus,
+} from '../../lib/emailApi'
+import {
   ensureNotificationPermissions,
   parseHm,
   syncDailyRitualNotifications,
@@ -27,14 +33,34 @@ const EVENING_PRESETS = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30']
 
 export default function SettingsScreen() {
   const router = useRouter()
+  const params = useLocalSearchParams<{ gmail?: string }>()
   const settings = useNovaStore((s) => s.settings)
   const tasks = useNovaStore((s) => s.tasks)
   const email = useNovaStore((s) => s.sessionEmail)
+  const userId = useNovaStore((s) => s.sessionUserId)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const clearSession = useNovaStore((s) => s.clearSession)
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
   const [eveningTime, setEveningTime] = useState(settings.eveningClearTime || '21:30')
+  const [gmailConfigured, setGmailConfigured] = useState(false)
+  const [gmailConnected, setGmailConnected] = useState(false)
+  const [gmailEmail, setGmailEmail] = useState<string | null>(null)
+  const [gmailBusy, setGmailBusy] = useState(false)
+
+  const refreshGmail = useCallback(async () => {
+    if (!userId) return
+    try {
+      const status = await fetchEmailStatus(userId)
+      setGmailConfigured(status.configured)
+      setGmailConnected(status.connected)
+      setGmailEmail(status.email)
+    } catch {
+      setGmailConfigured(false)
+      setGmailConnected(false)
+      setGmailEmail(null)
+    }
+  }, [userId])
 
   useEffect(() => {
     setMorningTime(settings.morningBriefTime || '08:00')
@@ -49,8 +75,24 @@ export default function SettingsScreen() {
     settings.morningBriefTime,
     settings.eveningClearEnabled,
     settings.eveningClearTime,
+    settings.emailDigestEnabled,
     tasks,
   ])
+
+  useEffect(() => {
+    refreshGmail().catch(() => undefined)
+  }, [refreshGmail])
+
+  useEffect(() => {
+    if (params.gmail === 'connected') {
+      Alert.alert('Gmail connected', 'Morning inbox will summarize who wrote overnight.')
+      refreshGmail().catch(() => undefined)
+      router.replace('/settings')
+    } else if (params.gmail === 'error') {
+      Alert.alert('Gmail', 'Could not connect. Try again from Settings.')
+      router.replace('/settings')
+    }
+  }, [params.gmail, refreshGmail, router])
 
   const saveName = () => {
     updateSettings({ name: name.trim() || settings.name })
@@ -93,6 +135,40 @@ export default function SettingsScreen() {
     updateSettings({ eveningClearTime: value })
   }
 
+  const connectGmail = async () => {
+    if (!userId) {
+      Alert.alert('Sign in', 'Sign in first, then connect Gmail.')
+      return
+    }
+    if (!gmailConfigured) {
+      Alert.alert(
+        'Almost ready',
+        'Add Google OAuth keys on the AI server (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI). Until then, Home shows a demo morning inbox preview.',
+      )
+      return
+    }
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.location.href = url
+      return
+    }
+    await Linking.openURL(url)
+  }
+
+  const onDisconnectGmail = async () => {
+    if (!userId) return
+    setGmailBusy(true)
+    try {
+      await disconnectEmail(userId)
+      setGmailConnected(false)
+      setGmailEmail(null)
+      Alert.alert('Disconnected', 'Gmail was removed from Wahrly.')
+    } catch (e) {
+      Alert.alert('Gmail', e instanceof Error ? e.message : 'Disconnect failed')
+    } finally {
+      setGmailBusy(false)
+    }
+  }
+
   const signOut = async () => {
     if (isSupabaseConfigured) {
       await getSupabase()?.auth.signOut()
@@ -124,6 +200,41 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
+            <Text style={styles.rowTitle}>Email inbox</Text>
+            <Text style={styles.rowSub}>
+              Connect Gmail so Morning brief can say who wrote overnight — names and subjects, not
+              full message bodies.
+            </Text>
+            {gmailConnected ? (
+              <>
+                <Text style={styles.connected}>Connected · {gmailEmail || 'Gmail'}</Text>
+                <Pressable
+                  style={[styles.btn, styles.btnGhost, gmailBusy && { opacity: 0.5 }]}
+                  onPress={onDisconnectGmail}
+                  disabled={gmailBusy}
+                >
+                  <Text style={styles.btnGhostText}>Disconnect Gmail</Text>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable style={styles.btn} onPress={connectGmail}>
+                <Text style={styles.btnText}>Connect Gmail</Text>
+              </Pressable>
+            )}
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>Include in morning brief</Text>
+                <Text style={styles.rowSub}>Show inbox card on Home</Text>
+              </View>
+              <Switch
+                value={settings.emailDigestEnabled !== false}
+                onValueChange={(v) => updateSettings({ emailDigestEnabled: v })}
+                trackColor={{ true: colors.accent, false: colors.bgSoft }}
+              />
+            </View>
+          </View>
+
+          <View style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Notifications</Text>
@@ -141,7 +252,7 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Morning brief</Text>
-                <Text style={styles.rowSub}>Push your full today list at this time</Text>
+                <Text style={styles.rowSub}>Today&apos;s list + inbox who-wrote hint</Text>
               </View>
               <Switch
                 value={settings.morningBriefEnabled}
@@ -231,6 +342,7 @@ export default function SettingsScreen() {
           <Text style={styles.mode}>
             {isSupabaseConfigured ? 'Supabase connected' : 'Demo mode (local AsyncStorage)'}
             {Platform.OS === 'web' ? ' · Ritual times save now, push on mobile' : ''}
+            {gmailConfigured ? ' · Gmail OAuth ready' : ' · Gmail OAuth keys pending on server'}
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -278,7 +390,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  btnGhost: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
+  btnGhostText: { color: colors.text, fontFamily: fonts.bodyBold },
+  connected: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   rowSub: { color: colors.textMuted, marginTop: 2, fontFamily: fonts.body, lineHeight: 18 },
