@@ -215,6 +215,10 @@ Tap a task in Tasks to open the panel (add items, pick day 1/5/10/15/…).
 
 **For the app owner (once):** follow [`docs/gmail-oauth-setup.md`](docs/gmail-oauth-setup.md) — add `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` on Render.
 
+### Promises you made (not in Gmail)
+
+Wahrly also scans **your sent mail** for open loops (“I’ll send…”, “я пришлю…”) and offers **Add task**. Gmail shows Sent; it never turns those commitments into a life list. Same Gmail connect — no extra scopes.
+
 ## Voice
 
 Mic button is present and wired for future speech-to-text. MVP accepts typed text (or pasted transcripts) through the same AI pipeline.

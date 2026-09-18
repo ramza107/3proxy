@@ -11,8 +11,10 @@ import {
   gmailConfigured,
   getAppReturnUrl,
   listOvernightMessages,
+  listRecentSentMessages,
   parseOAuthState,
 } from './email/gmail.js'
+import { buildPromisesDigest, demoPromises } from './email/promises.js'
 import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
 import { SYSTEM_PROMPT } from './prompt.js'
@@ -270,6 +272,45 @@ app.get('/api/email/digest', async (req, res) => {
     console.error('digest', error)
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'digest failed',
+    })
+  }
+})
+
+app.get('/api/email/promises', async (req, res) => {
+  try {
+    const userId = String(req.query.user_id || '')
+    const allowDemo = String(req.query.demo || '') === '1'
+    const days = Number(req.query.days || 7)
+    if (!userId) return res.status(400).json({ error: 'user_id required' })
+
+    const conn = await getConnection(userId)
+    if (!conn) {
+      if (allowDemo) return res.json(demoPromises())
+      return res.json({
+        connected: false,
+        email: null,
+        demo: false,
+        summary: 'Connect Gmail to catch promises you made in sent mail.',
+        promises: [],
+        scanned: 0,
+        generatedAt: new Date().toISOString(),
+        days: 7,
+      })
+    }
+
+    const messages = await listRecentSentMessages(userId, { days, max: 25 })
+    const provider = resolveProvider()
+    const digest = await buildPromisesDigest({
+      messages,
+      email: conn.email,
+      days: Number.isFinite(days) ? days : 7,
+      provider: provider ? { client: provider.client, model: provider.model } : null,
+    })
+    return res.json(digest)
+  } catch (error) {
+    console.error('promises', error)
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'promises failed',
     })
   }
 })

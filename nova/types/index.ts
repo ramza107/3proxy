@@ -130,3 +130,27 @@ export type EmailDigest = {
     timeZone: string
   }
 }
+
+/** Open loop found in the user's own sent mail */
+export type EmailPromise = {
+  id: string
+  messageId: string
+  toName: string
+  toEmail: string
+  subject: string
+  promise: string
+  suggestedTask: string
+  suggestedDate: string | null
+  sentAt: string
+}
+
+export type PromisesDigest = {
+  connected: boolean
+  email: string | null
+  demo: boolean
+  summary: string
+  promises: EmailPromise[]
+  scanned: number
+  generatedAt: string
+  days: number
+}
