@@ -1,3 +1,4 @@
+import { isInWindow, previousLocalDayWindow, type DayWindow } from './timeWindow.js'
 import { deleteConnection, getConnection, saveConnection, type EmailConnection } from './store.js'
 
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
@@ -149,22 +150,24 @@ function parseFrom(raw: string): { from: string; fromName: string } {
   return { from: raw, fromName: raw.split('@')[0] || raw }
 }
 
-/** Overnight window: since yesterday 18:00 local-ish (UTC-based fallback). */
-function overnightQuery() {
-  const since = new Date(Date.now() - 18 * 60 * 60 * 1000)
-  const y = since.getUTCFullYear()
-  const m = String(since.getUTCMonth() + 1).padStart(2, '0')
-  const d = String(since.getUTCDate()).padStart(2, '0')
-  return `after:${y}/${m}/${d} -category:promotions -category:social`
+/** Previous local calendar day (Gmail epoch query + client-side filter). */
+function previousDayQuery(window: DayWindow) {
+  const afterSec = Math.floor(window.start.getTime() / 1000)
+  const beforeSec = Math.floor(window.end.getTime() / 1000)
+  return `after:${afterSec} before:${beforeSec} -category:promotions -category:social`
 }
 
-export async function listOvernightMessages(userId: string, max = 25): Promise<GmailMessagePreview[]> {
+export async function listOvernightMessages(
+  userId: string,
+  opts?: { timeZone?: string | null; max?: number },
+): Promise<GmailMessagePreview[]> {
   const conn = await withFreshToken(userId)
-  const q = encodeURIComponent(overnightQuery())
-  const listRes = await fetch(
-    `${GMAIL_API}/messages?maxResults=${max}&q=${q}`,
-    { headers: { Authorization: `Bearer ${conn.accessToken}` } },
-  )
+  const window = previousLocalDayWindow(opts?.timeZone)
+  const max = opts?.max ?? 40
+  const q = encodeURIComponent(previousDayQuery(window))
+  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, {
+    headers: { Authorization: `Bearer ${conn.accessToken}` },
+  })
   if (!listRes.ok) {
     const text = await listRes.text()
     throw new Error(`Gmail list failed: ${text.slice(0, 200)}`)
@@ -183,17 +186,26 @@ export async function listOvernightMessages(userId: string, max = 25): Promise<G
       id: string
       snippet?: string
       labelIds?: string[]
+      internalDate?: string
       payload?: { headers?: { name: string; value: string }[] }
     }
     const fromRaw = headerValue(msg.payload?.headers, 'From')
     const { from, fromName } = parseFrom(fromRaw)
+    const headerDate = headerValue(msg.payload?.headers, 'Date')
+    const when = msg.internalDate
+      ? new Date(Number(msg.internalDate))
+      : headerDate
+        ? new Date(headerDate)
+        : null
+    if (when && !Number.isNaN(when.getTime()) && !isInWindow(when, window)) continue
+
     previews.push({
       id: msg.id,
       from,
       fromName,
       subject: headerValue(msg.payload?.headers, 'Subject') || '(no subject)',
       snippet: msg.snippet || '',
-      date: headerValue(msg.payload?.headers, 'Date'),
+      date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate,
       unread: (msg.labelIds || []).includes('UNREAD'),
     })
   }

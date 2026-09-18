@@ -23,10 +23,16 @@ export async function fetchEmailStatus(userId: string): Promise<{
 
 export async function fetchEmailDigest(
   userId: string,
-  opts?: { demo?: boolean },
+  opts?: { demo?: boolean; timeZone?: string },
 ): Promise<EmailDigest> {
   const q = new URLSearchParams({ user_id: userId })
   if (opts?.demo) q.set('demo', '1')
+  const tz =
+    opts?.timeZone ||
+    (typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : undefined)
+  if (tz) q.set('timezone', tz)
   const res = await fetch(`${apiUrl}/api/email/digest?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()

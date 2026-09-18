@@ -289,19 +289,20 @@ app.post('/api/email/connect-imap', async (req, res) => {
 app.get('/api/email/digest', async (req, res) => {
   try {
     const userId = String(req.query.user_id || '')
+    const timeZone = String(req.query.timezone || req.query.tz || '')
     const allowDemo = String(req.query.demo || '') === '1'
     if (!userId) return res.status(400).json({ error: 'user_id required' })
 
     const conn = await getConnection(userId)
     if (!conn) {
-      if (allowDemo) return res.json(demoDigest())
+      if (allowDemo) return res.json(demoDigest(timeZone))
       return res.json({
         connected: false,
         email: null,
         demo: false,
         total: 0,
         senders: [],
-        summary: 'Connect Gmail in Settings to get a morning inbox brief.',
+        summary: 'Connect Gmail in Settings to get yesterday’s inbox brief.',
         highlights: [],
         generatedAt: new Date().toISOString(),
       })
@@ -309,12 +310,13 @@ app.get('/api/email/digest', async (req, res) => {
 
     const messages =
       conn.provider === 'gmail_imap'
-        ? await listOvernightViaImap(userId)
-        : await listOvernightMessages(userId)
+        ? await listOvernightViaImap(userId, { timeZone })
+        : await listOvernightMessages(userId, { timeZone })
     const provider = resolveProvider()
     const digest = await buildDigest({
       messages,
       email: conn.email,
+      timeZone,
       provider: provider ? { client: provider.client, model: provider.model } : null,
     })
     return res.json(digest)

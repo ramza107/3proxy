@@ -10,7 +10,15 @@ type Props = {
   enabled: boolean
 }
 
-/** Automatic overnight inbox digest from connected Gmail. */
+function deviceTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  } catch {
+    return 'UTC'
+  }
+}
+
+/** Automatic yesterday inbox digest from connected Gmail (device time zone). */
 export function InboxBrief({ userId, enabled }: Props) {
   const router = useRouter()
   const [digest, setDigest] = useState<EmailDigest | null>(null)
@@ -29,7 +37,10 @@ export function InboxBrief({ userId, enabled }: Props) {
         setDigest(null)
         return
       }
-      const data = await fetchEmailDigest(userId, { demo: false })
+      const data = await fetchEmailDigest(userId, {
+        demo: false,
+        timeZone: deviceTimeZone(),
+      })
       setDigest(data)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load inbox')
@@ -45,10 +56,14 @@ export function InboxBrief({ userId, enabled }: Props) {
 
   if (!enabled || !userId) return null
 
+  const kicker = digest?.window?.dayLabel
+    ? `Yesterday · ${digest.window.dayLabel}`
+    : 'Yesterday’s inbox'
+
   return (
     <View style={styles.card}>
       <View style={styles.row}>
-        <Text style={styles.kicker}>Morning inbox</Text>
+        <Text style={styles.kicker}>{kicker}</Text>
         {connected ? (
           <Pressable onPress={() => load()} hitSlop={8}>
             <Text style={styles.refresh}>{loading ? '…' : 'Refresh'}</Text>
@@ -63,8 +78,8 @@ export function InboxBrief({ userId, enabled }: Props) {
       ) : !connected ? (
         <>
           <Text style={styles.summary}>
-            Connect Gmail once — Google asks for permission, you tap Allow. Then Wahrly shows who
-            wrote overnight.
+            Connect Gmail once — Google asks for permission, you tap Allow. Each morning Wahrly shows
+            who wrote yesterday (your local time).
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>Connect with Google</Text>
@@ -73,7 +88,24 @@ export function InboxBrief({ userId, enabled }: Props) {
       ) : digest ? (
         <>
           <Text style={styles.summary}>{digest.summary}</Text>
-          {digest.senders.length > 0 ? (
+          {digest.window?.timeZone ? (
+            <Text style={styles.demoNote}>Times in {digest.window.timeZone}</Text>
+          ) : null}
+          {digest.highlights.length > 0 ? (
+            <View style={styles.list}>
+              {digest.highlights.slice(0, 5).map((h, i) => (
+                <View key={`${h.fromName}-${h.subject}-${i}`} style={styles.senderRow}>
+                  <Text style={styles.senderName}>
+                    {h.fromName}
+                    {h.time ? ` · ${h.time}` : ''}
+                  </Text>
+                  <Text style={styles.senderSub} numberOfLines={1}>
+                    {h.subject}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : digest.senders.length > 0 ? (
             <View style={styles.list}>
               {digest.senders.slice(0, 5).map((s) => (
                 <View key={s.from} style={styles.senderRow}>
@@ -86,11 +118,11 @@ export function InboxBrief({ userId, enabled }: Props) {
               ))}
             </View>
           ) : (
-            <Text style={styles.demoNote}>Inbox looks quiet overnight.</Text>
+            <Text style={styles.demoNote}>Yesterday’s inbox looks quiet.</Text>
           )}
         </>
       ) : (
-        <Text style={styles.summary}>Pulling overnight mail…</Text>
+        <Text style={styles.summary}>Loading yesterday’s mail…</Text>
       )}
     </View>
   )
@@ -112,6 +144,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
+    flex: 1,
+    paddingRight: 8,
   },
   refresh: { color: colors.accent, fontFamily: fonts.bodyMedium, fontSize: 13 },
   summary: { color: colors.text, fontFamily: fonts.body, fontSize: 15, lineHeight: 22 },

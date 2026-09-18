@@ -120,7 +120,7 @@ async function cancelByIdentifier(identifier: string) {
 function morningBody(tasks: Task[], emailDigestEnabled?: boolean) {
   const today = tasksForDay(tasks, todayISO())
   const inboxHint = emailDigestEnabled
-    ? '\nOpen Wahrly for who wrote overnight (Gmail).'
+    ? '\nOpen Wahrly for who wrote yesterday (your local day).'
     : ''
   if (!today.length) {
     return `Good morning. Your day looks clear — open Wahrly if you want to add something.${inboxHint}`

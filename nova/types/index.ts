@@ -110,6 +110,11 @@ export type EmailDigest = {
   total: number
   senders: EmailDigestSender[]
   summary: string
-  highlights: { fromName: string; subject: string }[]
+  highlights: { fromName: string; subject: string; time?: string }[]
   generatedAt: string
+  window?: {
+    day: string
+    dayLabel: string
+    timeZone: string
+  }
 }

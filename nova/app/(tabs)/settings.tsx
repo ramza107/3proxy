@@ -204,8 +204,8 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <Text style={styles.rowTitle}>Gmail</Text>
             <Text style={styles.rowSub}>
-              Connect once. Google asks “Allow Wahrly to read mail?” — you tap Allow. Morning inbox
-              then shows who wrote overnight.
+              Connect once. Google asks “Allow Wahrly to read mail?” — you tap Allow. Each morning
+              shows who wrote yesterday in your local time zone.
             </Text>
 
             {gmailConnected ? (

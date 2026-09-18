@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import { ImapFlow } from 'imapflow'
 import type { GmailMessagePreview } from './gmail.js'
 import { getConnection, saveConnection, type EmailConnection } from './store.js'
+import { isInWindow, previousLocalDayWindow } from './timeWindow.js'
 
 function secretKey() {
   const raw =
@@ -90,19 +91,23 @@ export async function saveImapConnection(userId: string, email: string, appPassw
   return conn
 }
 
-export async function listOvernightViaImap(userId: string, max = 25): Promise<GmailMessagePreview[]> {
+export async function listOvernightViaImap(
+  userId: string,
+  opts?: { timeZone?: string | null; max?: number },
+): Promise<GmailMessagePreview[]> {
   const conn = await getConnection(userId)
   if (!conn || conn.provider !== 'gmail_imap') {
     throw new Error('Gmail IMAP not connected')
   }
   const appPassword = decryptSecret(conn.refreshToken)
-  const since = new Date(Date.now() - 18 * 60 * 60 * 1000)
+  const window = previousLocalDayWindow(opts?.timeZone)
+  const max = opts?.max ?? 40
 
   return withClient(conn.email, appPassword, async (client) => {
     const lock = await client.getMailboxLock('INBOX')
     try {
-      // SINCE uses date (not time); filter recent enough client-side
-      const uids = await client.search({ since }, { uid: true })
+      // IMAP SINCE is date-only; refine with local-day window client-side
+      const uids = await client.search({ since: window.start }, { uid: true })
       const ids = (uids || []).slice(-max).reverse()
       const previews: GmailMessagePreview[] = []
 
@@ -114,7 +119,7 @@ export async function listOvernightViaImap(userId: string, max = 25): Promise<Gm
         )
         if (!msg || !msg.envelope) continue
         const date = msg.envelope.date ? new Date(msg.envelope.date) : null
-        if (date && date.getTime() < since.getTime()) continue
+        if (!date || Number.isNaN(date.getTime()) || !isInWindow(date, window)) continue
 
         const fromObj = msg.envelope.from?.[0]
         const fromEmail = fromObj?.address || 'unknown'
@@ -127,13 +132,12 @@ export async function listOvernightViaImap(userId: string, max = 25): Promise<Gm
           fromName,
           subject,
           snippet: '',
-          date: date ? date.toISOString() : '',
+          date: date.toISOString(),
           unread: !flags.has('\\Seen'),
         })
         if (previews.length >= max) break
       }
 
-      // Prefer unread / newest already reversed
       return previews
     } finally {
       lock.release()
