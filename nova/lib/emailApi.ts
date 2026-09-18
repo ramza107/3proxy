@@ -1,11 +1,13 @@
 import Constants from 'expo-constants'
+import { Platform } from 'react-native'
 import type { EmailDigest } from '../types'
 import { apiUrl } from './api'
 
 const extra = Constants.expoConfig?.extra ?? {}
 
 export function emailConnectUrl(userId: string) {
-  return `${apiUrl}/api/email/connect?user_id=${encodeURIComponent(userId)}`
+  const client = Platform.OS === 'web' ? 'web' : 'native'
+  return `${apiUrl}/api/email/connect?user_id=${encodeURIComponent(userId)}&client=${client}`
 }
 
 export async function fetchEmailStatus(userId: string): Promise<{

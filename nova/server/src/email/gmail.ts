@@ -33,6 +33,18 @@ export function getAppReturnUrl() {
   return process.env.PUBLIC_APP_URL || 'https://ramza107.github.io/3proxy/nova/'
 }
 
+/** Deep link used after OAuth on installed iOS/Android apps. */
+export function getNativeAppReturnUrl() {
+  return process.env.PUBLIC_NATIVE_APP_URL || 'wahrly://'
+}
+
+export function resolveAppReturnUrl(client: 'web' | 'native' = 'web') {
+  if (client === 'native') {
+    return getNativeAppReturnUrl().replace(/\/?$/, '/')
+  }
+  return getAppReturnUrl().replace(/\/?$/, '/')
+}
+
 export function buildAuthUrl(userId: string, stateNonce: string) {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,

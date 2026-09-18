@@ -38,5 +38,7 @@ Environment variables:
 
 Redeploy the service.
 
-## 6. Try it
+6. Try it
 Settings → **Connect with Google** → Allow → Home shows Morning inbox.
+
+On **iPhone/Android**, the same flow ends at `wahrly://settings?gmail=connected` (see [`mobile-apps.md`](mobile-apps.md)).

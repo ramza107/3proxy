@@ -10,7 +10,12 @@
     "web:export": "expo export --platform web",
     "server": "npm --prefix server run dev",
     "server:start": "npm --prefix server run start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:android": "npx eas-cli build --platform android --profile preview",
+    "build:ios": "npx eas-cli build --platform ios --profile preview",
+    "build:mobile": "npx eas-cli build --platform all --profile preview",
+    "build:android:prod": "npx eas-cli build --platform android --profile production",
+    "build:ios:prod": "npx eas-cli build --platform ios --profile production"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",

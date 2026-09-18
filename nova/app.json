@@ -19,10 +19,19 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#E7EEF2"
       },
-      "package": "com.wahrly.assistant"
+      "package": "com.wahrly.assistant",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [{ "scheme": "wahrly" }]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

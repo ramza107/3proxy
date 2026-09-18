@@ -53,6 +53,20 @@ npm run server
 npm start
 ```
 
+### Installable iPhone & Android apps (EAS)
+
+One Expo project → two store builds. See [`docs/mobile-apps.md`](docs/mobile-apps.md).
+
+```bash
+cd nova
+npx eas-cli login
+npx eas-cli init
+npm run build:android   # APK for testing
+npm run build:ios       # needs Apple Developer account
+```
+
+Deep link scheme: `wahrly://` (Gmail OAuth returns into the app after Allow).
+
 ### Demo mode (no credentials)
 
 Leave `.env` placeholders as-is.

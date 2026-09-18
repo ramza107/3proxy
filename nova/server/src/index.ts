@@ -9,9 +9,9 @@ import {
   buildAuthUrl,
   exchangeCode,
   gmailConfigured,
-  getAppReturnUrl,
   listOvernightMessages,
   parseOAuthState,
+  resolveAppReturnUrl,
 } from './email/gmail.js'
 import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
@@ -25,8 +25,11 @@ app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 
 const Port = Number(process.env.PORT || 8787)
-/** Short-lived OAuth CSRF nonces: nonce → userId */
-const oauthNonces = new Map<string, { userId: string; expires: number }>()
+/** Short-lived OAuth CSRF nonces: nonce → user + return client */
+const oauthNonces = new Map<
+  string,
+  { userId: string; client: 'web' | 'native'; expires: number }
+>()
 
 const groqKey = process.env.GROQ_API_KEY || ''
 const openaiKey = process.env.OPENAI_API_KEY || ''
@@ -180,8 +183,10 @@ app.get('/api/email/connect', (req, res) => {
       hint: 'Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI on the AI server (one-time). Users then only tap Allow.',
     })
   }
+  const clientRaw = String(req.query.client || req.query.return || 'web').toLowerCase()
+  const client: 'web' | 'native' = clientRaw === 'native' || clientRaw === 'mobile' ? 'native' : 'web'
   const nonce = crypto.randomBytes(16).toString('hex')
-  oauthNonces.set(nonce, { userId, expires: Date.now() + 10 * 60 * 1000 })
+  oauthNonces.set(nonce, { userId, client, expires: Date.now() + 10 * 60 * 1000 })
   const url = buildAuthUrl(userId, nonce)
   // JSON for clients that prefer to open the URL themselves
   if (String(req.query.format || '') === 'json' || req.accepts('json') === 'json' && !req.accepts('html')) {
@@ -191,18 +196,20 @@ app.get('/api/email/connect', (req, res) => {
 })
 
 app.get('/api/email/callback', async (req, res) => {
-  const appUrl = getAppReturnUrl().replace(/\/?$/, '/')
+  const code = String(req.query.code || '')
+  const state = String(req.query.state || '')
+  const parsed = parseOAuthState(state)
+  const nonceRow = parsed ? oauthNonces.get(parsed.nonce) : undefined
+  const client = nonceRow?.client || 'web'
+  const appUrl = resolveAppReturnUrl(client)
+
+  const fail = () => res.redirect(`${appUrl}settings?gmail=error`)
+
   try {
-    const code = String(req.query.code || '')
-    const state = String(req.query.state || '')
-    const parsed = parseOAuthState(state)
-    if (!code || !parsed) {
-      return res.redirect(`${appUrl}settings?gmail=error`)
-    }
-    const nonceRow = oauthNonces.get(parsed.nonce)
+    if (!code || !parsed) return fail()
     oauthNonces.delete(parsed.nonce)
     if (!nonceRow || nonceRow.userId !== parsed.userId || nonceRow.expires < Date.now()) {
-      return res.redirect(`${appUrl}settings?gmail=error`)
+      return fail()
     }
 
     const tokens = await exchangeCode(code)
@@ -218,7 +225,7 @@ app.get('/api/email/callback', async (req, res) => {
     return res.redirect(`${appUrl}settings?gmail=connected`)
   } catch (error) {
     console.error('gmail callback', error)
-    return res.redirect(`${appUrl}settings?gmail=error`)
+    return fail()
   }
 })
 
