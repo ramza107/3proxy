@@ -197,8 +197,17 @@ Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`,
 
 - **Home** — greeting, morning inbox brief, today plan, composer
 - **Chat** — primary AI interface
-- **Tasks** — Today / Tomorrow / Upcoming / Completed
+- **Tasks** — Today / Tomorrow / Later / Done; expand a task for shopping checklist + monthly repeat
 - **Settings** — name, Gmail connect, morning/evening rituals, AI tone, sign out
+
+### Shopping lists & monthly tasks
+
+In chat (or Tasks empty-state hints):
+
+- \`Buy groceries: milk, bread, eggs\` → one task with a checklist you can tick in **Tasks**
+- \`Every month on the 15th pay rent\` / \`Каждое 15 число оплатить интернет\` → repeats monthly; completing it rolls to next month and clears checklist ticks
+
+Tap a task in Tasks to open the panel (add items, pick day 1/5/10/15/…).
 
 ## Morning inbox (automatic from Gmail)
 

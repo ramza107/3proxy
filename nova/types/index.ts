@@ -1,5 +1,18 @@
 export type Priority = 'low' | 'medium' | 'high'
 
+/** Shopping / packing line inside a task */
+export type ChecklistItem = {
+  id: string
+  text: string
+  done: boolean
+}
+
+/** Monthly cycle: same calendar day each month (clamped for short months) */
+export type TaskRecurrence = {
+  type: 'monthly'
+  dayOfMonth: number
+}
+
 export type Task = {
   id: string
   user_id: string
@@ -9,6 +22,8 @@ export type Task = {
   time: string | null
   priority: Priority
   completed: boolean
+  checklist: ChecklistItem[]
+  recurrence: TaskRecurrence | null
   created_at: string
   updated_at: string
 }
@@ -44,6 +59,8 @@ export type AIAction =
       date: string | null
       time: string | null
       priority: Priority
+      checklist?: string[] | null
+      recurrence?: TaskRecurrence | null
     }
   | {
       type: 'update_task'
@@ -52,6 +69,8 @@ export type AIAction =
       date?: string | null
       time?: string | null
       priority?: Priority
+      checklist?: string[] | null
+      recurrence?: TaskRecurrence | null
     }
   | {
       type: 'complete_task'

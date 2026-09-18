@@ -1,4 +1,5 @@
-import type { AIChatResponse, Priority, Task } from '../types'
+import type { AIAction, AIChatResponse, Priority, Task } from '../types'
+import { nextMonthlyDate } from '../lib/taskExtras'
 
 function addDays(isoDate: string, days: number) {
   const d = new Date(`${isoDate}T12:00:00`)
@@ -41,17 +42,101 @@ function parseTime(text: string): string | null {
 
 function parseDate(text: string, today: string): string | null {
   const lower = normalize(text)
-  if (/\btoday\b/.test(lower)) return today
-  if (/\btomorrow\b/.test(lower)) return addDays(today, 1)
+  if (/\b(today|сегодня)\b/.test(lower)) return today
+  if (/\b(tomorrow|завтра)\b/.test(lower)) return addDays(today, 1)
   const inDays = lower.match(/\bin\s+(\d+)\s+days?\b/)
   if (inDays) return addDays(today, Number(inDays[1]))
   return null
 }
 
+function parseMonthlyDay(text: string): number | null {
+  const lower = normalize(text)
+  const en =
+    lower.match(/\bevery\s+month\s+on\s+the\s+(\d{1,2})(?:st|nd|rd|th)?\b/) ||
+    lower.match(/\bmonthly\s+on\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\b/) ||
+    lower.match(/\bon\s+the\s+(\d{1,2})(?:st|nd|rd|th)?\s+every\s+month\b/) ||
+    lower.match(/\beach\s+month\s+on\s+(?:the\s+)?(\d{1,2})\b/)
+  if (en) {
+    const d = Number(en[1])
+    if (d >= 1 && d <= 31) return d
+  }
+  const ru =
+    lower.match(/кажд(?:ое|ый|ую|ого)\s+(\d{1,2})\s*(?:-?[еe]|го|ое)?\s*числ/) ||
+    lower.match(/каждое\s+(\d{1,2})\s*число/) ||
+    lower.match(/раз\s+в\s+месяц\s+(?:на\s+)?(\d{1,2})/) ||
+    lower.match(/каждый\s+месяц\s+(\d{1,2})/)
+  if (ru) {
+    const d = Number(ru[1])
+    if (d >= 1 && d <= 31) return d
+  }
+  return null
+}
+
+function monthlyTitle(text: string): string {
+  let t = text.trim()
+  t = t
+    .replace(/^(remind me to|remind me|i need to|i have to|need to|please|can you)\s+/i, '')
+    .replace(/\bevery\s+month\s+on\s+the\s+\d{1,2}(?:st|nd|rd|th)?\b/gi, ' ')
+    .replace(/\bmonthly\s+on\s+(?:the\s+)?\d{1,2}(?:st|nd|rd|th)?\b/gi, ' ')
+    .replace(/\bon\s+the\s+\d{1,2}(?:st|nd|rd|th)?\s+every\s+month\b/gi, ' ')
+    .replace(/\beach\s+month\s+on\s+(?:the\s+)?\d{1,2}\b/gi, ' ')
+    .replace(/кажд(?:ое|ый|ую|ого)\s+\d{1,2}\s*(?:-?[еe]|го|ое)?\s*числ[ао]?\s*/gi, ' ')
+    .replace(/раз\s+в\s+месяц\s+(?:на\s+)?\d{1,2}\s*/gi, ' ')
+    .replace(/каждый\s+месяц\s+\d{1,2}\s*/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return t.length > 2 ? t.slice(0, 80) : 'Monthly task'
+}
+
+function parseShoppingList(text: string): { title: string; items: string[] } | null {
+  const raw = text.trim()
+  const lower = normalize(raw)
+
+  const shoppingIntent =
+    /(buy|grocery|groceries|shop|store|supermarket|магазин|купить|продукт|еды)/i.test(lower)
+  if (!shoppingIntent) return null
+
+  // "buy groceries: milk, bread" / "сходи в магазин: молоко, хлеб"
+  const colon = raw.split(/[:：]/)
+  let itemPart = ''
+  let title = 'Buy groceries'
+  if (colon.length >= 2) {
+    title = colon[0]
+      .replace(/^(remind me to|i need to|please|can you)\s+/i, '')
+      .trim() || 'Buy groceries'
+    itemPart = colon.slice(1).join(':')
+  } else {
+    // "buy milk, bread and eggs" / "купить молоко хлеб яйца"
+    const afterBuy = raw.match(
+      /(?:buy|get|pick up|купить|возьми|сходи в магазин(?:\s+за)?)\s+(.+)$/i,
+    )
+    if (!afterBuy) return null
+    itemPart = afterBuy[1]
+    title = /магазин|grocery|shop|store/i.test(lower) ? 'Buy groceries' : 'Buy groceries'
+  }
+
+  const items = itemPart
+    .split(/,| and | & |;| и |，/i)
+    .map((p) =>
+      p
+        .replace(
+          /\b(tomorrow|today|сегодня|завтра|at\s+\d{1,2}(?::\d{2})?\s*(am|pm)?|\d{1,2}:\d{2}|кажд(?:ое|ый).*)\b/gi,
+          '',
+        )
+        .replace(/^(to|need to|have to|за)\s+/i, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
+    .filter((p) => p.length > 1 && !/^(groceries|products|продукт\w*|еду|food)$/i.test(p))
+
+  if (items.length < 2) return null
+  return { title: title.slice(0, 80), items: items.slice(0, 30) }
+}
+
 function isSmallTalk(text: string) {
   const lower = normalize(text)
   return (
-    /^(hi|hello|hey|yo|sup|thanks|thank you|ok|okay|cool|nice|bye|good\s*(morning|evening|night)?)\b/.test(
+    /^(hi|hello|hey|yo|sup|thanks|thank you|ok|okay|cool|nice|bye|good\s*(morning|evening|night)?|привет|спасибо)\b/.test(
       lower,
     ) ||
     /^(who are you|who r u|what are you|what'?s up|how are you|how r u|how do you do)\b/.test(
@@ -64,11 +149,11 @@ function isSmallTalk(text: string) {
 function hasTaskIntent(text: string) {
   const lower = normalize(text)
   return (
-    /\b(remind|reminder|todo|to-?do|task|schedule|plan)\b/.test(lower) ||
+    /\b(remind|reminder|todo|to-?do|task|schedule|plan|магазин|купить|оплат)\b/.test(lower) ||
     /\b(need to|have to|gotta|must|should|buy|call|clean|finish|pay|send|email|pick up|book|meet)\b/.test(
       lower,
     ) ||
-    /\b(tomorrow|today|at\s+\d{1,2})\b/.test(lower)
+    /\b(tomorrow|today|at\s+\d{1,2}|каждое|каждый месяц)\b/.test(lower)
   )
 }
 
@@ -109,7 +194,7 @@ export function clientLocalAI(message: string, tasks: Task[]): AIChatResponse {
   if (isSmallTalk(text)) {
     return {
       reply:
-        "I'm Wahrly — your life assistant. Tell me something to do (for example: \"Tomorrow buy groceries\") and I'll put it in Tasks.",
+        "I'm Wahrly — your life assistant. Tell me something to do (for example: \"Buy groceries: milk, bread\" or \"Every month on the 15th pay rent\").",
       actions: [],
     }
   }
@@ -135,16 +220,54 @@ export function clientLocalAI(message: string, tasks: Task[]): AIChatResponse {
     }
   }
 
+  const monthlyDay = parseMonthlyDay(text)
+  const shopping = parseShoppingList(text)
+  const date = monthlyDay != null ? nextMonthlyDate(monthlyDay, today) : parseDate(text, today)
+  const time = parseTime(text)
+
+  if (shopping) {
+    const action: AIAction = {
+      type: 'create_task',
+      title: shopping.title,
+      date,
+      time,
+      priority: (time ? 'high' : 'medium') as Priority,
+      checklist: shopping.items,
+      recurrence: monthlyDay != null ? { type: 'monthly', dayOfMonth: monthlyDay } : null,
+    }
+    return {
+      reply: `Saved "${shopping.title}" with ${shopping.items.length} items → open Tasks and tick them off.${
+        monthlyDay != null ? ` Repeats every month on the ${monthlyDay}.` : ''
+      }`,
+      actions: [action],
+    }
+  }
+
+  if (monthlyDay != null) {
+    const title = monthlyTitle(text)
+    return {
+      reply: `Saved "${title}" — every month on the ${monthlyDay} → ${whereLabel(date, today)}.`,
+      actions: [
+        {
+          type: 'create_task',
+          title,
+          date,
+          time,
+          priority: 'medium',
+          recurrence: { type: 'monthly', dayOfMonth: monthlyDay },
+        },
+      ],
+    }
+  }
+
   if (!hasTaskIntent(text)) {
     return {
       reply:
-        'I save real to-dos in the Tasks tab. Try: "Remind me to call Mom tomorrow at 7" or "Buy groceries tomorrow".',
+        'I save real to-dos in the Tasks tab. Try: "Buy groceries: milk, bread, eggs" or "Every month on the 15th pay rent".',
       actions: [],
     }
   }
 
-  const date = parseDate(text, today)
-  const time = parseTime(text)
   const titles = splitTasks(text).slice(0, 6)
   const isReminder = /remind me/i.test(lower)
 

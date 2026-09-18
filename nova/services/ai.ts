@@ -2,25 +2,48 @@ import { chatWithNova } from '../lib/api'
 import { scheduleTaskNotification, cancelNotification } from '../lib/notifications'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import { uid, useNovaStore } from '../lib/store'
+import {
+  advanceMonthlyDate,
+  checklistFromStrings,
+  nextMonthlyDate,
+  normalizeChecklist,
+  normalizeRecurrence,
+  normalizeTask,
+  resetChecklist,
+} from '../lib/taskExtras'
 import { clientLocalAI } from './localAI'
-import type { AIAction, AIChatResponse, Priority, Reminder, Task } from '../types'
+import type { AIAction, AIChatResponse, ChecklistItem, Priority, Reminder, Task, TaskRecurrence } from '../types'
+
+function taskPayloadFromCreate(action: Extract<AIAction, { type: 'create_task' }>) {
+  return {
+    title: action.title,
+    date: action.date,
+    time: action.time,
+    priority: action.priority,
+    checklist: checklistFromStrings(action.checklist || []),
+    recurrence: normalizeRecurrence(action.recurrence),
+  }
+}
 
 async function createTaskRemote(userId: string, action: Extract<AIAction, { type: 'create_task' }>) {
   const supabase = getSupabase()
   if (!supabase) return null
+  const extras = taskPayloadFromCreate(action)
   const { data, error } = await supabase
     .from('tasks')
     .insert({
       user_id: userId,
-      title: action.title,
-      date: action.date,
-      time: action.time,
-      priority: action.priority,
+      title: extras.title,
+      date: extras.date,
+      time: extras.time,
+      priority: extras.priority,
+      checklist: extras.checklist,
+      recurrence: extras.recurrence,
     })
     .select('*')
     .single()
   if (error) throw error
-  return data as Task
+  return normalizeTask(data as Task)
 }
 
 async function updateTaskRemote(action: Extract<AIAction, { type: 'update_task' }>) {
@@ -31,6 +54,8 @@ async function updateTaskRemote(action: Extract<AIAction, { type: 'update_task' 
   if (action.date !== undefined) patch.date = action.date
   if (action.time !== undefined) patch.time = action.time
   if (action.priority !== undefined) patch.priority = action.priority
+  if (action.checklist !== undefined) patch.checklist = checklistFromStrings(action.checklist || [])
+  if (action.recurrence !== undefined) patch.recurrence = normalizeRecurrence(action.recurrence)
   const { data, error } = await supabase
     .from('tasks')
     .update(patch)
@@ -38,7 +63,7 @@ async function updateTaskRemote(action: Extract<AIAction, { type: 'update_task' 
     .select('*')
     .single()
   if (error) throw error
-  return data as Task
+  return normalizeTask(data as Task)
 }
 
 export async function applyActions(
@@ -66,6 +91,8 @@ export async function applyActions(
           time: action.time,
           priority: action.priority,
           userId,
+          checklist: action.checklist,
+          recurrence: action.recurrence || null,
         })
       } else {
         store.upsertTask(task)
@@ -84,14 +111,22 @@ export async function applyActions(
       }
       const local = store.tasks.find((t) => t.id === action.task_id)
       if (!task && local) {
-        task = {
+        task = normalizeTask({
           ...local,
           title: action.title ?? local.title,
           date: action.date === undefined ? local.date : action.date,
           time: action.time === undefined ? local.time : action.time,
           priority: action.priority ?? local.priority,
+          checklist:
+            action.checklist === undefined
+              ? local.checklist
+              : checklistFromStrings(action.checklist || []),
+          recurrence:
+            action.recurrence === undefined
+              ? local.recurrence
+              : normalizeRecurrence(action.recurrence),
           updated_at: new Date().toISOString(),
-        }
+        })
       }
       if (task) {
         store.upsertTask(task)
@@ -101,16 +136,11 @@ export async function applyActions(
 
     if (action.type === 'complete_task') {
       const local = store.tasks.find((t) => t.id === action.task_id)
-      if (useRemote) {
+      if (local) {
+        await completeOrRollTask(local, notificationsEnabled)
+      } else if (useRemote) {
         const supabase = getSupabase()
         await supabase?.from('tasks').update({ completed: true }).eq('id', action.task_id)
-      }
-      if (local) {
-        store.upsertTask({
-          ...local,
-          completed: true,
-          updated_at: new Date().toISOString(),
-        })
       }
     }
 
@@ -159,7 +189,6 @@ export async function applyActions(
         store.addReminder(reminder)
       }
 
-      // Also mirror as a timed task for visibility in Today/Upcoming
       const mirrored = store.createTaskLocal({
         title: action.title,
         date: action.date,
@@ -172,6 +201,52 @@ export async function applyActions(
   }
 }
 
+/** Complete a one-off task, or roll a monthly task to next month (reset checklist). */
+export async function completeOrRollTask(task: Task, notificationsEnabled?: boolean) {
+  const store = useNovaStore.getState()
+  const notify = notificationsEnabled ?? store.settings.notificationsEnabled
+  const useRemote = isSupabaseConfigured && !store.demoMode
+  const recurrence = normalizeRecurrence(task.recurrence)
+
+  if (recurrence?.type === 'monthly' && !task.completed) {
+    const nextDate = advanceMonthlyDate(recurrence.dayOfMonth, task.date)
+    const next: Task = normalizeTask({
+      ...task,
+      completed: false,
+      date: nextDate,
+      checklist: resetChecklist(task.checklist || []),
+      updated_at: new Date().toISOString(),
+    })
+    if (useRemote) {
+      const supabase = getSupabase()
+      await supabase
+        ?.from('tasks')
+        .update({
+          completed: false,
+          date: next.date,
+          checklist: next.checklist,
+          recurrence: next.recurrence,
+        })
+        .eq('id', task.id)
+    }
+    store.upsertTask(next)
+    await scheduleTaskNotification(next, notify)
+    return { rolled: true as const, task: next }
+  }
+
+  const next: Task = {
+    ...normalizeTask(task),
+    completed: true,
+    updated_at: new Date().toISOString(),
+  }
+  if (useRemote) {
+    const supabase = getSupabase()
+    await supabase?.from('tasks').update({ completed: true }).eq('id', task.id)
+  }
+  store.upsertTask(next)
+  return { rolled: false as const, task: next }
+}
+
 export async function refreshTasks(userId: string) {
   const store = useNovaStore.getState()
   if (!isSupabaseConfigured || store.demoMode) return
@@ -182,7 +257,7 @@ export async function refreshTasks(userId: string) {
     .eq('user_id', userId)
     .order('date', { ascending: true })
   if (!error && data) {
-    useNovaStore.getState().setTasks(data as Task[])
+    useNovaStore.getState().setTasks((data as Task[]).map(normalizeTask))
   }
 }
 
@@ -222,30 +297,80 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
 export async function toggleTaskCompleted(task: Task) {
   const store = useNovaStore.getState()
-  const next = {
-    ...task,
-    completed: !task.completed,
-    updated_at: new Date().toISOString(),
+  if (!task.completed) {
+    return completeOrRollTask(task)
   }
+  const next = normalizeTask({
+    ...task,
+    completed: false,
+    updated_at: new Date().toISOString(),
+  })
   if (isSupabaseConfigured && !store.demoMode) {
     const supabase = getSupabase()
-    await supabase?.from('tasks').update({ completed: next.completed }).eq('id', task.id)
+    await supabase?.from('tasks').update({ completed: false }).eq('id', task.id)
   }
   store.upsertTask(next)
+  return { rolled: false as const, task: next }
 }
 
 export async function updateTaskFields(
   task: Task,
-  patch: Partial<Pick<Task, 'title' | 'date' | 'time' | 'priority'>>,
+  patch: Partial<Pick<Task, 'title' | 'date' | 'time' | 'priority' | 'checklist' | 'recurrence'>>,
 ) {
   const store = useNovaStore.getState()
-  const next = { ...task, ...patch, updated_at: new Date().toISOString() }
+  const next = normalizeTask({
+    ...task,
+    ...patch,
+    checklist: patch.checklist !== undefined ? normalizeChecklist(patch.checklist) : task.checklist,
+    recurrence:
+      patch.recurrence !== undefined ? normalizeRecurrence(patch.recurrence) : task.recurrence,
+    updated_at: new Date().toISOString(),
+  })
   if (isSupabaseConfigured && !store.demoMode) {
     const supabase = getSupabase()
-    await supabase?.from('tasks').update(patch).eq('id', task.id)
+    const remotePatch: Record<string, unknown> = { ...patch }
+    if (patch.checklist !== undefined) remotePatch.checklist = next.checklist
+    if (patch.recurrence !== undefined) remotePatch.recurrence = next.recurrence
+    await supabase?.from('tasks').update(remotePatch).eq('id', task.id)
   }
   store.upsertTask(next)
   await scheduleTaskNotification(next, store.settings.notificationsEnabled)
+  return next
+}
+
+export async function toggleChecklistItem(task: Task, itemId: string) {
+  const checklist = normalizeChecklist(task.checklist).map((item) =>
+    item.id === itemId ? { ...item, done: !item.done } : item,
+  )
+  return updateTaskFields(task, { checklist })
+}
+
+export async function addChecklistItem(task: Task, text: string) {
+  const trimmed = text.trim()
+  if (!trimmed) return task
+  const checklist = [
+    ...normalizeChecklist(task.checklist),
+    { id: uid('chk'), text: trimmed, done: false } as ChecklistItem,
+  ]
+  return updateTaskFields(task, { checklist })
+}
+
+export async function removeChecklistItem(task: Task, itemId: string) {
+  const checklist = normalizeChecklist(task.checklist).filter((item) => item.id !== itemId)
+  return updateTaskFields(task, { checklist })
+}
+
+export async function setMonthlyRecurrence(task: Task, dayOfMonth: number | null) {
+  if (dayOfMonth == null) {
+    return updateTaskFields(task, { recurrence: null })
+  }
+  const day = Math.min(31, Math.max(1, Math.floor(dayOfMonth)))
+  const recurrence: TaskRecurrence = { type: 'monthly', dayOfMonth: day }
+  const date = task.date || new Date().toISOString().slice(0, 10)
+  return updateTaskFields(task, {
+    recurrence,
+    date: nextMonthlyDate(day, date),
+  })
 }
 
 export async function deleteTask(taskId: string) {
