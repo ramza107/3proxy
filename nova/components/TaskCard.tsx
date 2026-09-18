@@ -1,10 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
+import { checklistProgress, recurrenceLabel } from '../lib/taskExtras'
 
 type Props = {
   task: Task
   dateLabel?: string
+  expanded?: boolean
   onToggle?: () => void
   onPress?: () => void
 }
@@ -15,9 +17,17 @@ const priorityLabel = {
   low: 'Low',
 }
 
-export function TaskCard({ task, dateLabel, onToggle, onPress }: Props) {
+export function TaskCard({ task, dateLabel, expanded, onToggle, onPress }: Props) {
   const when = [dateLabel || task.date, task.time].filter(Boolean).join(' · ')
-  const meta = [when, priorityLabel[task.priority]].filter(Boolean).join(' · ')
+  const progress = checklistProgress(task.checklist)
+  const monthly = recurrenceLabel(task.recurrence)
+  const bits = [
+    when,
+    priorityLabel[task.priority],
+    progress ? `${progress.done}/${progress.total} items` : null,
+    monthly ? 'Monthly' : null,
+  ].filter(Boolean)
+  const meta = bits.join(' · ')
 
   return (
     <Pressable
@@ -25,6 +35,7 @@ export function TaskCard({ task, dateLabel, onToggle, onPress }: Props) {
       style={({ pressed }) => [
         styles.card,
         task.completed && styles.done,
+        expanded && styles.expanded,
         pressed && styles.pressed,
       ]}
     >
@@ -61,6 +72,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  expanded: {
+    borderColor: colors.accent,
+    backgroundColor: 'rgba(255,255,255,0.92)',
   },
   pressed: { transform: [{ scale: 0.985 }], opacity: 0.96 },
   done: { opacity: 0.58 },

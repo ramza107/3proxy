@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { TaskCard } from '../../components/TaskCard'
+import { TaskPanel } from '../../components/TaskPanel'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../../services/ai'
@@ -50,6 +51,7 @@ export default function TasksScreen() {
   const router = useRouter()
   const tasks = useNovaStore((s) => s.tasks)
   const [filter, setFilter] = useState<Filter>('today')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const today = todayISO()
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
@@ -93,17 +95,26 @@ export default function TasksScreen() {
 
   const setFilterAnimated = (next: Filter) => {
     animateList()
+    setExpandedId(null)
     setFilter(next)
   }
 
-  const onEdit = (task: Task) => {
+  const onToggleComplete = async (task: Task) => {
+    animateList()
+    const result = await toggleTaskCompleted(task)
+    if (result?.rolled) {
+      Alert.alert(
+        'Next month',
+        `"${task.title}" is set again for ${friendlyDate(result.task.date)}. Shopping ticks were cleared.`,
+      )
+    }
+  }
+
+  const onMore = (task: Task) => {
     Alert.alert(task.title, `${friendlyDate(task.date)}${task.time ? ` · ${task.time}` : ''}`, [
       {
-        text: task.completed ? 'Mark active' : 'Complete',
-        onPress: () => {
-          animateList()
-          toggleTaskCompleted(task)
-        },
+        text: task.completed ? 'Mark active' : task.recurrence ? 'Complete this month' : 'Complete',
+        onPress: () => onToggleComplete(task),
       },
       {
         text: 'High priority',
@@ -121,6 +132,7 @@ export default function TasksScreen() {
         style: 'destructive',
         onPress: () => {
           animateList()
+          setExpandedId(null)
           deleteTask(task.id)
         },
       },
@@ -146,13 +158,13 @@ export default function TasksScreen() {
         : filter === 'upcoming'
           ? {
               title: 'Nothing further out',
-              body: 'Plan ahead in chat — Wahrly will place tasks here.',
+              body: 'Try: “Every month on the 15th pay rent”.',
               cta: 'Ask Wahrly',
               action: () => router.push('/chat'),
             }
           : {
               title: 'Your day is clear',
-              body: 'Tell Wahrly what needs doing — reminders and priorities included.',
+              body: 'Try: “Buy groceries: milk, bread, eggs” — then tick items in the list.',
               cta: 'Ask Wahrly',
               action: () => router.push('/chat'),
             }
@@ -233,18 +245,31 @@ export default function TasksScreen() {
                     </Text>
                   ) : null}
                   <View style={styles.sectionList}>
-                    {section.items.map((task) => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        dateLabel={friendlyDate(task.date)}
-                        onToggle={() => {
-                          animateList()
-                          toggleTaskCompleted(task)
-                        }}
-                        onPress={() => onEdit(task)}
-                      />
-                    ))}
+                    {section.items.map((task) => {
+                      const open = expandedId === task.id
+                      return (
+                        <View key={task.id} style={styles.taskBlock}>
+                          <TaskCard
+                            task={task}
+                            dateLabel={friendlyDate(task.date)}
+                            expanded={open}
+                            onToggle={() => onToggleComplete(task)}
+                            onPress={() => {
+                              animateList()
+                              setExpandedId(open ? null : task.id)
+                            }}
+                          />
+                          {open ? (
+                            <View>
+                              <TaskPanel task={task} />
+                              <Pressable onPress={() => onMore(task)} style={styles.moreBtn}>
+                                <Text style={styles.moreText}>More actions</Text>
+                              </Pressable>
+                            </View>
+                          ) : null}
+                        </View>
+                      )
+                    })}
                   </View>
                 </View>
               ),
@@ -380,6 +405,13 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
   sectionList: { gap: 10 },
+  taskBlock: { gap: 8 },
+  moreBtn: { alignItems: 'center', paddingBottom: 4 },
+  moreText: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
   empty: {
     marginTop: spacing.md,
     paddingVertical: spacing.xl,
