@@ -10,7 +10,8 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { colors, radii, spacing } from '../../constants/theme'
+import { Screen } from '../../components/Screen'
+import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 
@@ -68,12 +69,13 @@ export default function SignupScreen() {
   }
 
   return (
+    <Screen>
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Text style={styles.title}>Create account</Text>
-      <Text style={styles.sub}>NOVA will help you organize your everyday life.</Text>
+      <Text style={styles.sub}>Wahrly will help you organize your everyday life.</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>Name</Text>
@@ -110,7 +112,7 @@ export default function SignupScreen() {
           onPress={onSignup}
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color="#0B0D12" /> : <Text style={styles.btnText}>Sign up</Text>}
+          {loading ? <ActivityIndicator color={colors.textOnAccent} /> : <Text style={styles.btnText}>Sign up</Text>}
         </Pressable>
       </View>
 
@@ -118,19 +120,20 @@ export default function SignupScreen() {
         Already have an account? Sign in
       </Link>
     </KeyboardAvoidingView>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: 'transparent',
     padding: spacing.lg,
     justifyContent: 'center',
     gap: spacing.md,
   },
-  title: { color: colors.text, fontSize: 32, fontWeight: '800' },
-  sub: { color: colors.textMuted, fontSize: 15, marginBottom: 8 },
+  title: { color: colors.text, fontSize: 34, fontFamily: fonts.brand, letterSpacing: -0.5 },
+  sub: { color: colors.textMuted, fontSize: 15, marginBottom: 8, fontFamily: fonts.body },
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: radii.lg,
@@ -139,14 +142,17 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 10,
   },
-  label: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
+  label: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.bodyMedium },
   input: {
-    backgroundColor: colors.bgSoft,
+    backgroundColor: colors.bgElevated,
     borderRadius: radii.sm,
     color: colors.text,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
+    fontFamily: fonts.body,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   btn: {
     marginTop: 8,
@@ -158,7 +164,7 @@ const styles = StyleSheet.create({
     // @ts-expect-error web-only
     cursor: 'pointer',
   },
-  btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 16 },
+  btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 16 },
   error: { color: colors.danger },
-  link: { color: colors.accentStrong, textAlign: 'center', fontWeight: '600', fontSize: 15 },
+  link: { color: colors.accentStrong, textAlign: 'center', fontFamily: fonts.bodyMedium, fontSize: 15 },
 })

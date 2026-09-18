@@ -5,7 +5,8 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { DailyPlan } from '../../components/DailyPlan'
-import { colors, radii, spacing } from '../../constants/theme'
+import { Screen } from '../../components/Screen'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { tasksForDay, todayISO, useNovaStore } from '../../lib/store'
 import { refreshTasks, sendNovaMessage, toggleTaskCompleted } from '../../services/ai'
 
@@ -35,53 +36,62 @@ export default function HomeScreen() {
       await sendNovaMessage(text)
       router.push('/chat')
     } catch (e) {
-      Alert.alert('NOVA', e instanceof Error ? e.message : 'Could not reach AI server')
+      Alert.alert(brand.name, e instanceof Error ? e.message : 'Could not reach AI server')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.hello}>
-          {greeting()} 👋
-        </Text>
-        <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
-        <Text style={styles.name}>Hi {name}</Text>
+    <Screen>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Text style={styles.brandMark}>{brand.name}</Text>
+          <Text style={styles.hello}>{greeting()}</Text>
+          <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
+          <Text style={styles.name}>Hi {name}</Text>
 
-        <DailyPlan
-          tasks={todayTasks}
-          onToggle={(task) => toggleTaskCompleted(task)}
-        />
+          <DailyPlan tasks={todayTasks} onToggle={(task) => toggleTaskCompleted(task)} />
 
-        <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
-          <Text style={styles.askText}>Ask NOVA</Text>
-        </Pressable>
+          <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
+            <Text style={styles.askText}>Ask Wahrly</Text>
+          </Pressable>
 
-        <View style={styles.divider} />
-        <Text style={styles.prompt}>What do you need to do?</Text>
-        <AIInput
-          loading={loading}
-          onSend={onSend}
-          onMicPress={() =>
-            Alert.alert(
-              'Voice ready soon',
-              'Architecture is prepared. For MVP, type your request or paste a voice transcript.',
-            )
-          }
-        />
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.divider} />
+          <Text style={styles.prompt}>What do you need to do?</Text>
+          <AIInput
+            loading={loading}
+            onSend={onSend}
+            onMicPress={() =>
+              Alert.alert(
+                'Voice ready soon',
+                'Architecture is prepared. For MVP, type your request or paste a voice transcript.',
+              )
+            }
+          />
+        </ScrollView>
+      </SafeAreaView>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 40 },
-  hello: { color: colors.text, fontSize: 28, fontWeight: '800' },
-  date: { color: colors.textMuted, fontSize: 15, marginTop: -6 },
-  name: { color: colors.textDim, marginBottom: 4 },
+  brandMark: {
+    color: colors.accentStrong,
+    fontFamily: fonts.brand,
+    fontSize: 18,
+    letterSpacing: -0.3,
+  },
+  hello: {
+    color: colors.text,
+    fontSize: 32,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.6,
+  },
+  date: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.body, marginTop: -6 },
+  name: { color: colors.textDim, marginBottom: 4, fontFamily: fonts.body },
   ask: {
     alignSelf: 'flex-start',
     backgroundColor: colors.accent,
@@ -91,7 +101,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  askText: { color: '#0B0D12', fontWeight: '800' },
+  askText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
-  prompt: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
+  prompt: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.bodyMedium },
 })

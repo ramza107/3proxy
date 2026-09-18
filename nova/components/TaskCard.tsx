@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  checkMark: { color: '#0B0D12', fontWeight: '800', fontSize: 13 },
+  checkMark: { color: colors.textOnAccent, fontWeight: '800', fontSize: 13 },
   title: { color: colors.text, fontSize: 16, fontWeight: '600' },
   titleDone: { textDecorationLine: 'line-through', color: colors.textMuted },
   meta: { color: colors.textMuted, marginTop: 4, fontSize: 13 },

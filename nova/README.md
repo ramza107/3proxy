@@ -1,8 +1,8 @@
-# NOVA — AI Life Assistant (MVP)
+# Wahrly — AI Life Assistant (MVP)
 
-Personal AI assistant for everyday life. You tell NOVA what you need to do — it turns that into tasks, reminders, and a calm daily plan.
+Personal AI assistant for everyday life. You tell Wahrly what you need to do — it turns that into tasks, reminders, and a calm daily plan.
 
-> NOVA should feel like an AI that happens to have a task list — not a task manager with AI bolted on.
+> Wahrly should feel like an AI that happens to have a task list — not a task manager with AI bolted on.
 
 ## Stack
 

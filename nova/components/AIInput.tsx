@@ -53,7 +53,7 @@ export function AIInput({
           style={[styles.send, (!text.trim() || loading) && styles.sendDisabled]}
         >
           {loading ? (
-            <ActivityIndicator color="#0B0D12" />
+            <ActivityIndicator color={colors.textOnAccent} />
           ) : (
             <Text style={styles.sendText}>Ask</Text>
           )}
@@ -100,5 +100,5 @@ const styles = StyleSheet.create({
     minWidth: 78,
   },
   sendDisabled: { opacity: 0.45 },
-  sendText: { color: '#0B0D12', fontWeight: '800' },
+  sendText: { color: colors.textOnAccent, fontWeight: '800' },
 })

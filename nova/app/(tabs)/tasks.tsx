@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { TaskCard } from '../../components/TaskCard'
-import { colors, radii, spacing } from '../../constants/theme'
+import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../../services/ai'
 import type { Priority, Task } from '../../types'
@@ -93,7 +93,7 @@ export default function TasksScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Tasks</Text>
-        <Text style={styles.sub}>Everything NOVA is tracking for you</Text>
+        <Text style={styles.sub}>Everything Wahrly is tracking for you</Text>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
@@ -119,7 +119,7 @@ export default function TasksScreen() {
         {visible.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Nothing here yet</Text>
-            <Text style={styles.emptyText}>Ask NOVA to create tasks for you.</Text>
+            <Text style={styles.emptyText}>Ask Wahrly to create tasks for you.</Text>
           </View>
         ) : (
           visible.map((task) => (
@@ -146,9 +146,9 @@ export default function TasksScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: 4 },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
   sub: { color: colors.textMuted, marginBottom: 8 },
   tabs: { paddingHorizontal: spacing.lg, gap: 8, paddingBottom: 8 },
   tab: {
