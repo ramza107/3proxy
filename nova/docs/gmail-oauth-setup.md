@@ -15,8 +15,12 @@ Users never see this. They only tap **Connect with Google → Allow**.
 2. User type: **External**  
 3. App name: `Wahrly`  
 4. Support email: your email  
-5. Scopes → Add `https://www.googleapis.com/auth/gmail.readonly`  
-6. Test users → add your Gmail (while app is in Testing)
+5. **Privacy policy link** (required for verification):  
+   `https://ramza107.github.io/3proxy/nova/privacy`  
+6. Scopes → Add `https://www.googleapis.com/auth/gmail.readonly`  
+7. Test users → add your Gmail (while app is in Testing)
+
+Source text for the policy: [`privacy-policy.md`](privacy-policy.md) / in-app route `/privacy`.
 
 ## 4. Create OAuth client
 1. APIs & Services → Credentials → **Create credentials** → OAuth client ID  

@@ -356,6 +356,10 @@ export default function SettingsScreen() {
             <Text style={styles.signOutText}>Sign out</Text>
           </Pressable>
 
+          <Pressable onPress={() => router.push('/privacy')} style={styles.privacyLink}>
+            <Text style={styles.privacyText}>Privacy Policy</Text>
+          </Pressable>
+
           <Text style={styles.mode}>
             {isSupabaseConfigured ? 'Supabase connected' : 'Demo mode (local AsyncStorage)'}
             {oauthReady ? ' · Google OAuth ready' : ' · Google OAuth keys pending'}
@@ -461,5 +465,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   signOutText: { color: colors.danger, fontFamily: fonts.bodyBold },
+  privacyLink: { alignItems: 'center', paddingVertical: 8 },
+  privacyText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+  },
   mode: { color: colors.textDim, textAlign: 'center', fontSize: 12, fontFamily: fonts.body },
 })

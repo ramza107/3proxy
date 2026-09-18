@@ -82,6 +82,10 @@ export default function RootLayout() {
     const root = segments[0]
     const inAuth = root === '(auth)'
     const inOnboarding = root === '(onboarding)'
+    const isPublic = root === 'privacy'
+
+    // Privacy Policy must be reachable without login (Google OAuth verification).
+    if (isPublic) return
 
     if (!sessionUserId) {
       if (!inAuth) router.replace('/login')
