@@ -255,13 +255,12 @@ export default function TasksScreen() {
                             expanded={open}
                             onToggle={() => onToggleComplete(task)}
                             onPress={() => {
-                              animateList()
                               setExpandedId(open ? null : task.id)
                             }}
                           />
                           {open ? (
                             <View>
-                              <TaskPanel task={task} />
+                              <TaskPanel taskId={task.id} />
                               <Pressable onPress={() => onMore(task)} style={styles.moreBtn}>
                                 <Text style={styles.moreText}>More actions</Text>
                               </Pressable>

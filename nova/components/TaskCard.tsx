@@ -77,7 +77,6 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
     backgroundColor: 'rgba(255,255,255,0.92)',
   },
-  pressed: { transform: [{ scale: 0.985 }], opacity: 0.96 },
   done: { opacity: 0.58 },
   checkWrap: { padding: 2 },
   check: {
@@ -114,6 +113,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: fonts.body,
     fontSize: 13,
+  },
+  expandBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bgSoft,
+  },
+  expandText: {
+    color: colors.accentStrong,
+    fontSize: 14,
+    fontFamily: fonts.bodyBold,
   },
   priority: {
     width: 8,

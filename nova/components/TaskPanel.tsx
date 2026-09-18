@@ -6,8 +6,8 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import type { Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
+import { useNovaStore } from '../lib/store'
 import { recurrenceLabel } from '../lib/taskExtras'
 import {
   addChecklistItem,
@@ -18,14 +18,16 @@ import {
 } from '../services/ai'
 
 type Props = {
-  task: Task
-  onClose?: () => void
+  taskId: string
 }
 
 const MONTH_DAYS = [1, 5, 10, 15, 20, 25, 28]
 
-export function TaskPanel({ task }: Props) {
+export function TaskPanel({ taskId }: Props) {
+  const task = useNovaStore((s) => s.tasks.find((t) => t.id === taskId))
   const [draft, setDraft] = useState('')
+  if (!task) return null
+
   const checklist = task.checklist || []
   const monthly = task.recurrence?.type === 'monthly' ? task.recurrence.dayOfMonth : null
 
@@ -51,6 +53,7 @@ export function TaskPanel({ task }: Props) {
                 hitSlop={8}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: item.done }}
+                accessibilityLabel={`Toggle ${item.text}`}
               >
                 <View style={[styles.itemCheck, item.done && styles.itemCheckOn]}>
                   {item.done ? <Text style={styles.itemCheckMark}>✓</Text> : null}
@@ -106,10 +109,7 @@ export function TaskPanel({ task }: Props) {
         })}
       </View>
       {monthly ? (
-        <Pressable
-          onPress={() => setMonthlyRecurrence(task, null)}
-          style={styles.clearRepeat}
-        >
+        <Pressable onPress={() => setMonthlyRecurrence(task, null)} style={styles.clearRepeat}>
           <Text style={styles.clearRepeatText}>Turn off monthly repeat</Text>
         </Pressable>
       ) : (
