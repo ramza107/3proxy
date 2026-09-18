@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
-import { colors, radii, spacing } from '../../constants/theme'
+import { Screen } from '../../components/Screen'
+import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 
@@ -23,32 +24,39 @@ export default function NameScreen() {
   }
 
   return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>What&apos;s your name?</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        placeholder="Your name"
-        placeholderTextColor={colors.textDim}
-        style={styles.input}
-        autoFocus
-      />
-      <Pressable accessibilityRole="button" style={styles.btn} onPress={continueNext}>
-        <Text style={styles.btnText}>Continue</Text>
-      </Pressable>
-    </View>
+    <Screen>
+      <View style={styles.screen}>
+        <Text style={styles.title}>What should Wahrly call you?</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          placeholder="Your name"
+          placeholderTextColor={colors.textDim}
+          style={styles.input}
+          autoFocus
+        />
+        <Pressable accessibilityRole="button" style={styles.btn} onPress={continueNext}>
+          <Text style={styles.btnText}>Continue</Text>
+        </Pressable>
+      </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
     padding: spacing.xl,
     justifyContent: 'center',
     gap: spacing.lg,
   },
-  title: { color: colors.text, fontSize: 34, fontWeight: '800' },
+  title: {
+    color: colors.text,
+    fontSize: 34,
+    lineHeight: 40,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.6,
+  },
   input: {
     backgroundColor: colors.bgCard,
     borderRadius: radii.md,
@@ -56,6 +64,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     fontSize: 18,
+    fontFamily: fonts.body,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -68,5 +77,5 @@ const styles = StyleSheet.create({
     // @ts-expect-error web-only
     cursor: 'pointer',
   },
-  btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 17 },
+  btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 17 },
 })

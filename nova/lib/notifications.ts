@@ -62,7 +62,7 @@ export async function scheduleTaskNotification(
 
   return NotificationsMod.scheduleNotificationAsync({
     content: {
-      title: 'NOVA',
+      title: 'Wahrly',
       body: `Time to ${task.title.toLowerCase()} ✨`,
       data: { taskId: task.id },
     },

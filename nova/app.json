@@ -1,28 +1,28 @@
 {
   "expo": {
-    "name": "NOVA",
-    "slug": "nova",
+    "name": "Wahrly",
+    "slug": "wahrly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "nova",
-    "userInterfaceStyle": "dark",
+    "scheme": "wahrly",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B0D12"
+      "backgroundColor": "#E7EEF2"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nova.assistant"
+      "bundleIdentifier": "com.wahrly.assistant"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0B0D12"
+        "backgroundColor": "#E7EEF2"
       },
-      "package": "com.nova.assistant"
+      "package": "com.wahrly.assistant"
     },
     "web": {
       "favicon": "./assets/favicon.png",

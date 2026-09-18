@@ -192,6 +192,6 @@ app.post('/api/ai/chat', async (req, res) => {
 
 app.listen(Port, '0.0.0.0', () => {
   const provider = resolveProvider()
-  console.log(`NOVA AI server listening on http://0.0.0.0:${Port}`)
+  console.log(`Wahrly AI server listening on http://0.0.0.0:${Port}`)
   console.log(`Provider: ${provider?.name || 'local'} ${provider?.model || ''}`.trim())
 })

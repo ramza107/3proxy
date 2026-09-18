@@ -18,7 +18,7 @@ export function DailyPlan({ tasks, onToggle, suggestion }: Props) {
       {tasks.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>Your day is clear</Text>
-          <Text style={styles.emptyText}>Tell NOVA what you need to get done.</Text>
+          <Text style={styles.emptyText}>Tell Wahrly what you need to get done.</Text>
         </View>
       ) : (
         <View style={styles.list}>

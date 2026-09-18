@@ -1,3 +1,14 @@
+import {
+  Fraunces_600SemiBold,
+  Fraunces_600SemiBold_Italic,
+  useFonts as useFraunces,
+} from '@expo-google-fonts/fraunces'
+import {
+  DMSans_400Regular,
+  DMSans_500Medium,
+  DMSans_700Bold,
+  useFonts as useDmSans,
+} from '@expo-google-fonts/dm-sans'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
@@ -12,6 +23,17 @@ const RootView =
     : require('react-native-gesture-handler').GestureHandlerRootView
 
 export default function RootLayout() {
+  const [frauncesLoaded] = useFraunces({
+    Fraunces_600SemiBold,
+    Fraunces_600SemiBold_Italic,
+  })
+  const [dmLoaded] = useDmSans({
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_700Bold,
+  })
+  const fontsReady = frauncesLoaded && dmLoaded
+
   const router = useRouter()
   const segments = useSegments()
   const hydrated = useNovaStore((s) => s.hydrated)
@@ -29,7 +51,7 @@ export default function RootLayout() {
     supabase.auth.getSession().then(({ data }) => {
       const session = data.session
       if (session?.user) {
-        setDemoSession(session.user.email || 'user@nova.app', session.user.user_metadata?.name)
+        setDemoSession(session.user.email || 'user@wahrly.app', session.user.user_metadata?.name)
         useNovaStore.setState({
           demoMode: false,
           sessionUserId: session.user.id,
@@ -56,7 +78,7 @@ export default function RootLayout() {
   }, [clearSession, setDemoSession, updateSettings])
 
   useEffect(() => {
-    if (!hydrated) return
+    if (!hydrated || !fontsReady) return
     const root = segments[0]
     const inAuth = root === '(auth)'
     const inOnboarding = root === '(onboarding)'
@@ -74,9 +96,9 @@ export default function RootLayout() {
     if (inAuth || inOnboarding || root === undefined) {
       router.replace('/home')
     }
-  }, [hydrated, sessionUserId, onboardingComplete, segments, router])
+  }, [hydrated, fontsReady, sessionUserId, onboardingComplete, segments, router])
 
-  if (!hydrated) {
+  if (!hydrated || !fontsReady) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={colors.accent} />
@@ -86,7 +108,7 @@ export default function RootLayout() {
 
   return (
     <RootView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
     </RootView>
   )

@@ -109,7 +109,7 @@ export function clientLocalAI(message: string, tasks: Task[]): AIChatResponse {
   if (isSmallTalk(text)) {
     return {
       reply:
-        "I'm NOVA — your life assistant. Tell me something to do (for example: \"Tomorrow buy groceries\") and I'll put it in Tasks.",
+        "I'm Wahrly — your life assistant. Tell me something to do (for example: \"Tomorrow buy groceries\") and I'll put it in Tasks.",
       actions: [],
     }
   }

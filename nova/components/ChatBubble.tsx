@@ -12,11 +12,11 @@ export function ChatBubble({ role, content }: Props) {
     <View style={[styles.row, isUser && styles.rowUser]}>
       {!isUser && (
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>N</Text>
+          <Text style={styles.avatarText}>W</Text>
         </View>
       )}
       <View style={[styles.bubble, isUser ? styles.user : styles.assistant]}>
-        <Text style={styles.text}>{content}</Text>
+        <Text style={isUser ? styles.textUser : styles.text}>{content}</Text>
       </View>
     </View>
   )
@@ -57,4 +57,5 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 8,
   },
   text: { color: colors.text, fontSize: 15.5, lineHeight: 22 },
+  textUser: { color: colors.textOnAccent, fontSize: 15.5, lineHeight: 22 },
 })

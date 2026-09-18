@@ -1,10 +1,10 @@
 import { Tabs } from 'expo-router'
 import { Text } from 'react-native'
-import { colors } from '../../constants/theme'
+import { colors, fonts } from '../../constants/theme'
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
-    <Text style={{ color: focused ? colors.accentStrong : colors.textDim, fontSize: 11, fontWeight: '700' }}>
+    <Text style={{ color: focused ? colors.accentStrong : colors.textDim, fontSize: 11, fontFamily: fonts.bodyBold }}>
       {label}
     </Text>
   )
@@ -36,7 +36,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'NOVA',
+          title: 'Wahrly',
           tabBarIcon: ({ focused }) => <TabIcon label="✦" focused={focused} />,
         }}
       />

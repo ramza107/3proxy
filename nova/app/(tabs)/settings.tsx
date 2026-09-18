@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { colors, radii, spacing } from '../../constants/theme'
+import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { ensureNotificationPermissions } from '../../lib/notifications'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
@@ -109,7 +109,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg, gap: spacing.md },
   header: { gap: 4, marginBottom: 4 },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
   sub: { color: colors.textMuted },
   card: {
     backgroundColor: colors.bgCard,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnText: { color: '#0B0D12', fontWeight: '800' },
+  btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowTitle: { color: colors.text, fontWeight: '700', fontSize: 16 },
   rowSub: { color: colors.textMuted, marginTop: 2 },

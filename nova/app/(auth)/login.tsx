@@ -10,7 +10,8 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { colors, radii, spacing } from '../../constants/theme'
+import { Screen } from '../../components/Screen'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 
@@ -54,80 +55,98 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.hero}>
-        <Text style={styles.brand}>NOVA</Text>
-        <Text style={styles.sub}>Your AI life assistant</Text>
-      </View>
+    <Screen>
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.hero}>
+          <Text style={styles.brand}>{brand.name}</Text>
+          <Text style={styles.tagline}>{brand.tagline}</Text>
+          <Text style={styles.sub}>Tell Wahrly what matters today — it becomes a clear plan.</Text>
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@email.com"
-          placeholderTextColor={colors.textDim}
-          style={styles.input}
-        />
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          placeholder="••••••••"
-          placeholderTextColor={colors.textDim}
-          style={styles.input}
-        />
-        {!!error && <Text style={styles.error}>{error}</Text>}
+        <View style={styles.card}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@email.com"
+            placeholderTextColor={colors.textDim}
+            style={styles.input}
+          />
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            placeholderTextColor={colors.textDim}
+            style={styles.input}
+          />
+          {!!error && <Text style={styles.error}>{error}</Text>}
+          <Pressable
+            accessibilityRole="button"
+            style={styles.btn}
+            onPress={onLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.textOnAccent} />
+            ) : (
+              <Text style={styles.btnText}>Sign in</Text>
+            )}
+          </Pressable>
+        </View>
+
+        <Link href="/signup" style={styles.link}>
+          Create an account
+        </Link>
+
         <Pressable
           accessibilityRole="button"
-          style={styles.btn}
-          onPress={onLogin}
-          disabled={loading}
+          style={styles.demoBtn}
+          onPress={() => {
+            setDemoSession('demo@wahrly.local', 'Friend')
+            router.replace('/welcome')
+          }}
         >
-          {loading ? <ActivityIndicator color="#0B0D12" /> : <Text style={styles.btnText}>Sign in</Text>}
+          <Text style={styles.demoText}>Continue in demo mode</Text>
         </Pressable>
-        <Text style={styles.hint}>
-          {isSupabaseConfigured
-            ? 'Connected to Supabase'
-            : 'Demo mode: any email/password works locally'}
-        </Text>
-      </View>
-
-      <Link href="/signup" style={styles.link}>
-        Create an account
-      </Link>
-
-      <Pressable
-        accessibilityRole="button"
-        style={styles.demoBtn}
-        onPress={() => {
-          setDemoSession('demo@nova.local', 'Friend')
-          router.replace('/welcome')
-        }}
-      >
-        <Text style={styles.demoText}>Continue in demo mode</Text>
-      </Pressable>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
     padding: spacing.lg,
     justifyContent: 'center',
     gap: spacing.lg,
   },
-  hero: { gap: 8 },
-  brand: { color: colors.text, fontSize: 42, fontWeight: '800', letterSpacing: 1 },
-  sub: { color: colors.textMuted, fontSize: 16 },
+  hero: { gap: 10, marginBottom: 4 },
+  brand: {
+    color: colors.text,
+    fontSize: 56,
+    lineHeight: 60,
+    fontFamily: fonts.brand,
+    letterSpacing: -1,
+  },
+  tagline: {
+    color: colors.accentStrong,
+    fontSize: 18,
+    fontFamily: fonts.brandItalic,
+  },
+  sub: {
+    color: colors.textMuted,
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: fonts.body,
+    maxWidth: 320,
+  },
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: radii.lg,
@@ -136,29 +155,44 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 10,
   },
-  label: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
+  label: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontFamily: fonts.bodyMedium,
+  },
   input: {
-    backgroundColor: colors.bgSoft,
+    backgroundColor: colors.bgElevated,
     borderRadius: radii.sm,
     color: colors.text,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
+    fontFamily: fonts.body,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   btn: {
     marginTop: 8,
     backgroundColor: colors.accent,
     borderRadius: radii.full,
-    height: 48,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
     // @ts-expect-error web-only
     cursor: 'pointer',
   },
-  btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 16 },
-  error: { color: colors.danger },
-  hint: { color: colors.textDim, fontSize: 12, textAlign: 'center', marginTop: 4 },
-  link: { color: colors.accentStrong, textAlign: 'center', fontWeight: '600', fontSize: 15 },
+  btnText: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+  },
+  error: { color: colors.danger, fontFamily: fonts.body },
+  link: {
+    color: colors.accentStrong,
+    textAlign: 'center',
+    fontFamily: fonts.bodyMedium,
+    fontSize: 15,
+  },
   demoBtn: {
     alignSelf: 'center',
     paddingVertical: 10,
@@ -166,5 +200,5 @@ const styles = StyleSheet.create({
     // @ts-expect-error web-only
     cursor: 'pointer',
   },
-  demoText: { color: colors.textMuted, fontWeight: '600', fontSize: 14 },
+  demoText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 14 },
 })

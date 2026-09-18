@@ -10,10 +10,11 @@ import {
   Text,
   View,
 } from 'react-native'
+import { Screen } from '../../components/Screen'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { ChatBubble } from '../../components/ChatBubble'
-import { colors, radii, spacing } from '../../constants/theme'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { useNovaStore } from '../../lib/store'
 import { sendNovaMessage } from '../../services/ai'
 import type { AIAction } from '../../types'
@@ -62,7 +63,7 @@ export default function ChatScreen() {
         .filter((x): x is SavedItem => Boolean(x))
       setSaved(items)
     } catch (e) {
-      Alert.alert('NOVA', e instanceof Error ? e.message : 'AI unavailable')
+      Alert.alert('Wahrly', e instanceof Error ? e.message : 'AI unavailable')
     } finally {
       setLoading(false)
       requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }))
@@ -70,6 +71,7 @@ export default function ChatScreen() {
   }
 
   return (
+    <Screen>
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -77,8 +79,8 @@ export default function ChatScreen() {
         keyboardVerticalOffset={8}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>NOVA</Text>
-          <Text style={styles.sub}>Your personal assistant</Text>
+          <Text style={styles.title}>{brand.name}</Text>
+          <Text style={styles.sub}>{brand.tagline}</Text>
         </View>
 
         <FlatList
@@ -146,14 +148,15 @@ export default function ChatScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.sm },
-  title: { color: colors.text, fontSize: 28, fontWeight: '800' },
-  sub: { color: colors.textMuted },
+  title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
+  sub: { color: colors.accentStrong, fontFamily: fonts.brandItalic },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexGrow: 1 },
   empty: { gap: 12, paddingTop: 24 },
   emptyTitle: { color: colors.text, fontSize: 24, fontWeight: '700' },
@@ -196,6 +199,6 @@ const styles = StyleSheet.create({
     // @ts-expect-error web-only
     cursor: 'pointer',
   },
-  savedBtnText: { color: '#0B0D12', fontWeight: '800' },
+  savedBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
   inputWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
 })

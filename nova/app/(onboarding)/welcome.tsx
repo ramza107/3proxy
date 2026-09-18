@@ -1,50 +1,61 @@
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { colors, radii, spacing } from '../../constants/theme'
+import { Screen } from '../../components/Screen'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 
 export default function WelcomeScreen() {
   const router = useRouter()
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.glow} pointerEvents="none" />
-      <Text style={styles.emoji}>👋</Text>
-      <Text style={styles.title}>Hi</Text>
-      <Text style={styles.body}>
-        I&apos;m NOVA.{"\n"}
-        Tell me what you need to get done.
-      </Text>
-      <Pressable
-        accessibilityRole="button"
-        style={styles.btn}
-        onPress={() => router.push('/name')}
-      >
-        <Text style={styles.btnText}>Get started</Text>
-      </Pressable>
-    </View>
+    <Screen>
+      <View style={styles.screen}>
+        <Text style={styles.brand}>{brand.name}</Text>
+        <Text style={styles.title}>Hi — let&apos;s get clear.</Text>
+        <Text style={styles.body}>
+          I&apos;m Wahrly.{"\n"}
+          Tell me what you need done, and I&apos;ll turn it into a calm plan.
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.btn}
+          onPress={() => router.push('/name')}
+        >
+          <Text style={styles.btnText}>Get started</Text>
+        </Pressable>
+      </View>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.bg,
     padding: spacing.xl,
     justifyContent: 'center',
     gap: spacing.md,
   },
-  glow: {
-    position: 'absolute',
-    top: 80,
-    alignSelf: 'center',
-    width: 220,
-    height: 220,
-    borderRadius: 999,
-    backgroundColor: colors.accentSoft,
+  brand: {
+    color: colors.accentStrong,
+    fontSize: 22,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.3,
+    marginBottom: 8,
   },
-  emoji: { fontSize: 42 },
-  title: { color: colors.text, fontSize: 44, fontWeight: '800' },
-  body: { color: colors.textMuted, fontSize: 20, lineHeight: 30, marginBottom: spacing.lg },
+  title: {
+    color: colors.text,
+    fontSize: 40,
+    lineHeight: 46,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.8,
+  },
+  body: {
+    color: colors.textMuted,
+    fontSize: 18,
+    lineHeight: 28,
+    fontFamily: fonts.body,
+    marginBottom: spacing.lg,
+    maxWidth: 340,
+  },
   btn: {
     backgroundColor: colors.accent,
     borderRadius: radii.full,
@@ -55,5 +66,5 @@ const styles = StyleSheet.create({
     cursor: 'pointer',
     zIndex: 2,
   },
-  btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 17 },
+  btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 17 },
 })
