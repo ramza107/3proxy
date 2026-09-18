@@ -58,6 +58,13 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
+  // When user turns Auto-add ON, allow a fresh pass over current scan results
+  useEffect(() => {
+    if (!autoCreate) return
+    autoRanFor.current = null
+    setAutoNote('')
+  }, [autoCreate])
+
   const visible = useMemo(() => {
     const list = data?.promises || []
     return list.filter((p) => !dismissed.includes(p.id))
@@ -85,6 +92,7 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
       const key = p.suggestedTask.trim().toLowerCase()
       if (titles.has(key)) {
         dismissPromise(p.id)
+        alreadyDismissed.add(p.id)
         continue
       }
       createTaskLocal({
@@ -94,6 +102,7 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
         userId: uid,
       })
       dismissPromise(p.id)
+      alreadyDismissed.add(p.id)
       titles.add(key)
       added += 1
     }
@@ -103,8 +112,6 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
           ? 'Added 1 promise as a task'
           : `Added ${added} promises as tasks`,
       )
-    } else {
-      setAutoNote('')
     }
   }, [autoCreate, userId, sessionUserId, data, createTaskLocal, dismissPromise])
 
