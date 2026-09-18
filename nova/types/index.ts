@@ -85,7 +85,7 @@ export type UserSettings = {
   /** HH:MM — evening clear / prepare tomorrow */
   eveningClearTime: string
   eveningClearEnabled: boolean
-  /** Include “who wrote” morning card (manual — no Gmail setup) */
+  /** Show automatic Gmail morning inbox on Home */
   emailDigestEnabled: boolean
 }
 

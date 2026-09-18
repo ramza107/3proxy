@@ -200,9 +200,9 @@ Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`,
 - **Tasks** — Today / Tomorrow / Upcoming / Completed
 - **Settings** — name, Gmail connect, morning/evening rituals, AI tone, sign out
 
-## Morning “who wrote”
+## Morning inbox (automatic from Gmail)
 
-No Gmail setup. On **Home**, type who emailed you (e.g. `Mom, boss, Amazon`) and tap **Save for today**. Morning notifications can remind you to do this.
+Connect Gmail once in **Settings** with an [App Password](https://myaccount.google.com/apppasswords). Home then loads overnight senders (names + subjects) from your inbox — no typing.
 
 ## Voice
 
