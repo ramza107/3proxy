@@ -1,76 +1,109 @@
 import { addDays, format, parseISO } from 'date-fns'
-import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'expo-router'
+import { useMemo, useState } from 'react'
 import {
   Alert,
+  LayoutAnimation,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  UIManager,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Screen } from '../../components/Screen'
 import { TaskCard } from '../../components/TaskCard'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../../services/ai'
 import type { Priority, Task } from '../../types'
 
-type Section = 'today' | 'tomorrow' | 'upcoming' | 'completed'
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true)
+}
 
-function labelDate(date: string | null) {
+type Filter = 'today' | 'tomorrow' | 'upcoming' | 'done'
+
+const FILTERS: { id: Filter; label: string }[] = [
+  { id: 'today', label: 'Today' },
+  { id: 'tomorrow', label: 'Tomorrow' },
+  { id: 'upcoming', label: 'Later' },
+  { id: 'done', label: 'Done' },
+]
+
+function friendlyDate(date: string | null) {
   if (!date) return 'No date'
   try {
-    return format(parseISO(date), 'MMM d')
+    return format(parseISO(date), 'EEE, MMM d')
   } catch {
     return date
   }
 }
 
+function animateList() {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+}
+
 export default function TasksScreen() {
+  const router = useRouter()
   const tasks = useNovaStore((s) => s.tasks)
-  const [section, setSection] = useState<Section>('today')
+  const [filter, setFilter] = useState<Filter>('today')
 
   const today = todayISO()
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
-  const grouped = useMemo(() => {
+  const buckets = useMemo(() => {
     const open = sortTasks(tasks.filter((t) => !t.completed))
-    return {
-      today: open.filter((t) => t.date === today),
-      tomorrow: open.filter((t) => t.date === tomorrow),
-      upcoming: open.filter((t) => !t.date || t.date > tomorrow),
-      completed: sortTasks(tasks.filter((t) => t.completed)),
-    }
+    const overdue = open.filter((t) => Boolean(t.date && t.date < today))
+    const todayList = open.filter((t) => t.date === today)
+    const tomorrowList = open.filter((t) => t.date === tomorrow)
+    const upcoming = open.filter((t) => !t.date || t.date > tomorrow)
+    const done = sortTasks(tasks.filter((t) => t.completed))
+    return { overdue, today: todayList, tomorrow: tomorrowList, upcoming, done }
   }, [tasks, today, tomorrow])
 
-  useEffect(() => {
-    if (grouped[section].length > 0) return
-    if (grouped.today.length > 0) {
-      setSection('today')
-      return
-    }
-    if (grouped.tomorrow.length > 0) {
-      setSection('tomorrow')
-      return
-    }
-    if (grouped.upcoming.length > 0) {
-      setSection('upcoming')
-    }
-  }, [
-    section,
-    grouped.today.length,
-    grouped.tomorrow.length,
-    grouped.upcoming.length,
-    grouped.completed.length,
-  ])
+  const counts: Record<Filter, number> = {
+    today: buckets.today.length + buckets.overdue.length,
+    tomorrow: buckets.tomorrow.length,
+    upcoming: buckets.upcoming.length,
+    done: buckets.done.length,
+  }
 
-  const visible = grouped[section]
+  const openCount = tasks.filter((t) => !t.completed).length
+  const highToday = buckets.today.filter((t) => t.priority === 'high').length
+
+  const visible: { title?: string; items: Task[] }[] = useMemo(() => {
+    if (filter === 'today') {
+      const sections: { title?: string; items: Task[] }[] = []
+      if (buckets.overdue.length) sections.push({ title: 'Overdue', items: buckets.overdue })
+      sections.push({
+        title: buckets.overdue.length ? 'Today' : undefined,
+        items: buckets.today,
+      })
+      return sections
+    }
+    if (filter === 'tomorrow') return [{ items: buckets.tomorrow }]
+    if (filter === 'upcoming') return [{ items: buckets.upcoming }]
+    return [{ items: buckets.done }]
+  }, [filter, buckets])
+
+  const totalVisible = visible.reduce((n, s) => n + s.items.length, 0)
+
+  const setFilterAnimated = (next: Filter) => {
+    animateList()
+    setFilter(next)
+  }
 
   const onEdit = (task: Task) => {
-    Alert.alert(task.title, 'Choose an action', [
+    Alert.alert(task.title, `${friendlyDate(task.date)}${task.time ? ` · ${task.time}` : ''}`, [
       {
         text: task.completed ? 'Mark active' : 'Complete',
-        onPress: () => toggleTaskCompleted(task),
+        onPress: () => {
+          animateList()
+          toggleTaskCompleted(task)
+        },
       },
       {
         text: 'High priority',
@@ -78,99 +111,325 @@ export default function TasksScreen() {
       },
       {
         text: 'Move to tomorrow',
-        onPress: () => updateTaskFields(task, { date: tomorrow }),
+        onPress: () => {
+          animateList()
+          updateTaskFields(task, { date: tomorrow })
+        },
       },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => deleteTask(task.id),
+        onPress: () => {
+          animateList()
+          deleteTask(task.id)
+        },
       },
       { text: 'Cancel', style: 'cancel' },
     ])
   }
 
+  const emptyCopy =
+    filter === 'done'
+      ? {
+          title: 'No completed tasks yet',
+          body: 'Finish something today — it will land here.',
+          cta: 'Go to Today',
+          action: () => setFilterAnimated('today'),
+        }
+      : filter === 'tomorrow'
+        ? {
+            title: 'Tomorrow is open',
+            body: 'Ask Wahrly to schedule something for tomorrow.',
+            cta: 'Ask Wahrly',
+            action: () => router.push('/chat'),
+          }
+        : filter === 'upcoming'
+          ? {
+              title: 'Nothing further out',
+              body: 'Plan ahead in chat — Wahrly will place tasks here.',
+              cta: 'Ask Wahrly',
+              action: () => router.push('/chat'),
+            }
+          : {
+              title: 'Your day is clear',
+              body: 'Tell Wahrly what needs doing — reminders and priorities included.',
+              cta: 'Ask Wahrly',
+              action: () => router.push('/chat'),
+            }
+
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Tasks</Text>
-        <Text style={styles.sub}>Everything Wahrly is tracking for you</Text>
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {(
-          [
-            ['today', `Today (${grouped.today.length})`],
-            ['tomorrow', `Tomorrow (${grouped.tomorrow.length})`],
-            ['upcoming', `Upcoming (${grouped.upcoming.length})`],
-            ['completed', `Completed (${grouped.completed.length})`],
-          ] as const
-        ).map(([id, label]) => (
-          <Pressable
-            key={id}
-            onPress={() => setSection(id)}
-            style={[styles.tab, section === id && styles.tabOn]}
-          >
-            <Text style={[styles.tabText, section === id && styles.tabTextOn]}>{label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      <ScrollView contentContainerStyle={styles.list}>
-        {visible.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>Nothing here yet</Text>
-            <Text style={styles.emptyText}>Ask Wahrly to create tasks for you.</Text>
+    <Screen>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <Text style={styles.title}>Tasks</Text>
+            <Pressable
+              onPress={() => router.push('/chat')}
+              style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel="Ask Wahrly to add a task"
+            >
+              <Text style={styles.addBtnPlus}>+</Text>
+              <Text style={styles.addBtnText}>Add</Text>
+            </Pressable>
           </View>
-        ) : (
-          visible.map((task) => (
-            <View key={task.id} style={{ gap: 4 }}>
-              <TaskCard
-                task={{
-                  ...task,
-                  // show friendlier meta through TaskCard's own formatting
-                }}
-                onToggle={() => toggleTaskCompleted(task)}
-                onPress={() => onEdit(task)}
-              />
-              <Text style={styles.metaLine}>
-                {labelDate(task.date)}
-                {task.time ? ` · ${task.time}` : ''}
-                {` · ${task.priority} priority`}
-              </Text>
+          <Text style={styles.sub}>
+            {openCount === 0
+              ? 'Nothing open — a calm slate'
+              : `${openCount} open${highToday ? ` · ${highToday} high today` : ''}`}
+          </Text>
+        </View>
+
+        <View style={styles.filterBar}>
+          {FILTERS.map((f) => {
+            const on = filter === f.id
+            const count = counts[f.id]
+            return (
+              <Pressable
+                key={f.id}
+                onPress={() => setFilterAnimated(f.id)}
+                style={[styles.filterChip, on && styles.filterChipOn]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+              >
+                <Text style={[styles.filterLabel, on && styles.filterLabelOn]}>{f.label}</Text>
+                <View style={[styles.countPill, on && styles.countPillOn]}>
+                  <Text style={[styles.countText, on && styles.countTextOn]}>{count}</Text>
+                </View>
+              </Pressable>
+            )
+          })}
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {totalVisible === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyEyebrow}>Wahrly</Text>
+              <Text style={styles.emptyTitle}>{emptyCopy.title}</Text>
+              <Text style={styles.emptyBody}>{emptyCopy.body}</Text>
+              <Pressable
+                onPress={emptyCopy.action}
+                style={({ pressed }) => [styles.emptyCta, pressed && styles.emptyCtaPressed]}
+              >
+                <Text style={styles.emptyCtaText}>{emptyCopy.cta}</Text>
+              </Pressable>
             </View>
-          ))
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          ) : (
+            visible.map((section, idx) =>
+              section.items.length === 0 ? null : (
+                <View key={section.title || `sec-${idx}`} style={styles.section}>
+                  {section.title ? (
+                    <Text
+                      style={[
+                        styles.sectionLabel,
+                        section.title === 'Overdue' && styles.sectionLabelOverdue,
+                      ]}
+                    >
+                      {section.title}
+                    </Text>
+                  ) : null}
+                  <View style={styles.sectionList}>
+                    {section.items.map((task) => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        dateLabel={friendlyDate(task.date)}
+                        onToggle={() => {
+                          animateList()
+                          toggleTaskCompleted(task)
+                        }}
+                        onPress={() => onEdit(task)}
+                      />
+                    ))}
+                  </View>
+                </View>
+              ),
+            )
+          )}
+
+          {totalVisible > 0 ? (
+            <Pressable
+              onPress={() => router.push('/chat')}
+              style={({ pressed }) => [styles.footerAsk, pressed && styles.footerAskPressed]}
+            >
+              <Text style={styles.footerAskText}>Ask Wahrly to adjust your list</Text>
+            </Pressable>
+          ) : null}
+        </ScrollView>
+      </SafeAreaView>
+    </Screen>
   )
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, gap: 4 },
-  title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
-  sub: { color: colors.textMuted, marginBottom: 8 },
-  tabs: { paddingHorizontal: spacing.lg, gap: 8, paddingBottom: 8 },
-  tab: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radii.full,
+  safe: { flex: 1 },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    gap: 6,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  title: {
+    color: colors.text,
+    fontSize: 34,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.8,
+  },
+  sub: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.bgDeep,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 10,
+    borderRadius: radii.full,
   },
-  tabOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
-  tabText: { color: colors.textMuted, fontWeight: '700' },
-  tabTextOn: { color: colors.accentStrong },
-  list: { padding: spacing.lg, gap: 12, paddingBottom: 40 },
-  empty: {
-    backgroundColor: colors.bgCard,
+  addBtnPressed: { opacity: 0.88, transform: [{ scale: 0.97 }] },
+  addBtnPlus: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 18,
+    lineHeight: 20,
+  },
+  addBtnText: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    padding: 4,
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderRadius: radii.md,
-    padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    gap: 2,
   },
-  emptyTitle: { color: colors.text, fontWeight: '700', fontSize: 16 },
-  emptyText: { color: colors.textMuted, marginTop: 6 },
-  metaLine: { color: colors.textDim, fontSize: 12, marginLeft: 4 },
+  filterChip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderRadius: radii.sm,
+    gap: 4,
+  },
+  filterChipOn: {
+    backgroundColor: colors.bgDeep,
+  },
+  filterLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+  },
+  filterLabelOn: {
+    color: colors.textOnAccent,
+  },
+  countPill: {
+    minWidth: 22,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radii.full,
+    backgroundColor: colors.bgSoft,
+    alignItems: 'center',
+  },
+  countPillOn: {
+    backgroundColor: 'rgba(247,251,250,0.18)',
+  },
+  countText: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+  },
+  countTextOn: {
+    color: colors.textOnAccent,
+  },
+  list: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 48,
+    gap: spacing.lg,
+  },
+  section: { gap: spacing.sm },
+  sectionLabel: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    marginLeft: 2,
+  },
+  sectionLabelOverdue: {
+    color: colors.danger,
+  },
+  sectionList: { gap: 10 },
+  empty: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: 'rgba(255,255,255,0.62)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  emptyEyebrow: {
+    color: colors.accentStrong,
+    fontFamily: fonts.brandItalic,
+    fontSize: 15,
+  },
+  emptyTitle: {
+    color: colors.text,
+    fontFamily: fonts.brand,
+    fontSize: 26,
+    letterSpacing: -0.4,
+  },
+  emptyBody: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: 320,
+  },
+  emptyCta: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: radii.full,
+  },
+  emptyCtaPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
+  emptyCtaText: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+  },
+  footerAsk: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  footerAskPressed: { opacity: 0.7 },
+  footerAskText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+  },
 })
