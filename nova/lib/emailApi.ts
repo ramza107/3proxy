@@ -47,6 +47,31 @@ export async function disconnectEmail(userId: string): Promise<void> {
   }
 }
 
+export async function connectGmailImap(params: {
+  userId: string
+  email: string
+  appPassword: string
+}): Promise<{ ok: boolean; email: string; provider: string }> {
+  const res = await fetch(`${apiUrl}/api/email/connect-imap`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: params.userId,
+      email: params.email,
+      app_password: params.appPassword,
+    }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(
+      (json as { hint?: string; error?: string }).hint ||
+        (json as { error?: string }).error ||
+        `Connect failed (${res.status})`,
+    )
+  }
+  return json as { ok: boolean; email: string; provider: string }
+}
+
 /** Public site URL used after OAuth (for docs / redirects). */
 export const publicAppUrl =
   (extra.publicAppUrl as string) ||

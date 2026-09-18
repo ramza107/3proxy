@@ -202,15 +202,15 @@ Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`,
 
 ## Morning inbox (Gmail)
 
-Login is already email + password (Supabase). Separately, **Connect Gmail** in Settings lets Wahrly read overnight senders (names + subjects only) and show a **Morning inbox** card on Home.
+Login is already email + password (Supabase). For the overnight “who wrote” brief, use a **Gmail App Password** (no Google Cloud Console):
 
-1. Enable **Gmail API** in Google Cloud
-2. Create an OAuth **Web** client; redirect URI = `https://YOUR_AI_SERVER/api/email/callback`
-3. Set on Render: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `PUBLIC_APP_URL`
-4. Re-run `supabase/schema.sql` (adds `email_connections`)
-5. Tap **Connect Gmail** in Settings
+1. [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) (2-Step Verification must be on)
+2. Create an app password named Wahrly
+3. In Settings → Email inbox, paste your Gmail + the 16-character password → **Connect with App Password**
 
-Until OAuth keys are set, Home shows a **demo** morning inbox preview.
+Optional: OAuth (`GOOGLE_CLIENT_*` on Render) if you prefer Google consent instead of an App Password.
+
+Home shows a demo inbox preview until Gmail is connected.
 
 ## Voice
 
