@@ -53,6 +53,21 @@ export async function disconnectEmail(userId: string): Promise<void> {
   }
 }
 
+export async function fetchEmailPromises(
+  userId: string,
+  opts?: { demo?: boolean; days?: number },
+): Promise<import('../types').PromisesDigest> {
+  const q = new URLSearchParams({ user_id: userId })
+  if (opts?.demo) q.set('demo', '1')
+  if (opts?.days) q.set('days', String(opts.days))
+  const res = await fetch(`${apiUrl}/api/email/promises?${q.toString()}`)
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Promises failed (${res.status})`)
+  }
+  return res.json()
+}
+
 /** Public site URL used after OAuth (for docs / redirects). */
 export const publicAppUrl =
   (extra.publicAppUrl as string) ||

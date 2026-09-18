@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import type { ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
+import type { ChatMessage, ChecklistItem, Priority, Reminder, Task, TaskRecurrence, UserSettings } from '../types'
+import { checklistFromStrings, normalizeTask } from './taskExtras'
 
 const ssrSafeStorage = {
   getItem: async (_name: string) => null as string | null,
@@ -34,6 +35,7 @@ type NovaState = {
   tasks: Task[]
   reminders: Reminder[]
   messages: ChatMessage[]
+  dismissedPromiseIds: string[]
   setHydrated: (v: boolean) => void
   setDemoSession: (email: string, name?: string) => void
   clearSession: () => void
@@ -41,6 +43,7 @@ type NovaState = {
   setTasks: (tasks: Task[]) => void
   upsertTask: (task: Task) => void
   removeTask: (id: string) => void
+  dismissPromise: (id: string) => void
   addReminder: (reminder: Reminder) => void
   addMessage: (message: Omit<ChatMessage, 'id' | 'createdAt'> & Partial<ChatMessage>) => void
   clearMessages: () => void
@@ -50,6 +53,8 @@ type NovaState = {
     time?: string | null
     priority?: Priority
     userId: string
+    checklist?: string[] | ChecklistItem[] | null
+    recurrence?: TaskRecurrence | null
   }) => Task
 }
 
@@ -76,6 +81,7 @@ export const useNovaStore = create<NovaState>()(
       tasks: [],
       reminders: [],
       messages: [],
+      dismissedPromiseIds: [],
       setHydrated: (v) => set({ hydrated: v }),
       setDemoSession: (email, name) =>
         set({
@@ -94,22 +100,28 @@ export const useNovaStore = create<NovaState>()(
           tasks: [],
           reminders: [],
           messages: [],
+          dismissedPromiseIds: [],
           settings: defaultSettings,
         }),
       updateSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
-      setTasks: (tasks) => set({ tasks }),
+      setTasks: (tasks) => set({ tasks: tasks.map(normalizeTask) }),
       upsertTask: (task) => {
         const existing = get().tasks
-        const idx = existing.findIndex((t) => t.id === task.id)
+        const normalized = normalizeTask(task)
+        const idx = existing.findIndex((t) => t.id === normalized.id)
         if (idx >= 0) {
           const next = [...existing]
-          next[idx] = task
+          next[idx] = normalized
           set({ tasks: next })
         } else {
-          set({ tasks: [task, ...existing] })
+          set({ tasks: [normalized, ...existing] })
         }
       },
       removeTask: (id) => set({ tasks: get().tasks.filter((t) => t.id !== id) }),
+      dismissPromise: (id) =>
+        set({
+          dismissedPromiseIds: [...new Set([...get().dismissedPromiseIds, id])].slice(-80),
+        }),
       addReminder: (reminder) => set({ reminders: [reminder, ...get().reminders] }),
       addMessage: (message) =>
         set({
@@ -124,9 +136,22 @@ export const useNovaStore = create<NovaState>()(
           ],
         }),
       clearMessages: () => set({ messages: [] }),
-      createTaskLocal: ({ title, date = null, time = null, priority = 'medium', userId }) => {
+      createTaskLocal: ({
+        title,
+        date = null,
+        time = null,
+        priority = 'medium',
+        userId,
+        checklist = null,
+        recurrence = null,
+      }) => {
         const now = new Date().toISOString()
-        const task: Task = {
+        const items = Array.isArray(checklist)
+          ? typeof checklist[0] === 'string'
+            ? checklistFromStrings(checklist as string[])
+            : (checklist as ChecklistItem[])
+          : []
+        const task: Task = normalizeTask({
           id: uid('task'),
           user_id: userId,
           title,
@@ -135,9 +160,11 @@ export const useNovaStore = create<NovaState>()(
           time,
           priority,
           completed: false,
+          checklist: items,
+          recurrence: recurrence || null,
           created_at: now,
           updated_at: now,
-        }
+        })
         set({ tasks: [task, ...get().tasks] })
         return task
       },
@@ -153,10 +180,13 @@ export const useNovaStore = create<NovaState>()(
         tasks: s.tasks,
         reminders: s.reminders,
         messages: s.messages,
+        dismissedPromiseIds: s.dismissedPromiseIds,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.settings = { ...defaultSettings, ...state.settings }
+          state.tasks = (state.tasks || []).map(normalizeTask)
+          state.dismissedPromiseIds = state.dismissedPromiseIds || []
           state.setHydrated(true)
         }
       },

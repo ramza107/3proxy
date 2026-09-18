@@ -19,9 +19,21 @@ create table if not exists public.tasks (
   time text,
   priority text not null default 'medium' check (priority in ('low', 'medium', 'high')),
   completed boolean not null default false,
+  checklist jsonb not null default '[]'::jsonb,
+  recurrence jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Existing projects: add columns if the table already existed without them
+do $$ begin
+  alter table public.tasks add column if not exists checklist jsonb not null default '[]'::jsonb;
+exception when others then null;
+end $$;
+do $$ begin
+  alter table public.tasks add column if not exists recurrence jsonb;
+exception when others then null;
+end $$;
 
 create table if not exists public.reminders (
   id uuid primary key default gen_random_uuid(),

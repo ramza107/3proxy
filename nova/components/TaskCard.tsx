@@ -1,35 +1,63 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Task } from '../types'
-import { colors, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii, spacing } from '../constants/theme'
+import { checklistProgress, recurrenceLabel } from '../lib/taskExtras'
 
 type Props = {
   task: Task
+  dateLabel?: string
+  expanded?: boolean
   onToggle?: () => void
   onPress?: () => void
 }
 
 const priorityLabel = {
-  high: 'High priority',
+  high: 'High',
   medium: 'Medium',
   low: 'Low',
 }
 
-export function TaskCard({ task, onToggle, onPress }: Props) {
-  const meta = [task.date, task.time, priorityLabel[task.priority]].filter(Boolean).join(' · ')
+export function TaskCard({ task, dateLabel, expanded, onToggle, onPress }: Props) {
+  const when = [dateLabel || task.date, task.time].filter(Boolean).join(' · ')
+  const progress = checklistProgress(task.checklist)
+  const monthly = recurrenceLabel(task.recurrence)
+  const bits = [
+    when,
+    priorityLabel[task.priority],
+    progress ? `${progress.done}/${progress.total} items` : null,
+    monthly ? 'Monthly' : null,
+  ].filter(Boolean)
+  const meta = bits.join(' · ')
 
   return (
-    <Pressable onPress={onPress} style={[styles.card, task.completed && styles.done]}>
-      <Pressable onPress={onToggle} hitSlop={10} style={styles.checkWrap}>
+    <View style={[styles.card, task.completed && styles.done, expanded && styles.expanded]}>
+      <Pressable
+        onPress={onToggle}
+        hitSlop={12}
+        style={styles.checkWrap}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: task.completed }}
+      >
         <View style={[styles.check, task.completed && styles.checkOn]}>
           {task.completed ? <Text style={styles.checkMark}>✓</Text> : null}
         </View>
       </Pressable>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.title, task.completed && styles.titleDone]}>{task.title}</Text>
+      <Pressable onPress={onPress} style={styles.body} accessibilityRole="button">
+        <Text style={[styles.title, task.completed && styles.titleDone]} numberOfLines={2}>
+          {task.title}
+        </Text>
         {!!meta && <Text style={styles.meta}>{meta}</Text>}
-      </View>
-      <View style={[styles.dot, { backgroundColor: colors[task.priority] }]} />
-    </Pressable>
+      </Pressable>
+      <Pressable
+        onPress={onPress}
+        style={styles.expandBtn}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Hide details' : 'Show list and repeat'}
+      >
+        <Text style={styles.expandText}>{expanded ? '▴' : '▾'}</Text>
+      </Pressable>
+      <View style={[styles.priority, { backgroundColor: colors[task.priority] }]} />
+    </View>
   )
 }
 
@@ -38,21 +66,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.bgCard,
+    backgroundColor: 'rgba(255,255,255,0.78)',
     borderRadius: radii.md,
     paddingVertical: 14,
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  done: { opacity: 0.55 },
+  expanded: {
+    borderColor: colors.accent,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+  },
+  done: { opacity: 0.58 },
   checkWrap: { padding: 2 },
   check: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -60,9 +93,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  checkMark: { color: colors.textOnAccent, fontWeight: '800', fontSize: 13 },
-  title: { color: colors.text, fontSize: 16, fontWeight: '600' },
-  titleDone: { textDecorationLine: 'line-through', color: colors.textMuted },
-  meta: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
-  dot: { width: 8, height: 8, borderRadius: 99 },
+  checkMark: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+  },
+  body: { flex: 1, gap: 3 },
+  title: {
+    color: colors.text,
+    fontSize: 16,
+    fontFamily: fonts.bodyMedium,
+    lineHeight: 21,
+  },
+  titleDone: {
+    textDecorationLine: 'line-through',
+    color: colors.textMuted,
+  },
+  meta: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 13,
+  },
+  expandBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bgSoft,
+  },
+  expandText: {
+    color: colors.accentStrong,
+    fontSize: 14,
+    fontFamily: fonts.bodyBold,
+  },
+  priority: {
+    width: 8,
+    height: 8,
+    borderRadius: 99,
+  },
 })

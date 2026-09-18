@@ -16,6 +16,17 @@ export type GmailMessagePreview = {
   unread: boolean
 }
 
+export type SentMessagePreview = {
+  id: string
+  to: string
+  toName: string
+  toEmail: string
+  subject: string
+  snippet: string
+  bodyText: string
+  date: string
+}
+
 export function gmailConfigured() {
   const id = process.env.GOOGLE_CLIENT_ID || ''
   const secret = process.env.GOOGLE_CLIENT_SECRET || ''
@@ -207,6 +218,109 @@ export async function listOvernightMessages(
       snippet: msg.snippet || '',
       date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate,
       unread: (msg.labelIds || []).includes('UNREAD'),
+    })
+  }
+
+  return previews
+}
+
+function decodeBodyData(data?: string) {
+  if (!data) return ''
+  try {
+    const normalized = data.replace(/-/g, '+').replace(/_/g, '/')
+    return Buffer.from(normalized, 'base64').toString('utf8')
+  } catch {
+    return ''
+  }
+}
+
+type MimePart = {
+  mimeType?: string
+  filename?: string
+  body?: { data?: string; size?: number }
+  parts?: MimePart[]
+}
+
+function collectPlainText(part: MimePart | undefined, depth = 0): string {
+  if (!part || depth > 8) return ''
+  if (part.mimeType === 'text/plain' && part.body?.data) {
+    return decodeBodyData(part.body.data)
+  }
+  let out = ''
+  for (const child of part.parts || []) {
+    out += collectPlainText(child, depth + 1)
+    if (out.length > 6000) break
+  }
+  if (!out && part.mimeType === 'text/html' && part.body?.data) {
+    out = decodeBodyData(part.body.data)
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+  }
+  return out
+}
+
+function parseAddressList(raw: string): { to: string; toName: string; toEmail: string } {
+  const first = raw.split(',')[0]?.trim() || raw
+  const parsed = parseFrom(first)
+  return {
+    to: first,
+    toName: parsed.fromName,
+    toEmail: parsed.from,
+  }
+}
+
+/** Recent SENT mail with body text — for open-loop / promise detection. */
+export async function listRecentSentMessages(
+  userId: string,
+  opts?: { days?: number; max?: number },
+): Promise<SentMessagePreview[]> {
+  const conn = await withFreshToken(userId)
+  const days = Math.min(30, Math.max(1, opts?.days ?? 7))
+  const max = opts?.max ?? 25
+  const afterSec = Math.floor((Date.now() - days * 24 * 60 * 60 * 1000) / 1000)
+  const q = encodeURIComponent(`in:sent after:${afterSec}`)
+  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, {
+    headers: { Authorization: `Bearer ${conn.accessToken}` },
+  })
+  if (!listRes.ok) {
+    const text = await listRes.text()
+    throw new Error(`Gmail sent list failed: ${text.slice(0, 200)}`)
+  }
+  const list = (await listRes.json()) as { messages?: { id: string }[] }
+  const ids = (list.messages || []).map((m) => m.id)
+  const previews: SentMessagePreview[] = []
+
+  for (const id of ids) {
+    const msgRes = await fetch(`${GMAIL_API}/messages/${id}?format=full`, {
+      headers: { Authorization: `Bearer ${conn.accessToken}` },
+    })
+    if (!msgRes.ok) continue
+    const msg = (await msgRes.json()) as {
+      id: string
+      snippet?: string
+      internalDate?: string
+      payload?: MimePart & { headers?: { name: string; value: string }[] }
+    }
+    const toRaw = headerValue(msg.payload?.headers, 'To')
+    const addr = parseAddressList(toRaw || 'unknown')
+    const headerDate = headerValue(msg.payload?.headers, 'Date')
+    const when = msg.internalDate
+      ? new Date(Number(msg.internalDate))
+      : headerDate
+        ? new Date(headerDate)
+        : null
+    const bodyText = collectPlainText(msg.payload).slice(0, 6000)
+
+    previews.push({
+      id: msg.id,
+      to: addr.to,
+      toName: addr.toName,
+      toEmail: addr.toEmail,
+      subject: headerValue(msg.payload?.headers, 'Subject') || '(no subject)',
+      snippet: msg.snippet || '',
+      bodyText,
+      date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate || '',
     })
   }
 
