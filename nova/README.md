@@ -19,6 +19,8 @@ After deploy to GitHub Pages:
 
 **https://ramza107.github.io/3proxy/nova/**
 
+AI backend (Groq): `https://threeproxy-x9bi.onrender.com`
+
 Locally in the browser:
 
 ```bash

@@ -37,6 +37,9 @@
     "experiments": {
       "typedRoutes": true,
       "baseUrl": "/3proxy/nova"
+    },
+    "extra": {
+      "apiUrl": "https://threeproxy-x9bi.onrender.com"
     }
   }
 }
