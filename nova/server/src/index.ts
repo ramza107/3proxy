@@ -179,12 +179,17 @@ app.get('/api/email/connect', (req, res) => {
   if (!gmailConfigured()) {
     return res.status(503).json({
       error: 'Gmail OAuth not configured',
-      hint: 'Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI on the AI server',
+      hint: 'Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI on the AI server (one-time). Users then only tap Allow.',
     })
   }
   const nonce = crypto.randomBytes(16).toString('hex')
   oauthNonces.set(nonce, { userId, expires: Date.now() + 10 * 60 * 1000 })
-  return res.redirect(buildAuthUrl(userId, nonce))
+  const url = buildAuthUrl(userId, nonce)
+  // JSON for clients that prefer to open the URL themselves
+  if (String(req.query.format || '') === 'json' || req.accepts('json') === 'json' && !req.accepts('html')) {
+    return res.json({ url })
+  }
+  return res.redirect(url)
 })
 
 app.get('/api/email/callback', async (req, res) => {

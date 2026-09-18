@@ -63,10 +63,11 @@ export function InboxBrief({ userId, enabled }: Props) {
       ) : !connected ? (
         <>
           <Text style={styles.summary}>
-            Connect Gmail once in Settings — Wahrly will show who wrote overnight.
+            Connect Gmail once — Google asks for permission, you tap Allow. Then Wahrly shows who
+            wrote overnight.
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
-            <Text style={styles.btnText}>Connect Gmail</Text>
+            <Text style={styles.btnText}>Connect with Google</Text>
           </Pressable>
         </>
       ) : digest ? (

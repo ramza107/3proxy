@@ -202,7 +202,9 @@ Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`,
 
 ## Morning inbox (automatic from Gmail)
 
-Connect Gmail once in **Settings** with an [App Password](https://myaccount.google.com/apppasswords). Home then loads overnight senders (names + subjects) from your inbox — no typing.
+**For users:** Settings → **Connect with Google** → tap **Allow** on Google’s screen. No passwords.
+
+**For the app owner (once):** follow [`docs/gmail-oauth-setup.md`](docs/gmail-oauth-setup.md) — add `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` on Render.
 
 ## Voice
 
