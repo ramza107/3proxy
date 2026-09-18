@@ -79,4 +79,10 @@ export type UserSettings = {
   notificationsEnabled: boolean
   aiTone: 'friendly' | 'concise' | 'coach'
   onboardingComplete: boolean
+  /** HH:MM — morning brief of today's list */
+  morningBriefTime: string
+  morningBriefEnabled: boolean
+  /** HH:MM — evening clear / prepare tomorrow */
+  eveningClearTime: string
+  eveningClearEnabled: boolean
 }
