@@ -13,7 +13,6 @@ import {
   listOvernightMessages,
   parseOAuthState,
 } from './email/gmail.js'
-import { listOvernightViaImap, saveImapConnection } from './email/imap.js'
 import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
 import { SYSTEM_PROMPT } from './prompt.js'
@@ -151,7 +150,6 @@ app.get('/health', (_req, res) => {
     groq: Boolean(groqKey && !groqKey.includes('your-groq')),
     openai: Boolean(openaiKey && !openaiKey.includes('your-openai')),
     gmail: gmailConfigured(),
-    gmail_imap: true,
   })
 })
 
@@ -237,55 +235,6 @@ app.post('/api/email/disconnect', async (req, res) => {
   }
 })
 
-app.post('/api/email/connect-imap', async (req, res) => {
-  try {
-    const schema = z.object({
-      user_id: z.string().min(1),
-      email: z.string().email(),
-      app_password: z.string().min(8),
-    })
-    const parsed = schema.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'Need user_id, Gmail address, and App Password',
-        details: parsed.error.flatten(),
-      })
-    }
-    const { user_id, email, app_password } = parsed.data
-    const conn = await saveImapConnection(user_id, email, app_password)
-    return res.json({
-      ok: true,
-      connected: true,
-      email: conn.email,
-      provider: conn.provider,
-    })
-  } catch (error) {
-    console.error('connect-imap', error)
-    const anyErr = error as {
-      message?: string
-      responseText?: string
-      authenticationFailed?: boolean
-      response?: string
-    }
-    const message =
-      anyErr.responseText ||
-      anyErr.message ||
-      (typeof error === 'string' ? error : 'IMAP connect failed')
-    const authFail =
-      anyErr.authenticationFailed ||
-      /Invalid credentials|AUTHENTICATIONFAILED|Application-specific password|LOGIN/i.test(
-        String(anyErr.response || '') + message,
-      )
-    const hint = authFail
-      ? 'Wrong password. Use a Google App Password (16 characters), not your normal Gmail password. Open myaccount.google.com/apppasswords'
-      : undefined
-    return res.status(401).json({
-      error: hint || message,
-      hint,
-    })
-  }
-})
-
 app.get('/api/email/digest', async (req, res) => {
   try {
     const userId = String(req.query.user_id || '')
@@ -308,10 +257,7 @@ app.get('/api/email/digest', async (req, res) => {
       })
     }
 
-    const messages =
-      conn.provider === 'gmail_imap'
-        ? await listOvernightViaImap(userId, { timeZone })
-        : await listOvernightMessages(userId, { timeZone })
+    const messages = await listOvernightMessages(userId, { timeZone })
     const provider = resolveProvider()
     const digest = await buildDigest({
       messages,

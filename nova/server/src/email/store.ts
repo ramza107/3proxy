@@ -1,6 +1,6 @@
 export type EmailConnection = {
   userId: string
-  provider: 'gmail' | 'gmail_imap'
+  provider: 'gmail'
   email: string
   accessToken: string
   refreshToken: string
@@ -47,7 +47,7 @@ async function getFromSupabase(userId: string): Promise<EmailConnection | null> 
     if (error || !data) return null
     return {
       userId: data.user_id,
-      provider: (data.provider === 'gmail_imap' ? 'gmail_imap' : 'gmail') as EmailConnection['provider'],
+      provider: 'gmail',
       email: data.email,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,

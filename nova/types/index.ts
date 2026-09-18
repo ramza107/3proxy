@@ -89,13 +89,6 @@ export type UserSettings = {
   emailDigestEnabled: boolean
 }
 
-export type MorningWhoWrote = {
-  date: string
-  raw: string
-  people: string[]
-  summary: string
-}
-
 export type EmailDigestSender = {
   fromName: string
   from: string

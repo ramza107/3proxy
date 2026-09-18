@@ -104,7 +104,7 @@ create trigger tasks_set_updated_at
 -- Gmail OAuth tokens for morning inbox digest (server writes via service role)
 create table if not exists public.email_connections (
   user_id uuid primary key references public.users (id) on delete cascade,
-  provider text not null default 'gmail' check (provider in ('gmail', 'gmail_imap')),
+  provider text not null default 'gmail' check (provider in ('gmail')),
   email text not null,
   access_token text not null,
   refresh_token text not null,
