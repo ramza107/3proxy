@@ -58,6 +58,10 @@ const defaultSettings: UserSettings = {
   notificationsEnabled: true,
   aiTone: 'friendly',
   onboardingComplete: false,
+  morningBriefTime: '08:00',
+  morningBriefEnabled: true,
+  eveningClearTime: '21:30',
+  eveningClearEnabled: true,
 }
 
 export const useNovaStore = create<NovaState>()(
@@ -150,7 +154,10 @@ export const useNovaStore = create<NovaState>()(
         messages: s.messages,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.setHydrated(true)
+        if (state) {
+          state.settings = { ...defaultSettings, ...state.settings }
+          state.setHydrated(true)
+        }
       },
     },
   ),
