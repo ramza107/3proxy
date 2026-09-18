@@ -87,6 +87,11 @@ export type UserSettings = {
   eveningClearEnabled: boolean
   /** Show automatic Gmail morning inbox on Home */
   emailDigestEnabled: boolean
+  /**
+   * When on: scan Sent for “I’ll…” promises and auto-add them as Tasks.
+   * When off: Home still can show the Promises card for manual Add.
+   */
+  emailPromisesAutoEnabled: boolean
 }
 
 export type EmailDigestSender = {
@@ -110,4 +115,28 @@ export type EmailDigest = {
     dayLabel: string
     timeZone: string
   }
+}
+
+/** Open loop found in the user's own sent mail */
+export type EmailPromise = {
+  id: string
+  messageId: string
+  toName: string
+  toEmail: string
+  subject: string
+  promise: string
+  suggestedTask: string
+  suggestedDate: string | null
+  sentAt: string
+}
+
+export type PromisesDigest = {
+  connected: boolean
+  email: string | null
+  demo: boolean
+  summary: string
+  promises: EmailPromise[]
+  scanned: number
+  generatedAt: string
+  days: number
 }

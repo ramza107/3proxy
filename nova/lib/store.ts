@@ -34,6 +34,7 @@ type NovaState = {
   tasks: Task[]
   reminders: Reminder[]
   messages: ChatMessage[]
+  dismissedPromiseIds: string[]
   setHydrated: (v: boolean) => void
   setDemoSession: (email: string, name?: string) => void
   clearSession: () => void
@@ -41,6 +42,7 @@ type NovaState = {
   setTasks: (tasks: Task[]) => void
   upsertTask: (task: Task) => void
   removeTask: (id: string) => void
+  dismissPromise: (id: string) => void
   addReminder: (reminder: Reminder) => void
   addMessage: (message: Omit<ChatMessage, 'id' | 'createdAt'> & Partial<ChatMessage>) => void
   clearMessages: () => void
@@ -63,6 +65,7 @@ const defaultSettings: UserSettings = {
   eveningClearTime: '21:30',
   eveningClearEnabled: true,
   emailDigestEnabled: true,
+  emailPromisesAutoEnabled: false,
 }
 
 export const useNovaStore = create<NovaState>()(
@@ -76,6 +79,7 @@ export const useNovaStore = create<NovaState>()(
       tasks: [],
       reminders: [],
       messages: [],
+      dismissedPromiseIds: [],
       setHydrated: (v) => set({ hydrated: v }),
       setDemoSession: (email, name) =>
         set({
@@ -94,6 +98,7 @@ export const useNovaStore = create<NovaState>()(
           tasks: [],
           reminders: [],
           messages: [],
+          dismissedPromiseIds: [],
           settings: defaultSettings,
         }),
       updateSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
@@ -110,6 +115,10 @@ export const useNovaStore = create<NovaState>()(
         }
       },
       removeTask: (id) => set({ tasks: get().tasks.filter((t) => t.id !== id) }),
+      dismissPromise: (id) =>
+        set({
+          dismissedPromiseIds: [...new Set([...get().dismissedPromiseIds, id])].slice(-80),
+        }),
       addReminder: (reminder) => set({ reminders: [reminder, ...get().reminders] }),
       addMessage: (message) =>
         set({
@@ -153,10 +162,14 @@ export const useNovaStore = create<NovaState>()(
         tasks: s.tasks,
         reminders: s.reminders,
         messages: s.messages,
+        dismissedPromiseIds: s.dismissedPromiseIds,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.settings = { ...defaultSettings, ...state.settings }
+          state.dismissedPromiseIds = Array.isArray(state.dismissedPromiseIds)
+            ? state.dismissedPromiseIds
+            : []
           state.setHydrated(true)
         }
       },
