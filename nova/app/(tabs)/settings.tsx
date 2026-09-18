@@ -1,8 +1,7 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'expo-router'
+import { useEffect, useState } from 'react'
 import {
   Alert,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -16,12 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import {
-  connectGmailImap,
-  disconnectEmail,
-  emailConnectUrl,
-  fetchEmailStatus,
-} from '../../lib/emailApi'
-import {
   ensureNotificationPermissions,
   parseHm,
   syncDailyRitualNotifications,
@@ -34,37 +27,14 @@ const EVENING_PRESETS = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30']
 
 export default function SettingsScreen() {
   const router = useRouter()
-  const params = useLocalSearchParams<{ gmail?: string }>()
   const settings = useNovaStore((s) => s.settings)
   const tasks = useNovaStore((s) => s.tasks)
   const email = useNovaStore((s) => s.sessionEmail)
-  const userId = useNovaStore((s) => s.sessionUserId)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const clearSession = useNovaStore((s) => s.clearSession)
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
   const [eveningTime, setEveningTime] = useState(settings.eveningClearTime || '21:30')
-  const [gmailConfigured, setGmailConfigured] = useState(false)
-  const [gmailConnected, setGmailConnected] = useState(false)
-  const [gmailEmail, setGmailEmail] = useState<string | null>(null)
-  const [gmailBusy, setGmailBusy] = useState(false)
-  const [imapEmail, setImapEmail] = useState('')
-  const [imapPassword, setImapPassword] = useState('')
-
-  const refreshGmail = useCallback(async () => {
-    if (!userId) return
-    try {
-      const status = await fetchEmailStatus(userId)
-      setGmailConfigured(status.configured)
-      setGmailConnected(status.connected)
-      setGmailEmail(status.email)
-      if (status.email) setImapEmail(status.email)
-    } catch {
-      setGmailConfigured(false)
-      setGmailConnected(false)
-      setGmailEmail(null)
-    }
-  }, [userId])
 
   useEffect(() => {
     setMorningTime(settings.morningBriefTime || '08:00')
@@ -82,21 +52,6 @@ export default function SettingsScreen() {
     settings.emailDigestEnabled,
     tasks,
   ])
-
-  useEffect(() => {
-    refreshGmail().catch(() => undefined)
-  }, [refreshGmail])
-
-  useEffect(() => {
-    if (params.gmail === 'connected') {
-      Alert.alert('Gmail connected', 'Morning inbox will summarize who wrote overnight.')
-      refreshGmail().catch(() => undefined)
-      router.replace('/settings')
-    } else if (params.gmail === 'error') {
-      Alert.alert('Gmail', 'Could not connect. Try again from Settings.')
-      router.replace('/settings')
-    }
-  }, [params.gmail, refreshGmail, router])
 
   const saveName = () => {
     updateSettings({ name: name.trim() || settings.name })
@@ -139,72 +94,6 @@ export default function SettingsScreen() {
     updateSettings({ eveningClearTime: value })
   }
 
-  const connectGmailOAuth = async () => {
-    if (!userId) {
-      Alert.alert('Sign in', 'Sign in first, then connect Gmail.')
-      return
-    }
-    if (!gmailConfigured) {
-      Alert.alert(
-        'Use App Password',
-        'Google Console is not needed. Create a Gmail App Password (steps above) and tap Connect with App Password.',
-      )
-      return
-    }
-    const url = emailConnectUrl(userId)
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.location.href = url
-      return
-    }
-    await Linking.openURL(url)
-  }
-
-  const connectWithAppPassword = async () => {
-    if (!userId) {
-      Alert.alert('Sign in', 'Sign in first, then connect Gmail.')
-      return
-    }
-    if (!imapEmail.trim() || !imapPassword.trim()) {
-      Alert.alert('Gmail', 'Enter your Gmail address and the 16-character App Password.')
-      return
-    }
-    setGmailBusy(true)
-    try {
-      const result = await connectGmailImap({
-        userId,
-        email: imapEmail.trim(),
-        appPassword: imapPassword.trim(),
-      })
-      setGmailConnected(true)
-      setGmailEmail(result.email)
-      setImapPassword('')
-      Alert.alert('Connected', 'Morning inbox will summarize who wrote overnight.')
-    } catch (e) {
-      Alert.alert('Gmail', e instanceof Error ? e.message : 'Connect failed')
-    } finally {
-      setGmailBusy(false)
-    }
-  }
-
-  const openAppPasswordHelp = () => {
-    Linking.openURL('https://myaccount.google.com/apppasswords')
-  }
-
-  const onDisconnectGmail = async () => {
-    if (!userId) return
-    setGmailBusy(true)
-    try {
-      await disconnectEmail(userId)
-      setGmailConnected(false)
-      setGmailEmail(null)
-      Alert.alert('Disconnected', 'Gmail was removed from Wahrly.')
-    } catch (e) {
-      Alert.alert('Gmail', e instanceof Error ? e.message : 'Disconnect failed')
-    } finally {
-      setGmailBusy(false)
-    }
-  }
-
   const signOut = async () => {
     if (isSupabaseConfigured) {
       await getSupabase()?.auth.signOut()
@@ -236,73 +125,12 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.rowTitle}>Email inbox</Text>
-            <Text style={styles.rowSub}>
-              Morning brief shows who wrote overnight (names + subjects). No Google Cloud Console
-              needed — use a Gmail App Password.
-            </Text>
-            <Text style={styles.steps}>
-              1. Open Google Account → Security{'\n'}
-              2. Turn on 2-Step Verification (if off){'\n'}
-              3. Tap App passwords → create one named Wahrly{'\n'}
-              4. Paste the 16-character password below
-            </Text>
-            <Pressable onPress={openAppPasswordHelp}>
-              <Text style={styles.helpLink}>Open App passwords page →</Text>
-            </Pressable>
-            {gmailConnected ? (
-              <>
-                <Text style={styles.connected}>Connected · {gmailEmail || 'Gmail'}</Text>
-                <Pressable
-                  style={[styles.btn, styles.btnGhost, gmailBusy && { opacity: 0.5 }]}
-                  onPress={onDisconnectGmail}
-                  disabled={gmailBusy}
-                >
-                  <Text style={styles.btnGhostText}>Disconnect Gmail</Text>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <Text style={styles.label}>Gmail address</Text>
-                <TextInput
-                  value={imapEmail}
-                  onChangeText={setImapEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  placeholder="you@gmail.com"
-                  placeholderTextColor={colors.textDim}
-                  style={styles.input}
-                />
-                <Text style={styles.label}>App Password (16 characters)</Text>
-                <TextInput
-                  value={imapPassword}
-                  onChangeText={setImapPassword}
-                  autoCapitalize="none"
-                  secureTextEntry
-                  placeholder="xxxx xxxx xxxx xxxx"
-                  placeholderTextColor={colors.textDim}
-                  style={styles.input}
-                />
-                <Pressable
-                  style={[styles.btn, gmailBusy && { opacity: 0.5 }]}
-                  onPress={connectWithAppPassword}
-                  disabled={gmailBusy}
-                >
-                  <Text style={styles.btnText}>
-                    {gmailBusy ? 'Connecting…' : 'Connect with App Password'}
-                  </Text>
-                </Pressable>
-                {gmailConfigured ? (
-                  <Pressable style={[styles.btn, styles.btnGhost]} onPress={connectGmailOAuth}>
-                    <Text style={styles.btnGhostText}>Or connect via Google (OAuth)</Text>
-                  </Pressable>
-                ) : null}
-              </>
-            )}
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Include in morning brief</Text>
-                <Text style={styles.rowSub}>Show inbox card on Home</Text>
+                <Text style={styles.rowTitle}>Who wrote</Text>
+                <Text style={styles.rowSub}>
+                  On Home, type who emailed you — no Gmail setup.
+                </Text>
               </View>
               <Switch
                 value={settings.emailDigestEnabled !== false}
@@ -330,7 +158,7 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Morning brief</Text>
-                <Text style={styles.rowSub}>Today&apos;s list + inbox who-wrote hint</Text>
+                <Text style={styles.rowSub}>Today&apos;s list + who-wrote reminder</Text>
               </View>
               <Switch
                 value={settings.morningBriefEnabled}
@@ -420,7 +248,6 @@ export default function SettingsScreen() {
           <Text style={styles.mode}>
             {isSupabaseConfigured ? 'Supabase connected' : 'Demo mode (local AsyncStorage)'}
             {Platform.OS === 'web' ? ' · Ritual times save now, push on mobile' : ''}
-            {gmailConfigured ? ' · Gmail OAuth ready' : ' · Connect via App Password (no Google Console)'}
           </Text>
         </ScrollView>
       </SafeAreaView>
@@ -468,28 +295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnGhost: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
-  btnGhostText: { color: colors.text, fontFamily: fonts.bodyBold },
-  connected: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 14 },
-  steps: {
-    color: colors.textMuted,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    lineHeight: 20,
-    backgroundColor: colors.bgSoft,
-    borderRadius: radii.sm,
-    padding: 12,
-  },
-  helpLink: {
-    color: colors.accent,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-  },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   rowSub: { color: colors.textMuted, marginTop: 2, fontFamily: fonts.body, lineHeight: 18 },

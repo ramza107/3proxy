@@ -200,17 +200,9 @@ Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`,
 - **Tasks** — Today / Tomorrow / Upcoming / Completed
 - **Settings** — name, Gmail connect, morning/evening rituals, AI tone, sign out
 
-## Morning inbox (Gmail)
+## Morning “who wrote”
 
-Login is already email + password (Supabase). For the overnight “who wrote” brief, use a **Gmail App Password** (no Google Cloud Console):
-
-1. [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) (2-Step Verification must be on)
-2. Create an app password named Wahrly
-3. In Settings → Email inbox, paste your Gmail + the 16-character password → **Connect with App Password**
-
-Optional: OAuth (`GOOGLE_CLIENT_*` on Render) if you prefer Google consent instead of an App Password.
-
-Home shows a demo inbox preview until Gmail is connected.
+No Gmail setup. On **Home**, type who emailed you (e.g. `Mom, boss, Amazon`) and tap **Save for today**. Morning notifications can remind you to do this.
 
 ## Voice
 

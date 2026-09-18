@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import type { ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
+import type { ChatMessage, MorningWhoWrote, Priority, Reminder, Task, UserSettings } from '../types'
 
 const ssrSafeStorage = {
   getItem: async (_name: string) => null as string | null,
@@ -34,10 +34,12 @@ type NovaState = {
   tasks: Task[]
   reminders: Reminder[]
   messages: ChatMessage[]
+  morningWhoWrote: MorningWhoWrote | null
   setHydrated: (v: boolean) => void
   setDemoSession: (email: string, name?: string) => void
   clearSession: () => void
   updateSettings: (patch: Partial<UserSettings>) => void
+  setMorningWhoWrote: (note: MorningWhoWrote | null) => void
   setTasks: (tasks: Task[]) => void
   upsertTask: (task: Task) => void
   removeTask: (id: string) => void
@@ -76,6 +78,7 @@ export const useNovaStore = create<NovaState>()(
       tasks: [],
       reminders: [],
       messages: [],
+      morningWhoWrote: null,
       setHydrated: (v) => set({ hydrated: v }),
       setDemoSession: (email, name) =>
         set({
@@ -94,9 +97,11 @@ export const useNovaStore = create<NovaState>()(
           tasks: [],
           reminders: [],
           messages: [],
+          morningWhoWrote: null,
           settings: defaultSettings,
         }),
       updateSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
+      setMorningWhoWrote: (note) => set({ morningWhoWrote: note }),
       setTasks: (tasks) => set({ tasks }),
       upsertTask: (task) => {
         const existing = get().tasks
@@ -153,6 +158,7 @@ export const useNovaStore = create<NovaState>()(
         tasks: s.tasks,
         reminders: s.reminders,
         messages: s.messages,
+        morningWhoWrote: s.morningWhoWrote,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

@@ -85,8 +85,15 @@ export type UserSettings = {
   /** HH:MM — evening clear / prepare tomorrow */
   eveningClearTime: string
   eveningClearEnabled: boolean
-  /** Include overnight inbox “who wrote” in morning brief */
+  /** Include “who wrote” morning card (manual — no Gmail setup) */
   emailDigestEnabled: boolean
+}
+
+export type MorningWhoWrote = {
+  date: string
+  raw: string
+  people: string[]
+  summary: string
 }
 
 export type EmailDigestSender = {

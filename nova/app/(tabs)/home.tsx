@@ -5,7 +5,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { DailyPlan } from '../../components/DailyPlan'
-import { InboxBrief } from '../../components/InboxBrief'
+import { WhoWroteBrief } from '../../components/WhoWroteBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { tasksForDay, todayISO, useNovaStore } from '../../lib/store'
@@ -23,7 +23,7 @@ export default function HomeScreen() {
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const tasks = useNovaStore((s) => s.tasks)
   const userId = useNovaStore((s) => s.sessionUserId)
-  const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
+  const whoWroteEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function HomeScreen() {
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
           <Text style={styles.name}>Hi {name}</Text>
 
-          <InboxBrief userId={userId} enabled={emailDigestEnabled} allowDemoPreview />
+          <WhoWroteBrief enabled={whoWroteEnabled} />
 
           <DailyPlan tasks={todayTasks} onToggle={(task) => toggleTaskCompleted(task)} />
 
