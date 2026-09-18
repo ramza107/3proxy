@@ -42,6 +42,10 @@ jobs:
 
       - name: Build NOVA web demo
         working-directory: nova
+        env:
+          EXPO_PUBLIC_API_URL: https://threeproxy-x9bi.onrender.com
+          EXPO_PUBLIC_SUPABASE_URL: https://whvcsbxbizuychqclxcx.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndodmNzYnhiaXp1eWNocWNseGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NTc2NDUsImV4cCI6MjA5MjIzMzY0NX0.ZJ2qMGP3aNO5cC0VWKs-9pj2MFbkeJIQRTMxmdN3dK0
         run: |
           npm ci --legacy-peer-deps
           npx expo export --platform web

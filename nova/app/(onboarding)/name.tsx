@@ -19,7 +19,7 @@ export default function NameScreen() {
       const supabase = getSupabase()
       await supabase?.from('users').update({ name: value }).eq('id', sessionUserId)
     }
-    router.push('/(onboarding)/ready')
+    router.push('/ready')
   }
 
   return (
@@ -33,7 +33,7 @@ export default function NameScreen() {
         style={styles.input}
         autoFocus
       />
-      <Pressable style={styles.btn} onPress={continueNext}>
+      <Pressable accessibilityRole="button" style={styles.btn} onPress={continueNext}>
         <Text style={styles.btnText}>Continue</Text>
       </Pressable>
     </View>
@@ -65,6 +65,8 @@ const styles = StyleSheet.create({
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
+    // @ts-expect-error web-only
+    cursor: 'pointer',
   },
   btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 17 },
 })

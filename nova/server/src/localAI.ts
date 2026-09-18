@@ -15,6 +15,16 @@ function addDays(isoDate: string, days: number) {
   return d.toISOString().slice(0, 10)
 }
 
+function normalize(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/\btommorow\b/g, 'tomorrow')
+    .replace(/\btomorow\b/g, 'tomorrow')
+    .replace(/\btabacco\b/g, 'tobacco')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function parseTime(text: string): string | null {
   const ampm = text.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i)
   if (ampm) {
@@ -25,7 +35,8 @@ function parseTime(text: string): string | null {
     if (mer === 'am' && h === 12) h = 0
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
   }
-  const twentyFour = text.match(/\bat\s+(\d{1,2}):(\d{2})\b/i) || text.match(/\b(\d{1,2}):(\d{2})\b/)
+  const twentyFour =
+    text.match(/\bat\s+(\d{1,2}):(\d{2})\b/i) || text.match(/\b(\d{1,2}):(\d{2})\b/)
   if (twentyFour) {
     return `${String(Number(twentyFour[1])).padStart(2, '0')}:${twentyFour[2]}`
   }
@@ -38,7 +49,7 @@ function parseTime(text: string): string | null {
 }
 
 function parseDate(text: string, today: string): string | null {
-  const lower = text.toLowerCase()
+  const lower = normalize(text)
   if (/\btoday\b/.test(lower)) return today
   if (/\btomorrow\b/.test(lower)) return addDays(today, 1)
   const inDays = lower.match(/\bin\s+(\d+)\s+days?\b/)
@@ -46,10 +57,40 @@ function parseDate(text: string, today: string): string | null {
   return null
 }
 
+function isSmallTalk(text: string) {
+  const lower = normalize(text)
+  return (
+    /^(hi|hello|hey|yo|sup|thanks|thank you|ok|okay|cool|nice|bye|good\s*(morning|evening|night)?)\b/.test(
+      lower,
+    ) ||
+    /^(who are you|who r u|what are you|what'?s up|how are you|how r u|how do you do)\b/.test(
+      lower,
+    ) ||
+    /^(who|what|how|why|where|when)\b.{0,24}\?$/.test(lower)
+  )
+}
+
+function hasTaskIntent(text: string) {
+  const lower = normalize(text)
+  return (
+    /\b(remind|reminder|todo|to-?do|task|schedule|plan)\b/.test(lower) ||
+    /\b(need to|have to|gotta|must|should|buy|call|clean|finish|pay|send|email|pick up|book|meet)\b/.test(
+      lower,
+    ) ||
+    /\b(tomorrow|today|at\s+\d{1,2})\b/.test(lower)
+  )
+}
+
+function whereLabel(date: string | null, today: string) {
+  if (!date) return 'Tasks → Upcoming'
+  if (date === today) return 'Tasks → Today'
+  if (date === addDays(today, 1)) return 'Tasks → Tomorrow'
+  return `Tasks → Upcoming (${date})`
+}
+
 function splitTasks(text: string): string[] {
-  const cleaned = text
-    .replace(/^(remind me to|remind me|i need to|i have to|please|can you)\s+/i, '')
-    .replace(/\s+/g, ' ')
+  const cleaned = normalize(text)
+    .replace(/^(remind me to|remind me|i need to|i have to|need to|please|can you)\s+/i, '')
     .trim()
 
   const parts = cleaned
@@ -58,7 +99,11 @@ function splitTasks(text: string): string[] {
     .filter(Boolean)
     .map((p) =>
       p
-        .replace(/\b(tomorrow|today|at\s+\d{1,2}(?::\d{2})?\s*(am|pm)?|\d{1,2}:\d{2})\b/gi, '')
+        .replace(
+          /\b(tomorrow|today|at\s+\d{1,2}(?::\d{2})?\s*(am|pm)?|\d{1,2}:\d{2})\b/gi,
+          '',
+        )
+        .replace(/^(to|need to|have to)\s+/i, '')
         .replace(/\s+/g, ' ')
         .trim(),
     )
@@ -72,11 +117,19 @@ function findTask(tasks: TaskLike[], hint: string) {
   return tasks.find((t) => !t.completed && t.title.toLowerCase().includes(q))
 }
 
-/** Deterministic offline AI for MVP demos without OpenAI credentials. */
+/** Deterministic offline AI for MVP demos without OpenAI credits. */
 export function localAI(message: string, tasks: TaskLike[], today: string): AIChatResponse {
   const text = message.trim()
-  const lower = text.toLowerCase()
+  const lower = normalize(text)
   const open = tasks.filter((t) => !t.completed)
+
+  if (isSmallTalk(text)) {
+    return {
+      reply:
+        "I'm NOVA — your life assistant. Tell me something to do (for example: \"Tomorrow buy groceries\") and I'll put it in Tasks.",
+      actions: [],
+    }
+  }
 
   if (/what.*(today|do i have|need to do)/i.test(lower) || /today'?s tasks?/i.test(lower)) {
     const todayTasks = open.filter((t) => t.date === today)
@@ -124,6 +177,14 @@ export function localAI(message: string, tasks: TaskLike[], today: string): AICh
     }
   }
 
+  if (!hasTaskIntent(text)) {
+    return {
+      reply:
+        'I save real to-dos in the Tasks tab. Try: "Remind me to call Mom tomorrow at 7" or "Buy groceries tomorrow".',
+      actions: [],
+    }
+  }
+
   const date = parseDate(text, today)
   const time = parseTime(text)
   const isReminder = /remind me/i.test(lower)
@@ -135,7 +196,7 @@ export function localAI(message: string, tasks: TaskLike[], today: string): AICh
       .replace(/^remind me to\s+/i, '')
       .replace(/^remind me\s+/i, '')
     return {
-      reply: `Done. I'll remind you on ${date} at ${time}.`,
+      reply: `Done. Reminder saved → ${whereLabel(date, today)} at ${time}.`,
       actions: [{ type: 'create_reminder', title, date, time }],
     }
   }
@@ -148,24 +209,23 @@ export function localAI(message: string, tasks: TaskLike[], today: string): AICh
       time: index === 0 ? time : null,
       priority: time ? ('high' as const) : ('medium' as const),
     }))
+    const place = whereLabel(date, today)
 
     if (actions.length === 1) {
       return {
-        reply: `Got it. I created "${actions[0].title}"${date ? ` for ${date}` : ''}${
-          time ? ` at ${time}` : ''
-        }.`,
+        reply: `Saved "${actions[0].title}" → open ${place}${time ? ` at ${time}` : ''}.`,
         actions,
       }
     }
 
     return {
-      reply: `Got it. I added ${actions.length} tasks${date ? ` for ${date}` : ''} in a logical order.`,
+      reply: `Saved ${actions.length} tasks → open ${place}.`,
       actions,
     }
   }
 
   return {
-    reply: "Tell me what you need to get done — I can turn it into tasks and reminders.",
+    reply: "Tell me what you need to get done — I'll add it under Tasks.",
     actions: [],
   }
 }

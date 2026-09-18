@@ -47,11 +47,12 @@ export async function applyActions(
   notificationsEnabled: boolean,
 ) {
   const store = useNovaStore.getState()
+  const useRemote = isSupabaseConfigured && !store.demoMode
 
   for (const action of actions) {
     if (action.type === 'create_task') {
       let task: Task | null = null
-      if (isSupabaseConfigured) {
+      if (useRemote) {
         try {
           task = await createTaskRemote(userId, action)
         } catch {
@@ -74,7 +75,7 @@ export async function applyActions(
 
     if (action.type === 'update_task') {
       let task: Task | null = null
-      if (isSupabaseConfigured) {
+      if (useRemote) {
         try {
           task = await updateTaskRemote(action)
         } catch {
@@ -100,7 +101,7 @@ export async function applyActions(
 
     if (action.type === 'complete_task') {
       const local = store.tasks.find((t) => t.id === action.task_id)
-      if (isSupabaseConfigured) {
+      if (useRemote) {
         const supabase = getSupabase()
         await supabase?.from('tasks').update({ completed: true }).eq('id', action.task_id)
       }
@@ -114,7 +115,7 @@ export async function applyActions(
     }
 
     if (action.type === 'delete_task') {
-      if (isSupabaseConfigured) {
+      if (useRemote) {
         const supabase = getSupabase()
         await supabase?.from('tasks').delete().eq('id', action.task_id)
       }
@@ -133,7 +134,7 @@ export async function applyActions(
         created_at: new Date().toISOString(),
       }
 
-      if (isSupabaseConfigured) {
+      if (useRemote) {
         const supabase = getSupabase()
         if (supabase) {
           const { data } = await supabase
@@ -172,7 +173,8 @@ export async function applyActions(
 }
 
 export async function refreshTasks(userId: string) {
-  if (!isSupabaseConfigured) return
+  const store = useNovaStore.getState()
+  if (!isSupabaseConfigured || store.demoMode) return
   const supabase = getSupabase()
   const { data, error } = await supabase!
     .from('tasks')
@@ -193,7 +195,7 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
   const history = store.messages.slice(-8).map((m) => ({ role: m.role, content: m.content }))
   let accessToken: string | null = null
-  if (isSupabaseConfigured) {
+  if (isSupabaseConfigured && !store.demoMode) {
     const supabase = getSupabase()
     const { data } = await supabase!.auth.getSession()
     accessToken = data.session?.access_token ?? null
@@ -225,7 +227,7 @@ export async function toggleTaskCompleted(task: Task) {
     completed: !task.completed,
     updated_at: new Date().toISOString(),
   }
-  if (isSupabaseConfigured) {
+  if (isSupabaseConfigured && !store.demoMode) {
     const supabase = getSupabase()
     await supabase?.from('tasks').update({ completed: next.completed }).eq('id', task.id)
   }
@@ -238,7 +240,7 @@ export async function updateTaskFields(
 ) {
   const store = useNovaStore.getState()
   const next = { ...task, ...patch, updated_at: new Date().toISOString() }
-  if (isSupabaseConfigured) {
+  if (isSupabaseConfigured && !store.demoMode) {
     const supabase = getSupabase()
     await supabase?.from('tasks').update(patch).eq('id', task.id)
   }
@@ -248,7 +250,7 @@ export async function updateTaskFields(
 
 export async function deleteTask(taskId: string) {
   const store = useNovaStore.getState()
-  if (isSupabaseConfigured) {
+  if (isSupabaseConfigured && !store.demoMode) {
     const supabase = getSupabase()
     await supabase?.from('tasks').delete().eq('id', taskId)
   }

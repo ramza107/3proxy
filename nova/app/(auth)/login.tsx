@@ -45,7 +45,7 @@ export default function LoginScreen() {
       } else {
         setDemoSession(email.trim())
       }
-      router.replace('/(tabs)/home')
+      router.replace('/home')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Login failed')
     } finally {
@@ -84,7 +84,12 @@ export default function LoginScreen() {
           style={styles.input}
         />
         {!!error && <Text style={styles.error}>{error}</Text>}
-        <Pressable style={styles.btn} onPress={onLogin} disabled={loading}>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.btn}
+          onPress={onLogin}
+          disabled={loading}
+        >
           {loading ? <ActivityIndicator color="#0B0D12" /> : <Text style={styles.btnText}>Sign in</Text>}
         </Pressable>
         <Text style={styles.hint}>
@@ -94,9 +99,20 @@ export default function LoginScreen() {
         </Text>
       </View>
 
-      <Link href="/(auth)/signup" style={styles.link}>
+      <Link href="/signup" style={styles.link}>
         Create an account
       </Link>
+
+      <Pressable
+        accessibilityRole="button"
+        style={styles.demoBtn}
+        onPress={() => {
+          setDemoSession('demo@nova.local', 'Friend')
+          router.replace('/welcome')
+        }}
+      >
+        <Text style={styles.demoText}>Continue in demo mode</Text>
+      </Pressable>
     </KeyboardAvoidingView>
   )
 }
@@ -136,9 +152,19 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    // @ts-expect-error web-only
+    cursor: 'pointer',
   },
   btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 16 },
   error: { color: colors.danger },
   hint: { color: colors.textDim, fontSize: 12, textAlign: 'center', marginTop: 4 },
   link: { color: colors.accentStrong, textAlign: 'center', fontWeight: '600', fontSize: 15 },
+  demoBtn: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    // @ts-expect-error web-only
+    cursor: 'pointer',
+  },
+  demoText: { color: colors.textMuted, fontWeight: '600', fontSize: 14 },
 })

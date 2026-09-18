@@ -14,8 +14,40 @@ app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 
 const Port = Number(process.env.PORT || 8787)
+
+const groqKey = process.env.GROQ_API_KEY || ''
 const openaiKey = process.env.OPENAI_API_KEY || ''
-const model = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+
+type Provider = {
+  name: 'groq' | 'openai'
+  client: OpenAI
+  model: string
+}
+
+function resolveProvider(): Provider | null {
+  // Prefer Groq (free tier) when configured.
+  if (groqKey && !groqKey.includes('your-groq')) {
+    return {
+      name: 'groq',
+      client: new OpenAI({
+        apiKey: groqKey,
+        baseURL: 'https://api.groq.com/openai/v1',
+      }),
+      // Fast free-tier default; override with GROQ_MODEL if needed.
+      model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
+    }
+  }
+
+  if (openaiKey && !openaiKey.includes('your-openai')) {
+    return {
+      name: 'openai',
+      client: new OpenAI({ apiKey: openaiKey }),
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    }
+  }
+
+  return null
+}
 
 const bodySchema = z.object({
   message: z.string().min(1),
@@ -97,8 +129,12 @@ function safeParseModelJson(raw: string) {
 }
 
 app.get('/health', (_req, res) => {
+  const provider = resolveProvider()
   res.json({
     ok: true,
+    provider: provider?.name || 'local',
+    model: provider?.model || null,
+    groq: Boolean(groqKey && !groqKey.includes('your-groq')),
     openai: Boolean(openaiKey && !openaiKey.includes('your-openai')),
   })
 })
@@ -112,31 +148,40 @@ app.post('/api/ai/chat', async (req, res) => {
 
     const input = parsed.data
     const context = buildContext(input)
+    const today = input.current_date || new Date().toISOString().slice(0, 10)
+    const provider = resolveProvider()
 
-    if (!openaiKey || openaiKey.includes('your-openai')) {
-      const local = localAI(input.message, input.tasks, input.current_date || new Date().toISOString().slice(0, 10))
-      return res.json(local)
+    if (!provider) {
+      const local = localAI(input.message, input.tasks, today)
+      return res.json({ ...local, provider: 'local' })
     }
 
-    const openai = new OpenAI({ apiKey: openaiKey })
-    const completion = await openai.chat.completions.create({
-      model,
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'system', content: context },
-        ...input.history.map((h) => ({ role: h.role, content: h.content })),
-        { role: 'user', content: input.message },
-      ],
-    })
+    try {
+      const completion = await provider.client.chat.completions.create({
+        model: provider.model,
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: context },
+          ...input.history.map((h) => ({ role: h.role, content: h.content })),
+          { role: 'user', content: input.message },
+        ],
+      })
 
-    const content = completion.choices[0]?.message?.content || '{"reply":"I could not process that.","actions":[]}'
-    const json = safeParseModelJson(content)
-    if (!json.reply || !Array.isArray(json.actions)) {
-      return res.status(502).json({ error: 'Malformed AI response', raw: json })
+      const content =
+        completion.choices[0]?.message?.content ||
+        '{"reply":"I could not process that.","actions":[]}'
+      const json = safeParseModelJson(content)
+      if (!json.reply || !Array.isArray(json.actions)) {
+        return res.status(502).json({ error: 'Malformed AI response', raw: json })
+      }
+      return res.json({ ...json, provider: provider.name })
+    } catch (providerError) {
+      console.warn(`${provider.name} unavailable, using local AI:`, providerError)
+      const local = localAI(input.message, input.tasks, today)
+      return res.json({ ...local, fallback: true, provider: 'local' })
     }
-    return res.json(json)
   } catch (error) {
     console.error(error)
     return res.status(500).json({
@@ -145,6 +190,8 @@ app.post('/api/ai/chat', async (req, res) => {
   }
 })
 
-app.listen(Port, () => {
-  console.log(`NOVA AI server listening on http://localhost:${Port}`)
+app.listen(Port, '0.0.0.0', () => {
+  const provider = resolveProvider()
+  console.log(`NOVA AI server listening on http://0.0.0.0:${Port}`)
+  console.log(`Provider: ${provider?.name || 'local'} ${provider?.model || ''}`.trim())
 })

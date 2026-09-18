@@ -33,7 +33,7 @@ export default function HomeScreen() {
     setLoading(true)
     try {
       await sendNovaMessage(text)
-      router.push('/(tabs)/chat')
+      router.push('/chat')
     } catch (e) {
       Alert.alert('NOVA', e instanceof Error ? e.message : 'Could not reach AI server')
     } finally {
@@ -55,7 +55,7 @@ export default function HomeScreen() {
           onToggle={(task) => toggleTaskCompleted(task)}
         />
 
-        <Pressable style={styles.ask} onPress={() => router.push('/(tabs)/chat')}>
+        <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
           <Text style={styles.askText}>Ask NOVA</Text>
         </Pressable>
 

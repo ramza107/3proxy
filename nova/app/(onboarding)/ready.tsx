@@ -18,10 +18,11 @@ export default function ReadyScreen() {
         </Text>
       </View>
       <Pressable
+        accessibilityRole="button"
         style={styles.btn}
         onPress={() => {
           updateSettings({ onboardingComplete: true })
-          router.replace('/(tabs)/home')
+          router.replace('/home')
         }}
       >
         <Text style={styles.btnText}>Start using NOVA</Text>
@@ -55,6 +56,8 @@ const styles = StyleSheet.create({
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
+    // @ts-expect-error web-only
+    cursor: 'pointer',
   },
   btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 17 },
 })

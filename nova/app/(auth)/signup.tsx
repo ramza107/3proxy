@@ -59,7 +59,7 @@ export default function SignupScreen() {
         name: name.trim(),
         onboardingComplete: false,
       })
-      router.replace('/(onboarding)/welcome')
+      router.replace('/welcome')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sign up failed')
     } finally {
@@ -104,12 +104,17 @@ export default function SignupScreen() {
           style={styles.input}
         />
         {!!error && <Text style={styles.error}>{error}</Text>}
-        <Pressable style={styles.btn} onPress={onSignup} disabled={loading}>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.btn}
+          onPress={onSignup}
+          disabled={loading}
+        >
           {loading ? <ActivityIndicator color="#0B0D12" /> : <Text style={styles.btnText}>Sign up</Text>}
         </Pressable>
       </View>
 
-      <Link href="/(auth)/login" style={styles.link}>
+      <Link href="/login" style={styles.link}>
         Already have an account? Sign in
       </Link>
     </KeyboardAvoidingView>
@@ -150,6 +155,8 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    // @ts-expect-error web-only
+    cursor: 'pointer',
   },
   btnText: { color: '#0B0D12', fontWeight: '800', fontSize: 16 },
   error: { color: colors.danger },

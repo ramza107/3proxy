@@ -19,6 +19,8 @@ After deploy to GitHub Pages:
 
 **https://ramza107.github.io/3proxy/nova/**
 
+AI backend (Groq): `https://threeproxy-x9bi.onrender.com`
+
 Locally in the browser:
 
 ```bash
@@ -66,25 +68,84 @@ Leave `.env` placeholders as-is.
 
 Tasks appear on **Home** and **Tasks**. Timed tasks schedule local notifications when permissions allow.
 
-## Configure Supabase + OpenAI
+## Configure Supabase + AI (Groq / OpenAI)
 
 1. Create a Supabase project
 2. Run `supabase/schema.sql` in the SQL editor
 3. Enable Email auth
-4. Fill `.env`:
+4. Get a **free Groq key**: [console.groq.com/keys](https://console.groq.com/keys)
+5. Fill `.env`:
 
 ```env
 EXPO_PUBLIC_SUPABASE_URL=...
 EXPO_PUBLIC_SUPABASE_ANON_KEY=...
 EXPO_PUBLIC_API_URL=http://localhost:8787
-OPENAI_API_KEY=sk-...
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=openai/gpt-oss-20b
+# optional fallback:
+# OPENAI_API_KEY=sk-...
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-5. Restart Expo and the AI server
+6. Restart Expo and the AI server
 
-> Never put `OPENAI_API_KEY` in the mobile app. Only the server uses it.
+> Never put `GROQ_API_KEY` / `OPENAI_API_KEY` in the mobile app. Only the server uses them.
+> Provider order: Groq → OpenAI → built-in local AI.
+
+## Deploy AI server (Render)
+
+Самый простой вариант для продакшена — [Render](https://render.com) (есть free tier).
+
+### 1. Запушь репозиторий на GitHub
+Убедись, что ветка с `nova/server` уже на GitHub.
+
+### 2. Создай Web Service на Render
+1. [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**
+2. Подключи репозиторий `ramza107/3proxy`
+3. Настройки:
+   - **Root Directory:** `nova/server`
+   - **Runtime:** Node
+   - **Build Command:** `npm ci`
+   - **Start Command:** `npm start`
+   - **Health Check Path:** `/health`
+4. Environment variables:
+   - `GROQ_API_KEY` = ключ с [console.groq.com/keys](https://console.groq.com/keys) *(рекомендуется, free tier)*
+   - `GROQ_MODEL` = `openai/gpt-oss-20b` (или другая модель Groq)
+   - `OPENAI_API_KEY` = опциональный fallback
+   - `OPENAI_MODEL` = `gpt-4o-mini`
+   - `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` = опционально
+
+Приоритет провайдера: **Groq → OpenAI → local AI**.
+
+Или через Blueprint: в корне репо есть `render.yaml` → **New** → **Blueprint**.
+
+### 3. Проверь
+После деплоя Render даст URL вида `https://nova-ai-xxxx.onrender.com`.
+
+```bash
+curl https://YOUR-SERVICE.onrender.com/health
+# {"ok":true,"openai":true}
+```
+
+### 4. Подключи приложение
+В `nova/.env` (и в GitHub Pages / EAS secrets):
+
+```env
+EXPO_PUBLIC_API_URL=https://YOUR-SERVICE.onrender.com
+```
+
+Пересобери веб/приложение. Чат пойдёт на сервер → OpenAI.
+
+> Free tier на Render «засыпает» без трафика (~50с cold start). Для продакшена лучше платный Starter.
+
+### Docker (любой хост)
+
+```bash
+cd nova/server
+docker build -t nova-ai .
+docker run -p 8787:8787 -e OPENAI_API_KEY=sk-... nova-ai
+```
 
 ## Project structure
 
