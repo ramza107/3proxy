@@ -49,8 +49,9 @@ export default function TasksScreen() {
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.header}>
+          <Text style={styles.kicker}>On the rail</Text>
           <Text style={styles.title}>Tasks</Text>
-          <Text style={styles.sub}>Edit, postpone, or move anything Wahrly tracks</Text>
+          <Text style={styles.sub}>Edit, postpone, or move anything on your signal</Text>
         </View>
 
         <View style={styles.tabs}>
@@ -125,11 +126,18 @@ const styles = StyleSheet.create({
     gap: 4,
     marginBottom: 12,
   },
+  kicker: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  },
   title: {
     color: colors.text,
-    fontSize: 32,
+    fontSize: 34,
     fontFamily: fonts.brand,
-    letterSpacing: -0.6,
+    letterSpacing: -0.8,
   },
   sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14 },
   tabs: {
@@ -143,12 +151,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.bgCard,
     borderRadius: radii.full,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: 'transparent',
   },
   tabOn: {
     backgroundColor: colors.accentSoft,
