@@ -18,6 +18,13 @@ type Slot =
   | { kind: 'task'; start: number; end: number; task: Task }
   | { kind: 'free'; start: number; end: number }
 
+/** Soft teal ladder — priority without traffic-light red/yellow clash. */
+const NODE: Record<Task['priority'], string> = {
+  high: colors.accentStrong,
+  medium: colors.accent,
+  low: colors.signalMuted,
+}
+
 function buildSlots(
   tasks: Task[],
   workStart: string,
@@ -65,11 +72,10 @@ export function DailyPlan({
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
-        <View>
-          <Text style={styles.kicker}>Signal</Text>
+        <View style={{ flex: 1 }}>
           <Text style={styles.title}>Today</Text>
           <Text style={styles.meta}>
-            {dayKind === 'light' ? 'light · ' : ''}
+            {dayKind === 'light' ? 'Light day · ' : ''}
             {workdayStart}–{workdayEnd}
             {openCount ? ` · ${openCount} open` : ' · clear'}
           </Text>
@@ -80,16 +86,14 @@ export function DailyPlan({
             onPress={onPlanDay}
             disabled={!!planning}
           >
-            <Text style={styles.planBtnText}>{planning ? '…' : 'Plan day'}</Text>
+            <Text style={styles.planBtnText}>{planning ? 'Planning…' : 'Plan day'}</Text>
           </Pressable>
         ) : null}
       </View>
 
       {openCount === 0 ? (
         <View style={styles.empty}>
-          <View style={styles.emptyNode} />
-          <Text style={styles.emptyTitle}>Clear signal</Text>
-          <Text style={styles.emptyText}>Add tasks, then Plan day — Wahrly fills free slots on the line.</Text>
+          <Text style={styles.emptyText}>No open tasks yet. Add one below, then Plan day.</Text>
         </View>
       ) : (
         <View style={styles.timeline}>
@@ -113,10 +117,7 @@ export function DailyPlan({
               >
                 <View style={styles.nodeCol}>
                   <View
-                    style={[
-                      styles.nodeOn,
-                      { backgroundColor: colors[slot.task.priority] },
-                    ]}
+                    style={[styles.nodeOn, { backgroundColor: NODE[slot.task.priority] }]}
                   />
                 </View>
                 <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
@@ -127,21 +128,17 @@ export function DailyPlan({
                   >
                     {slot.task.title}
                   </Text>
-                  <Text style={styles.taskMeta}>
-                    {slot.task.priority}
-                    {slot.task.time ? ` · ${slot.task.time}` : ''}
-                  </Text>
                 </View>
               </Pressable>
             ),
           )}
           {untimed.length > 0 ? (
             <View style={styles.untimed}>
-              <Text style={styles.untimedLabel}>Off-rail</Text>
+              <Text style={styles.untimedLabel}>Later</Text>
               {untimed.map((t) => (
                 <Pressable key={t.id} style={styles.row} onPress={() => onToggle(t)}>
                   <View style={styles.nodeCol}>
-                    <View style={[styles.nodeOn, { backgroundColor: colors[t.priority] }]} />
+                    <View style={[styles.nodeOn, { backgroundColor: NODE[t.priority] }]} />
                   </View>
                   <Text style={styles.timeCol}>—</Text>
                   <View style={styles.taskBody}>
@@ -156,60 +153,48 @@ export function DailyPlan({
         </View>
       )}
 
-      <Text style={styles.hint}>
-        {suggestion ||
-          (hasUntimed
-            ? 'Plan day packs off-rail tasks into free gaps on the signal.'
-            : openCount
-              ? 'Signal is packed. Add more anytime — then Plan day again.'
-              : 'Your day as one continuous signal.')}
-      </Text>
+      {suggestion ? <Text style={styles.hint}>{suggestion}</Text> : null}
+      {!suggestion && hasUntimed ? (
+        <Text style={styles.hint}>Plan day places untimed tasks into free gaps.</Text>
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm },
+  wrap: { gap: spacing.sm, marginTop: 4 },
   head: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 8,
-  },
-  kicker: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
+    marginBottom: 4,
   },
   title: {
     color: colors.text,
-    fontFamily: fonts.brand,
-    fontSize: 34,
-    letterSpacing: -0.8,
-    marginTop: 2,
+    fontFamily: fonts.bodyBold,
+    fontSize: 20,
+    letterSpacing: -0.3,
   },
-  meta: { color: colors.textDim, fontFamily: fonts.body, fontSize: 13, marginTop: 4 },
+  meta: { color: colors.textDim, fontFamily: fonts.body, fontSize: 13, marginTop: 2 },
   planBtn: {
-    backgroundColor: colors.bgDeep,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
     borderRadius: radii.full,
     paddingHorizontal: 14,
-    height: 36,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 18,
   },
-  planDisabled: { opacity: 0.45 },
-  planBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
+  planDisabled: { opacity: 0.4 },
+  planBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   timeline: { position: 'relative', paddingLeft: 2, gap: 0 },
   spine: {
     position: 'absolute',
     left: 11,
     top: 8,
     bottom: 8,
-    width: 2,
+    width: 1.5,
     backgroundColor: colors.signalLine,
     borderRadius: 1,
   },
@@ -217,13 +202,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    paddingVertical: 10,
-    minHeight: 44,
+    paddingVertical: 9,
+    minHeight: 40,
   },
   nodeCol: { width: 24, alignItems: 'center', paddingTop: 4 },
   nodeOn: {
-    width: 12,
-    height: 12,
+    width: 10,
+    height: 10,
     borderRadius: 99,
     borderWidth: 2,
     borderColor: colors.bg,
@@ -241,54 +226,33 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
-    paddingTop: 3,
+    paddingTop: 2,
   },
   freeText: {
     flex: 1,
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
-    paddingTop: 2,
-    fontStyle: 'italic',
+    paddingTop: 1,
   },
   taskBody: { flex: 1, gap: 2 },
-  taskTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 16, lineHeight: 22 },
+  taskTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15, lineHeight: 21 },
   taskDone: { textDecorationLine: 'line-through', color: colors.textMuted },
-  taskMeta: {
+  untimed: { marginTop: 4, paddingTop: 4 },
+  untimedLabel: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    marginBottom: 2,
+    marginLeft: 34,
+  },
+  empty: { paddingVertical: spacing.md },
+  emptyText: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  hint: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 12,
-    textTransform: 'capitalize',
-  },
-  untimed: { marginTop: 8, paddingTop: 8 },
-  untimedLabel: {
-    color: colors.textDim,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-    marginLeft: 34,
-  },
-  empty: {
-    paddingVertical: spacing.lg,
-    gap: 6,
-    alignItems: 'flex-start',
-  },
-  emptyNode: {
-    width: 12,
-    height: 12,
-    borderRadius: 99,
-    backgroundColor: colors.signal,
-    marginBottom: 4,
-  },
-  emptyTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.bodyBold },
-  emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
-  hint: {
-    color: colors.textMuted,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 8,
+    lineHeight: 18,
+    marginTop: 4,
   },
 })

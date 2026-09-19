@@ -222,19 +222,14 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    borderLeftWidth: 2,
-    borderLeftColor: colors.signal,
-    paddingLeft: spacing.md,
-    paddingVertical: spacing.sm,
     gap: 8,
+    paddingVertical: 2,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   kicker: {
-    color: colors.accentStrong,
+    color: colors.textMuted,
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
+    fontSize: 13,
     flex: 1,
   },
   refresh: { color: colors.accent, fontFamily: fonts.bodyMedium, fontSize: 13 },

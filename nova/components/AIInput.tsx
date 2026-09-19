@@ -151,9 +151,9 @@ export function AIInput({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radii.lg,
-    borderWidth: 1,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.sm,
     gap: spacing.sm,
