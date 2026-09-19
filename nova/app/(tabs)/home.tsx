@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { DailyPlan } from '../../components/DailyPlan'
 import { InboxBrief } from '../../components/InboxBrief'
+import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { PromisesBrief } from '../../components/PromisesBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
@@ -27,6 +28,9 @@ export default function HomeScreen() {
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const emailPromisesAutoEnabled = useNovaStore(
     (s) => s.settings.emailPromisesAutoEnabled === true,
+  )
+  const meetingEmailAlertsEnabled = useNovaStore(
+    (s) => s.settings.meetingEmailAlertsEnabled !== false,
   )
   const [loading, setLoading] = useState(false)
 
@@ -58,6 +62,8 @@ export default function HomeScreen() {
           <Text style={styles.name}>Hi {name}</Text>
 
           <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+
+          <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
 
           <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
 

@@ -27,6 +27,18 @@ export type SentMessagePreview = {
   date: string
 }
 
+/** Inbox message with body — for meeting / important-intent detection. */
+export type InboxMessagePreview = {
+  id: string
+  from: string
+  fromName: string
+  subject: string
+  snippet: string
+  bodyText: string
+  date: string
+  unread: boolean
+}
+
 export function gmailConfigured() {
   const id = process.env.GOOGLE_CLIENT_ID || ''
   const secret = process.env.GOOGLE_CLIENT_SECRET || ''
@@ -320,6 +332,69 @@ export async function listRecentSentMessages(
       snippet: msg.snippet || '',
       bodyText,
       date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate || '',
+    })
+  }
+
+  return previews
+}
+
+/**
+ * Recent INBOX mail (Primary-ish) with body text.
+ * Excludes Promotions/Social noise; looks at the last `hours` (default 48).
+ */
+export async function listRecentInboxMessages(
+  userId: string,
+  opts?: { hours?: number; max?: number },
+): Promise<InboxMessagePreview[]> {
+  const conn = await withFreshToken(userId)
+  const hours = Math.min(168, Math.max(6, opts?.hours ?? 48))
+  const max = opts?.max ?? 30
+  const afterSec = Math.floor((Date.now() - hours * 60 * 60 * 1000) / 1000)
+  const q = encodeURIComponent(
+    `in:inbox after:${afterSec} -category:promotions -category:social`,
+  )
+  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, {
+    headers: { Authorization: `Bearer ${conn.accessToken}` },
+  })
+  if (!listRes.ok) {
+    const text = await listRes.text()
+    throw new Error(`Gmail inbox list failed: ${text.slice(0, 200)}`)
+  }
+  const list = (await listRes.json()) as { messages?: { id: string }[] }
+  const ids = (list.messages || []).map((m) => m.id)
+  const previews: InboxMessagePreview[] = []
+
+  for (const id of ids) {
+    const msgRes = await fetch(`${GMAIL_API}/messages/${id}?format=full`, {
+      headers: { Authorization: `Bearer ${conn.accessToken}` },
+    })
+    if (!msgRes.ok) continue
+    const msg = (await msgRes.json()) as {
+      id: string
+      snippet?: string
+      internalDate?: string
+      labelIds?: string[]
+      payload?: MimePart & { headers?: { name: string; value: string }[] }
+    }
+    const fromRaw = headerValue(msg.payload?.headers, 'From')
+    const { from, fromName } = parseFrom(fromRaw)
+    const headerDate = headerValue(msg.payload?.headers, 'Date')
+    const when = msg.internalDate
+      ? new Date(Number(msg.internalDate))
+      : headerDate
+        ? new Date(headerDate)
+        : null
+    const bodyText = collectPlainText(msg.payload).slice(0, 6000)
+
+    previews.push({
+      id: msg.id,
+      from,
+      fromName,
+      subject: headerValue(msg.payload?.headers, 'Subject') || '(no subject)',
+      snippet: msg.snippet || '',
+      bodyText,
+      date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate || '',
+      unread: (msg.labelIds || []).includes('UNREAD'),
     })
   }
 

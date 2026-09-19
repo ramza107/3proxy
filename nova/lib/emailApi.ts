@@ -68,6 +68,29 @@ export async function fetchEmailPromises(
   return res.json()
 }
 
+export async function fetchEmailMeetings(
+  userId: string,
+  opts?: { demo?: boolean; hours?: number },
+): Promise<import('../types').MeetingsDigest> {
+  const q = new URLSearchParams({ user_id: userId })
+  if (opts?.demo) q.set('demo', '1')
+  if (opts?.hours) q.set('hours', String(opts.hours))
+  const res = await fetch(`${apiUrl}/api/email/meetings?${q.toString()}`)
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `Meetings failed (${res.status})`)
+  }
+  return res.json()
+}
+
+export async function registerPushToken(userId: string, token: string): Promise<void> {
+  await fetch(`${apiUrl}/api/push/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, token }),
+  })
+}
+
 /** Public site URL used after OAuth (for docs / redirects). */
 export const publicAppUrl =
   (extra.publicAppUrl as string) ||

@@ -92,6 +92,11 @@ export type UserSettings = {
    * When off: Home still can show the Promises card for manual Add.
    */
   emailPromisesAutoEnabled: boolean
+  /**
+   * When on: scan recent Primary inbox for meet/call/report asks and
+   * fire push / local notifications for new ones.
+   */
+  meetingEmailAlertsEnabled: boolean
 }
 
 export type EmailDigestSender = {
@@ -139,4 +144,30 @@ export type PromisesDigest = {
   scanned: number
   generatedAt: string
   days: number
+}
+
+/** Important ask found in recent incoming mail */
+export type MeetingAlert = {
+  id: string
+  messageId: string
+  fromName: string
+  fromEmail: string
+  subject: string
+  intent: 'meet' | 'report' | 'call' | 'other'
+  summary: string
+  notifyBody: string
+  suggestedDate: string | null
+  suggestedTime: string | null
+  receivedAt: string
+}
+
+export type MeetingsDigest = {
+  connected: boolean
+  email: string | null
+  demo: boolean
+  summary: string
+  meetings: MeetingAlert[]
+  scanned: number
+  generatedAt: string
+  hours: number
 }

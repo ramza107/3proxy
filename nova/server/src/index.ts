@@ -11,10 +11,20 @@ import {
   gmailConfigured,
   getAppReturnUrl,
   listOvernightMessages,
+  listRecentInboxMessages,
   listRecentSentMessages,
   parseOAuthState,
 } from './email/gmail.js'
+import { buildMeetingsDigest, demoMeetings } from './email/meetings.js'
 import { buildPromisesDigest, demoPromises } from './email/promises.js'
+import {
+  getPushToken,
+  listPushUsers,
+  markAlertPushed,
+  savePushToken,
+  sendExpoPush,
+  wasAlertPushed,
+} from './email/pushStore.js'
 import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
 import { SYSTEM_PROMPT } from './prompt.js'
@@ -315,6 +325,62 @@ app.get('/api/email/promises', async (req, res) => {
   }
 })
 
+/** Scan recent Primary inbox for meet / call / report asks. */
+app.get('/api/email/meetings', async (req, res) => {
+  try {
+    const userId = String(req.query.user_id || '')
+    const allowDemo = String(req.query.demo || '') === '1'
+    const hours = Number(req.query.hours || 48)
+    if (!userId) return res.status(400).json({ error: 'user_id required' })
+
+    const conn = await getConnection(userId)
+    if (!conn) {
+      if (allowDemo) return res.json(demoMeetings())
+      return res.json({
+        connected: false,
+        email: null,
+        demo: false,
+        summary: 'Connect Gmail to get alerts when someone asks to meet or wants a report.',
+        meetings: [],
+        scanned: 0,
+        generatedAt: new Date().toISOString(),
+        hours: 48,
+      })
+    }
+
+    const safeHours = Number.isFinite(hours) ? hours : 48
+    const messages = await listRecentInboxMessages(userId, { hours: safeHours, max: 30 })
+    const provider = resolveProvider()
+    const digest = await buildMeetingsDigest({
+      messages,
+      email: conn.email,
+      hours: safeHours,
+      provider: provider ? { client: provider.client, model: provider.model } : null,
+    })
+    return res.json(digest)
+  } catch (error) {
+    console.error('meetings', error)
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'meetings failed',
+    })
+  }
+})
+
+/** Register Expo push token for meeting-email alerts while the app is closed. */
+app.post('/api/push/register', async (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '')
+    const token = String(req.body?.token || '')
+    if (!userId || !token) return res.status(400).json({ error: 'user_id and token required' })
+    savePushToken(userId, token)
+    return res.json({ ok: true })
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'push register failed',
+    })
+  }
+})
+
 app.post('/api/ai/chat', async (req, res) => {
   try {
     const parsed = bodySchema.safeParse(req.body)
@@ -370,4 +436,47 @@ app.listen(Port, '0.0.0.0', () => {
   const provider = resolveProvider()
   console.log(`Wahrly AI server listening on http://0.0.0.0:${Port}`)
   console.log(`Provider: ${provider?.name || 'local'} ${provider?.model || ''}`.trim())
+
+  // Poll connected users who registered a push token (~every 10 min).
+  // Free Render may sleep — alerts also fire when the app opens Home.
+  const POLL_MS = 10 * 60 * 1000
+  setInterval(() => {
+    pollMeetingPushes().catch((e) => console.warn('meeting poll', e))
+  }, POLL_MS)
+  setTimeout(() => {
+    pollMeetingPushes().catch(() => undefined)
+  }, 45_000)
 })
+
+async function pollMeetingPushes() {
+  const users = listPushUsers()
+  if (!users.length) return
+  const provider = resolveProvider()
+  for (const userId of users) {
+    const token = getPushToken(userId)
+    if (!token) continue
+    const conn = await getConnection(userId)
+    if (!conn) continue
+    try {
+      const messages = await listRecentInboxMessages(userId, { hours: 48, max: 25 })
+      const digest = await buildMeetingsDigest({
+        messages,
+        email: conn.email,
+        hours: 48,
+        provider: provider ? { client: provider.client, model: provider.model } : null,
+      })
+      for (const m of digest.meetings) {
+        if (wasAlertPushed(userId, m.id)) continue
+        const ok = await sendExpoPush({
+          token,
+          title: 'Wahrly · Inbox',
+          body: m.notifyBody,
+          data: { kind: 'meeting', alertId: m.id, messageId: m.messageId },
+        })
+        if (ok) markAlertPushed(userId, m.id)
+      }
+    } catch (e) {
+      console.warn('meeting poll user', userId, e)
+    }
+  }
+}
