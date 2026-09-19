@@ -10,6 +10,7 @@ import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { PromisesBrief } from '../../components/PromisesBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { parseHm } from '../../lib/notifications'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
 import { organizeMyDay, refreshTasks, sendNovaMessage, toggleTaskCompleted } from '../../services/ai'
@@ -19,6 +20,16 @@ function greeting() {
   if (h < 12) return 'Good morning'
   if (h < 18) return 'Good afternoon'
   return 'Good evening'
+}
+
+/** Show Evening Clear from late afternoon until end of day, until finished today. */
+function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) {
+  const today = todayISO()
+  if (lastClear === today) return false
+  const hm = parseHm(eveningTime)
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
+  const startMin = hm ? Math.max(18 * 60, hm.hour * 60 + hm.minute - 120) : 18 * 60
+  return nowMin >= startMin
 }
 
 export default function HomeScreen() {
@@ -50,6 +61,10 @@ export default function HomeScreen() {
     () => sortTasks(tasks.filter((t) => !t.completed && (t.date === day || !t.date))),
     [tasks, day],
   )
+
+  const showEveningClear =
+    settings.eveningClearEnabled !== false &&
+    shouldOfferEveningClear(settings.eveningClearTime || '21:30', settings.lastEveningClearDate)
 
   const onSend = async (text: string) => {
     setLoading(true)
@@ -83,6 +98,17 @@ export default function HomeScreen() {
           <Text style={styles.hello}>{greeting()}</Text>
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
           <Text style={styles.name}>Hi {name}</Text>
+
+          {showEveningClear ? (
+            <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
+              <Text style={styles.eveningEyebrow}>Ritual</Text>
+              <Text style={styles.eveningTitle}>Evening Clear</Text>
+              <Text style={styles.eveningSub}>
+                Close today, shape tomorrow — {todayTasks.length} open now
+              </Text>
+              <Text style={styles.eveningCta}>Start →</Text>
+            </Pressable>
+          ) : null}
 
           <DailyPlan
             tasks={todayTasks}
@@ -130,6 +156,38 @@ const styles = StyleSheet.create({
   },
   date: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.body, marginTop: -6 },
   name: { color: colors.textDim, marginBottom: 4, fontFamily: fonts.body },
+  eveningCard: {
+    backgroundColor: colors.bgDeep,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    gap: 4,
+  },
+  eveningEyebrow: {
+    color: 'rgba(247,251,250,0.55)',
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  eveningTitle: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.brand,
+    fontSize: 26,
+    letterSpacing: -0.4,
+  },
+  eveningSub: {
+    color: 'rgba(247,251,250,0.72)',
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  eveningCta: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
+    marginTop: 4,
+  },
   ask: {
     alignSelf: 'flex-start',
     backgroundColor: colors.accent,

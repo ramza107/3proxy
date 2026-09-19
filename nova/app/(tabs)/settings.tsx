@@ -436,7 +436,7 @@ export default function SettingsScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Evening Clear</Text>
                 <Text style={styles.rowSub}>
-                  Before sleep: create &amp; check tomorrow&apos;s list
+                  In-app ritual: close today, shape tomorrow. Reminder at the time below.
                 </Text>
               </View>
               <Switch
@@ -467,6 +467,9 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
+            <Pressable style={styles.openRitual} onPress={() => router.push('/evening')}>
+              <Text style={styles.openRitualText}>Open Evening Clear</Text>
+            </Pressable>
           </View>
 
           <View style={styles.card}>
@@ -730,6 +733,15 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
   chipTextOn: { color: colors.accentStrong },
+  openRitual: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.bgDeep,
+    borderRadius: radii.full,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  openRitualText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
   anchorBlock: {
     gap: 8,
     paddingTop: 8,

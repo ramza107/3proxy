@@ -97,7 +97,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={dismiss} accessibilityLabel="Close editor" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} accessibilityLabel="Close editor" />
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.heading}>Edit task</Text>

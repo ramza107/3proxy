@@ -68,6 +68,7 @@ const defaultSettings: UserSettings = {
   morningBriefEnabled: true,
   eveningClearTime: '21:30',
   eveningClearEnabled: true,
+  lastEveningClearDate: null,
   emailDigestEnabled: true,
   emailPromisesAutoEnabled: false,
   meetingEmailAlertsEnabled: true,

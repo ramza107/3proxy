@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { ActivityIndicator, Platform, View } from 'react-native'
 import { colors } from '../constants/theme'
+import { getNotifications } from '../lib/notifications'
 import { isSupabaseConfigured, getSupabase } from '../lib/supabase'
 import { useNovaStore } from '../lib/store'
 
@@ -101,6 +102,29 @@ export default function RootLayout() {
       router.replace('/home')
     }
   }, [hydrated, fontsReady, sessionUserId, onboardingComplete, segments, router])
+
+  // Evening Clear / Morning brief notification → open ritual
+  useEffect(() => {
+    if (!hydrated || !fontsReady || !sessionUserId || !onboardingComplete) return
+    if (Platform.OS === 'web') return
+    let sub: { remove: () => void } | undefined
+    ;(async () => {
+      const NotificationsMod = await getNotifications()
+      if (!NotificationsMod) return
+      const go = (data: Record<string, unknown> | undefined) => {
+        if (!data) return
+        if (data.kind === 'evening' || data.route === '/evening') {
+          router.push('/evening')
+        }
+      }
+      const last = await NotificationsMod.getLastNotificationResponseAsync()
+      go(last?.notification?.request?.content?.data as Record<string, unknown> | undefined)
+      sub = NotificationsMod.addNotificationResponseReceivedListener((response) => {
+        go(response.notification.request.content.data as Record<string, unknown> | undefined)
+      })
+    })()
+    return () => sub?.remove()
+  }, [hydrated, fontsReady, sessionUserId, onboardingComplete, router])
 
   if (!hydrated || !fontsReady) {
     return (

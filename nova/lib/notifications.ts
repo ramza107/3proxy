@@ -24,6 +24,8 @@ async function getNotifications() {
   return Notifications
 }
 
+export { getNotifications }
+
 export async function ensureNotificationPermissions(): Promise<boolean> {
   if (Platform.OS === 'web') return false
   try {
@@ -187,8 +189,8 @@ export async function syncDailyRitualNotifications(
       await NotificationsMod.scheduleNotificationAsync({
         content: {
           title: 'Wahrly · Evening Clear',
-          body: "Before sleep: check tomorrow's list. Add what matters, drop what doesn't.",
-          data: { ritualId: EVENING_ID_KEY, kind: 'evening' },
+          body: 'Close today and shape tomorrow — open Evening Clear in Wahrly.',
+          data: { ritualId: EVENING_ID_KEY, kind: 'evening', route: '/evening' },
         },
         trigger: {
           type: NotificationsMod.SchedulableTriggerInputTypes.DAILY,
