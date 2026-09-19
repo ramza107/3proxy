@@ -60,7 +60,7 @@ module.exports = ({ config }) => {
       'expo-secure-store',
       'expo-notifications',
       [
-        'expo-av',
+        'expo-audio',
         {
           microphonePermission: 'Allow Wahrly to use the microphone to dictate tasks.',
         },

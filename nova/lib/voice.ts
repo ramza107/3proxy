@@ -8,8 +8,10 @@ export type VoiceRecording = {
 }
 
 type NativeRecorder = {
-  stopAndUnloadAsync: () => Promise<unknown>
-  getURI: () => string | null
+  uri: string | null
+  prepareToRecordAsync: () => Promise<void>
+  record: () => void
+  stop: () => Promise<void>
 }
 
 let nativeRecording: NativeRecorder | null = null
@@ -28,8 +30,8 @@ export async function requestMicPermission(): Promise<boolean> {
     }
   }
   try {
-    const { Audio } = await import('expo-av')
-    const { granted } = await Audio.requestPermissionsAsync()
+    const { requestRecordingPermissionsAsync } = await import('expo-audio')
+    const { granted } = await requestRecordingPermissionsAsync()
     return granted
   } catch {
     return false
@@ -58,15 +60,15 @@ export async function startVoiceRecording(): Promise<void> {
     return
   }
 
-  const { Audio } = await import('expo-av')
-  await Audio.setAudioModeAsync({
-    allowsRecordingIOS: true,
-    playsInSilentModeIOS: true,
+  const { AudioModule, RecordingPresets, setAudioModeAsync } = await import('expo-audio')
+  await setAudioModeAsync({
+    allowsRecording: true,
+    playsInSilentMode: true,
   })
-  const { recording } = await Audio.Recording.createAsync(
-    Audio.RecordingOptionsPresets.HIGH_QUALITY,
-  )
-  nativeRecording = recording
+  const recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY)
+  await recorder.prepareToRecordAsync()
+  recorder.record()
+  nativeRecording = recorder
 }
 
 export async function stopVoiceRecording(): Promise<VoiceRecording> {
@@ -96,12 +98,12 @@ export async function stopVoiceRecording(): Promise<VoiceRecording> {
 
   const recording = nativeRecording
   if (!recording) throw new Error('Not recording')
-  await recording.stopAndUnloadAsync()
-  const uri = recording.getURI()
+  await recording.stop()
+  const uri = recording.uri
   nativeRecording = null
   try {
-    const { Audio } = await import('expo-av')
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false })
+    const { setAudioModeAsync } = await import('expo-audio')
+    await setAudioModeAsync({ allowsRecording: false })
   } catch {
     // ignore
   }
@@ -120,7 +122,7 @@ export async function cancelVoiceRecording(): Promise<void> {
       return
     }
     if (nativeRecording) {
-      await nativeRecording.stopAndUnloadAsync()
+      await nativeRecording.stop()
       nativeRecording = null
     }
   } catch {
