@@ -22,7 +22,7 @@ module.exports = ({ config }) => {
     splash: {
       image: './assets/splash-icon.png',
       resizeMode: 'contain',
-      backgroundColor: '#E7EEF2',
+      backgroundColor: '#F7F4EE',
     },
     ios: {
       supportsTablet: true,
@@ -38,7 +38,7 @@ module.exports = ({ config }) => {
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
-        backgroundColor: '#E7EEF2',
+        backgroundColor: '#F7F4EE',
       },
       package: 'com.wahrly.assistant',
       permissions: ['RECORD_AUDIO'],
