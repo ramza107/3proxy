@@ -59,6 +59,7 @@ module.exports = ({ config }) => {
       'expo-router',
       'expo-secure-store',
       'expo-notifications',
+      'expo-web-browser',
       [
         'expo-audio',
         {

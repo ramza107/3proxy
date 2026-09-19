@@ -47,7 +47,7 @@ const Port = Number(process.env.PORT || 8787)
 /** Short-lived OAuth CSRF nonces: nonce → userId */
 const oauthNonces = new Map<
   string,
-  { userId: string; client: 'web' | 'native'; expires: number }
+  { userId: string; client: 'web' | 'native'; expires: number; used?: boolean }
 >()
 
 const groqKey = process.env.GROQ_API_KEY || ''
@@ -205,8 +205,9 @@ app.get('/api/email/connect', (req, res) => {
   const clientRaw = String(req.query.client || req.query.return || 'web').toLowerCase()
   const client: 'web' | 'native' = clientRaw === 'native' || clientRaw === 'mobile' ? 'native' : 'web'
   const nonce = crypto.randomBytes(16).toString('hex')
-  oauthNonces.set(nonce, { userId, client, expires: Date.now() + 10 * 60 * 1000 })
-  const url = buildAuthUrl(userId, nonce)
+  // Kept for legacy / optional replay hints; return client is signed into OAuth state
+  oauthNonces.set(nonce, { userId, client, expires: Date.now() + 15 * 60 * 1000 })
+  const url = buildAuthUrl(userId, nonce, client)
   // JSON for clients that prefer to open the URL themselves
   if (String(req.query.format || '') === 'json' || req.accepts('json') === 'json' && !req.accepts('html')) {
     return res.json({ url })
@@ -218,17 +219,24 @@ app.get('/api/email/callback', async (req, res) => {
   const code = String(req.query.code || '')
   const state = String(req.query.state || '')
   const parsed = parseOAuthState(state)
-  const nonceRow = parsed ? oauthNonces.get(parsed.nonce) : undefined
-  const client = nonceRow?.client || 'web'
+  const client = parsed?.client || 'web'
   const appUrl = resolveAppReturnUrl(client)
 
   const fail = () => res.redirect(`${appUrl}settings?gmail=error`)
 
   try {
     if (!code || !parsed) return fail()
-    oauthNonces.delete(parsed.nonce)
-    if (!nonceRow || nonceRow.userId !== parsed.userId || nonceRow.expires < Date.now()) {
-      return fail()
+
+    // Optional one-time nonce (best-effort); signed state alone is enough after Render sleep
+    if (parsed.nonce) {
+      const seen = oauthNonces.get(parsed.nonce)
+      if (seen?.used) return fail()
+      oauthNonces.set(parsed.nonce, {
+        userId: parsed.userId,
+        client: parsed.client,
+        expires: Date.now() + 10 * 60 * 1000,
+        used: true,
+      })
     }
 
     const tokens = await exchangeCode(code)
