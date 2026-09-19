@@ -42,6 +42,8 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
   const [time, setTime] = useState('')
   const [priority, setPriority] = useState<Priority>('medium')
   const [error, setError] = useState('')
+  // Web: the same click that opens the modal can hit the backdrop and close it instantly.
+  const [canDismiss, setCanDismiss] = useState(false)
 
   useEffect(() => {
     if (!task) return
@@ -52,7 +54,22 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
     setError('')
   }, [task])
 
+  useEffect(() => {
+    if (!visible) {
+      setCanDismiss(false)
+      return
+    }
+    setCanDismiss(false)
+    const timer = setTimeout(() => setCanDismiss(true), 150)
+    return () => clearTimeout(timer)
+  }, [visible])
+
   if (!task) return null
+
+  const dismiss = () => {
+    if (!canDismiss) return
+    onClose()
+  }
 
   const save = () => {
     const nextTitle = title.trim()
@@ -79,8 +96,9 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+      <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} accessibilityLabel="Close editor" />
+        <View style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.heading}>Edit task</Text>
 
@@ -218,8 +236,8 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
               <Text style={styles.cancelText}>Close</Text>
             </Pressable>
           </ScrollView>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   )
 }
