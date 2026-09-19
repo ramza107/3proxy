@@ -204,4 +204,57 @@ export async function syncDailyRitualNotifications(
   return { morningOk, eveningOk }
 }
 
+/** Immediate local notification for an inbox meeting / report ask. */
+export async function notifyMeetingEmail(params: {
+  title?: string
+  body: string
+  alertId: string
+  enabled: boolean
+}): Promise<boolean> {
+  if (Platform.OS === 'web' || !params.enabled) return false
+  const granted = await ensureNotificationPermissions()
+  if (!granted) return false
+  const NotificationsMod = await getNotifications()
+  if (!NotificationsMod) return false
+  try {
+    await NotificationsMod.scheduleNotificationAsync({
+      content: {
+        title: params.title || 'Wahrly · Inbox',
+        body: params.body,
+        data: { kind: 'meeting', alertId: params.alertId },
+      },
+      trigger: null,
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Best-effort Expo push token for server-side meeting alerts. */
+export async function registerDevicePushToken(userId: string): Promise<string | null> {
+  if (Platform.OS === 'web' || !userId) return null
+  try {
+    const granted = await ensureNotificationPermissions()
+    if (!granted) return null
+    const NotificationsMod = await getNotifications()
+    if (!NotificationsMod) return null
+    const Constants = await import('expo-constants')
+    const projectId =
+      Constants.default?.easConfig?.projectId ||
+      (Constants.default?.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas
+        ?.projectId
+    const tokenRes = projectId
+      ? await NotificationsMod.getExpoPushTokenAsync({ projectId })
+      : await NotificationsMod.getExpoPushTokenAsync()
+    const token = tokenRes.data
+    if (!token) return null
+    const { registerPushToken } = await import('./emailApi')
+    await registerPushToken(userId, token)
+    return token
+  } catch {
+    return null
+  }
+}
+
 export { parseHm }

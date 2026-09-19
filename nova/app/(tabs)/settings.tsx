@@ -208,7 +208,8 @@ export default function SettingsScreen() {
             <Text style={styles.rowTitle}>Gmail</Text>
             <Text style={styles.rowSub}>
               Connect once. Google asks “Allow Wahrly to read mail?” — you tap Allow. Morning inbox
-              shows who wrote yesterday; Promises scans Sent for commitments you made.
+              shows who wrote yesterday; Inbox asks watch for meet/report emails; Promises scan
+              Sent.
             </Text>
 
             {gmailConnected ? (
@@ -263,6 +264,29 @@ export default function SettingsScreen() {
               <Switch
                 value={settings.emailPromisesAutoEnabled === true}
                 onValueChange={(v) => updateSettings({ emailPromisesAutoEnabled: v })}
+                trackColor={{ true: colors.accent, false: colors.bgSoft }}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>Meeting email alerts</Text>
+                <Text style={styles.rowSub}>
+                  Watch Primary inbox for meet / call / report asks and push: “Name wrote — wants
+                  to meet…”
+                </Text>
+              </View>
+              <Switch
+                value={settings.meetingEmailAlertsEnabled !== false}
+                onValueChange={async (v) => {
+                  updateSettings({ meetingEmailAlertsEnabled: v })
+                  if (v) {
+                    const { ensureNotificationPermissions, registerDevicePushToken } =
+                      await import('../../lib/notifications')
+                    await ensureNotificationPermissions()
+                    if (userId) await registerDevicePushToken(userId)
+                  }
+                }}
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
