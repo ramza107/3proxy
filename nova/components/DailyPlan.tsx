@@ -9,6 +9,7 @@ type Props = {
   onToggle: (task: Task) => void
   workdayStart?: string
   workdayEnd?: string
+  dayKind?: 'work' | 'light'
   onPlanDay?: () => void | Promise<void>
   planning?: boolean
   suggestion?: string
@@ -53,6 +54,7 @@ export function DailyPlan({
   onToggle,
   workdayStart = '09:00',
   workdayEnd = '18:00',
+  dayKind = 'work',
   onPlanDay,
   planning,
   suggestion,
@@ -67,6 +69,7 @@ export function DailyPlan({
         <View>
           <Text style={styles.title}>Today</Text>
           <Text style={styles.meta}>
+            {dayKind === 'light' ? 'light · ' : ''}
             {workdayStart}–{workdayEnd}
             {openCount ? ` · ${openCount} open` : ' · clear'}
           </Text>

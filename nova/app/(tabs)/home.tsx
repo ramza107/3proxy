@@ -11,6 +11,7 @@ import { PromisesBrief } from '../../components/PromisesBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
+import { resolveDayWindow } from '../../lib/scheduleDay'
 import { organizeMyDay, refreshTasks, sendNovaMessage, toggleTaskCompleted } from '../../services/ai'
 
 function greeting() {
@@ -41,6 +42,10 @@ export default function HomeScreen() {
   }, [userId])
 
   const day = todayISO()
+  const dayWindow = useMemo(
+    () => resolveDayWindow(settings, day),
+    [settings, day],
+  )
   const todayTasks = useMemo(
     () => sortTasks(tasks.filter((t) => !t.completed && (t.date === day || !t.date))),
     [tasks, day],
@@ -82,8 +87,9 @@ export default function HomeScreen() {
           <DailyPlan
             tasks={todayTasks}
             onToggle={(task) => toggleTaskCompleted(task)}
-            workdayStart={settings.workdayStart || '09:00'}
-            workdayEnd={settings.workdayEnd || '18:00'}
+            workdayStart={dayWindow.start}
+            workdayEnd={dayWindow.end}
+            dayKind={dayWindow.kind}
             onPlanDay={onPlanDay}
             planning={planning}
           />
