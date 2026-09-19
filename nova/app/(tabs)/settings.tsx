@@ -21,11 +21,20 @@ import {
   parseHm,
   syncDailyRitualNotifications,
 } from '../../lib/notifications'
+import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
+import { defaultTypicalWeek, type Dow, type WeekAnchor } from '../../types'
 
 const MORNING_PRESETS = ['06:30', '07:00', '07:30', '08:00', '08:30', '09:00']
 const EVENING_PRESETS = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30']
+const WORK_START_PRESETS = ['08:00', '09:00', '10:00']
+const WORK_END_PRESETS = ['17:00', '18:00', '19:00', '20:00']
+const ANCHOR_PRESETS = [
+  { title: 'Deep work', time: '09:30', durationMin: 90 },
+  { title: 'Sport', time: '19:00', durationMin: 60 },
+  { title: 'Family', time: '18:30', durationMin: 90 },
+]
 
 export default function SettingsScreen() {
   const router = useRouter()
@@ -39,6 +48,13 @@ export default function SettingsScreen() {
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
   const [eveningTime, setEveningTime] = useState(settings.eveningClearTime || '21:30')
+  const [workStart, setWorkStart] = useState(settings.workdayStart || '09:00')
+  const [workEnd, setWorkEnd] = useState(settings.workdayEnd || '18:00')
+  const [weekendStart, setWeekendStart] = useState(
+    settings.typicalWeek?.weekendStart || '10:00',
+  )
+  const [weekendEnd, setWeekendEnd] = useState(settings.typicalWeek?.weekendEnd || '14:00')
+  const [weekBlurb, setWeekBlurb] = useState(settings.typicalWeek?.blurb || '')
   const [oauthReady, setOauthReady] = useState(false)
   const [gmailConnected, setGmailConnected] = useState(false)
   const [gmailEmail, setGmailEmail] = useState<string | null>(null)
@@ -61,7 +77,62 @@ export default function SettingsScreen() {
   useEffect(() => {
     setMorningTime(settings.morningBriefTime || '08:00')
     setEveningTime(settings.eveningClearTime || '21:30')
-  }, [settings.morningBriefTime, settings.eveningClearTime])
+    setWorkStart(settings.workdayStart || '09:00')
+    setWorkEnd(settings.workdayEnd || '18:00')
+    const tw = normalizeTypicalWeek(settings.typicalWeek)
+    setWeekendStart(tw.weekendStart)
+    setWeekendEnd(tw.weekendEnd)
+    setWeekBlurb(tw.blurb)
+  }, [
+    settings.morningBriefTime,
+    settings.eveningClearTime,
+    settings.workdayStart,
+    settings.workdayEnd,
+    settings.typicalWeek,
+  ])
+
+  const typicalWeek = normalizeTypicalWeek(settings.typicalWeek)
+
+  const patchTypicalWeek = (patch: Partial<typeof typicalWeek>) => {
+    updateSettings({
+      typicalWeek: normalizeTypicalWeek({ ...typicalWeek, ...patch }),
+    })
+  }
+
+  const toggleWorkDay = (dow: Dow) => {
+    const next = [...typicalWeek.workDays] as typeof typicalWeek.workDays
+    next[dow] = !next[dow]
+    patchTypicalWeek({ workDays: next })
+  }
+
+  const addAnchor = (preset: (typeof ANCHOR_PRESETS)[0]) => {
+    const id = `a_${Math.random().toString(36).slice(2, 8)}`
+    const anchor: WeekAnchor = {
+      id,
+      title: preset.title,
+      time: preset.time,
+      durationMin: preset.durationMin,
+      days: typicalWeek.workDays[2] ? [2, 4] : [1, 3], // Tue/Thu or Mon/Wed
+    }
+    patchTypicalWeek({ anchors: [...typicalWeek.anchors, anchor].slice(0, 6) })
+  }
+
+  const toggleAnchorDay = (anchorId: string, dow: Dow) => {
+    patchTypicalWeek({
+      anchors: typicalWeek.anchors.map((a) => {
+        if (a.id !== anchorId) return a
+        const has = a.days.includes(dow)
+        return {
+          ...a,
+          days: has ? a.days.filter((d) => d !== dow) : [...a.days, dow].sort(),
+        }
+      }),
+    })
+  }
+
+  const removeAnchor = (anchorId: string) => {
+    patchTypicalWeek({ anchors: typicalWeek.anchors.filter((a) => a.id !== anchorId) })
+  }
 
   useEffect(() => {
     syncDailyRitualNotifications(settings, tasks).catch(() => undefined)
@@ -132,6 +203,24 @@ export default function SettingsScreen() {
     }
     setEveningTime(value)
     updateSettings({ eveningClearTime: value })
+  }
+
+  const applyWorkStart = (value: string) => {
+    if (!parseHm(value)) {
+      Alert.alert('Time', 'Use HH:MM, for example 09:00')
+      return
+    }
+    setWorkStart(value)
+    updateSettings({ workdayStart: value })
+  }
+
+  const applyWorkEnd = (value: string) => {
+    if (!parseHm(value)) {
+      Alert.alert('Time', 'Use HH:MM, for example 18:00')
+      return
+    }
+    setWorkEnd(value)
+    updateSettings({ workdayEnd: value })
   }
 
   const connectWithGoogle = async () => {
@@ -381,6 +470,163 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
+            <Text style={styles.rowTitle}>Workday</Text>
+            <Text style={styles.rowSub}>
+              Smart day packs tasks into free slots between these hours (Plan day / “разложи день”)
+            </Text>
+            <Text style={styles.label}>Start</Text>
+            <TextInput
+              value={workStart}
+              onChangeText={setWorkStart}
+              onEndEditing={() => applyWorkStart(workStart)}
+              placeholder="09:00"
+              placeholderTextColor={colors.textDim}
+              style={styles.input}
+              keyboardType="numbers-and-punctuation"
+              autoCapitalize="none"
+            />
+            <View style={styles.presets}>
+              {WORK_START_PRESETS.map((t) => (
+                <Pressable
+                  key={t}
+                  style={[styles.chip, workStart === t && styles.chipOn]}
+                  onPress={() => applyWorkStart(t)}
+                >
+                  <Text style={[styles.chipText, workStart === t && styles.chipTextOn]}>{t}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.label}>End</Text>
+            <TextInput
+              value={workEnd}
+              onChangeText={setWorkEnd}
+              onEndEditing={() => applyWorkEnd(workEnd)}
+              placeholder="18:00"
+              placeholderTextColor={colors.textDim}
+              style={styles.input}
+              keyboardType="numbers-and-punctuation"
+              autoCapitalize="none"
+            />
+            <View style={styles.presets}>
+              {WORK_END_PRESETS.map((t) => (
+                <Pressable
+                  key={t}
+                  style={[styles.chip, workEnd === t && styles.chipOn]}
+                  onPress={() => applyWorkEnd(t)}
+                >
+                  <Text style={[styles.chipText, workEnd === t && styles.chipTextOn]}>{t}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.rowTitle}>Typical week</Text>
+            <Text style={styles.rowSub}>
+              Which days are work days, light weekend hours, and recurring anchors Plan day will
+              protect.
+            </Text>
+            <Text style={styles.label}>Work days</Text>
+            <View style={styles.presets}>
+              {DOW_LABELS.map(({ key, short }) => (
+                <Pressable
+                  key={key}
+                  style={[styles.chip, typicalWeek.workDays[key] && styles.chipOn]}
+                  onPress={() => toggleWorkDay(key)}
+                >
+                  <Text
+                    style={[styles.chipText, typicalWeek.workDays[key] && styles.chipTextOn]}
+                  >
+                    {short}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.label}>Light days (hours)</Text>
+            <View style={styles.presets}>
+              {['10:00', '11:00'].map((t) => (
+                <Pressable
+                  key={`ws-${t}`}
+                  style={[styles.chip, weekendStart === t && styles.chipOn]}
+                  onPress={() => {
+                    setWeekendStart(t)
+                    patchTypicalWeek({ weekendStart: t })
+                  }}
+                >
+                  <Text style={[styles.chipText, weekendStart === t && styles.chipTextOn]}>
+                    {t} start
+                  </Text>
+                </Pressable>
+              ))}
+              {['13:00', '14:00', '16:00'].map((t) => (
+                <Pressable
+                  key={`we-${t}`}
+                  style={[styles.chip, weekendEnd === t && styles.chipOn]}
+                  onPress={() => {
+                    setWeekendEnd(t)
+                    patchTypicalWeek({ weekendEnd: t })
+                  }}
+                >
+                  <Text style={[styles.chipText, weekendEnd === t && styles.chipTextOn]}>
+                    {t} end
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.label}>Anchors</Text>
+            <View style={styles.presets}>
+              {ANCHOR_PRESETS.map((p) => (
+                <Pressable key={p.title} style={styles.chip} onPress={() => addAnchor(p)}>
+                  <Text style={styles.chipText}>+ {p.title}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {typicalWeek.anchors.map((a) => (
+              <View key={a.id} style={styles.anchorBlock}>
+                <View style={styles.row}>
+                  <Text style={styles.anchorTitle}>
+                    {a.title} · {a.time} · {a.durationMin}m
+                  </Text>
+                  <Pressable onPress={() => removeAnchor(a.id)} hitSlop={8}>
+                    <Text style={styles.dismiss}>Remove</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.presets}>
+                  {DOW_LABELS.map(({ key, short }) => (
+                    <Pressable
+                      key={`${a.id}-${key}`}
+                      style={[styles.chip, a.days.includes(key) && styles.chipOn]}
+                      onPress={() => toggleAnchorDay(a.id, key)}
+                    >
+                      <Text
+                        style={[styles.chipText, a.days.includes(key) && styles.chipTextOn]}
+                      >
+                        {short}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ))}
+            <Text style={styles.label}>Note (optional)</Text>
+            <TextInput
+              value={weekBlurb}
+              onChangeText={setWeekBlurb}
+              onEndEditing={() => patchTypicalWeek({ blurb: weekBlurb.trim() })}
+              placeholder="e.g. Gym Tue/Thu evenings, Friday light"
+              placeholderTextColor={colors.textDim}
+              style={[styles.input, { minHeight: 64 }]}
+              multiline
+            />
+            <Pressable
+              onPress={() => patchTypicalWeek(defaultTypicalWeek())}
+              style={{ alignSelf: 'flex-start', paddingVertical: 4 }}
+            >
+              <Text style={styles.dismiss}>Reset typical week</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.card}>
             <Text style={styles.label}>AI preferences</Text>
             {(['friendly', 'concise', 'coach'] as const).map((tone) => (
               <Pressable
@@ -484,6 +730,14 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
   chipTextOn: { color: colors.accentStrong },
+  anchorBlock: {
+    gap: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  anchorTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 14, flex: 1 },
+  dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   tone: {
     backgroundColor: colors.bgSoft,
     borderRadius: radii.sm,

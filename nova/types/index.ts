@@ -97,6 +97,45 @@ export type UserSettings = {
    * fire push / local notifications for new ones.
    */
   meetingEmailAlertsEnabled: boolean
+  /** HH:MM — smart day packer window start (weekdays) */
+  workdayStart: string
+  /** HH:MM — smart day packer window end (weekdays) */
+  workdayEnd: string
+  /** Typical week: which days are work, weekend hours, recurring anchors */
+  typicalWeek: TypicalWeek
+}
+
+/** JS Date#getDay(): 0=Sun … 6=Sat */
+export type Dow = 0 | 1 | 2 | 3 | 4 | 5 | 6
+
+export type WeekAnchor = {
+  id: string
+  title: string
+  /** Days this block repeats */
+  days: Dow[]
+  time: string
+  durationMin: number
+}
+
+export type TypicalWeek = {
+  /** Indexed by Dow — true = full workday hours */
+  workDays: [boolean, boolean, boolean, boolean, boolean, boolean, boolean]
+  weekendStart: string
+  weekendEnd: string
+  anchors: WeekAnchor[]
+  /** Free-text reminder of how your week usually feels */
+  blurb: string
+}
+
+export function defaultTypicalWeek(): TypicalWeek {
+  return {
+    // Sun off, Mon–Fri on, Sat off
+    workDays: [false, true, true, true, true, true, false],
+    weekendStart: '10:00',
+    weekendEnd: '14:00',
+    anchors: [],
+    blurb: '',
+  }
 }
 
 export type EmailDigestSender = {

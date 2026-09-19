@@ -3,6 +3,7 @@ import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
+import { defaultTypicalWeek } from '../types'
 
 const ssrSafeStorage = {
   getItem: async (_name: string) => null as string | null,
@@ -70,6 +71,9 @@ const defaultSettings: UserSettings = {
   emailDigestEnabled: true,
   emailPromisesAutoEnabled: false,
   meetingEmailAlertsEnabled: true,
+  workdayStart: '09:00',
+  workdayEnd: '18:00',
+  typicalWeek: defaultTypicalWeek(),
 }
 
 export const useNovaStore = create<NovaState>()(
@@ -182,6 +186,17 @@ export const useNovaStore = create<NovaState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.settings = { ...defaultSettings, ...state.settings }
+          state.settings.typicalWeek = {
+            ...defaultTypicalWeek(),
+            ...(state.settings.typicalWeek || {}),
+            workDays:
+              state.settings.typicalWeek?.workDays?.length === 7
+                ? state.settings.typicalWeek.workDays
+                : defaultTypicalWeek().workDays,
+            anchors: Array.isArray(state.settings.typicalWeek?.anchors)
+              ? state.settings.typicalWeek.anchors
+              : [],
+          }
           state.dismissedPromiseIds = Array.isArray(state.dismissedPromiseIds)
             ? state.dismissedPromiseIds
             : []
