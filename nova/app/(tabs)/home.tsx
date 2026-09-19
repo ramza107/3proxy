@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { BrandMark } from '../../components/BrandMark'
@@ -10,7 +10,7 @@ import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { PromisesBrief } from '../../components/PromisesBrief'
 import { Screen } from '../../components/Screen'
-import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { brand, colors, fonts, spacing } from '../../constants/theme'
 import { parseHm } from '../../lib/notifications'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
@@ -92,24 +92,24 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.brandRow}>
-            <BrandMark size={40} />
+            <BrandMark size={36} />
             <Text style={styles.brandMark}>{brand.name}</Text>
           </View>
-          <Text style={styles.hello}>{greeting()}</Text>
+          <Text style={styles.hello}>
+            {greeting()}, {name}
+          </Text>
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
-          <Text style={styles.name}>Hi {name}</Text>
 
           {showEveningClear ? (
-            <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
+            <Pressable style={styles.eveningRow} onPress={() => router.push('/evening')}>
               <View style={styles.eveningNode} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.eveningEyebrow}>Evening node</Text>
                 <Text style={styles.eveningTitle}>Evening Clear</Text>
                 <Text style={styles.eveningSub}>
-                  Close today, shape tomorrow — {todayTasks.length} open
+                  Close today · {todayTasks.length} open
                 </Text>
               </View>
-              <Text style={styles.eveningCta}>→</Text>
+              <Text style={styles.eveningCta}>Open</Text>
             </Pressable>
           ) : null}
 
@@ -123,9 +123,11 @@ export default function HomeScreen() {
             planning={planning}
           />
 
-          <InboxBrief userId={userId} enabled={emailDigestEnabled} />
-          <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
-          <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
+          <View style={styles.mailBlock}>
+            <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+            <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
+            <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
+          </View>
 
           <View style={styles.composer}>
             <Text style={styles.prompt}>What do you need to do?</Text>
@@ -142,30 +144,36 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 48 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: 48 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
   brandMark: {
     color: colors.accentStrong,
     fontFamily: fonts.brand,
-    fontSize: 22,
-    letterSpacing: -0.4,
+    fontSize: 28,
+    letterSpacing: -0.6,
   },
   hello: {
     color: colors.text,
-    fontSize: 36,
-    fontFamily: fonts.brand,
-    letterSpacing: -0.8,
-    marginTop: 4,
+    fontSize: 18,
+    fontFamily: fonts.bodyMedium,
+    letterSpacing: -0.2,
+    marginTop: 8,
   },
-  date: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.body, marginTop: -8 },
-  name: { color: colors.textDim, fontFamily: fonts.body, marginBottom: 4 },
-  eveningCard: {
+  date: {
+    color: colors.textDim,
+    fontSize: 14,
+    fontFamily: fonts.body,
+    marginBottom: 8,
+  },
+  eveningRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.bgDeep,
-    borderRadius: radii.lg,
-    padding: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    marginBottom: 4,
   },
   eveningNode: {
     width: 10,
@@ -173,28 +181,31 @@ const styles = StyleSheet.create({
     borderRadius: 99,
     backgroundColor: colors.accent,
   },
-  eveningEyebrow: {
-    color: 'rgba(247,251,250,0.5)',
-    fontFamily: fonts.bodyBold,
-    fontSize: 10,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
   eveningTitle: {
-    color: colors.textOnAccent,
-    fontFamily: fonts.brand,
-    fontSize: 22,
-    letterSpacing: -0.3,
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontSize: 15,
   },
   eveningSub: {
-    color: 'rgba(247,251,250,0.7)',
+    color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
-    lineHeight: 18,
+    marginTop: 1,
   },
-  eveningCta: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 20 },
+  eveningCta: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+  },
+  mailBlock: {
+    marginTop: spacing.sm,
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
   composer: {
-    marginTop: 8,
+    marginTop: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
