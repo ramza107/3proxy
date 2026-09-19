@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii, spacing } from '../constants/theme'
@@ -131,11 +131,10 @@ export function InboxBrief({ userId, enabled }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.signal,
+    paddingLeft: spacing.md,
+    paddingVertical: spacing.sm,
     gap: 8,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

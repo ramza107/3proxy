@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
+import { BrandMark } from '../../components/BrandMark'
 import { DailyPlan } from '../../components/DailyPlan'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
@@ -22,7 +23,6 @@ function greeting() {
   return 'Good evening'
 }
 
-/** Show Evening Clear from late afternoon until end of day, until finished today. */
 function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) {
   const today = todayISO()
   if (lastClear === today) return false
@@ -53,10 +53,7 @@ export default function HomeScreen() {
   }, [userId])
 
   const day = todayISO()
-  const dayWindow = useMemo(
-    () => resolveDayWindow(settings, day),
-    [settings, day],
-  )
+  const dayWindow = useMemo(() => resolveDayWindow(settings, day), [settings, day])
   const todayTasks = useMemo(
     () => sortTasks(tasks.filter((t) => !t.completed && (t.date === day || !t.date))),
     [tasks, day],
@@ -94,19 +91,25 @@ export default function HomeScreen() {
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.brandMark}>{brand.name}</Text>
+          <View style={styles.brandRow}>
+            <BrandMark size={40} />
+            <Text style={styles.brandMark}>{brand.name}</Text>
+          </View>
           <Text style={styles.hello}>{greeting()}</Text>
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
           <Text style={styles.name}>Hi {name}</Text>
 
           {showEveningClear ? (
             <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
-              <Text style={styles.eveningEyebrow}>Ritual</Text>
-              <Text style={styles.eveningTitle}>Evening Clear</Text>
-              <Text style={styles.eveningSub}>
-                Close today, shape tomorrow — {todayTasks.length} open now
-              </Text>
-              <Text style={styles.eveningCta}>Start →</Text>
+              <View style={styles.eveningNode} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.eveningEyebrow}>Evening node</Text>
+                <Text style={styles.eveningTitle}>Evening Clear</Text>
+                <Text style={styles.eveningSub}>
+                  Close today, shape tomorrow — {todayTasks.length} open
+                </Text>
+              </View>
+              <Text style={styles.eveningCta}>→</Text>
             </Pressable>
           ) : null}
 
@@ -121,18 +124,16 @@ export default function HomeScreen() {
           />
 
           <InboxBrief userId={userId} enabled={emailDigestEnabled} />
-
           <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
-
           <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
 
-          <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
-            <Text style={styles.askText}>Ask Wahrly</Text>
-          </Pressable>
-
-          <View style={styles.divider} />
-          <Text style={styles.prompt}>What do you need to do?</Text>
-          <AIInput loading={loading} onSend={onSend} />
+          <View style={styles.composer}>
+            <Text style={styles.prompt}>What do you need to do?</Text>
+            <AIInput loading={loading} onSend={onSend} />
+            <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
+              <Text style={styles.askText}>Open chat</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </Screen>
@@ -141,63 +142,69 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 40 },
+  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 48 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   brandMark: {
     color: colors.accentStrong,
     fontFamily: fonts.brand,
-    fontSize: 18,
-    letterSpacing: -0.3,
+    fontSize: 22,
+    letterSpacing: -0.4,
   },
   hello: {
     color: colors.text,
-    fontSize: 32,
+    fontSize: 36,
     fontFamily: fonts.brand,
-    letterSpacing: -0.6,
+    letterSpacing: -0.8,
+    marginTop: 4,
   },
-  date: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.body, marginTop: -6 },
-  name: { color: colors.textDim, marginBottom: 4, fontFamily: fonts.body },
+  date: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.body, marginTop: -8 },
+  name: { color: colors.textDim, fontFamily: fonts.body, marginBottom: 4 },
   eveningCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: colors.bgDeep,
     borderRadius: radii.lg,
     padding: spacing.md,
-    gap: 4,
+  },
+  eveningNode: {
+    width: 10,
+    height: 10,
+    borderRadius: 99,
+    backgroundColor: colors.accent,
   },
   eveningEyebrow: {
-    color: 'rgba(247,251,250,0.55)',
+    color: 'rgba(247,251,250,0.5)',
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
+    fontSize: 10,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   eveningTitle: {
     color: colors.textOnAccent,
     fontFamily: fonts.brand,
-    fontSize: 26,
-    letterSpacing: -0.4,
+    fontSize: 22,
+    letterSpacing: -0.3,
   },
   eveningSub: {
-    color: 'rgba(247,251,250,0.72)',
+    color: 'rgba(247,251,250,0.7)',
     fontFamily: fonts.body,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
+    fontSize: 13,
+    lineHeight: 18,
   },
-  eveningCta: {
-    color: colors.textOnAccent,
-    fontFamily: fonts.bodyBold,
-    fontSize: 15,
-    marginTop: 4,
+  eveningCta: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 20 },
+  composer: {
+    marginTop: 8,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    gap: 10,
   },
-  ask: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.accent,
-    borderRadius: radii.full,
-    paddingHorizontal: 18,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  askText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
   prompt: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.bodyMedium },
+  ask: { alignSelf: 'flex-start' },
+  askText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+  },
 })

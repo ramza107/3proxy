@@ -220,16 +220,15 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: 'rgba(255,255,255,0.72)',
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.signal,
+    paddingLeft: spacing.md,
+    paddingVertical: spacing.sm,
     gap: 8,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   kicker: {
-    color: colors.bgDeep,
+    color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
     fontSize: 11,
     letterSpacing: 1.1,

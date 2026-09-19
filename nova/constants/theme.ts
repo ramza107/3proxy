@@ -1,9 +1,9 @@
 export const colors = {
-  // Soft dawn atmosphere — ink + mist (not purple AI dark)
-  bg: '#E7EEF2',
-  bgElevated: '#F4F7F9',
-  bgCard: 'rgba(255,255,255,0.72)',
-  bgSoft: '#DDE6EC',
+  // Signal Timeline — mist field + ink signal (not purple AI)
+  bg: '#E8EEF1',
+  bgElevated: '#F5F8FA',
+  bgCard: 'rgba(255,255,255,0.55)',
+  bgSoft: '#D5E0E6',
   bgDeep: '#0F2A32',
   border: 'rgba(15,42,50,0.10)',
   borderStrong: 'rgba(15,42,50,0.18)',
@@ -14,7 +14,10 @@ export const colors = {
   accent: '#0F6E66',
   accentSoft: 'rgba(15,110,102,0.12)',
   accentStrong: '#0A5751',
-  accentGlow: 'rgba(47, 168, 152, 0.22)',
+  accentGlow: 'rgba(15, 110, 102, 0.14)',
+  signal: '#0F6E66',
+  signalMuted: 'rgba(15,110,102,0.28)',
+  signalLine: 'rgba(15,42,50,0.14)',
   success: '#1F8A5B',
   danger: '#C4454A',
   warning: '#B8872A',
@@ -33,10 +36,10 @@ export const spacing = {
 }
 
 export const radii = {
-  sm: 12,
-  md: 18,
-  lg: 24,
-  xl: 32,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
   full: 999,
 }
 

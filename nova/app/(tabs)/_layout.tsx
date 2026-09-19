@@ -1,12 +1,18 @@
 import { Tabs } from 'expo-router'
-import { Text } from 'react-native'
-import { colors, fonts } from '../../constants/theme'
+import { View } from 'react-native'
+import { BrandMark } from '../../components/BrandMark'
+import { colors } from '../../constants/theme'
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+function SignalDot({ focused }: { focused: boolean }) {
   return (
-    <Text style={{ color: focused ? colors.accentStrong : colors.textDim, fontSize: 11, fontFamily: fonts.bodyBold }}>
-      {label}
-    </Text>
+    <View
+      style={{
+        width: focused ? 10 : 7,
+        height: focused ? 10 : 7,
+        borderRadius: 99,
+        backgroundColor: focused ? colors.signal : colors.signalMuted,
+      }}
+    />
   )
 }
 
@@ -24,34 +30,37 @@ export default function TabsLayout() {
         },
         tabBarActiveTintColor: colors.accentStrong,
         tabBarInactiveTintColor: colors.textDim,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon label="●" focused={focused} />,
+          tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
           title: 'Wahrly',
-          tabBarIcon: ({ focused }) => <TabIcon label="✦" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <BrandMark size={22} color={focused ? colors.signal : colors.signalMuted} />
+          ),
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
           title: 'Tasks',
-          tabBarIcon: ({ focused }) => <TabIcon label="☰" focused={focused} />,
+          tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon label="⚙" focused={focused} />,
+          tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
         }}
       />
     </Tabs>
