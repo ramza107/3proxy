@@ -38,6 +38,20 @@ npx serve dist
 
 Demo mode works in the browser without OpenAI/Supabase keys (local AI fallback + AsyncStorage).
 
+## Installable iPhone & Android (EAS)
+
+One Expo project → native builds. Details: [`docs/mobile-apps.md`](docs/mobile-apps.md).
+
+```bash
+cd nova
+npx eas-cli login
+npx eas-cli init
+npm run build:ios       # needs Apple Developer account
+npm run build:android   # APK download link
+```
+
+Deep link: `wahrly://` (Gmail OAuth returns into the app after Allow).
+
 ## Quick start (mobile / Expo Go)
 
 ```bash

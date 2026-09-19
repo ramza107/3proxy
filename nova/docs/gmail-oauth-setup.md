@@ -38,9 +38,12 @@ Environment variables:
 - `GOOGLE_CLIENT_SECRET` = (Client Secret)
 - `GOOGLE_REDIRECT_URI` = `https://threeproxy-x9bi.onrender.com/api/email/callback`
 - `PUBLIC_APP_URL` = `https://ramza107.github.io/3proxy/nova/`
+- `PUBLIC_NATIVE_APP_URL` = `wahrly://` (iPhone/Android return after Google Allow)
 - `PUBLIC_API_URL` = `https://threeproxy-x9bi.onrender.com`
 
 Redeploy the service.
 
 ## 6. Try it
 Settings → **Connect with Google** → Allow → Home shows Morning inbox.
+
+On the installed iOS/Android app the same button returns via `wahrly://settings?gmail=connected`.
