@@ -32,3 +32,5 @@ services:
         value: https://threeproxy-x9bi.onrender.com
       - key: PUBLIC_APP_URL
         value: https://ramza107.github.io/3proxy/nova/
+      - key: PUBLIC_NATIVE_APP_URL
+        value: wahrly://
