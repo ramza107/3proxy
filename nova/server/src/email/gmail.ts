@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { isInWindow, previousLocalDayWindow, type DayWindow } from './timeWindow.js'
 import { deleteConnection, getConnection, saveConnection, type EmailConnection } from './store.js'
 
@@ -68,7 +69,22 @@ export function resolveAppReturnUrl(client: 'web' | 'native' = 'web') {
   return getAppReturnUrl().replace(/\/?$/, '/')
 }
 
-export function buildAuthUrl(userId: string, stateNonce: string) {
+function oauthStateSecret() {
+  return process.env.GOOGLE_CLIENT_SECRET || process.env.OAUTH_STATE_SECRET || 'wahrly-dev-oauth'
+}
+
+/** Signed OAuth state — survives Render cold starts (no in-memory nonce required). */
+export function buildAuthUrl(userId: string, _stateNonce: string, client: 'web' | 'native' = 'web') {
+  const payload = {
+    userId,
+    client,
+    exp: Date.now() + 15 * 60 * 1000,
+    n: crypto.randomBytes(8).toString('hex'),
+  }
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url')
+  const sig = crypto.createHmac('sha256', oauthStateSecret()).update(body).digest('base64url')
+  const state = `${body}.${sig}`
+
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
     redirect_uri: getRedirectUri(),
@@ -77,16 +93,38 @@ export function buildAuthUrl(userId: string, stateNonce: string) {
     access_type: 'offline',
     prompt: 'consent',
     include_granted_scopes: 'true',
-    state: Buffer.from(JSON.stringify({ userId, nonce: stateNonce })).toString('base64url'),
+    state,
   })
   return `${AUTH_URL}?${params.toString()}`
 }
 
-export function parseOAuthState(state: string): { userId: string; nonce: string } | null {
+export function parseOAuthState(
+  state: string,
+): { userId: string; nonce: string; client: 'web' | 'native' } | null {
   try {
+    // New format: body.sig
+    if (state.includes('.')) {
+      const [body, sig] = state.split('.')
+      if (!body || !sig) return null
+      const expect = crypto.createHmac('sha256', oauthStateSecret()).update(body).digest('base64url')
+      if (sig !== expect) return null
+      const raw = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'))
+      if (!raw?.userId || !raw?.exp || Number(raw.exp) < Date.now()) return null
+      const client: 'web' | 'native' =
+        raw.client === 'native' || raw.client === 'mobile' ? 'native' : 'web'
+      return {
+        userId: String(raw.userId),
+        nonce: String(raw.n || ''),
+        client,
+      }
+    }
+
+    // Legacy unsigned format (in-flight sessions)
     const raw = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'))
     if (!raw?.userId || !raw?.nonce) return null
-    return { userId: String(raw.userId), nonce: String(raw.nonce) }
+    const client: 'web' | 'native' =
+      raw.client === 'native' || raw.client === 'mobile' ? 'native' : 'web'
+    return { userId: String(raw.userId), nonce: String(raw.nonce), client }
   } catch {
     return null
   }

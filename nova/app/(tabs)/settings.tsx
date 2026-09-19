@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import * as WebBrowser from 'expo-web-browser'
 import { useCallback, useEffect, useState } from 'react'
 import {
   Alert,
@@ -25,6 +26,10 @@ import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { defaultTypicalWeek, type Dow, type WeekAnchor } from '../../types'
+
+WebBrowser.maybeCompleteAuthSession()
+
+const NATIVE_OAUTH_RETURN = 'wahrly://settings'
 
 const MORNING_PRESETS = ['06:30', '07:00', '07:30', '08:00', '08:30', '09:00']
 const EVENING_PRESETS = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30']
@@ -242,7 +247,22 @@ export default function SettingsScreen() {
         window.location.href = url
         return
       }
-      await Linking.openURL(url)
+      // Opens in-app browser and returns to wahrly://settings after Google Allow
+      const result = await WebBrowser.openAuthSessionAsync(url, NATIVE_OAUTH_RETURN)
+      if (result.type === 'success' && result.url) {
+        const q = result.url.includes('gmail=connected')
+          ? 'connected'
+          : result.url.includes('gmail=error')
+            ? 'error'
+            : null
+        if (q === 'connected') {
+          await refreshGmail()
+          Alert.alert('Gmail connected', 'Wahrly can now read your inbox (readonly).')
+          router.replace('/settings')
+        } else if (q === 'error') {
+          Alert.alert('Gmail', 'Could not connect. Try Connect with Google again.')
+        }
+      }
     } finally {
       setGmailBusy(false)
     }
