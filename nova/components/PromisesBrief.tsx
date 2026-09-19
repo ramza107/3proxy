@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
 import { useNovaStore } from '../lib/store'
@@ -53,10 +53,11 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
     }
   }
 
-  useEffect(() => {
-    load(true).catch(() => undefined)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId])
+  useFocusEffect(
+    useCallback(() => {
+      load(true).catch(() => undefined)
+    }, [userId]),
+  )
 
   // When user turns Auto-add ON, allow a fresh pass over current scan results
   useEffect(() => {
