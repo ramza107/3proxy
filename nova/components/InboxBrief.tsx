@@ -130,11 +130,13 @@ export function InboxBrief({ userId, enabled }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    paddingVertical: spacing.md,
+    paddingHorizontal: 0,
+    borderWidth: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
     gap: 8,
   },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

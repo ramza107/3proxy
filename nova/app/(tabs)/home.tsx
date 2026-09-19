@@ -8,8 +8,8 @@ import { DailyPlan } from '../../components/DailyPlan'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { PromisesBrief } from '../../components/PromisesBrief'
-import { Screen } from '../../components/Screen'
-import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { FadeUp, Screen } from '../../components/Screen'
+import { brand, colors, fonts, spacing } from '../../constants/theme'
 import { tasksForDay, todayISO, useNovaStore } from '../../lib/store'
 import { refreshTasks, sendNovaMessage, toggleTaskCompleted } from '../../services/ai'
 
@@ -55,30 +55,42 @@ export default function HomeScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Text style={styles.brandMark}>{brand.name}</Text>
-          <Text style={styles.hello}>{greeting()}</Text>
-          <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
-          <Text style={styles.name}>Hi {name}</Text>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <FadeUp>
+            <View style={styles.hero}>
+              <Text style={styles.brandMark}>{brand.name}</Text>
+              <Text style={styles.hello}>{greeting()}</Text>
+              <Text style={styles.lede}>
+                Hi {name} — {format(new Date(), 'EEEE, MMMM d')}
+              </Text>
+            </View>
+          </FadeUp>
 
-          <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+          <FadeUp delay={80} style={styles.compose}>
+            <Text style={styles.composeLabel}>Say it once</Text>
+            <AIInput loading={loading} onSend={onSend} placeholder="Tomorrow buy milk at 7…" />
+            <Pressable style={styles.askLink} onPress={() => router.push('/chat')}>
+              <Text style={styles.askLinkText}>Open full chat →</Text>
+            </Pressable>
+          </FadeUp>
 
-          <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
+          <FadeUp delay={140}>
+            <DailyPlan tasks={todayTasks} onToggle={(task) => toggleTaskCompleted(task)} />
+          </FadeUp>
 
-          <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
-
-          <DailyPlan tasks={todayTasks} onToggle={(task) => toggleTaskCompleted(task)} />
-
-          <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
-            <Text style={styles.askText}>Ask Wahrly</Text>
-          </Pressable>
-
-          <View style={styles.divider} />
-          <Text style={styles.prompt}>What do you need to do?</Text>
-          <AIInput
-            loading={loading}
-            onSend={onSend}
-          />
+          <FadeUp delay={200} style={styles.signals}>
+            <Text style={styles.signalsTitle}>From mail</Text>
+            <Text style={styles.signalsSub}>Yesterday, asks, and promises you made</Text>
+            <View style={styles.signalsStack}>
+              <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+              <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
+              <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
+            </View>
+          </FadeUp>
         </ScrollView>
       </SafeAreaView>
     </Screen>
@@ -87,31 +99,58 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 40 },
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: 48,
+    gap: spacing.xl,
+  },
+  hero: { gap: 6, paddingTop: 4 },
   brandMark: {
     color: colors.accentStrong,
     fontFamily: fonts.brand,
-    fontSize: 18,
-    letterSpacing: -0.3,
+    fontSize: 42,
+    letterSpacing: -1.4,
+    lineHeight: 46,
   },
   hello: {
     color: colors.text,
-    fontSize: 32,
+    fontSize: 22,
+    fontFamily: fonts.brandItalic,
+    letterSpacing: -0.4,
+  },
+  lede: {
+    color: colors.textMuted,
+    fontSize: 15,
+    fontFamily: fonts.body,
+    marginTop: 2,
+  },
+  compose: { gap: 10 },
+  composeLabel: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  },
+  askLink: { alignSelf: 'flex-start', paddingVertical: 4 },
+  askLinkText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+  },
+  signals: { gap: 8 },
+  signalsTitle: {
+    color: colors.text,
     fontFamily: fonts.brand,
-    letterSpacing: -0.6,
+    fontSize: 26,
+    letterSpacing: -0.5,
   },
-  date: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.body, marginTop: -6 },
-  name: { color: colors.textDim, marginBottom: 4, fontFamily: fonts.body },
-  ask: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.accent,
-    borderRadius: radii.full,
-    paddingHorizontal: 18,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+  signalsSub: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    marginBottom: 4,
   },
-  askText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
-  prompt: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.bodyMedium },
+  signalsStack: { gap: spacing.md },
 })

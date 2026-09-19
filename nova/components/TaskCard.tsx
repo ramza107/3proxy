@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Task } from '../types'
-import { colors, radii, spacing } from '../constants/theme'
+import { colors, fonts, spacing } from '../constants/theme'
 
 type Props = {
   task: Task
@@ -9,16 +9,17 @@ type Props = {
 }
 
 const priorityLabel = {
-  high: 'High priority',
-  medium: 'Medium',
+  high: 'High',
+  medium: 'Med',
   low: 'Low',
 }
 
 export function TaskCard({ task, onToggle, onPress }: Props) {
-  const meta = [task.date, task.time, priorityLabel[task.priority]].filter(Boolean).join(' · ')
+  const meta = [task.time, priorityLabel[task.priority]].filter(Boolean).join(' · ')
 
   return (
-    <Pressable onPress={onPress} style={[styles.card, task.completed && styles.done]}>
+    <Pressable onPress={onPress} style={[styles.row, task.completed && styles.done]}>
+      <View style={[styles.rail, { backgroundColor: colors[task.priority] }]} />
       <Pressable onPress={onToggle} hitSlop={10} style={styles.checkWrap}>
         <View style={[styles.check, task.completed && styles.checkOn]}>
           {task.completed ? <Text style={styles.checkMark}>✓</Text> : null}
@@ -28,31 +29,34 @@ export function TaskCard({ task, onToggle, onPress }: Props) {
         <Text style={[styles.title, task.completed && styles.titleDone]}>{task.title}</Text>
         {!!meta && <Text style={styles.meta}>{meta}</Text>}
       </View>
-      <View style={[styles.dot, { backgroundColor: colors[task.priority] }]} />
     </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.bgCard,
-    borderRadius: radii.md,
     paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingRight: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  done: { opacity: 0.55 },
+  done: { opacity: 0.5 },
+  rail: {
+    width: 3,
+    alignSelf: 'stretch',
+    borderRadius: 2,
+    marginRight: 2,
+  },
   checkWrap: { padding: 2 },
   check: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 7,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -60,9 +64,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  checkMark: { color: colors.textOnAccent, fontWeight: '800', fontSize: 13 },
-  title: { color: colors.text, fontSize: 16, fontWeight: '600' },
+  checkMark: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 12 },
+  title: { color: colors.text, fontSize: 16, fontFamily: fonts.bodyMedium },
   titleDone: { textDecorationLine: 'line-through', color: colors.textMuted },
-  meta: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
-  dot: { width: 8, height: 8, borderRadius: 99 },
+  meta: { color: colors.textMuted, marginTop: 3, fontSize: 12, fontFamily: fonts.body },
 })

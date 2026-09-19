@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native'
-import { colors, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii, spacing } from '../constants/theme'
 
 type Props = {
   role: 'user' | 'assistant'
@@ -26,36 +26,50 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 8,
+    gap: 10,
     marginBottom: spacing.md,
-    paddingRight: 28,
+    paddingRight: 36,
   },
-  rowUser: { justifyContent: 'flex-end', paddingRight: 0, paddingLeft: 40 },
+  rowUser: { justifyContent: 'flex-end', paddingRight: 0, paddingLeft: 48 },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    backgroundColor: colors.accentSoft,
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    backgroundColor: colors.bgDeep,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: colors.accentStrong, fontWeight: '800', fontSize: 12 },
+  avatarText: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.brand,
+    fontSize: 12,
+  },
   bubble: {
     maxWidth: '88%',
     borderRadius: radii.lg,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 12,
   },
   user: {
-    backgroundColor: colors.accent,
-    borderBottomRightRadius: 8,
+    backgroundColor: colors.bgDeep,
+    borderBottomRightRadius: 6,
   },
   assistant: {
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderBottomLeftRadius: 8,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderBottomLeftRadius: 6,
+    paddingHorizontal: 4,
   },
-  text: { color: colors.text, fontSize: 15.5, lineHeight: 22 },
-  textUser: { color: colors.textOnAccent, fontSize: 15.5, lineHeight: 22 },
+  text: {
+    color: colors.text,
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: fonts.body,
+  },
+  textUser: {
+    color: colors.textOnAccent,
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: fonts.body,
+  },
 })
