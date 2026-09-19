@@ -1,4 +1,5 @@
 import { chatWithNova } from '../lib/api'
+import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
 import { scheduleTaskNotification, cancelNotification } from '../lib/notifications'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import { uid, useNovaStore } from '../lib/store'
@@ -193,6 +194,15 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
   store.addMessage({ role: 'user', content: message })
 
+  let response: AIChatResponse
+
+  // Real Gmail check — don't fall through to the Tasks canned reply
+  if (isCheckEmailIntent(message)) {
+    response = await replyFromEmailCheck(userId, message)
+    store.addMessage({ role: 'assistant', content: response.reply })
+    return response
+  }
+
   const history = store.messages.slice(-8).map((m) => ({ role: m.role, content: m.content }))
   let accessToken: string | null = null
   if (isSupabaseConfigured && !store.demoMode) {
@@ -201,7 +211,6 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
     accessToken = data.session?.access_token ?? null
   }
 
-  let response: AIChatResponse
   try {
     response = await chatWithNova({
       message,
