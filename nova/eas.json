@@ -25,7 +25,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://threeproxy-x9bi.onrender.com",
         "EXPO_PUBLIC_APP_URL": "wahrly://",
-        "EXPO_PUBLIC_PLATFORM": "native"
+        "EXPO_PUBLIC_PLATFORM": "native",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     },
     "production": {
@@ -36,7 +37,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://threeproxy-x9bi.onrender.com",
         "EXPO_PUBLIC_APP_URL": "wahrly://",
-        "EXPO_PUBLIC_PLATFORM": "native"
+        "EXPO_PUBLIC_PLATFORM": "native",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     }
   },
