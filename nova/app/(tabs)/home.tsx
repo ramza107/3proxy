@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { BrandMark } from '../../components/BrandMark'
