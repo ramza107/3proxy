@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailStatus } from '../lib/emailApi'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
@@ -57,10 +57,11 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
     }
   }
 
-  useEffect(() => {
-    load(true).catch(() => undefined)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId])
+  useFocusEffect(
+    useCallback(() => {
+      load(true).catch(() => undefined)
+    }, [userId]),
+  )
 
   // Register Expo push token so the server can alert while the app is closed
   useEffect(() => {

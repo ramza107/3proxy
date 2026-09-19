@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { fetchEmailDigest, fetchEmailStatus } from '../lib/emailApi'
 import type { EmailDigest } from '../types'
@@ -49,10 +49,11 @@ export function InboxBrief({ userId, enabled }: Props) {
     }
   }
 
-  useEffect(() => {
-    load().catch(() => undefined)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, enabled])
+  useFocusEffect(
+    useCallback(() => {
+      load().catch(() => undefined)
+    }, [userId, enabled]),
+  )
 
   if (!enabled || !userId) return null
 
