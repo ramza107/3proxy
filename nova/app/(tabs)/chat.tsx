@@ -138,12 +138,6 @@ export default function ChatScreen() {
             loading={loading}
             placeholder="Tomorrow I need to..."
             onSend={onSend}
-            onMicPress={() =>
-              Alert.alert(
-                'Voice',
-                'Mic architecture is ready. Paste a transcript for now, or connect a speech-to-text provider next.',
-              )
-            }
           />
         </View>
       </KeyboardAvoidingView>
