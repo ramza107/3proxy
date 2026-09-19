@@ -63,9 +63,16 @@ function isSmallTalk(text: string) {
 
 function hasTaskIntent(text: string) {
   const lower = normalize(text)
+  // Don't treat “check my email” as creating a to-do
+  if (
+    /(проверь|проверить|посмотри|покажи).{0,40}(почт|inbox|gmail|письм)/i.test(lower) ||
+    /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail|gmail)\b/i.test(lower)
+  ) {
+    return false
+  }
   return (
     /\b(remind|reminder|todo|to-?do|task|schedule|plan)\b/.test(lower) ||
-    /\b(need to|have to|gotta|must|should|buy|call|clean|finish|pay|send|email|pick up|book|meet)\b/.test(
+    /\b(need to|have to|gotta|must|should|buy|call|clean|finish|pay|send|pick up|book|meet)\b/.test(
       lower,
     ) ||
     /\b(tomorrow|today|at\s+\d{1,2})\b/.test(lower)
@@ -110,6 +117,18 @@ export function clientLocalAI(message: string, tasks: Task[]): AIChatResponse {
     return {
       reply:
         "I'm Wahrly — your life assistant. Tell me something to do (for example: \"Tomorrow buy groceries\") and I'll put it in Tasks.",
+      actions: [],
+    }
+  }
+
+  if (
+    /(проверь|проверить|посмотри|покажи).{0,40}(почт|inbox|gmail|письм)/i.test(lower) ||
+    /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail|gmail)\b/i.test(lower)
+  ) {
+    return {
+      reply: /[а-яё]/i.test(text)
+        ? 'Могу проверить почту — скажи ещё раз «проверь почту» (нужен Connected Gmail в Settings). Или открой Home.'
+        : 'I can check your mail — say “check my email” again (Gmail must be connected in Settings), or open Home.',
       actions: [],
     }
   }
