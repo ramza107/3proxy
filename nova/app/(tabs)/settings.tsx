@@ -81,7 +81,10 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (params.gmail === 'connected') {
-      Alert.alert('Gmail connected', 'Morning inbox will show who wrote overnight.')
+      Alert.alert(
+        'Gmail connected',
+        'Morning inbox + Sent promises are ready. Turn on “Auto-add promises” to create tasks automatically.',
+      )
       refreshGmail().catch(() => undefined)
       router.replace('/settings')
     } else if (params.gmail === 'error') {
@@ -204,8 +207,8 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <Text style={styles.rowTitle}>Gmail</Text>
             <Text style={styles.rowSub}>
-              Connect once. Google asks “Allow Wahrly to read mail?” — you tap Allow. Each morning
-              shows who wrote yesterday in your local time zone.
+              Connect once. Google asks “Allow Wahrly to read mail?” — you tap Allow. Morning inbox
+              shows who wrote yesterday; Promises scans Sent for commitments you made.
             </Text>
 
             {gmailConnected ? (
@@ -246,6 +249,20 @@ export default function SettingsScreen() {
               <Switch
                 value={settings.emailDigestEnabled !== false}
                 onValueChange={(v) => updateSettings({ emailDigestEnabled: v })}
+                trackColor={{ true: colors.accent, false: colors.bgSoft }}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>Auto-add promises</Text>
+                <Text style={styles.rowSub}>
+                  Scan Sent for “I’ll…” commitments and create Tasks when you open Home
+                </Text>
+              </View>
+              <Switch
+                value={settings.emailPromisesAutoEnabled === true}
+                onValueChange={(v) => updateSettings({ emailPromisesAutoEnabled: v })}
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>

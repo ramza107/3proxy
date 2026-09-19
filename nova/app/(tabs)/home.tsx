@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { DailyPlan } from '../../components/DailyPlan'
 import { InboxBrief } from '../../components/InboxBrief'
+import { PromisesBrief } from '../../components/PromisesBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { tasksForDay, todayISO, useNovaStore } from '../../lib/store'
@@ -24,6 +25,9 @@ export default function HomeScreen() {
   const tasks = useNovaStore((s) => s.tasks)
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
+  const emailPromisesAutoEnabled = useNovaStore(
+    (s) => s.settings.emailPromisesAutoEnabled === true,
+  )
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -54,6 +58,8 @@ export default function HomeScreen() {
           <Text style={styles.name}>Hi {name}</Text>
 
           <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+
+          <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
 
           <DailyPlan tasks={todayTasks} onToggle={(task) => toggleTaskCompleted(task)} />
 
