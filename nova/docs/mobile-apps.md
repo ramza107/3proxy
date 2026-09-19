@@ -11,7 +11,7 @@ Wahrly is one Expo codebase (same features as the web demo on GitHub Pages). Nat
 ## Prerequisites
 
 1. [Expo account](https://expo.dev/signup) (free)
-2. **Apple Developer** account — required to install on a physical iPhone (TestFlight / device build)
+2. **Apple Developer** account — required for TestFlight / device builds
 3. Same backend as the website: Render API + Gmail OAuth (`PUBLIC_NATIVE_APP_URL=wahrly://`)
 
 Optional:
@@ -29,19 +29,61 @@ npx eas-cli login
 npx eas-cli init          # writes EAS projectId
 ```
 
-## Build iPhone app (preview / internal)
+## TestFlight (friends can install)
+
+### A. Create the app in App Store Connect (once)
+
+1. Open [App Store Connect](https://appstoreconnect.apple.com) → **My Apps** → **+**
+2. Bundle ID: **com.wahrly.assistant**
+3. Name: Wahrly · SKU: e.g. `wahrly1`
+
+### B. Build + upload from your PC
 
 ```bash
-cd nova
+cd C:\Users\rrali\3proxy\nova
+git pull
+npm install --legacy-peer-deps
+
+# One command: production build AND submit to TestFlight
+npm run build:ios:testflight
+```
+
+Or step by step:
+
+```bash
+npm run build:ios:prod
+npm run submit:ios
+```
+
+Sign in with Apple ID when EAS asks. First upload can take 10–30+ minutes to process in App Store Connect.
+
+### C. Invite people
+
+1. App Store Connect → your app → **TestFlight**
+2. Answer **Export Compliance** if prompted (usually encryption = HTTPS only → No)
+3. **Internal Testing** — add yourself / team (fastest)
+4. **External Testing** — add friends by email or public link (Apple may do a short review)
+
+Friends install **TestFlight** from the App Store, open the invite, then Install Wahrly.
+
+### D. Later updates
+
+```bash
+git pull
+npm run build:ios:testflight
+```
+
+Friends get an **Update** button in TestFlight.
+
+## Preview / internal (your device only)
+
+```bash
 npm run build:ios
 ```
 
-EAS will ask for Apple credentials the first time. When the build finishes, open the URL EAS prints:
+Each device must be registered. Prefer **TestFlight** for sharing with friends.
 
-- **TestFlight** (recommended) or install profile on your device
-- Or use `eas build:run -p ios` after a simulator build (`development` profile)
-
-Android APK (optional):
+## Android APK (optional)
 
 ```bash
 npm run build:android
@@ -55,8 +97,6 @@ npm start
 # scan QR with Expo Go
 ```
 
-Push notifications and some native modules are limited in Expo Go — use an EAS preview build for the real app.
-
 ## Server note
 
-`/api/email/connect?client=native` stores the client on the OAuth nonce. After Google Allow, the callback redirects to `wahrly://settings?gmail=…` (web still uses Pages URL).
+`/api/email/connect?client=native` returns to `wahrly://settings?gmail=…` after Google Allow (web still uses Pages URL).

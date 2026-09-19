@@ -46,8 +46,12 @@ One Expo project → native builds. Details: [`docs/mobile-apps.md`](docs/mobile
 cd nova
 npx eas-cli login
 npx eas-cli init
-npm run build:ios       # needs Apple Developer account
-npm run build:android   # APK download link
+
+# TestFlight (friends) — production build + submit
+npm run build:ios:testflight
+
+# Or internal preview on your registered iPhone
+npm run build:ios
 ```
 
 Deep link: `wahrly://` (Gmail OAuth returns into the app after Allow).
