@@ -78,12 +78,6 @@ export default function HomeScreen() {
           <AIInput
             loading={loading}
             onSend={onSend}
-            onMicPress={() =>
-              Alert.alert(
-                'Voice ready soon',
-                'Architecture is prepared. For MVP, type your request or paste a voice transcript.',
-              )
-            }
           />
         </ScrollView>
       </SafeAreaView>

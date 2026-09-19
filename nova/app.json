@@ -15,14 +15,18 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wahrly.assistant"
+      "bundleIdentifier": "com.wahrly.assistant",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Wahrly uses the microphone so you can dictate tasks and reminders."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E7EEF2"
       },
-      "package": "com.wahrly.assistant"
+      "package": "com.wahrly.assistant",
+      "permissions": ["RECORD_AUDIO"]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -32,7 +36,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Wahrly to use the microphone to dictate tasks."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

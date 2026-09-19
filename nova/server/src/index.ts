@@ -2,6 +2,7 @@ import cors from 'cors'
 import crypto from 'crypto'
 import dotenv from 'dotenv'
 import express from 'express'
+import multer from 'multer'
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { buildDigest, demoDigest } from './email/digest.js'
@@ -28,6 +29,7 @@ import {
 import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
 import { SYSTEM_PROMPT } from './prompt.js'
+import { transcribeAudio } from './transcribe.js'
 
 dotenv.config({ path: new URL('../../.env', import.meta.url).pathname })
 dotenv.config()
@@ -35,6 +37,11 @@ dotenv.config()
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '1mb' }))
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024 },
+})
 
 const Port = Number(process.env.PORT || 8787)
 /** Short-lived OAuth CSRF nonces: nonce → userId */
@@ -377,6 +384,37 @@ app.post('/api/push/register', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'push register failed',
+    })
+  }
+})
+
+/** Speech → text via Groq/OpenAI Whisper (+ optional LLM polish). */
+app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
+  try {
+    const file = req.file
+    if (!file?.buffer?.length) {
+      return res.status(400).json({ error: 'audio file required (field: audio)' })
+    }
+    const language = String(req.body?.language || req.query.language || '') || null
+    const provider = resolveProvider()
+    const result = await transcribeAudio({
+      buffer: file.buffer,
+      filename: file.originalname || 'voice.m4a',
+      mimeType: file.mimetype,
+      language,
+      groqKey,
+      openaiKey,
+      polishClient: provider?.client || null,
+      polishModel: provider?.model || null,
+    })
+    if (!result.text) {
+      return res.status(422).json({ error: 'Could not hear speech — try again closer to the mic' })
+    }
+    return res.json(result)
+  } catch (error) {
+    console.error('transcribe', error)
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'transcribe failed',
     })
   }
 })
