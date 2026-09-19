@@ -1,34 +1,51 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Task } from '../types'
-import { colors, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii, spacing } from '../constants/theme'
 
 type Props = {
   task: Task
+  dateLabel?: string
   onToggle?: () => void
   onPress?: () => void
 }
 
 const priorityLabel = {
-  high: 'High priority',
+  high: 'High',
   medium: 'Medium',
   low: 'Low',
 }
 
-export function TaskCard({ task, onToggle, onPress }: Props) {
-  const meta = [task.date, task.time, priorityLabel[task.priority]].filter(Boolean).join(' · ')
+export function TaskCard({ task, dateLabel, onToggle, onPress }: Props) {
+  const when = [dateLabel || task.date, task.time].filter(Boolean).join(' · ')
+  const meta = [when, priorityLabel[task.priority]].filter(Boolean).join(' · ')
 
   return (
-    <Pressable onPress={onPress} style={[styles.card, task.completed && styles.done]}>
-      <Pressable onPress={onToggle} hitSlop={10} style={styles.checkWrap}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.card,
+        task.completed && styles.done,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Pressable
+        onPress={onToggle}
+        hitSlop={12}
+        style={styles.checkWrap}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: task.completed }}
+      >
         <View style={[styles.check, task.completed && styles.checkOn]}>
           {task.completed ? <Text style={styles.checkMark}>✓</Text> : null}
         </View>
       </Pressable>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.title, task.completed && styles.titleDone]}>{task.title}</Text>
+      <View style={styles.body}>
+        <Text style={[styles.title, task.completed && styles.titleDone]} numberOfLines={2}>
+          {task.title}
+        </Text>
         {!!meta && <Text style={styles.meta}>{meta}</Text>}
       </View>
-      <View style={[styles.dot, { backgroundColor: colors[task.priority] }]} />
+      <View style={[styles.priority, { backgroundColor: colors[task.priority] }]} />
     </Pressable>
   )
 }
@@ -38,21 +55,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.bgCard,
+    backgroundColor: 'rgba(255,255,255,0.78)',
     borderRadius: radii.md,
     paddingVertical: 14,
     paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  done: { opacity: 0.55 },
+  pressed: { transform: [{ scale: 0.985 }], opacity: 0.96 },
+  done: { opacity: 0.58 },
   checkWrap: { padding: 2 },
   check: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -60,9 +79,30 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
-  checkMark: { color: colors.textOnAccent, fontWeight: '800', fontSize: 13 },
-  title: { color: colors.text, fontSize: 16, fontWeight: '600' },
-  titleDone: { textDecorationLine: 'line-through', color: colors.textMuted },
-  meta: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
-  dot: { width: 8, height: 8, borderRadius: 99 },
+  checkMark: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+  },
+  body: { flex: 1, gap: 3 },
+  title: {
+    color: colors.text,
+    fontSize: 16,
+    fontFamily: fonts.bodyMedium,
+    lineHeight: 21,
+  },
+  titleDone: {
+    textDecorationLine: 'line-through',
+    color: colors.textMuted,
+  },
+  meta: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 13,
+  },
+  priority: {
+    width: 8,
+    height: 8,
+    borderRadius: 99,
+  },
 })
