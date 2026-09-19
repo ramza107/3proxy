@@ -33,24 +33,30 @@ export function TaskCard({ task, onToggle, onPress, onPostpone, onMoveTomorrow }
 
   return (
     <View style={[styles.card, task.completed && styles.done]}>
-      <Pressable onPress={onPress} style={styles.main}>
-        <Pressable onPress={onToggle} hitSlop={10} style={styles.checkWrap}>
+      <View style={styles.main}>
+        <Pressable
+          onPress={onToggle}
+          hitSlop={10}
+          style={styles.checkWrap}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: task.completed }}
+        >
           <View style={[styles.check, task.completed && styles.checkOn]}>
             {task.completed ? <Text style={styles.checkMark}>✓</Text> : null}
           </View>
         </Pressable>
-        <View style={styles.body}>
+        <Pressable onPress={onPress} style={styles.body} accessibilityRole="button">
           <Text style={[styles.title, task.completed && styles.titleDone]} numberOfLines={2}>
             {task.title}
           </Text>
           <Text style={styles.meta}>{meta}</Text>
-        </View>
+        </Pressable>
         <View style={[styles.dot, { backgroundColor: colors[task.priority] }]} />
-      </Pressable>
+      </View>
 
       {!task.completed ? (
         <View style={styles.actions}>
-          <Pressable onPress={onPress} style={styles.actionBtn} hitSlop={6}>
+          <Pressable onPress={onPress} style={styles.actionBtn} hitSlop={6} accessibilityRole="button">
             <Text style={styles.actionText}>Edit</Text>
           </Pressable>
           {onPostpone ? (
