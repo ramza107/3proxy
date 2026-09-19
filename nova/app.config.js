@@ -75,7 +75,8 @@ module.exports = ({ config }) => {
       publicAppUrl:
         process.env.EXPO_PUBLIC_APP_URL || 'https://ramza107.github.io/3proxy/nova/',
       eas: {
-        projectId: process.env.EAS_PROJECT_ID || undefined,
+        projectId:
+          process.env.EAS_PROJECT_ID || 'cd1e9e17-cb36-4664-8395-c9599ae532f9',
       },
     },
   }

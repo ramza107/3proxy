@@ -58,7 +58,10 @@
       "baseUrl": "/3proxy/nova"
     },
     "extra": {
-      "apiUrl": "https://threeproxy-x9bi.onrender.com"
+      "apiUrl": "https://threeproxy-x9bi.onrender.com",
+      "eas": {
+        "projectId": "cd1e9e17-cb36-4664-8395-c9599ae532f9"
+      }
     }
   }
 }
