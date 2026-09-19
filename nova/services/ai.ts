@@ -1,8 +1,9 @@
 import { chatWithNova } from '../lib/api'
 import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
 import { scheduleTaskNotification, cancelNotification } from '../lib/notifications'
+import { isOrganizeDayIntent, planDayActions } from '../lib/scheduleDay'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
-import { uid, useNovaStore } from '../lib/store'
+import { todayISO, uid, useNovaStore } from '../lib/store'
 import { clientLocalAI } from './localAI'
 import type { AIAction, AIChatResponse, Priority, Reminder, Task } from '../types'
 
@@ -187,6 +188,25 @@ export async function refreshTasks(userId: string) {
   }
 }
 
+export async function organizeMyDay(opts?: { includeUndated?: boolean }): Promise<AIChatResponse> {
+  const store = useNovaStore.getState()
+  const userId = store.sessionUserId
+  if (!userId) throw new Error('Not signed in')
+
+  const planned = planDayActions({
+    tasks: store.tasks,
+    day: todayISO(),
+    settings: store.settings,
+    includeUndated: opts?.includeUndated !== false,
+  })
+
+  if (planned.actions.length) {
+    await applyActions(planned.actions, userId, store.settings.notificationsEnabled)
+  }
+
+  return { reply: planned.summary, actions: planned.actions }
+}
+
 export async function sendNovaMessage(message: string): Promise<AIChatResponse> {
   const store = useNovaStore.getState()
   const userId = store.sessionUserId
@@ -199,6 +219,13 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
   // Real Gmail check — don't fall through to the Tasks canned reply
   if (isCheckEmailIntent(message)) {
     response = await replyFromEmailCheck(userId, message)
+    store.addMessage({ role: 'assistant', content: response.reply })
+    return response
+  }
+
+  // Smart day packer — Motion-style slot filling for today's tasks
+  if (isOrganizeDayIntent(message)) {
+    response = await organizeMyDay()
     store.addMessage({ role: 'assistant', content: response.reply })
     return response
   }

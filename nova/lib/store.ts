@@ -70,6 +70,8 @@ const defaultSettings: UserSettings = {
   emailDigestEnabled: true,
   emailPromisesAutoEnabled: false,
   meetingEmailAlertsEnabled: true,
+  workdayStart: '09:00',
+  workdayEnd: '18:00',
 }
 
 export const useNovaStore = create<NovaState>()(

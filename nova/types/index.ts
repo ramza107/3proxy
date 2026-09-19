@@ -97,6 +97,10 @@ export type UserSettings = {
    * fire push / local notifications for new ones.
    */
   meetingEmailAlertsEnabled: boolean
+  /** HH:MM — smart day packer window start */
+  workdayStart: string
+  /** HH:MM — smart day packer window end */
+  workdayEnd: string
 }
 
 export type EmailDigestSender = {

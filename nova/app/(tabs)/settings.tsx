@@ -26,6 +26,8 @@ import { useNovaStore } from '../../lib/store'
 
 const MORNING_PRESETS = ['06:30', '07:00', '07:30', '08:00', '08:30', '09:00']
 const EVENING_PRESETS = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30']
+const WORK_START_PRESETS = ['08:00', '09:00', '10:00']
+const WORK_END_PRESETS = ['17:00', '18:00', '19:00', '20:00']
 
 export default function SettingsScreen() {
   const router = useRouter()
@@ -39,6 +41,8 @@ export default function SettingsScreen() {
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
   const [eveningTime, setEveningTime] = useState(settings.eveningClearTime || '21:30')
+  const [workStart, setWorkStart] = useState(settings.workdayStart || '09:00')
+  const [workEnd, setWorkEnd] = useState(settings.workdayEnd || '18:00')
   const [oauthReady, setOauthReady] = useState(false)
   const [gmailConnected, setGmailConnected] = useState(false)
   const [gmailEmail, setGmailEmail] = useState<string | null>(null)
@@ -61,7 +65,14 @@ export default function SettingsScreen() {
   useEffect(() => {
     setMorningTime(settings.morningBriefTime || '08:00')
     setEveningTime(settings.eveningClearTime || '21:30')
-  }, [settings.morningBriefTime, settings.eveningClearTime])
+    setWorkStart(settings.workdayStart || '09:00')
+    setWorkEnd(settings.workdayEnd || '18:00')
+  }, [
+    settings.morningBriefTime,
+    settings.eveningClearTime,
+    settings.workdayStart,
+    settings.workdayEnd,
+  ])
 
   useEffect(() => {
     syncDailyRitualNotifications(settings, tasks).catch(() => undefined)
@@ -132,6 +143,24 @@ export default function SettingsScreen() {
     }
     setEveningTime(value)
     updateSettings({ eveningClearTime: value })
+  }
+
+  const applyWorkStart = (value: string) => {
+    if (!parseHm(value)) {
+      Alert.alert('Time', 'Use HH:MM, for example 09:00')
+      return
+    }
+    setWorkStart(value)
+    updateSettings({ workdayStart: value })
+  }
+
+  const applyWorkEnd = (value: string) => {
+    if (!parseHm(value)) {
+      Alert.alert('Time', 'Use HH:MM, for example 18:00')
+      return
+    }
+    setWorkEnd(value)
+    updateSettings({ workdayEnd: value })
   }
 
   const connectWithGoogle = async () => {
@@ -375,6 +404,57 @@ export default function SettingsScreen() {
                   onPress={() => applyEveningTime(t)}
                 >
                   <Text style={[styles.chipText, eveningTime === t && styles.chipTextOn]}>{t}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.rowTitle}>Workday</Text>
+            <Text style={styles.rowSub}>
+              Smart day packs tasks into free slots between these hours (Plan day / “разложи день”)
+            </Text>
+            <Text style={styles.label}>Start</Text>
+            <TextInput
+              value={workStart}
+              onChangeText={setWorkStart}
+              onEndEditing={() => applyWorkStart(workStart)}
+              placeholder="09:00"
+              placeholderTextColor={colors.textDim}
+              style={styles.input}
+              keyboardType="numbers-and-punctuation"
+              autoCapitalize="none"
+            />
+            <View style={styles.presets}>
+              {WORK_START_PRESETS.map((t) => (
+                <Pressable
+                  key={t}
+                  style={[styles.chip, workStart === t && styles.chipOn]}
+                  onPress={() => applyWorkStart(t)}
+                >
+                  <Text style={[styles.chipText, workStart === t && styles.chipTextOn]}>{t}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.label}>End</Text>
+            <TextInput
+              value={workEnd}
+              onChangeText={setWorkEnd}
+              onEndEditing={() => applyWorkEnd(workEnd)}
+              placeholder="18:00"
+              placeholderTextColor={colors.textDim}
+              style={styles.input}
+              keyboardType="numbers-and-punctuation"
+              autoCapitalize="none"
+            />
+            <View style={styles.presets}>
+              {WORK_END_PRESETS.map((t) => (
+                <Pressable
+                  key={t}
+                  style={[styles.chip, workEnd === t && styles.chipOn]}
+                  onPress={() => applyWorkEnd(t)}
+                >
+                  <Text style={[styles.chipText, workEnd === t && styles.chipTextOn]}>{t}</Text>
                 </Pressable>
               ))}
             </View>

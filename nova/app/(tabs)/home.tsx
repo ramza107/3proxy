@@ -10,8 +10,8 @@ import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { PromisesBrief } from '../../components/PromisesBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
-import { tasksForDay, todayISO, useNovaStore } from '../../lib/store'
-import { refreshTasks, sendNovaMessage, toggleTaskCompleted } from '../../services/ai'
+import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
+import { organizeMyDay, refreshTasks, sendNovaMessage, toggleTaskCompleted } from '../../services/ai'
 
 function greeting() {
   const h = new Date().getHours()
@@ -24,6 +24,7 @@ export default function HomeScreen() {
   const router = useRouter()
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const tasks = useNovaStore((s) => s.tasks)
+  const settings = useNovaStore((s) => s.settings)
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const emailPromisesAutoEnabled = useNovaStore(
@@ -33,12 +34,17 @@ export default function HomeScreen() {
     (s) => s.settings.meetingEmailAlertsEnabled !== false,
   )
   const [loading, setLoading] = useState(false)
+  const [planning, setPlanning] = useState(false)
 
   useEffect(() => {
     if (userId) refreshTasks(userId).catch(() => undefined)
   }, [userId])
 
-  const todayTasks = useMemo(() => tasksForDay(tasks, todayISO()), [tasks])
+  const day = todayISO()
+  const todayTasks = useMemo(
+    () => sortTasks(tasks.filter((t) => !t.completed && (t.date === day || !t.date))),
+    [tasks, day],
+  )
 
   const onSend = async (text: string) => {
     setLoading(true)
@@ -52,6 +58,18 @@ export default function HomeScreen() {
     }
   }
 
+  const onPlanDay = async () => {
+    setPlanning(true)
+    try {
+      const res = await organizeMyDay({ includeUndated: true })
+      Alert.alert('Smart day', res.reply)
+    } catch (e) {
+      Alert.alert(brand.name, e instanceof Error ? e.message : 'Could not plan the day')
+    } finally {
+      setPlanning(false)
+    }
+  }
+
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
@@ -61,13 +79,20 @@ export default function HomeScreen() {
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
           <Text style={styles.name}>Hi {name}</Text>
 
+          <DailyPlan
+            tasks={todayTasks}
+            onToggle={(task) => toggleTaskCompleted(task)}
+            workdayStart={settings.workdayStart || '09:00'}
+            workdayEnd={settings.workdayEnd || '18:00'}
+            onPlanDay={onPlanDay}
+            planning={planning}
+          />
+
           <InboxBrief userId={userId} enabled={emailDigestEnabled} />
 
           <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
 
           <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
-
-          <DailyPlan tasks={todayTasks} onToggle={(task) => toggleTaskCompleted(task)} />
 
           <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
             <Text style={styles.askText}>Ask Wahrly</Text>
@@ -75,10 +100,7 @@ export default function HomeScreen() {
 
           <View style={styles.divider} />
           <Text style={styles.prompt}>What do you need to do?</Text>
-          <AIInput
-            loading={loading}
-            onSend={onSend}
-          />
+          <AIInput loading={loading} onSend={onSend} />
         </ScrollView>
       </SafeAreaView>
     </Screen>

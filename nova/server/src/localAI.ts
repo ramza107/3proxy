@@ -162,7 +162,18 @@ export function localAI(message: string, tasks: TaskLike[], today: string): AICh
     return {
       reply: `You have ${todayTasks.length} thing${todayTasks.length > 1 ? 's' : ''} today:\n${lines}${
         firstTimed ? `\n${firstTimed.title} is time-sensitive, so I'd do that first.` : ''
-      }`,
+      }\n\nSay “plan my day” to auto-fill free slots.`,
+      actions: [],
+    }
+  }
+
+  if (
+    /(разлож|спланиру|организуй).{0,20}день/i.test(lower) ||
+    /\b(plan|organize|schedule)\b.{0,20}\b(day|today)\b/i.test(lower)
+  ) {
+    return {
+      reply:
+        'Open Home and tap Plan day — or say “plan my day” again online so Wahrly packs tasks into your work hours.',
       actions: [],
     }
   }
