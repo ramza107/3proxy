@@ -8,6 +8,7 @@ import { BrandMark } from '../../components/BrandMark'
 import { DailyPlan } from '../../components/DailyPlan'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
+import { MorningBrief } from '../../components/MorningBrief'
 import { PromisesBrief } from '../../components/PromisesBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, spacing } from '../../constants/theme'
@@ -32,11 +33,29 @@ function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) 
   return nowMin >= startMin
 }
 
+/** Morning brief on Home: after brief time (or from 5:00), until noon, once per day. */
+function shouldOfferMorningBrief(
+  enabled: boolean,
+  briefTime: string,
+  lastBrief: string | null,
+) {
+  if (!enabled) return false
+  const today = todayISO()
+  if (lastBrief === today) return false
+  const hour = new Date().getHours()
+  if (hour >= 12) return false
+  const hm = parseHm(briefTime || '08:00')
+  const nowMin = hour * 60 + new Date().getMinutes()
+  const startMin = hm ? Math.max(5 * 60, hm.hour * 60 + hm.minute - 60) : 5 * 60
+  return nowMin >= startMin
+}
+
 export default function HomeScreen() {
   const router = useRouter()
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const tasks = useNovaStore((s) => s.tasks)
   const settings = useNovaStore((s) => s.settings)
+  const updateSettings = useNovaStore((s) => s.updateSettings)
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const emailPromisesAutoEnabled = useNovaStore(
@@ -59,9 +78,19 @@ export default function HomeScreen() {
     [tasks, day],
   )
 
+  const showMorningBrief = shouldOfferMorningBrief(
+    settings.morningBriefEnabled !== false,
+    settings.morningBriefTime || '08:00',
+    settings.lastMorningBriefDate ?? null,
+  )
+
   const showEveningClear =
     settings.eveningClearEnabled !== false &&
     shouldOfferEveningClear(settings.eveningClearTime || '21:30', settings.lastEveningClearDate)
+
+  const dismissMorningBrief = () => {
+    updateSettings({ lastMorningBriefDate: todayISO() })
+  }
 
   const onSend = async (text: string) => {
     setLoading(true)
@@ -79,6 +108,7 @@ export default function HomeScreen() {
     setPlanning(true)
     try {
       const res = await organizeMyDay({ includeUndated: true })
+      if (showMorningBrief) dismissMorningBrief()
       Alert.alert('Smart day', res.reply)
     } catch (e) {
       Alert.alert(brand.name, e instanceof Error ? e.message : 'Could not plan the day')
@@ -99,6 +129,18 @@ export default function HomeScreen() {
             {greeting()}, {name}
           </Text>
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
+
+          {showMorningBrief ? (
+            <MorningBrief
+              tasks={todayTasks}
+              workdayStart={dayWindow.start}
+              workdayEnd={dayWindow.end}
+              weatherCity={settings.weatherCity}
+              planning={planning}
+              onPlanDay={onPlanDay}
+              onDismiss={dismissMorningBrief}
+            />
+          ) : null}
 
           {showEveningClear ? (
             <Pressable style={styles.eveningRow} onPress={() => router.push('/evening')}>
@@ -144,7 +186,14 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg, gap: spacing.sm, paddingBottom: 48 },
+  content: {
+    padding: spacing.lg,
+    gap: spacing.sm,
+    paddingBottom: 48,
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 520 : undefined,
+    alignSelf: 'center',
+  },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
   brandMark: {
     color: colors.accentStrong,

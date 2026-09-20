@@ -66,6 +66,8 @@ const defaultSettings: UserSettings = {
   onboardingComplete: false,
   morningBriefTime: '08:00',
   morningBriefEnabled: true,
+  lastMorningBriefDate: null,
+  weatherCity: '',
   eveningClearTime: '21:30',
   eveningClearEnabled: true,
   lastEveningClearDate: null,
