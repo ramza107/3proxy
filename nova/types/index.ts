@@ -234,3 +234,22 @@ export type MeetingsDigest = {
   generatedAt: string
   hours: number
 }
+
+/** Google Calendar event (primary calendar) */
+export type CalendarEvent = {
+  id: string
+  title: string
+  start: string
+  end: string
+  allDay: boolean
+  location: string | null
+  calendar: string
+}
+
+export type CalendarDigest = {
+  connected: boolean
+  email: string | null
+  demo: boolean
+  events: CalendarEvent[]
+  generatedAt: string
+}

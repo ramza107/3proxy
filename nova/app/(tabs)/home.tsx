@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { BottomSheet } from '../../components/BottomSheet'
 import { BrandMark } from '../../components/BrandMark'
+import { CalendarBrief } from '../../components/CalendarBrief'
 import { DailyPlan } from '../../components/DailyPlan'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
@@ -28,6 +29,7 @@ import {
   updateTaskFields,
 } from '../../services/ai'
 import type { Task } from '../../types'
+import type { CalendarEvent } from '../../types'
 
 function greeting() {
   const h = new Date().getHours()
@@ -85,6 +87,7 @@ export default function HomeScreen() {
   const [planning, setPlanning] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
 
   useEffect(() => {
     if (userId) refreshTasks(userId).catch(() => undefined)
@@ -170,6 +173,7 @@ export default function HomeScreen() {
 
           <DailyPlan
             tasks={todayTasks}
+            events={calendarEvents}
             onToggle={(task) => toggleTaskCompleted(task)}
             onEdit={(task) => setEditing(task)}
             workdayStart={dayWindow.start}
@@ -181,6 +185,10 @@ export default function HomeScreen() {
           <Text style={styles.editHint}>Tap a task to edit · tap the dot to complete.</Text>
 
           <View style={styles.mailBlock}>
+            <CalendarBrief
+              userId={userId}
+              onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
+            />
             <InboxBrief userId={userId} enabled={emailDigestEnabled} />
             <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
             <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />

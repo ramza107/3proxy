@@ -85,6 +85,29 @@ export async function fetchEmailMeetings(
   return res.json()
 }
 
+export async function fetchCalendarEvents(
+  userId: string,
+  opts?: { from?: string; to?: string; demo?: boolean },
+): Promise<import('../types').CalendarDigest> {
+  const q = new URLSearchParams({ user_id: userId })
+  if (opts?.from) q.set('from', opts.from)
+  if (opts?.to) q.set('to', opts.to)
+  if (opts?.demo) q.set('demo', '1')
+  const res = await fetch(`${apiUrl}/api/calendar/events?${q.toString()}`)
+  if (!res.ok) {
+    const text = await res.text()
+    let msg = text || `Calendar failed (${res.status})`
+    try {
+      const j = JSON.parse(text) as { error?: string }
+      if (j.error) msg = j.error
+    } catch {
+      // keep text
+    }
+    throw new Error(msg)
+  }
+  return res.json()
+}
+
 export async function registerPushToken(userId: string, token: string): Promise<void> {
   await fetch(`${apiUrl}/api/push/register`, {
     method: 'POST',

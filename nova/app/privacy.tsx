@@ -76,12 +76,12 @@ export default function PrivacyScreen() {
             service running. We do not sell advertising profiles.
           </Bullet>
 
-          <H>3. Google / Gmail access</H>
+          <H>3. Google / Gmail + Calendar access</H>
           <P>
-            If you connect Gmail, Wahrly requests only the Google scope
-            gmail.readonly (read-only access to your Gmail).
+            If you connect Google, Wahrly requests read-only scopes: gmail.readonly and
+            calendar.readonly.
           </P>
-          <P>With that permission, Wahrly may:</P>
+          <P>With those permissions, Wahrly may:</P>
           <Bullet>
             Read recent inbox messages to build a morning brief (who wrote to you, typically for the
             previous local calendar day).
@@ -91,13 +91,18 @@ export default function PrivacyScreen() {
             “я перезвоню…”) and suggest turning them into tasks — only if you use the Promises
             feature.
           </Bullet>
+          <Bullet>
+            Read today’s events from your primary Google Calendar to show them on the Home signal
+            timeline.
+          </Bullet>
           <P>Wahrly does not:</P>
           <Bullet>Send, delete, or modify your email.</Bullet>
-          <Bullet>Read your mail without your explicit Connect / Allow step.</Bullet>
-          <Bullet>Sell your email content to third parties.</Bullet>
+          <Bullet>Create, edit, or delete calendar events.</Bullet>
+          <Bullet>Read your mail or calendar without your explicit Connect / Allow step.</Bullet>
+          <Bullet>Sell your Google content to third parties.</Bullet>
           <P>
-            Google OAuth tokens (access / refresh) are stored on our API server so the brief can be
-            refreshed without asking you to Allow every day. You can disconnect Gmail at any time in
+            Google OAuth tokens (access / refresh) are stored on our API server so briefs can be
+            refreshed without asking you to Allow every day. You can disconnect Google at any time in
             Settings; we then delete the stored tokens for your account.
           </P>
           <P>

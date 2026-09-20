@@ -258,7 +258,7 @@ export default function SettingsScreen() {
             : null
         if (q === 'connected') {
           await refreshGmail()
-          Alert.alert('Gmail connected', 'Wahrly can now read your inbox (readonly).')
+          Alert.alert('Google connected', 'Wahrly can read Gmail + Calendar (readonly).')
           router.replace('/settings')
         } else if (q === 'error') {
           Alert.alert('Gmail', 'Could not connect. Try Connect with Google again.')
@@ -315,11 +315,11 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.rowTitle}>Gmail</Text>
+            <Text style={styles.rowTitle}>Google</Text>
             <Text style={styles.rowSub}>
-              Connect once. Google asks “Allow Wahrly to read mail?” — you tap Allow. Morning inbox
-              shows who wrote yesterday; Inbox asks watch for meet/report emails; Promises scan
-              Sent.
+              One Allow connects Gmail + Calendar (readonly). Morning inbox, Inbox asks, Promises,
+              and today&apos;s meetings on the Home signal. If you connected earlier, Connect again
+              to grant Calendar.
             </Text>
 
             {gmailConnected ? (
