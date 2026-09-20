@@ -8,6 +8,8 @@ import { SoftPressable } from './SoftPressable'
 type Props = {
   tasks: Task[]
   onToggle: (task: Task) => void
+  /** Long-press opens editor sheet */
+  onEdit?: (task: Task) => void
   workdayStart?: string
   workdayEnd?: string
   dayKind?: 'work' | 'light'
@@ -60,6 +62,7 @@ function buildSlots(
 export function DailyPlan({
   tasks,
   onToggle,
+  onEdit,
   workdayStart = '09:00',
   workdayEnd = '18:00',
   dayKind = 'work',
@@ -120,7 +123,12 @@ export function DailyPlan({
                 key={slot.task.id}
                 entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
               >
-                <Pressable style={styles.row} onPress={() => onToggle(slot.task)}>
+                <Pressable
+                  style={styles.row}
+                  onPress={() => onToggle(slot.task)}
+                  onLongPress={onEdit ? () => onEdit(slot.task) : undefined}
+                  delayLongPress={280}
+                >
                   <View style={styles.nodeCol}>
                     <View
                       style={[styles.nodeOn, { backgroundColor: NODE[slot.task.priority] }]}
@@ -147,7 +155,12 @@ export function DailyPlan({
                   key={t.id}
                   entering={FadeInRight.delay(120 + Math.min(i, 6) * 40).duration(280)}
                 >
-                  <Pressable style={styles.row} onPress={() => onToggle(t)}>
+                  <Pressable
+                    style={styles.row}
+                    onPress={() => onToggle(t)}
+                    onLongPress={onEdit ? () => onEdit(t) : undefined}
+                    delayLongPress={280}
+                  >
                     <View style={styles.nodeCol}>
                       <View style={[styles.nodeOn, { backgroundColor: NODE[t.priority] }]} />
                     </View>

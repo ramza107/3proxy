@@ -72,7 +72,7 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+          href: null,
         }}
       />
     </Tabs>

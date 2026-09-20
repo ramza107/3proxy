@@ -23,6 +23,7 @@ export function SoftPressable({ children, onPress, disabled, style, hitSlop }: P
 
   return (
     <Pressable
+      style={style}
       onPress={onPress}
       disabled={disabled}
       hitSlop={hitSlop}
@@ -33,7 +34,9 @@ export function SoftPressable({ children, onPress, disabled, style, hitSlop }: P
         scale.value = withSpring(1, { damping: 14, stiffness: 240 })
       }}
     >
-      <Animated.View style={[style, anim]}>{children}</Animated.View>
+      <Animated.View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1 }, anim]}>
+        {children}
+      </Animated.View>
     </Pressable>
   )
 }

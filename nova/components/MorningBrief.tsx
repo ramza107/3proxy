@@ -14,6 +14,8 @@ type Props = {
   planning?: boolean
   onPlanDay: () => void | Promise<void>
   onDismiss: () => void
+  /** When true, skip outer chrome (used inside BottomSheet) */
+  embedded?: boolean
 }
 
 /**
@@ -28,6 +30,7 @@ export function MorningBrief({
   planning,
   onPlanDay,
   onDismiss,
+  embedded,
 }: Props) {
   const [weather, setWeather] = useState<WeatherBrief | null>(null)
   const [weatherLoading, setWeatherLoading] = useState(true)
@@ -48,12 +51,11 @@ export function MorningBrief({
   }, [weatherCity])
 
   const preview = tasks.slice(0, 4)
-
-  return (
-    <Animated.View entering={FadeInDown.duration(420).springify().damping(18)} style={styles.wrap}>
+  const body = (
+    <>
       <View style={styles.head}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.kicker}>Morning brief</Text>
+          {!embedded ? <Text style={styles.kicker}>Morning brief</Text> : null}
           <Text style={styles.title}>Today’s plan</Text>
           <Text style={styles.meta}>
             {workdayStart}–{workdayEnd}
@@ -108,6 +110,16 @@ export function MorningBrief({
         </SoftPressable>
         <Text style={styles.hint}>Packs untimed tasks into free gaps for today.</Text>
       </View>
+    </>
+  )
+
+  if (embedded) {
+    return <View style={styles.embedded}>{body}</View>
+  }
+
+  return (
+    <Animated.View entering={FadeInDown.duration(420).springify().damping(18)} style={styles.wrap}>
+      {body}
     </Animated.View>
   )
 }
@@ -121,6 +133,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginBottom: 4,
   },
+  embedded: { gap: 10, paddingBottom: 4 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   kicker: {
     color: colors.accentStrong,
