@@ -115,6 +115,10 @@ export default function RootLayout() {
         if (!data) return
         if (data.kind === 'evening' || data.route === '/evening') {
           router.push('/evening')
+          return
+        }
+        if (data.kind === 'morning') {
+          router.push('/home')
         }
       }
       const last = await NotificationsMod.getLastNotificationResponseAsync()

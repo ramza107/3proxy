@@ -419,7 +419,10 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>Morning brief</Text>
-                <Text style={styles.rowSub}>Today&apos;s list + inbox reminder</Text>
+                <Text style={styles.rowSub}>
+                  On open: today&apos;s tasks + weather, and a Plan day shortcut. Reminder at the
+                  time below.
+                </Text>
               </View>
               <Switch
                 value={settings.morningBriefEnabled}
@@ -449,6 +452,27 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
+            <Text style={styles.label}>Weather city</Text>
+            <TextInput
+              value={settings.weatherCity || ''}
+              onChangeText={(v) => updateSettings({ weatherCity: v })}
+              placeholder="Kyiv"
+              placeholderTextColor={colors.textDim}
+              style={styles.input}
+              autoCapitalize="words"
+            />
+            <Text style={styles.rowSub}>
+              Open-Meteo forecast for morning brief. Leave blank to try device location on web.
+            </Text>
+            <Pressable
+              style={styles.openRitual}
+              onPress={() => {
+                updateSettings({ lastMorningBriefDate: null })
+                router.push('/home')
+              }}
+            >
+              <Text style={styles.openRitualText}>Show Morning brief now</Text>
+            </Pressable>
           </View>
 
           <View style={styles.card}>

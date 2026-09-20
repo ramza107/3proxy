@@ -82,6 +82,10 @@ export type UserSettings = {
   /** HH:MM — morning brief of today's list */
   morningBriefTime: string
   morningBriefEnabled: boolean
+  /** YYYY-MM-DD — last time Morning brief was dismissed / planned on Home */
+  lastMorningBriefDate: string | null
+  /** City for Open-Meteo weather on morning brief (e.g. Kyiv) */
+  weatherCity: string
   /** HH:MM — evening clear / prepare tomorrow */
   eveningClearTime: string
   eveningClearEnabled: boolean
