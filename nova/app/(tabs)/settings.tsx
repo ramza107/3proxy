@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { APP_LANGUAGES, type AppLanguage } from '../../lib/i18n'
 import { disconnectEmail, emailConnectUrl, fetchEmailStatus } from '../../lib/emailApi'
 import {
   ensureNotificationPermissions,
@@ -25,6 +26,7 @@ import {
 import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
+import { useT } from '../../lib/useT'
 import { defaultTypicalWeek, type Dow, type WeekAnchor } from '../../types'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -43,6 +45,7 @@ const ANCHOR_PRESETS = [
 
 export default function SettingsScreen() {
   const router = useRouter()
+  const tr = useT()
   const params = useLocalSearchParams<{ gmail?: string }>()
   const settings = useNovaStore((s) => s.settings)
   const tasks = useNovaStore((s) => s.tasks)
@@ -297,12 +300,12 @@ export default function SettingsScreen() {
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <Text style={styles.title}>Settings</Text>
-            <Text style={styles.sub}>{email || 'Local demo account'}</Text>
+            <Text style={styles.title}>{tr('settings.title')}</Text>
+            <Text style={styles.sub}>{email || tr('settings.localDemo')}</Text>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Your name</Text>
+            <Text style={styles.label}>{tr('settings.yourName')}</Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -310,12 +313,33 @@ export default function SettingsScreen() {
               placeholderTextColor={colors.textDim}
             />
             <Pressable style={styles.btn} onPress={saveName}>
-              <Text style={styles.btnText}>Save name</Text>
+              <Text style={styles.btnText}>{tr('settings.saveName')}</Text>
             </Pressable>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.rowTitle}>Google</Text>
+            <Text style={styles.rowTitle}>{tr('settings.language')}</Text>
+            <Text style={styles.rowSub}>{tr('settings.languageSub')}</Text>
+            <View style={styles.langWrap}>
+              {APP_LANGUAGES.map((lang) => {
+                const on = settings.language === lang.code
+                return (
+                  <Pressable
+                    key={lang.code}
+                    style={[styles.langChip, on && styles.langChipOn]}
+                    onPress={() => updateSettings({ language: lang.code as AppLanguage })}
+                  >
+                    <Text style={[styles.langChipText, on && styles.langChipTextOn]}>
+                      {lang.native}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.rowTitle}>{tr('settings.google')}</Text>
             <Text style={styles.rowSub}>
               One Allow connects Gmail + Calendar (readonly). Morning inbox, Inbox asks, Promises,
               and today&apos;s meetings on the Home signal. If you connected earlier, Connect again
@@ -689,7 +713,7 @@ export default function SettingsScreen() {
           </View>
 
           <Pressable style={styles.signOut} onPress={signOut}>
-            <Text style={styles.signOutText}>Sign out</Text>
+            <Text style={styles.signOutText}>{tr('settings.signOut')}</Text>
           </Pressable>
 
           <Pressable onPress={() => router.push('/privacy')} style={styles.privacyLink}>
@@ -779,6 +803,18 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
   chipTextOn: { color: colors.accentStrong },
+  langWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  langChip: {
+    backgroundColor: colors.bgElevated,
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  langChipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  langChipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  langChipTextOn: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
   openRitual: {
     marginTop: 4,
     alignSelf: 'flex-start',

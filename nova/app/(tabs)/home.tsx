@@ -18,9 +18,11 @@ import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { TaskEditor } from '../../components/TaskEditor'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { t as translate } from '../../lib/i18n'
 import { parseHm } from '../../lib/notifications'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
+import { useT } from '../../lib/useT'
 import {
   deleteTask,
   organizeMyDay,
@@ -32,11 +34,11 @@ import {
 import type { Task } from '../../types'
 import type { CalendarEvent } from '../../types'
 
-function greeting() {
+function greetingKey() {
   const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 18) return 'Good afternoon'
-  return 'Good evening'
+  if (h < 12) return 'home.goodMorning'
+  if (h < 18) return 'home.goodAfternoon'
+  return 'home.goodEvening'
 }
 
 function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) {
@@ -70,6 +72,8 @@ function shouldOfferMorningBrief(
 
 export default function HomeScreen() {
   const router = useRouter()
+  const t = useT()
+  const language = useNovaStore((s) => s.settings.language)
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const tasks = useNovaStore((s) => s.tasks)
   const settings = useNovaStore((s) => s.settings)
@@ -148,14 +152,16 @@ export default function HomeScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.brandRow}>
             <BrandMark size={36} />
-            <Text style={styles.brandMark}>{brand.name}</Text>
+            <Text style={styles.pageTitle} numberOfLines={1}>
+              {t('tabs.home')}
+            </Text>
             <View style={{ flex: 1 }} />
             <Pressable onPress={() => setQuickOpen(true)} hitSlop={8} style={styles.menuBtn}>
               <Text style={styles.menuBtnText}>···</Text>
             </Pressable>
           </View>
           <Text style={styles.hello}>
-            {greeting()}, {name}
+            {translate(language, greetingKey())}, {name}
           </Text>
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
 
@@ -163,12 +169,12 @@ export default function HomeScreen() {
             <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
               <View style={styles.eveningNode} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.eveningTitle}>Evening Clear</Text>
+                <Text style={styles.eveningTitle}>{t('home.eveningClear')}</Text>
                 <Text style={styles.eveningSub}>
-                  Close today · {todayTasks.length} open
+                  {t('home.closeToday')} · {todayTasks.length} open
                 </Text>
               </View>
-              <Text style={styles.eveningCta}>Open ›</Text>
+              <Text style={styles.eveningCta}>{t('home.open')}</Text>
             </Pressable>
           ) : null}
 
@@ -183,9 +189,9 @@ export default function HomeScreen() {
             onPlanDay={onPlanDay}
             planning={planning}
           />
-          <Text style={styles.editHint}>Tap a task to edit · tap the dot to complete.</Text>
+          <Text style={styles.editHint}>{t('home.editHint')}</Text>
 
-          <Text style={styles.groupLabel}>From Google</Text>
+          <Text style={styles.groupLabel}>{t('home.fromGoogle')}</Text>
           <CalendarBrief
             userId={userId}
             onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
@@ -194,11 +200,11 @@ export default function HomeScreen() {
           <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
           <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
 
-          <HomeSection title="Ask Wahrly" emphasize>
-            <Text style={styles.prompt}>What do you need to do?</Text>
+          <HomeSection title={t('home.askWahrly')} emphasize>
+            <Text style={styles.prompt}>{t('home.askPrompt')}</Text>
             <AIInput loading={loading} onSend={onSend} />
             <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
-              <Text style={styles.askText}>Open chat ›</Text>
+              <Text style={styles.askText}>{t('home.openChat')}</Text>
             </Pressable>
           </HomeSection>
         </ScrollView>
@@ -275,6 +281,13 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 0 },
+  pageTitle: {
+    color: colors.accentStrong,
+    fontFamily: fonts.brand,
+    fontSize: 28,
+    letterSpacing: -0.6,
+    flexShrink: 0,
+  },
   brandMark: {
     color: colors.accentStrong,
     fontFamily: fonts.brand,

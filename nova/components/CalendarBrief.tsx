@@ -7,6 +7,7 @@ import { fetchCalendarEvents, fetchEmailStatus } from '../lib/emailApi'
 import { todayISO } from '../lib/store'
 import type { CalendarEvent } from '../types'
 import { HomeSection } from './HomeSection'
+import { useT } from '../lib/useT'
 
 type Props = {
   userId: string | null
@@ -34,6 +35,7 @@ function formatEventWhen(ev: CalendarEvent) {
 
 /** Today’s Google Calendar on Home — readonly; events also merge into Today rail. */
 export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
+  const t = useT()
   const router = useRouter()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [connected, setConnected] = useState(false)
@@ -84,12 +86,12 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
 
   return (
     <HomeSection
-      title="Calendar"
+      title={t('home.calendar')}
       meta={meta}
       action={
         connected ? (
           <Pressable onPress={() => load()} hitSlop={8}>
-            <Text style={styles.refresh}>{loading ? '…' : 'Refresh'}</Text>
+            <Text style={styles.refresh}>{loading ? '…' : t('home.refresh')}</Text>
           </Pressable>
         ) : null
       }
@@ -100,7 +102,7 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
         <>
           <Text style={styles.error}>{error}</Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
-            <Text style={styles.btnText}>Reconnect Google</Text>
+            <Text style={styles.btnText}>{t('home.reconnectGoogle')}</Text>
           </Pressable>
         </>
       ) : !connected ? (
@@ -121,7 +123,7 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
             </View>
           ) : null}
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
-            <Text style={styles.btnText}>Connect with Google</Text>
+            <Text style={styles.btnText}>{t('home.connectGoogle')}</Text>
           </Pressable>
         </>
       ) : events.length === 0 ? (

@@ -4,6 +4,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { Bill, ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
 import { defaultTypicalWeek } from '../types'
+import { deviceLanguageFallback, isAppLanguage } from './i18n'
 
 const ssrSafeStorage = {
   getItem: async (_name: string) => null as string | null,
@@ -77,6 +78,7 @@ type NovaState = {
 
 const defaultSettings: UserSettings = {
   name: '',
+  language: 'en',
   notificationsEnabled: true,
   aiTone: 'friendly',
   onboardingComplete: false,
@@ -259,6 +261,9 @@ export const useNovaStore = create<NovaState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.settings = { ...defaultSettings, ...state.settings }
+          if (!isAppLanguage(state.settings.language)) {
+            state.settings.language = deviceLanguageFallback()
+          }
           state.settings.typicalWeek = {
             ...defaultTypicalWeek(),
             ...(state.settings.typicalWeek || {}),
