@@ -49,6 +49,7 @@ export default function SettingsScreen() {
   const email = useNovaStore((s) => s.sessionEmail)
   const userId = useNovaStore((s) => s.sessionUserId)
   const updateSettings = useNovaStore((s) => s.updateSettings)
+  const setForceMorningBrief = useNovaStore((s) => s.setForceMorningBrief)
   const clearSession = useNovaStore((s) => s.clearSession)
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
@@ -468,6 +469,7 @@ export default function SettingsScreen() {
               style={styles.openRitual}
               onPress={() => {
                 updateSettings({ lastMorningBriefDate: null })
+                setForceMorningBrief(true)
                 router.push('/home')
               }}
             >

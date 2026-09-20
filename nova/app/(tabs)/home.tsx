@@ -33,13 +33,16 @@ function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) 
   return nowMin >= startMin
 }
 
-/** Morning brief on Home: after brief time (or from 5:00), until noon, once per day. */
+/** Morning brief on Home: after brief time (or from 5:00), until noon, once per day.
+ *  `force` bypasses the clock (Settings → Show Morning brief now). */
 function shouldOfferMorningBrief(
   enabled: boolean,
   briefTime: string,
   lastBrief: string | null,
+  force: boolean,
 ) {
-  if (!enabled) return false
+  if (!enabled && !force) return false
+  if (force) return true
   const today = todayISO()
   if (lastBrief === today) return false
   const hour = new Date().getHours()
@@ -56,6 +59,8 @@ export default function HomeScreen() {
   const tasks = useNovaStore((s) => s.tasks)
   const settings = useNovaStore((s) => s.settings)
   const updateSettings = useNovaStore((s) => s.updateSettings)
+  const forceMorningBrief = useNovaStore((s) => s.forceMorningBrief)
+  const setForceMorningBrief = useNovaStore((s) => s.setForceMorningBrief)
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const emailPromisesAutoEnabled = useNovaStore(
@@ -82,6 +87,7 @@ export default function HomeScreen() {
     settings.morningBriefEnabled !== false,
     settings.morningBriefTime || '08:00',
     settings.lastMorningBriefDate ?? null,
+    forceMorningBrief,
   )
 
   const showEveningClear =
@@ -89,6 +95,7 @@ export default function HomeScreen() {
     shouldOfferEveningClear(settings.eveningClearTime || '21:30', settings.lastEveningClearDate)
 
   const dismissMorningBrief = () => {
+    setForceMorningBrief(false)
     updateSettings({ lastMorningBriefDate: todayISO() })
   }
 
