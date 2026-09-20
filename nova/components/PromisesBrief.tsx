@@ -6,6 +6,7 @@ import { fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
 import { useNovaStore } from '../lib/store'
 import type { EmailPromise, PromisesDigest } from '../types'
 import { HomeSection } from './HomeSection'
+import { useT } from '../lib/useT'
 
 type Props = {
   userId: string | null
@@ -18,6 +19,7 @@ type Props = {
  * "I'll send the deck tomorrow" → Wahrly offers (or auto-adds) a real task.
  */
 export function PromisesBrief({ userId, autoCreate }: Props) {
+  const t = useT()
   const router = useRouter()
   const dismissed = useNovaStore((s) => s.dismissedPromiseIds)
   const dismissPromise = useNovaStore((s) => s.dismissPromise)
@@ -134,7 +136,7 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
 
   return (
     <HomeSection
-      title="Promises"
+      title={t('home.promises')}
       meta={
         connected
           ? autoCreate
@@ -153,7 +155,7 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
             }}
             hitSlop={8}
           >
-            <Text style={styles.refresh}>{loading ? '…' : 'Scan'}</Text>
+            <Text style={styles.refresh}>{loading ? '…' : t('home.scan')}</Text>
           </Pressable>
         ) : null
       }
@@ -170,7 +172,7 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
             Commitments like “I’ll send…” in your sent mail become real tasks.
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
-            <Text style={styles.btnText}>Connect Gmail</Text>
+            <Text style={styles.btnText}>{t('home.connectGoogle')}</Text>
           </Pressable>
           <Pressable onPress={() => load(true)}>
             <Text style={styles.demoLink}>Preview with demo promises</Text>

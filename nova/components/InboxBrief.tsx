@@ -5,6 +5,7 @@ import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailDigest, fetchEmailStatus } from '../lib/emailApi'
 import type { EmailDigest } from '../types'
 import { HomeSection } from './HomeSection'
+import { useT } from '../lib/useT'
 
 type Props = {
   userId: string | null
@@ -21,6 +22,7 @@ function deviceTimeZone() {
 
 /** Automatic yesterday inbox digest from connected Gmail (device time zone). */
 export function InboxBrief({ userId, enabled }: Props) {
+  const t = useT()
   const router = useRouter()
   const [digest, setDigest] = useState<EmailDigest | null>(null)
   const [connected, setConnected] = useState(false)
@@ -58,7 +60,9 @@ export function InboxBrief({ userId, enabled }: Props) {
 
   if (!enabled || !userId) return null
 
-  const title = digest?.window?.dayLabel ? `Yesterday · ${digest.window.dayLabel}` : 'Yesterday'
+  const title = digest?.window?.dayLabel
+    ? `${t('home.yesterday')} · ${digest.window.dayLabel}`
+    : t('home.yesterday')
   const highlightCount = digest?.highlights?.length || digest?.senders?.length || 0
   const meta = connected
     ? highlightCount
@@ -75,7 +79,7 @@ export function InboxBrief({ userId, enabled }: Props) {
       action={
         connected ? (
           <Pressable onPress={() => load()} hitSlop={8}>
-            <Text style={styles.refresh}>{loading ? '…' : 'Refresh'}</Text>
+            <Text style={styles.refresh}>{loading ? '…' : t('home.refresh')}</Text>
           </Pressable>
         ) : null
       }
@@ -90,7 +94,7 @@ export function InboxBrief({ userId, enabled }: Props) {
             Connect Gmail once — each morning Wahrly shows who wrote yesterday.
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
-            <Text style={styles.btnText}>Connect with Google</Text>
+            <Text style={styles.btnText}>{t('home.connectGoogle')}</Text>
           </Pressable>
         </>
       ) : digest ? (

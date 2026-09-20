@@ -7,6 +7,8 @@ import Animated, {
 import { useEffect } from 'react'
 import { BrandMark } from '../../components/BrandMark'
 import { colors } from '../../constants/theme'
+import { t } from '../../lib/i18n'
+import { useNovaStore } from '../../lib/store'
 
 function SignalDot({ focused }: { focused: boolean }) {
   const scale = useSharedValue(focused ? 1 : 0.75)
@@ -28,6 +30,8 @@ function SignalDot({ focused }: { focused: boolean }) {
 }
 
 export default function TabsLayout() {
+  const language = useNovaStore((s) => s.settings.language)
+
   return (
     <Tabs
       screenOptions={{
@@ -48,14 +52,15 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: t(language, 'tabs.home'),
           tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="chat"
         options={{
-          title: 'Wahrly',
+          // Short label — "Wahrly" was truncating in the tab bar
+          title: t(language, 'tabs.chat'),
           tabBarIcon: ({ focused }) => (
             <BrandMark size={22} color={focused ? colors.signal : colors.signalMuted} />
           ),
@@ -64,21 +69,21 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="tasks"
         options={{
-          title: 'Tasks',
+          title: t(language, 'tabs.tasks'),
           tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="bills"
         options={{
-          title: 'Bills',
+          title: t(language, 'tabs.bills'),
           tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t(language, 'tabs.settings'),
           href: null,
         }}
       />

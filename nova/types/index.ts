@@ -92,8 +92,12 @@ export type AIChatResponse = {
   actions: AIAction[]
 }
 
+import type { AppLanguage } from '../lib/i18n'
+
 export type UserSettings = {
   name: string
+  /** UI language for tabs, Home, Settings */
+  language: AppLanguage
   notificationsEnabled: boolean
   aiTone: 'friendly' | 'concise' | 'coach'
   onboardingComplete: boolean

@@ -7,6 +7,7 @@ import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notification
 import { useNovaStore } from '../lib/store'
 import type { MeetingAlert, MeetingsDigest } from '../types'
 import { HomeSection } from './HomeSection'
+import { useT } from '../lib/useT'
 
 type Props = {
   userId: string | null
@@ -21,6 +22,7 @@ const POLL_MS = 5 * 60 * 1000
  * Fires a notification: “Aaz wrote — wants to meet Sep 23 at 6pm”.
  */
 export function MeetingAlerts({ userId, alertsEnabled }: Props) {
+  const t = useT()
   const router = useRouter()
   const notified = useNovaStore((s) => s.notifiedMeetingIds)
   const markMeetingNotified = useNovaStore((s) => s.markMeetingNotified)
@@ -140,7 +142,7 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
 
   return (
     <HomeSection
-      title="Inbox asks"
+      title={t('home.inboxAsks')}
       meta={
         connected
           ? visible.length
@@ -151,7 +153,7 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
       action={
         connected ? (
           <Pressable onPress={() => load(false)} hitSlop={8}>
-            <Text style={styles.refresh}>{loading ? '…' : 'Scan'}</Text>
+            <Text style={styles.refresh}>{loading ? '…' : t('home.scan')}</Text>
           </Pressable>
         ) : null
       }
@@ -166,7 +168,7 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
             Meet / call / report emails become tasks — and push when something new lands.
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
-            <Text style={styles.btnText}>Connect Gmail</Text>
+            <Text style={styles.btnText}>{t('home.connectGoogle')}</Text>
           </Pressable>
           <Pressable onPress={() => load(true)}>
             <Text style={styles.demoLink}>Preview with demo alerts</Text>

@@ -6,6 +6,7 @@ import { colors, fonts, radii, spacing } from '../constants/theme'
 import { durationForPriority, minutesToHm, parseHmToMinutes } from '../lib/scheduleDay'
 import { SoftPressable } from './SoftPressable'
 import { HomeSection } from './HomeSection'
+import { useT } from '../lib/useT'
 
 type Props = {
   tasks: Task[]
@@ -97,6 +98,7 @@ export function DailyPlan({
   planning,
   suggestion,
 }: Props) {
+  const t = useT()
   const { timed, untimed, allDay } = useMemo(
     () => buildSlots(tasks, events, workdayStart, workdayEnd),
     [tasks, events, workdayStart, workdayEnd],
@@ -109,7 +111,7 @@ export function DailyPlan({
   return (
     <Animated.View entering={FadeIn.duration(380)} style={styles.wrap}>
       <HomeSection
-        title="Today"
+        title={t('home.today')}
         emphasize
         meta={`${dayKind === 'light' ? 'Light day · ' : ''}${workdayStart}–${workdayEnd}${
           openCount ? ` · ${openCount} open` : ' · clear'
@@ -124,7 +126,9 @@ export function DailyPlan({
               onPress={onPlanDay}
               disabled={!!planning}
             >
-              <Text style={styles.planBtnText}>{planning ? 'Planning…' : 'Plan day'}</Text>
+              <Text style={styles.planBtnText}>
+                {planning ? t('home.planning') : t('home.planDay')}
+              </Text>
             </SoftPressable>
           ) : null
         }
