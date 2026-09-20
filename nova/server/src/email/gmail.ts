@@ -3,6 +3,9 @@ import { isInWindow, previousLocalDayWindow, type DayWindow } from './timeWindow
 import { deleteConnection, getConnection, saveConnection, type EmailConnection } from './store.js'
 
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
+const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
+/** Gmail + Calendar — reconnect needed for users who connected before Calendar was added. */
+const GOOGLE_SCOPES = `${GMAIL_SCOPE} ${CALENDAR_SCOPE}`
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me'
@@ -89,7 +92,7 @@ export function buildAuthUrl(userId: string, _stateNonce: string, client: 'web' 
     client_id: process.env.GOOGLE_CLIENT_ID!,
     redirect_uri: getRedirectUri(),
     response_type: 'code',
-    scope: GMAIL_SCOPE,
+    scope: GOOGLE_SCOPES,
     access_type: 'offline',
     prompt: 'consent',
     include_granted_scopes: 'true',
@@ -208,6 +211,9 @@ async function withFreshToken(userId: string): Promise<EmailConnection> {
   }
   return conn
 }
+
+/** Shared by Gmail + Calendar routes — refresh access token when needed. */
+export { withFreshToken }
 
 function headerValue(headers: { name: string; value: string }[] | undefined, name: string) {
   return headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || ''

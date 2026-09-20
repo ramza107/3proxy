@@ -1,4 +1,4 @@
-# Gmail OAuth — one-time product setup (for the app owner)
+# Gmail + Calendar OAuth — one-time product setup (for the app owner)
 
 Users never see this. They only tap **Connect with Google → Allow**.
 
@@ -6,9 +6,10 @@ Users never see this. They only tap **Connect with Google → Allow**.
 1. Open https://console.cloud.google.com/
 2. Create (or pick) a project, e.g. `Wahrly`
 
-## 2. Enable Gmail API
+## 2. Enable APIs
 1. APIs & Services → Library  
-2. Search **Gmail API** → Enable
+2. Enable **Gmail API**  
+3. Enable **Google Calendar API**
 
 ## 3. OAuth consent screen
 1. APIs & Services → OAuth consent screen  
@@ -17,8 +18,12 @@ Users never see this. They only tap **Connect with Google → Allow**.
 4. Support email: your email  
 5. **Privacy policy link** (required for verification):  
    `https://ramza107.github.io/3proxy/nova/privacy`  
-6. Scopes → Add `https://www.googleapis.com/auth/gmail.readonly`  
+6. Scopes → Add:
+   - `https://www.googleapis.com/auth/gmail.readonly`
+   - `https://www.googleapis.com/auth/calendar.readonly`
 7. Test users → add your Gmail (while app is in Testing)
+
+**Existing users** who connected before Calendar was added must tap **Connect with Google** again (or Disconnect → Connect) so Google grants Calendar.
 
 Source text for the policy: [`privacy-policy.md`](privacy-policy.md) / in-app route `/privacy`.
 

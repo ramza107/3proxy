@@ -1,15 +1,16 @@
+import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated'
-import type { Task } from '../types'
+import type { CalendarEvent, Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { durationForPriority, minutesToHm, parseHmToMinutes } from '../lib/scheduleDay'
 import { SoftPressable } from './SoftPressable'
 
 type Props = {
   tasks: Task[]
-  /** Complete / reopen via the check node */
+  /** Google Calendar events for today (merged onto the rail) */
+  events?: CalendarEvent[]
   onToggle: (task: Task) => void
-  /** Tap the row body → edit sheet */
   onEdit?: (task: Task) => void
   workdayStart?: string
   workdayEnd?: string
@@ -21,20 +22,27 @@ type Props = {
 
 type Slot =
   | { kind: 'task'; start: number; end: number; task: Task }
+  | { kind: 'event'; start: number; end: number; event: CalendarEvent }
   | { kind: 'free'; start: number; end: number }
 
-/** Soft teal ladder — priority without traffic-light red/yellow clash. */
 const NODE: Record<Task['priority'], string> = {
   high: colors.accentStrong,
   medium: colors.accent,
   low: colors.signalMuted,
 }
 
+function minutesFromIso(iso: string): number | null {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.getHours() * 60 + d.getMinutes()
+}
+
 function buildSlots(
   tasks: Task[],
+  events: CalendarEvent[],
   workStart: string,
   workEnd: string,
-): { timed: Slot[]; untimed: Task[] } {
+): { timed: Slot[]; untimed: Task[]; allDay: CalendarEvent[] } {
   const start = parseHmToMinutes(workStart) ?? 9 * 60
   const end = parseHmToMinutes(workEnd) ?? 18 * 60
   const open = tasks.filter((t) => !t.completed)
@@ -44,12 +52,28 @@ function buildSlots(
       const s = parseHmToMinutes(t.time!)!
       return { kind: 'task' as const, start: s, end: s + durationForPriority(t.priority), task: t }
     })
-    .sort((a, b) => a.start - b.start)
 
+  const allDay = events.filter((e) => e.allDay)
+  const timedEvents = events
+    .filter((e) => !e.allDay)
+    .map((e) => {
+      const s = minutesFromIso(e.start)
+      const en = minutesFromIso(e.end)
+      if (s == null) return null
+      return {
+        kind: 'event' as const,
+        start: s,
+        end: en != null && en > s ? en : s + 30,
+        event: e,
+      }
+    })
+    .filter(Boolean) as Extract<Slot, { kind: 'event' }>[]
+
+  const blocks = [...withTime, ...timedEvents].sort((a, b) => a.start - b.start)
   const untimed = open.filter((t) => !t.time)
   const slots: Slot[] = []
   let cursor = start
-  for (const block of withTime) {
+  for (const block of blocks) {
     if (block.start > cursor) {
       slots.push({ kind: 'free', start: cursor, end: Math.min(block.start, end) })
     }
@@ -57,11 +81,12 @@ function buildSlots(
     cursor = Math.max(cursor, block.end)
   }
   if (cursor < end) slots.push({ kind: 'free', start: cursor, end })
-  return { timed: slots, untimed }
+  return { timed: slots, untimed, allDay }
 }
 
 export function DailyPlan({
   tasks,
+  events = [],
   onToggle,
   onEdit,
   workdayStart = '09:00',
@@ -71,9 +96,14 @@ export function DailyPlan({
   planning,
   suggestion,
 }: Props) {
-  const { timed, untimed } = buildSlots(tasks, workdayStart, workdayEnd)
+  const { timed, untimed, allDay } = useMemo(
+    () => buildSlots(tasks, events, workdayStart, workdayEnd),
+    [tasks, events, workdayStart, workdayEnd],
+  )
   const hasUntimed = untimed.length > 0
   const openCount = tasks.filter((t) => !t.completed).length
+  const eventCount = events.length
+  const empty = openCount === 0 && eventCount === 0
 
   return (
     <Animated.View entering={FadeIn.duration(380)} style={styles.wrap}>
@@ -84,6 +114,7 @@ export function DailyPlan({
             {dayKind === 'light' ? 'Light day · ' : ''}
             {workdayStart}–{workdayEnd}
             {openCount ? ` · ${openCount} open` : ' · clear'}
+            {eventCount ? ` · ${eventCount} event${eventCount === 1 ? '' : 's'}` : ''}
           </Text>
         </View>
         {onPlanDay ? (
@@ -97,13 +128,33 @@ export function DailyPlan({
         ) : null}
       </View>
 
-      {openCount === 0 ? (
+      {empty ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>No open tasks yet. Add one below, then Plan day.</Text>
+          <Text style={styles.emptyText}>
+            No tasks or calendar events yet. Connect Google for meetings, or add a task below.
+          </Text>
         </View>
       ) : (
         <View style={styles.timeline}>
           <View style={styles.spine} />
+          {allDay.map((ev, i) => (
+            <Animated.View
+              key={ev.id}
+              entering={FadeInRight.delay(Math.min(i, 6) * 30).duration(280)}
+              style={styles.row}
+            >
+              <View style={styles.nodeCol}>
+                <View style={styles.nodeEvent} />
+              </View>
+              <Text style={styles.timeCol}>Day</Text>
+              <View style={styles.taskBody}>
+                <Text style={styles.eventTitle} numberOfLines={2}>
+                  {ev.title}
+                </Text>
+                <Text style={styles.eventMeta}>Calendar · all day</Text>
+              </View>
+            </Animated.View>
+          ))}
           {timed.map((slot, i) =>
             slot.kind === 'free' ? (
               <Animated.View
@@ -119,6 +170,27 @@ export function DailyPlan({
                   free · {Math.max(0, slot.end - slot.start)}m
                 </Text>
               </Animated.View>
+            ) : slot.kind === 'event' ? (
+              <Animated.View
+                key={slot.event.id}
+                entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
+                style={styles.row}
+              >
+                <View style={styles.nodeCol}>
+                  <View style={styles.nodeEvent} />
+                </View>
+                <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
+                <View style={styles.taskBody}>
+                  <Text style={styles.eventTitle} numberOfLines={2}>
+                    {slot.event.title}
+                  </Text>
+                  <Text style={styles.eventMeta}>
+                    Calendar
+                    {slot.event.location ? ` · ${slot.event.location}` : ''}
+                    {` · ${Math.max(15, slot.end - slot.start)}m`}
+                  </Text>
+                </View>
+              </Animated.View>
             ) : (
               <Animated.View
                 key={slot.task.id}
@@ -130,7 +202,6 @@ export function DailyPlan({
                     onPress={() => onToggle(slot.task)}
                     hitSlop={8}
                     accessibilityRole="checkbox"
-                    accessibilityState={{ checked: !!slot.task.completed }}
                     accessibilityLabel="Mark done"
                   >
                     <View
@@ -198,7 +269,7 @@ export function DailyPlan({
 
       {suggestion ? <Text style={styles.hint}>{suggestion}</Text> : null}
       {!suggestion && hasUntimed ? (
-        <Text style={styles.hint}>Plan day places untimed tasks into free gaps.</Text>
+        <Text style={styles.hint}>Plan day places untimed tasks into free gaps around calendar events.</Text>
       ) : null}
     </Animated.View>
   )
@@ -234,7 +305,7 @@ const styles = StyleSheet.create({
   timeline: { position: 'relative', paddingLeft: 2, gap: 0 },
   spine: {
     position: 'absolute',
-    left: 11,
+    left: 13,
     top: 8,
     bottom: 8,
     width: 1.5,
@@ -262,6 +333,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.bg,
   },
+  nodeEvent: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
+    backgroundColor: colors.bgDeep,
+    marginTop: 2,
+  },
   nodeFree: {
     width: 8,
     height: 8,
@@ -287,6 +365,8 @@ const styles = StyleSheet.create({
   taskBody: { flex: 1, gap: 2 },
   taskTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15, lineHeight: 21 },
   taskDone: { textDecorationLine: 'line-through', color: colors.textMuted },
+  eventTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15, lineHeight: 21 },
+  eventMeta: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   untimed: { marginTop: 4, paddingTop: 4 },
   untimedLabel: {
     color: colors.textDim,

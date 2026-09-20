@@ -6,6 +6,7 @@ import multer from 'multer'
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { buildDigest, demoDigest } from './email/digest.js'
+import { demoCalendarEvents, listCalendarEvents } from './email/calendar.js'
 import {
   buildAuthUrl,
   exchangeCode,
@@ -240,12 +241,13 @@ app.get('/api/email/callback', async (req, res) => {
     }
 
     const tokens = await exchangeCode(code)
+    const existing = await getConnection(parsed.userId)
     await saveConnection({
       userId: parsed.userId,
       provider: 'gmail',
       email: tokens.email,
       accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      refreshToken: tokens.refreshToken || existing?.refreshToken || '',
       expiryDate: tokens.expiryDate,
       updatedAt: new Date().toISOString(),
     })
@@ -385,6 +387,58 @@ app.get('/api/email/meetings', async (req, res) => {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'meetings failed',
     })
+  }
+})
+
+/** Google Calendar events (primary) for a time range. */
+app.get('/api/calendar/events', async (req, res) => {
+  try {
+    const userId = String(req.query.user_id || '')
+    const allowDemo = String(req.query.demo || '') === '1'
+    const from = String(req.query.from || '')
+    const to = String(req.query.to || '')
+    if (!userId) return res.status(400).json({ error: 'user_id required' })
+
+    const day =
+      from && /^\d{4}-\d{2}-\d{2}/.test(from)
+        ? from.slice(0, 10)
+        : new Date().toISOString().slice(0, 10)
+
+    const conn = await getConnection(userId)
+    if (!conn) {
+      if (allowDemo) {
+        return res.json({
+          connected: false,
+          email: null,
+          demo: true,
+          events: demoCalendarEvents(day),
+          generatedAt: new Date().toISOString(),
+        })
+      }
+      return res.json({
+        connected: false,
+        email: null,
+        demo: false,
+        events: [],
+        generatedAt: new Date().toISOString(),
+      })
+    }
+
+    const timeMin = from || `${day}T00:00:00.000Z`
+    const timeMax = to || `${day}T23:59:59.999Z`
+    const { email, events } = await listCalendarEvents(userId, { from: timeMin, to: timeMax })
+    return res.json({
+      connected: true,
+      email,
+      demo: false,
+      events,
+      generatedAt: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('calendar', error)
+    const msg = error instanceof Error ? error.message : 'calendar failed'
+    const needsReconnect = /permission missing|reconnect/i.test(msg)
+    return res.status(needsReconnect ? 403 : 500).json({ error: msg })
   }
 })
 
