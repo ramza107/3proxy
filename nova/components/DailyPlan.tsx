@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated'
 import type { Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { durationForPriority, minutesToHm, parseHmToMinutes } from '../lib/scheduleDay'
+import { SoftPressable } from './SoftPressable'
 
 type Props = {
   tasks: Task[]
@@ -70,7 +72,7 @@ export function DailyPlan({
   const openCount = tasks.filter((t) => !t.completed).length
 
   return (
-    <View style={styles.wrap}>
+    <Animated.View entering={FadeIn.duration(380)} style={styles.wrap}>
       <View style={styles.head}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Today</Text>
@@ -81,13 +83,13 @@ export function DailyPlan({
           </Text>
         </View>
         {onPlanDay ? (
-          <Pressable
+          <SoftPressable
             style={[styles.planBtn, (planning || (!hasUntimed && openCount === 0)) && styles.planDisabled]}
             onPress={onPlanDay}
             disabled={!!planning}
           >
             <Text style={styles.planBtnText}>{planning ? 'Planning…' : 'Plan day'}</Text>
-          </Pressable>
+          </SoftPressable>
         ) : null}
       </View>
 
@@ -100,7 +102,11 @@ export function DailyPlan({
           <View style={styles.spine} />
           {timed.map((slot, i) =>
             slot.kind === 'free' ? (
-              <View key={`free-${i}`} style={styles.row}>
+              <Animated.View
+                key={`free-${i}`}
+                entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
+                style={styles.row}
+              >
                 <View style={styles.nodeCol}>
                   <View style={styles.nodeFree} />
                 </View>
@@ -108,45 +114,51 @@ export function DailyPlan({
                 <Text style={styles.freeText}>
                   free · {Math.max(0, slot.end - slot.start)}m
                 </Text>
-              </View>
+              </Animated.View>
             ) : (
-              <Pressable
+              <Animated.View
                 key={slot.task.id}
-                style={styles.row}
-                onPress={() => onToggle(slot.task)}
+                entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
               >
-                <View style={styles.nodeCol}>
-                  <View
-                    style={[styles.nodeOn, { backgroundColor: NODE[slot.task.priority] }]}
-                  />
-                </View>
-                <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
-                <View style={styles.taskBody}>
-                  <Text
-                    style={[styles.taskTitle, slot.task.completed && styles.taskDone]}
-                    numberOfLines={2}
-                  >
-                    {slot.task.title}
-                  </Text>
-                </View>
-              </Pressable>
+                <Pressable style={styles.row} onPress={() => onToggle(slot.task)}>
+                  <View style={styles.nodeCol}>
+                    <View
+                      style={[styles.nodeOn, { backgroundColor: NODE[slot.task.priority] }]}
+                    />
+                  </View>
+                  <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
+                  <View style={styles.taskBody}>
+                    <Text
+                      style={[styles.taskTitle, slot.task.completed && styles.taskDone]}
+                      numberOfLines={2}
+                    >
+                      {slot.task.title}
+                    </Text>
+                  </View>
+                </Pressable>
+              </Animated.View>
             ),
           )}
           {untimed.length > 0 ? (
             <View style={styles.untimed}>
               <Text style={styles.untimedLabel}>Later</Text>
-              {untimed.map((t) => (
-                <Pressable key={t.id} style={styles.row} onPress={() => onToggle(t)}>
-                  <View style={styles.nodeCol}>
-                    <View style={[styles.nodeOn, { backgroundColor: NODE[t.priority] }]} />
-                  </View>
-                  <Text style={styles.timeCol}>—</Text>
-                  <View style={styles.taskBody}>
-                    <Text style={styles.taskTitle} numberOfLines={2}>
-                      {t.title}
-                    </Text>
-                  </View>
-                </Pressable>
+              {untimed.map((t, i) => (
+                <Animated.View
+                  key={t.id}
+                  entering={FadeInRight.delay(120 + Math.min(i, 6) * 40).duration(280)}
+                >
+                  <Pressable style={styles.row} onPress={() => onToggle(t)}>
+                    <View style={styles.nodeCol}>
+                      <View style={[styles.nodeOn, { backgroundColor: NODE[t.priority] }]} />
+                    </View>
+                    <Text style={styles.timeCol}>—</Text>
+                    <View style={styles.taskBody}>
+                      <Text style={styles.taskTitle} numberOfLines={2}>
+                        {t.title}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </Animated.View>
               ))}
             </View>
           ) : null}
@@ -157,7 +169,7 @@ export function DailyPlan({
       {!suggestion && hasUntimed ? (
         <Text style={styles.hint}>Plan day places untimed tasks into free gaps.</Text>
       ) : null}
-    </View>
+    </Animated.View>
   )
 }
 
