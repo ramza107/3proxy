@@ -37,10 +37,13 @@ type NovaState = {
   messages: ChatMessage[]
   dismissedPromiseIds: string[]
   notifiedMeetingIds: string[]
+  /** Settings → Show Morning brief now (ignores time-of-day gate) */
+  forceMorningBrief: boolean
   setHydrated: (v: boolean) => void
   setDemoSession: (email: string, name?: string) => void
   clearSession: () => void
   updateSettings: (patch: Partial<UserSettings>) => void
+  setForceMorningBrief: (v: boolean) => void
   setTasks: (tasks: Task[]) => void
   upsertTask: (task: Task) => void
   removeTask: (id: string) => void
@@ -92,6 +95,7 @@ export const useNovaStore = create<NovaState>()(
       messages: [],
       dismissedPromiseIds: [],
       notifiedMeetingIds: [],
+      forceMorningBrief: false,
       setHydrated: (v) => set({ hydrated: v }),
       setDemoSession: (email, name) =>
         set({
@@ -112,9 +116,11 @@ export const useNovaStore = create<NovaState>()(
           messages: [],
           dismissedPromiseIds: [],
           notifiedMeetingIds: [],
+          forceMorningBrief: false,
           settings: defaultSettings,
         }),
       updateSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
+      setForceMorningBrief: (v) => set({ forceMorningBrief: v }),
       setTasks: (tasks) => set({ tasks }),
       upsertTask: (task) => {
         const existing = get().tasks
