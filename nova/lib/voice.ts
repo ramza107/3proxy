@@ -108,7 +108,8 @@ export async function stopVoiceRecording(): Promise<VoiceRecording> {
     // ignore
   }
   if (!uri) throw new Error('No recording saved')
-  return { uri, mimeType: 'audio/m4a', filename: 'voice.m4a' }
+  // Whisper accepts audio/mp4 for .m4a from expo-audio HIGH_QUALITY
+  return { uri, mimeType: 'audio/mp4', filename: 'voice.m4a' }
 }
 
 export async function cancelVoiceRecording(): Promise<void> {
@@ -130,32 +131,47 @@ export async function cancelVoiceRecording(): Promise<void> {
   }
 }
 
+/**
+ * Upload audio for Whisper.
+ * Native: expo-file-system multipart upload (RN {uri,name,type} FormData breaks
+ * Expo’s fetch with “Unsupported FormDataPart implementation”).
+ * Web: standard Blob FormData.
+ */
 export async function transcribeVoice(
   recording: VoiceRecording,
   opts?: { language?: string },
 ): Promise<{ text: string; raw: string; provider: string }> {
-  const form = new FormData()
+  const url = `${apiUrl}/api/ai/transcribe`
 
   if (Platform.OS === 'web') {
+    const form = new FormData()
     const blob = await fetch(recording.uri).then((r) => r.blob())
     form.append('audio', blob, recording.filename)
-  } else {
-    // React Native FormData file shape
-    form.append('audio', {
-      uri: recording.uri,
-      name: recording.filename,
-      type: recording.mimeType,
-    } as unknown as Blob)
+    if (opts?.language) form.append('language', opts.language)
+    const res = await fetch(url, { method: 'POST', body: form })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text || `Transcribe failed (${res.status})`)
+    }
+    return res.json()
   }
-  if (opts?.language) form.append('language', opts.language)
 
-  const res = await fetch(`${apiUrl}/api/ai/transcribe`, {
-    method: 'POST',
-    body: form,
+  const FileSystem = await import('expo-file-system/legacy')
+  const result = await FileSystem.uploadAsync(url, recording.uri, {
+    httpMethod: 'POST',
+    uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+    fieldName: 'audio',
+    mimeType: recording.mimeType,
+    parameters: opts?.language ? { language: opts.language } : {},
   })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(text || `Transcribe failed (${res.status})`)
+
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(result.body || `Transcribe failed (${result.status})`)
   }
-  return res.json()
+
+  try {
+    return JSON.parse(result.body) as { text: string; raw: string; provider: string }
+  } catch {
+    throw new Error(result.body || 'Invalid transcribe response')
+  }
 }
