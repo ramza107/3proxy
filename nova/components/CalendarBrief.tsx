@@ -2,10 +2,11 @@ import { useCallback, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { format, parseISO } from 'date-fns'
-import { colors, fonts, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii } from '../constants/theme'
 import { fetchCalendarEvents, fetchEmailStatus } from '../lib/emailApi'
 import { todayISO } from '../lib/store'
 import type { CalendarEvent } from '../types'
+import { HomeSection } from './HomeSection'
 
 type Props = {
   userId: string | null
@@ -15,7 +16,6 @@ type Props = {
 }
 
 function dayBounds(day: string) {
-  // Local day as ISO range — server passes through to Google
   const start = new Date(`${day}T00:00:00`)
   const end = new Date(`${day}T23:59:59.999`)
   return { from: start.toISOString(), to: end.toISOString() }
@@ -32,7 +32,7 @@ function formatEventWhen(ev: CalendarEvent) {
   }
 }
 
-/** Today’s Google Calendar on Home — readonly. */
+/** Today’s Google Calendar on Home — readonly; events also merge into Today rail. */
 export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
   const router = useRouter()
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -75,17 +75,25 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
 
   if (!enabled || !userId) return null
 
+  const meta =
+    connected && events.length > 0
+      ? `${events.length} today · on the rail above`
+      : connected
+        ? 'Primary calendar'
+        : undefined
+
   return (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.kicker}>Calendar</Text>
-        {connected ? (
+    <HomeSection
+      title="Calendar"
+      meta={meta}
+      action={
+        connected ? (
           <Pressable onPress={() => load()} hitSlop={8}>
             <Text style={styles.refresh}>{loading ? '…' : 'Refresh'}</Text>
           </Pressable>
-        ) : null}
-      </View>
-
+        ) : null
+      }
+    >
       {loading && events.length === 0 ? (
         <ActivityIndicator color={colors.accent} />
       ) : error ? (
@@ -98,66 +106,38 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
       ) : !connected ? (
         <>
           <Text style={styles.summary}>
-            Connect Google once — today&apos;s meetings land on your signal (readonly).
+            Connect Google once — today’s meetings land on the Today rail (readonly).
           </Text>
           {demo && events.length > 0 ? (
-            <Text style={styles.demoNote}>Demo preview:</Text>
-          ) : null}
-          {demo
-            ? events.slice(0, 3).map((ev) => (
+            <View style={styles.list}>
+              {events.slice(0, 3).map((ev) => (
                 <View key={ev.id} style={styles.item}>
                   <Text style={styles.when}>{formatEventWhen(ev)}</Text>
-                  <Text style={styles.title} numberOfLines={1}>
+                  <Text style={styles.itemTitle} numberOfLines={1}>
                     {ev.title}
                   </Text>
                 </View>
-              ))
-            : null}
+              ))}
+            </View>
+          ) : null}
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>Connect with Google</Text>
           </Pressable>
         </>
       ) : events.length === 0 ? (
-        <Text style={styles.summary}>No events on the primary calendar today.</Text>
+        <Text style={styles.quiet}>No events on the primary calendar today.</Text>
       ) : (
-        <View style={styles.list}>
-          {events.slice(0, 6).map((ev) => (
-            <View key={ev.id} style={styles.item}>
-              <Text style={styles.when}>{formatEventWhen(ev)}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.title} numberOfLines={1}>
-                  {ev.title}
-                </Text>
-                {ev.location ? (
-                  <Text style={styles.loc} numberOfLines={1}>
-                    {ev.location}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-          ))}
-          {events.length > 6 ? (
-            <Text style={styles.demoNote}>+{events.length - 6} more today</Text>
-          ) : null}
-        </View>
+        <Text style={styles.quiet}>Meetings are on the Today signal above.</Text>
       )}
-    </View>
+    </HomeSection>
   )
 }
 
 const styles = StyleSheet.create({
-  card: { gap: 8, paddingVertical: 2 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  kicker: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    flex: 1,
-  },
-  refresh: { color: colors.accent, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  summary: { color: colors.text, fontFamily: fonts.body, fontSize: 15, lineHeight: 22 },
-  demoNote: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
-  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 13 },
+  refresh: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
+  summary: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  quiet: { color: colors.textDim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   list: { gap: 8 },
   item: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   when: {
@@ -167,8 +147,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     paddingTop: 2,
   },
-  title: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15 },
-  loc: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, marginTop: 1 },
+  itemTitle: { flex: 1, color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15 },
   btn: {
     alignSelf: 'flex-start',
     backgroundColor: colors.accent,
@@ -177,7 +156,7 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
 })

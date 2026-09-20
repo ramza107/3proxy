@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
-import { colors, fonts, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
 import { useNovaStore } from '../lib/store'
 import type { EmailPromise, PromisesDigest } from '../types'
+import { HomeSection } from './HomeSection'
 
 type Props = {
   userId: string | null
@@ -132,10 +133,19 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
   }
 
   return (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.kicker}>Promises you made</Text>
-        {connected ? (
+    <HomeSection
+      title="Promises"
+      meta={
+        connected
+          ? autoCreate
+            ? 'Auto → Tasks'
+            : visible.length
+              ? `${visible.length} open`
+              : 'Clear'
+          : undefined
+      }
+      action={
+        connected ? (
           <Pressable
             onPress={() => {
               autoRanFor.current = null
@@ -145,14 +155,9 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
           >
             <Text style={styles.refresh}>{loading ? '…' : 'Scan'}</Text>
           </Pressable>
-        ) : null}
-      </View>
-      <Text style={styles.tagline}>
-        {autoCreate
-          ? 'Auto-on: Sent mail → Tasks when you open Home.'
-          : 'From your sent mail — tap Add, or turn on auto in Settings.'}
-      </Text>
-
+        ) : null
+      }
+    >
       {autoNote ? <Text style={styles.autoNote}>{autoNote}</Text> : null}
 
       {loading && !data ? (
@@ -162,8 +167,7 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
       ) : !connected && !data?.demo ? (
         <>
           <Text style={styles.summary}>
-            Wahrly reads commitments like “I’ll send…” in emails you already wrote, then turns
-            them into tasks. Gmail never does this.
+            Commitments like “I’ll send…” in your sent mail become real tasks.
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>Connect Gmail</Text>
@@ -173,14 +177,13 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
           </Pressable>
         </>
       ) : visible.length === 0 ? (
-        <Text style={styles.summary}>
+        <Text style={styles.quiet}>
           {autoNote
-            ? 'Caught up — new promises will land in Tasks automatically.'
-            : data?.summary || 'No open promises right now — clear slate.'}
+            ? 'Caught up — new promises land in Tasks automatically.'
+            : data?.summary || 'No open promises — clear slate.'}
         </Text>
       ) : (
         <>
-          <Text style={styles.summary}>{data?.summary}</Text>
           {data?.demo ? <Text style={styles.demoNote}>Demo preview</Text> : null}
           <View style={styles.list}>
             {visible.map((p) => (
@@ -214,29 +217,12 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
           </View>
         </>
       )}
-    </View>
+    </HomeSection>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: 8,
-    paddingVertical: 2,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  kicker: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    flex: 1,
-  },
-  refresh: { color: colors.accent, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  tagline: {
-    color: colors.textMuted,
-    fontFamily: fonts.body,
-    fontSize: 12,
-    marginTop: -4,
-  },
+  refresh: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   autoNote: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyMedium,
@@ -248,7 +234,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
-  summary: { color: colors.text, fontFamily: fonts.body, fontSize: 15, lineHeight: 22 },
+  summary: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  quiet: { color: colors.textDim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   demoNote: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   demoLink: {
     color: colors.accentStrong,
@@ -256,12 +243,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
-  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 13 },
-  list: { gap: 12, marginTop: 4 },
+  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  list: { gap: 0 },
   item: {
     gap: 4,
-    paddingTop: 8,
-    borderTopWidth: 1,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
   to: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 12 },
@@ -294,7 +281,7 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
 })

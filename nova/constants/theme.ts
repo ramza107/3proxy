@@ -2,6 +2,8 @@ export const colors = {
   // Signal Timeline — mist field + ink signal (not purple AI)
   bg: '#E8EEF1',
   bgElevated: '#F5F8FA',
+  /** Solid Home cards — soft mint-white on the mist field */
+  bgCardSolid: '#FAFCFB',
   bgCard: 'rgba(255,255,255,0.55)',
   bgSoft: '#D5E0E6',
   bgDeep: '#0F2A32',

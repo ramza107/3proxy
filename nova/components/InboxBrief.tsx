@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
-import { colors, fonts, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailDigest, fetchEmailStatus } from '../lib/emailApi'
 import type { EmailDigest } from '../types'
+import { HomeSection } from './HomeSection'
 
 type Props = {
   userId: string | null
@@ -57,21 +58,28 @@ export function InboxBrief({ userId, enabled }: Props) {
 
   if (!enabled || !userId) return null
 
-  const kicker = digest?.window?.dayLabel
-    ? `Yesterday · ${digest.window.dayLabel}`
-    : 'Yesterday’s inbox'
+  const title = digest?.window?.dayLabel ? `Yesterday · ${digest.window.dayLabel}` : 'Yesterday'
+  const highlightCount = digest?.highlights?.length || digest?.senders?.length || 0
+  const meta = connected
+    ? highlightCount
+      ? `${highlightCount} from inbox`
+      : digest
+        ? 'Quiet'
+        : undefined
+    : undefined
 
   return (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.kicker}>{kicker}</Text>
-        {connected ? (
+    <HomeSection
+      title={title}
+      meta={meta}
+      action={
+        connected ? (
           <Pressable onPress={() => load()} hitSlop={8}>
             <Text style={styles.refresh}>{loading ? '…' : 'Refresh'}</Text>
           </Pressable>
-        ) : null}
-      </View>
-
+        ) : null
+      }
+    >
       {loading && !digest ? (
         <ActivityIndicator color={colors.accent} />
       ) : error ? (
@@ -79,8 +87,7 @@ export function InboxBrief({ userId, enabled }: Props) {
       ) : !connected ? (
         <>
           <Text style={styles.summary}>
-            Connect Gmail once — Google asks for permission, you tap Allow. Each morning Wahrly shows
-            who wrote yesterday (your local time).
+            Connect Gmail once — each morning Wahrly shows who wrote yesterday.
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>Connect with Google</Text>
@@ -89,12 +96,9 @@ export function InboxBrief({ userId, enabled }: Props) {
       ) : digest ? (
         <>
           <Text style={styles.summary}>{digest.summary}</Text>
-          {digest.window?.timeZone ? (
-            <Text style={styles.demoNote}>Times in {digest.window.timeZone}</Text>
-          ) : null}
           {digest.highlights.length > 0 ? (
             <View style={styles.list}>
-              {digest.highlights.slice(0, 5).map((h, i) => (
+              {digest.highlights.slice(0, 4).map((h, i) => (
                 <View key={`${h.fromName}-${h.subject}-${i}`} style={styles.senderRow}>
                   <Text style={styles.senderName}>
                     {h.fromName}
@@ -108,7 +112,7 @@ export function InboxBrief({ userId, enabled }: Props) {
             </View>
           ) : digest.senders.length > 0 ? (
             <View style={styles.list}>
-              {digest.senders.slice(0, 5).map((s) => (
+              {digest.senders.slice(0, 4).map((s) => (
                 <View key={s.from} style={styles.senderRow}>
                   <Text style={styles.senderName}>{s.fromName}</Text>
                   <Text style={styles.senderSub} numberOfLines={1}>
@@ -119,35 +123,28 @@ export function InboxBrief({ userId, enabled }: Props) {
               ))}
             </View>
           ) : (
-            <Text style={styles.demoNote}>Yesterday’s inbox looks quiet.</Text>
+            <Text style={styles.quiet}>Yesterday’s inbox looks quiet.</Text>
           )}
         </>
       ) : (
-        <Text style={styles.summary}>Loading yesterday’s mail…</Text>
+        <Text style={styles.quiet}>Loading yesterday’s mail…</Text>
       )}
-    </View>
+    </HomeSection>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: 8,
-    paddingVertical: 2,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  kicker: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    flex: 1,
-    paddingRight: 8,
-  },
-  refresh: { color: colors.accent, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  refresh: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   summary: { color: colors.text, fontFamily: fonts.body, fontSize: 15, lineHeight: 22 },
-  demoNote: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, lineHeight: 18 },
-  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 13 },
-  list: { gap: 6, marginTop: 4 },
-  senderRow: { gap: 2 },
+  quiet: { color: colors.textDim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  list: { gap: 8, marginTop: 2 },
+  senderRow: {
+    gap: 2,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
   senderName: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 14 },
   senderSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 13 },
   btn: {
@@ -158,7 +155,7 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
 })
