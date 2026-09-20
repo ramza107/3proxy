@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import { ar, de, enUS, es, fr, hi, ptBR, ru, uk, zhCN } from 'date-fns/locale'
 import { useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
@@ -19,6 +20,7 @@ import { SoftPressable } from '../../components/SoftPressable'
 import { TaskEditor } from '../../components/TaskEditor'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { t as translate } from '../../lib/i18n'
+import type { AppLanguage } from '../../lib/i18n'
 import { parseHm } from '../../lib/notifications'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
@@ -39,6 +41,24 @@ function greetingKey() {
   if (h < 12) return 'home.goodMorning'
   if (h < 18) return 'home.goodAfternoon'
   return 'home.goodEvening'
+}
+
+const DATE_LOCALES = {
+  en: enUS,
+  zh: zhCN,
+  hi,
+  es,
+  fr,
+  ar,
+  pt: ptBR,
+  ru,
+  uk,
+  de,
+} as const
+
+function homeDateLocale(lang: AppLanguage | string | undefined) {
+  const code = (lang && lang in DATE_LOCALES ? lang : 'en') as keyof typeof DATE_LOCALES
+  return DATE_LOCALES[code]
 }
 
 function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) {
@@ -163,7 +183,9 @@ export default function HomeScreen() {
           <Text style={styles.hello}>
             {translate(language, greetingKey())}, {name}
           </Text>
-          <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
+          <Text style={styles.date}>
+            {format(new Date(), 'EEEE, d MMMM', { locale: homeDateLocale(language) })}
+          </Text>
 
           {showEveningClear ? (
             <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
@@ -171,7 +193,7 @@ export default function HomeScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.eveningTitle}>{t('home.eveningClear')}</Text>
                 <Text style={styles.eveningSub}>
-                  {t('home.closeToday')} · {todayTasks.length} open
+                  {t('home.closeToday')} · {todayTasks.length} {t('home.openShort')}
                 </Text>
               </View>
               <Text style={styles.eveningCta}>{t('home.open')}</Text>

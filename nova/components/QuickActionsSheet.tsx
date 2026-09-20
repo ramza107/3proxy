@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { colors, fonts, spacing } from '../constants/theme'
+import { useT } from '../lib/useT'
 import { BottomSheet } from './BottomSheet'
 
 type Props = {
@@ -30,48 +31,60 @@ export function QuickActionsSheet({
   onOpenEvening,
   onOpenMorning,
 }: Props) {
+  const t = useT()
   const run = (fn: () => void) => {
     onClose()
-    // Let the sheet start closing before navigating
     setTimeout(fn, 80)
   }
 
   return (
-    <BottomSheet visible={visible} onClose={onClose} title="Quick actions" scroll={false}>
+    <BottomSheet visible={visible} onClose={onClose} title={t('quick.title')} scroll={false}>
       <View style={styles.list}>
         <Action
-          label={planning ? 'Planning…' : 'Plan day'}
-          sub="Pack tasks into free gaps"
+          label={planning ? t('home.planning') : t('home.planDay')}
+          sub={t('quick.packGaps')}
           onPress={() => run(onPlanDay)}
           disabled={!!planning}
         />
-        <Action label="Chat with Wahrly" sub="Ask or dictate" onPress={() => run(onOpenChat)} />
-        <Action label="All tasks" sub="Today, tomorrow, upcoming" onPress={() => run(onOpenTasks)} />
+        <Action
+          label={t('quick.chat')}
+          sub={t('quick.chatSub')}
+          onPress={() => run(onOpenChat)}
+        />
+        <Action
+          label={t('quick.tasks')}
+          sub={t('quick.tasksSub')}
+          onPress={() => run(onOpenTasks)}
+        />
         {onOpenBills ? (
           <Action
-            label="Bills"
-            sub="Monthly rent, subs, utilities"
+            label={t('quick.bills')}
+            sub={t('quick.billsSub')}
             onPress={() => run(onOpenBills)}
           />
         ) : null}
         {onOpenMorning ? (
           <Action
-            label="Morning brief"
-            sub="Weather + today’s list"
+            label={t('quick.morning')}
+            sub={t('quick.morningSub')}
             onPress={() => run(onOpenMorning)}
           />
         ) : null}
         {showEvening && onOpenEvening ? (
           <Action
-            label="Evening Clear"
-            sub="Close today, shape tomorrow"
+            label={t('home.eveningClear')}
+            sub={t('quick.eveningSub')}
             onPress={() => run(onOpenEvening)}
           />
         ) : null}
-        <Action label="Settings" sub="Rituals, Gmail, weather city" onPress={() => run(onOpenSettings)} />
+        <Action
+          label={t('tabs.settings')}
+          sub={t('quick.settingsSub')}
+          onPress={() => run(onOpenSettings)}
+        />
       </View>
       <Pressable onPress={onClose} style={styles.cancel}>
-        <Text style={styles.cancelText}>Close</Text>
+        <Text style={styles.cancelText}>{t('home.close')}</Text>
       </Pressable>
     </BottomSheet>
   )

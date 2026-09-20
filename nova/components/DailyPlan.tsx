@@ -113,9 +113,18 @@ export function DailyPlan({
       <HomeSection
         title={t('home.today')}
         emphasize
-        meta={`${dayKind === 'light' ? 'Light day · ' : ''}${workdayStart}–${workdayEnd}${
-          openCount ? ` · ${openCount} open` : ' · clear'
-        }${eventCount ? ` · ${eventCount} event${eventCount === 1 ? '' : 's'}` : ''}`}
+        meta={[
+          dayKind === 'light' ? t('home.lightDay') : null,
+          `${workdayStart}–${workdayEnd}`,
+          openCount ? t.tf('home.openCount', { n: openCount }) : t('home.clear'),
+          eventCount
+            ? eventCount === 1
+              ? t.tf('home.eventOne', { n: 1 })
+              : t.tf('home.eventsCount', { n: eventCount })
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
         action={
           onPlanDay ? (
             <SoftPressable
@@ -135,9 +144,7 @@ export function DailyPlan({
       >
         {empty ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              No tasks or calendar events yet. Connect Google for meetings, or add a task below.
-            </Text>
+            <Text style={styles.emptyText}>{t('home.emptyToday')}</Text>
           </View>
         ) : (
           <View style={styles.timeline}>
@@ -172,7 +179,7 @@ export function DailyPlan({
                   </View>
                   <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
                   <Text style={styles.freeText}>
-                    free · {Math.max(0, slot.end - slot.start)}m
+                    {t.tf('home.freeMin', { n: Math.max(0, slot.end - slot.start) })}
                   </Text>
                 </Animated.View>
               ) : slot.kind === 'event' ? (
@@ -235,7 +242,7 @@ export function DailyPlan({
             )}
             {untimed.length > 0 ? (
               <View style={styles.untimed}>
-                <Text style={styles.untimedLabel}>Later</Text>
+                <Text style={styles.untimedLabel}>{t('home.later')}</Text>
                 {untimed.map((t, i) => (
                   <Animated.View
                     key={t.id}
@@ -274,9 +281,7 @@ export function DailyPlan({
 
         {suggestion ? <Text style={styles.hint}>{suggestion}</Text> : null}
         {!suggestion && hasUntimed ? (
-          <Text style={styles.hint}>
-            Plan day places untimed tasks into free gaps around calendar events.
-          </Text>
+          <Text style={styles.hint}>{t('home.planHint')}</Text>
         ) : null}
       </HomeSection>
     </Animated.View>

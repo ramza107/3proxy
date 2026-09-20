@@ -146,8 +146,8 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
       meta={
         connected
           ? visible.length
-            ? `${visible.length} open`
-            : 'Clear'
+            ? t.tf('home.openCount', { n: visible.length })
+            : t('home.quiet')
           : undefined
       }
       action={
@@ -164,34 +164,30 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
         <Text style={styles.error}>{error}</Text>
       ) : !connected && !data?.demo ? (
         <>
-          <Text style={styles.summary}>
-            Meet / call / report emails become tasks — and push when something new lands.
-          </Text>
+          <Text style={styles.summary}>{t('home.inboxConnect')}</Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>{t('home.connectGoogle')}</Text>
           </Pressable>
           <Pressable onPress={() => load(true)}>
-            <Text style={styles.demoLink}>Preview with demo alerts</Text>
+            <Text style={styles.demoLink}>{t('home.previewAlerts')}</Text>
           </Pressable>
         </>
       ) : visible.length === 0 ? (
-        <Text style={styles.quiet}>
-          {data?.summary || 'No meeting or report asks in recent inbox.'}
-        </Text>
+        <Text style={styles.quiet}>{data?.summary || t('home.inboxEmpty')}</Text>
       ) : (
         <>
-          {data?.demo ? <Text style={styles.demoNote}>Demo preview</Text> : null}
+          {data?.demo ? <Text style={styles.demoNote}>{t('home.demoPreview')}</Text> : null}
           <View style={styles.list}>
             {visible.map((m) => (
               <View key={m.id} style={styles.item}>
                 <Text style={styles.from}>
                   {m.fromName}
                   {m.intent === 'meet'
-                    ? ' · meet'
+                    ? ` · ${t('home.intentMeet')}`
                     : m.intent === 'report'
-                      ? ' · report'
+                      ? ` · ${t('home.intentReport')}`
                       : m.intent === 'call'
-                        ? ' · call'
+                        ? ` · ${t('home.intentCall')}`
                         : ''}
                 </Text>
                 <Text style={styles.summaryLine} numberOfLines={2}>
@@ -202,7 +198,7 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
                 </Text>
                 <View style={styles.actions}>
                   <Pressable style={styles.addBtn} onPress={() => onAddTask(m)}>
-                    <Text style={styles.addBtnText}>Add task</Text>
+                    <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => {
@@ -211,7 +207,7 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
                     }}
                     hitSlop={8}
                   >
-                    <Text style={styles.dismiss}>Dismiss</Text>
+                    <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
                   </Pressable>
                 </View>
               </View>

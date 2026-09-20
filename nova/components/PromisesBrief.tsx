@@ -140,10 +140,10 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
       meta={
         connected
           ? autoCreate
-            ? 'Auto → Tasks'
+            ? t('home.autoTasks')
             : visible.length
-              ? `${visible.length} open`
-              : 'Clear'
+              ? t.tf('home.openCount', { n: visible.length })
+              : t('home.clear')
           : undefined
       }
       action={
@@ -168,29 +168,25 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
         <Text style={styles.error}>{error}</Text>
       ) : !connected && !data?.demo ? (
         <>
-          <Text style={styles.summary}>
-            Commitments like “I’ll send…” in your sent mail become real tasks.
-          </Text>
+          <Text style={styles.summary}>{t('home.promisesConnect')}</Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>{t('home.connectGoogle')}</Text>
           </Pressable>
           <Pressable onPress={() => load(true)}>
-            <Text style={styles.demoLink}>Preview with demo promises</Text>
+            <Text style={styles.demoLink}>{t('home.previewPromises')}</Text>
           </Pressable>
         </>
       ) : visible.length === 0 ? (
         <Text style={styles.quiet}>
-          {autoNote
-            ? 'Caught up — new promises land in Tasks automatically.'
-            : data?.summary || 'No open promises — clear slate.'}
+          {autoNote ? t('home.promisesCaughtUp') : data?.summary || t('home.promisesEmpty')}
         </Text>
       ) : (
         <>
-          {data?.demo ? <Text style={styles.demoNote}>Demo preview</Text> : null}
+          {data?.demo ? <Text style={styles.demoNote}>{t('home.demoPreview')}</Text> : null}
           <View style={styles.list}>
             {visible.map((p) => (
               <View key={p.id} style={styles.item}>
-                <Text style={styles.to}>To {p.toName}</Text>
+                <Text style={styles.to}>{t.tf('home.to', { name: p.toName })}</Text>
                 <Text style={styles.promise} numberOfLines={2}>
                   “{p.promise}”
                 </Text>
@@ -205,14 +201,14 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
                       onPress={() => onAdd(p)}
                       accessibilityRole="button"
                     >
-                      <Text style={styles.addBtnText}>Add task</Text>
+                      <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
                     </Pressable>
                     <Pressable onPress={() => dismissPromise(p.id)} hitSlop={8}>
-                      <Text style={styles.dismiss}>Dismiss</Text>
+                      <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
                     </Pressable>
                   </View>
                 ) : (
-                  <Text style={styles.autoPending}>Adding…</Text>
+                  <Text style={styles.autoPending}>{t('home.adding')}</Text>
                 )}
               </View>
             ))}

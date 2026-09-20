@@ -79,9 +79,9 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
 
   const meta =
     connected && events.length > 0
-      ? `${events.length} today · on the rail above`
+      ? t.tf('home.calendarMeta', { n: events.length })
       : connected
-        ? 'Primary calendar'
+        ? t('home.calendarPrimary')
         : undefined
 
   return (
@@ -107,9 +107,7 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
         </>
       ) : !connected ? (
         <>
-          <Text style={styles.summary}>
-            Connect Google once — today’s meetings land on the Today rail (readonly).
-          </Text>
+          <Text style={styles.summary}>{t('home.calendarConnect')}</Text>
           {demo && events.length > 0 ? (
             <View style={styles.list}>
               {events.slice(0, 3).map((ev) => (
@@ -127,9 +125,9 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
           </Pressable>
         </>
       ) : events.length === 0 ? (
-        <Text style={styles.quiet}>No events on the primary calendar today.</Text>
+        <Text style={styles.quiet}>{t('home.calendarEmpty')}</Text>
       ) : (
-        <Text style={styles.quiet}>Meetings are on the Today signal above.</Text>
+        <Text style={styles.quiet}>{t('home.calendarOnSignal')}</Text>
       )}
     </HomeSection>
   )
