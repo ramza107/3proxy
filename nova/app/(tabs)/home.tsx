@@ -4,18 +4,30 @@ import { useEffect, useMemo, useState } from 'react'
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
+import { BottomSheet } from '../../components/BottomSheet'
 import { BrandMark } from '../../components/BrandMark'
 import { DailyPlan } from '../../components/DailyPlan'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { MorningBrief } from '../../components/MorningBrief'
 import { PromisesBrief } from '../../components/PromisesBrief'
+import { QuickActionsSheet } from '../../components/QuickActionsSheet'
 import { Screen } from '../../components/Screen'
+import { SoftPressable } from '../../components/SoftPressable'
+import { TaskEditor } from '../../components/TaskEditor'
 import { brand, colors, fonts, spacing } from '../../constants/theme'
 import { parseHm } from '../../lib/notifications'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
-import { organizeMyDay, refreshTasks, sendNovaMessage, toggleTaskCompleted } from '../../services/ai'
+import {
+  deleteTask,
+  organizeMyDay,
+  refreshTasks,
+  sendNovaMessage,
+  toggleTaskCompleted,
+  updateTaskFields,
+} from '../../services/ai'
+import type { Task } from '../../types'
 
 function greeting() {
   const h = new Date().getHours()
@@ -33,8 +45,8 @@ function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) 
   return nowMin >= startMin
 }
 
-/** Morning brief on Home: after brief time (or from 5:00), until noon, once per day.
- *  `force` bypasses the clock (Settings → Show Morning brief now). */
+/** Morning brief: after brief time (or from 5:00), until noon, once per day.
+ *  `force` bypasses the clock (Settings / Quick actions). */
 function shouldOfferMorningBrief(
   enabled: boolean,
   briefTime: string,
@@ -71,6 +83,8 @@ export default function HomeScreen() {
   )
   const [loading, setLoading] = useState(false)
   const [planning, setPlanning] = useState(false)
+  const [quickOpen, setQuickOpen] = useState(false)
+  const [editing, setEditing] = useState<Task | null>(null)
 
   useEffect(() => {
     if (userId) refreshTasks(userId).catch(() => undefined)
@@ -131,23 +145,15 @@ export default function HomeScreen() {
           <View style={styles.brandRow}>
             <BrandMark size={36} />
             <Text style={styles.brandMark}>{brand.name}</Text>
+            <View style={{ flex: 1 }} />
+            <Pressable onPress={() => setQuickOpen(true)} hitSlop={8} style={styles.menuBtn}>
+              <Text style={styles.menuBtnText}>···</Text>
+            </Pressable>
           </View>
           <Text style={styles.hello}>
             {greeting()}, {name}
           </Text>
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
-
-          {showMorningBrief ? (
-            <MorningBrief
-              tasks={todayTasks}
-              workdayStart={dayWindow.start}
-              workdayEnd={dayWindow.end}
-              weatherCity={settings.weatherCity}
-              planning={planning}
-              onPlanDay={onPlanDay}
-              onDismiss={dismissMorningBrief}
-            />
-          ) : null}
 
           {showEveningClear ? (
             <Pressable style={styles.eveningRow} onPress={() => router.push('/evening')}>
@@ -165,12 +171,14 @@ export default function HomeScreen() {
           <DailyPlan
             tasks={todayTasks}
             onToggle={(task) => toggleTaskCompleted(task)}
+            onEdit={(task) => setEditing(task)}
             workdayStart={dayWindow.start}
             workdayEnd={dayWindow.end}
             dayKind={dayWindow.kind}
             onPlanDay={onPlanDay}
             planning={planning}
           />
+          <Text style={styles.editHint}>Long-press a task to edit in a sheet.</Text>
 
           <View style={styles.mailBlock}>
             <InboxBrief userId={userId} enabled={emailDigestEnabled} />
@@ -186,7 +194,63 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </ScrollView>
+
+        <SoftPressable style={styles.fab} onPress={() => setQuickOpen(true)}>
+          <Text style={styles.fabText}>+</Text>
+        </SoftPressable>
       </SafeAreaView>
+
+      <BottomSheet
+        visible={showMorningBrief}
+        onClose={dismissMorningBrief}
+        title="Morning brief"
+      >
+        <MorningBrief
+          embedded
+          tasks={todayTasks}
+          workdayStart={dayWindow.start}
+          workdayEnd={dayWindow.end}
+          weatherCity={settings.weatherCity}
+          planning={planning}
+          onPlanDay={onPlanDay}
+          onDismiss={dismissMorningBrief}
+        />
+      </BottomSheet>
+
+      <QuickActionsSheet
+        visible={quickOpen}
+        onClose={() => setQuickOpen(false)}
+        planning={planning}
+        showEvening={showEveningClear}
+        onPlanDay={onPlanDay}
+        onOpenChat={() => router.push('/chat')}
+        onOpenTasks={() => router.push('/tasks')}
+        onOpenSettings={() => router.push('/settings')}
+        onOpenEvening={() => router.push('/evening')}
+        onOpenMorning={() => {
+          updateSettings({ lastMorningBriefDate: null })
+          setForceMorningBrief(true)
+        }}
+      />
+
+      <TaskEditor
+        task={editing}
+        visible={!!editing}
+        onClose={() => setEditing(null)}
+        onSave={(patch) => {
+          if (editing) updateTaskFields(editing, patch)
+        }}
+        onComplete={() => {
+          if (editing) {
+            toggleTaskCompleted(editing)
+            setEditing(null)
+          }
+        }}
+        onDelete={() => {
+          if (editing) deleteTask(editing.id)
+          setEditing(null)
+        }}
+      />
     </Screen>
   )
 }
@@ -196,7 +260,7 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     gap: spacing.sm,
-    paddingBottom: 48,
+    paddingBottom: 96,
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 520 : undefined,
     alignSelf: 'center',
@@ -207,6 +271,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.brand,
     fontSize: 28,
     letterSpacing: -0.6,
+  },
+  menuBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  menuBtnText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 18,
+    marginTop: -6,
   },
   hello: {
     color: colors.text,
@@ -253,6 +333,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13,
   },
+  editHint: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: -4,
+  },
   mailBlock: {
     marginTop: spacing.sm,
     gap: spacing.md,
@@ -273,5 +359,27 @@ const styles = StyleSheet.create({
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
     fontSize: 14,
+  },
+  fab: {
+    position: 'absolute',
+    right: 22,
+    bottom: 18,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: colors.bgDeep,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F2A32',
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  fabText: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 28,
+    marginTop: -2,
   },
 })

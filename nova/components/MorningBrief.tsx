@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import type { Task } from '../types'
 import { colors, fonts, spacing } from '../constants/theme'
 import { fetchWeatherBrief, formatWeatherLine, type WeatherBrief } from '../lib/weather'
+import { SoftPressable } from './SoftPressable'
 
 type Props = {
   tasks: Task[]
@@ -12,6 +14,8 @@ type Props = {
   planning?: boolean
   onPlanDay: () => void | Promise<void>
   onDismiss: () => void
+  /** When true, skip outer chrome (used inside BottomSheet) */
+  embedded?: boolean
 }
 
 /**
@@ -26,6 +30,7 @@ export function MorningBrief({
   planning,
   onPlanDay,
   onDismiss,
+  embedded,
 }: Props) {
   const [weather, setWeather] = useState<WeatherBrief | null>(null)
   const [weatherLoading, setWeatherLoading] = useState(true)
@@ -46,12 +51,11 @@ export function MorningBrief({
   }, [weatherCity])
 
   const preview = tasks.slice(0, 4)
-
-  return (
-    <View style={styles.wrap}>
+  const body = (
+    <>
       <View style={styles.head}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.kicker}>Morning brief</Text>
+          {!embedded ? <Text style={styles.kicker}>Morning brief</Text> : null}
           <Text style={styles.title}>Today’s plan</Text>
           <Text style={styles.meta}>
             {workdayStart}–{workdayEnd}
@@ -63,7 +67,7 @@ export function MorningBrief({
         </Pressable>
       </View>
 
-      <View style={styles.weatherRow}>
+      <Animated.View entering={FadeIn.delay(120).duration(360)} style={styles.weatherRow}>
         {weatherLoading ? (
           <ActivityIndicator color={colors.accent} />
         ) : weather ? (
@@ -73,15 +77,20 @@ export function MorningBrief({
             Set a city in Settings for weather — helps you plan outdoors.
           </Text>
         )}
-      </View>
+      </Animated.View>
 
       {preview.length > 0 ? (
         <View style={styles.list}>
           {preview.map((t, i) => (
-            <Text key={t.id} style={styles.item} numberOfLines={1}>
+            <Animated.Text
+              key={t.id}
+              entering={FadeInDown.delay(160 + i * 55).duration(320)}
+              style={styles.item}
+              numberOfLines={1}
+            >
               {i + 1}. {t.title}
               {t.time ? ` · ${t.time}` : ''}
-            </Text>
+            </Animated.Text>
           ))}
           {tasks.length > preview.length ? (
             <Text style={styles.more}>+{tasks.length - preview.length} more on the signal</Text>
@@ -92,16 +101,26 @@ export function MorningBrief({
       )}
 
       <View style={styles.actions}>
-        <Pressable
+        <SoftPressable
           style={[styles.planBtn, planning && styles.planDisabled]}
           onPress={onPlanDay}
           disabled={!!planning}
         >
           <Text style={styles.planText}>{planning ? 'Planning…' : 'Plan day'}</Text>
-        </Pressable>
+        </SoftPressable>
         <Text style={styles.hint}>Packs untimed tasks into free gaps for today.</Text>
       </View>
-    </View>
+    </>
+  )
+
+  if (embedded) {
+    return <View style={styles.embedded}>{body}</View>
+  }
+
+  return (
+    <Animated.View entering={FadeInDown.duration(420).springify().damping(18)} style={styles.wrap}>
+      {body}
+    </Animated.View>
   )
 }
 
@@ -114,6 +133,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginBottom: 4,
   },
+  embedded: { gap: 10, paddingBottom: 4 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   kicker: {
     color: colors.accentStrong,
