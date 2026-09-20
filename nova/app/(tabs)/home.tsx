@@ -8,6 +8,7 @@ import { BottomSheet } from '../../components/BottomSheet'
 import { BrandMark } from '../../components/BrandMark'
 import { CalendarBrief } from '../../components/CalendarBrief'
 import { DailyPlan } from '../../components/DailyPlan'
+import { HomeSection } from '../../components/HomeSection'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { MorningBrief } from '../../components/MorningBrief'
@@ -184,23 +185,25 @@ export default function HomeScreen() {
           />
           <Text style={styles.editHint}>Tap a task to edit · tap the dot to complete.</Text>
 
-          <View style={styles.mailBlock}>
-            <CalendarBrief
-              userId={userId}
-              onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
-            />
-            <InboxBrief userId={userId} enabled={emailDigestEnabled} />
-            <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
-            <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
-          </View>
+          <HomeSection title="From Google" zone meta="Mail & calendar signals">
+            <View style={styles.mailStack}>
+              <CalendarBrief
+                userId={userId}
+                onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
+              />
+              <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+              <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
+              <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
+            </View>
+          </HomeSection>
 
-          <View style={styles.composer}>
+          <HomeSection title="Ask Wahrly" zone>
             <Text style={styles.prompt}>What do you need to do?</Text>
             <AIInput loading={loading} onSend={onSend} />
             <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
               <Text style={styles.askText}>Open chat</Text>
             </Pressable>
-          </View>
+          </HomeSection>
         </ScrollView>
 
         <SoftPressable style={styles.fab} onPress={() => setQuickOpen(true)}>
@@ -346,21 +349,10 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 12,
-    marginTop: -4,
+    marginTop: 2,
   },
-  mailBlock: {
-    marginTop: spacing.sm,
-    gap: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  composer: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    gap: 10,
+  mailStack: {
+    gap: spacing.lg,
   },
   prompt: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.bodyMedium },
   ask: { alignSelf: 'flex-start' },

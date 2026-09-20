@@ -5,6 +5,24 @@ import { apiUrl } from './api'
 
 const extra = Constants.expoConfig?.extra ?? {}
 
+/** Never dump HTML / raw Express errors into the UI. */
+export function friendlyApiError(raw: string, fallback: string): string {
+  const text = (raw || '').trim()
+  if (!text) return fallback
+  if (/^\s*</.test(text) || /Cannot GET|Cannot POST|<html/i.test(text)) {
+    return fallback
+  }
+  try {
+    const j = JSON.parse(text) as { error?: string; message?: string }
+    if (j.error) return j.error
+    if (j.message) return j.message
+  } catch {
+    // plain text
+  }
+  if (text.length > 160) return fallback
+  return text
+}
+
 export function emailConnectUrl(userId: string) {
   const client = Platform.OS === 'web' ? 'web' : 'native'
   return `${apiUrl}/api/email/connect?user_id=${encodeURIComponent(userId)}&client=${client}`
@@ -38,7 +56,7 @@ export async function fetchEmailDigest(
   const res = await fetch(`${apiUrl}/api/email/digest?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(text || `Digest failed (${res.status})`)
+    throw new Error(friendlyApiError(text, `Couldn’t load inbox (${res.status})`))
   }
   return res.json()
 }
@@ -51,7 +69,7 @@ export async function disconnectEmail(userId: string): Promise<void> {
   })
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(text || `Disconnect failed (${res.status})`)
+    throw new Error(friendlyApiError(text, `Disconnect failed (${res.status})`))
   }
 }
 
@@ -65,7 +83,7 @@ export async function fetchEmailPromises(
   const res = await fetch(`${apiUrl}/api/email/promises?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(text || `Promises failed (${res.status})`)
+    throw new Error(friendlyApiError(text, `Couldn’t scan sent mail (${res.status})`))
   }
   return res.json()
 }
@@ -80,7 +98,7 @@ export async function fetchEmailMeetings(
   const res = await fetch(`${apiUrl}/api/email/meetings?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(text || `Meetings failed (${res.status})`)
+    throw new Error(friendlyApiError(text, `Couldn’t scan inbox asks (${res.status})`))
   }
   return res.json()
 }
@@ -96,14 +114,7 @@ export async function fetchCalendarEvents(
   const res = await fetch(`${apiUrl}/api/calendar/events?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()
-    let msg = text || `Calendar failed (${res.status})`
-    try {
-      const j = JSON.parse(text) as { error?: string }
-      if (j.error) msg = j.error
-    } catch {
-      // keep text
-    }
-    throw new Error(msg)
+    throw new Error(friendlyApiError(text, `Couldn’t load calendar (${res.status})`))
   }
   return res.json()
 }

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
-import { colors, fonts, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailStatus } from '../lib/emailApi'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
 import type { MeetingAlert, MeetingsDigest } from '../types'
+import { HomeSection } from './HomeSection'
 
 type Props = {
   userId: string | null
@@ -138,21 +139,23 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
   }
 
   return (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.kicker}>Inbox asks</Text>
-        {connected ? (
+    <HomeSection
+      title="Inbox asks"
+      meta={
+        connected
+          ? visible.length
+            ? `${visible.length} open`
+            : 'Clear'
+          : undefined
+      }
+      action={
+        connected ? (
           <Pressable onPress={() => load(false)} hitSlop={8}>
             <Text style={styles.refresh}>{loading ? '…' : 'Scan'}</Text>
           </Pressable>
-        ) : null}
-      </View>
-      <Text style={styles.tagline}>
-        {alertsEnabled
-          ? 'Watching Primary for meet / call / report — push when something new lands.'
-          : 'Turn on Meeting alerts in Settings for push notifications.'}
-      </Text>
-
+        ) : null
+      }
+    >
       {loading && !data ? (
         <ActivityIndicator color={colors.accent} />
       ) : error ? (
@@ -160,8 +163,7 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
       ) : !connected && !data?.demo ? (
         <>
           <Text style={styles.summary}>
-            When someone emails “let’s meet tomorrow at 6” or asks for a report, Wahrly can notify
-            you and offer a task.
+            Meet / call / report emails become tasks — and push when something new lands.
           </Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>Connect Gmail</Text>
@@ -171,12 +173,11 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
           </Pressable>
         </>
       ) : visible.length === 0 ? (
-        <Text style={styles.summary}>
+        <Text style={styles.quiet}>
           {data?.summary || 'No meeting or report asks in recent inbox.'}
         </Text>
       ) : (
         <>
-          <Text style={styles.summary}>{data?.summary}</Text>
           {data?.demo ? <Text style={styles.demoNote}>Demo preview</Text> : null}
           <View style={styles.list}>
             {visible.map((m) => (
@@ -216,30 +217,14 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
           </View>
         </>
       )}
-    </View>
+    </HomeSection>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: 8,
-    paddingVertical: 2,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  kicker: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    flex: 1,
-  },
-  refresh: { color: colors.accent, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  tagline: {
-    color: colors.textMuted,
-    fontFamily: fonts.body,
-    fontSize: 12,
-    marginTop: -4,
-  },
-  summary: { color: colors.text, fontFamily: fonts.body, fontSize: 15, lineHeight: 22 },
+  refresh: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
+  summary: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  quiet: { color: colors.textDim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   summaryLine: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15, lineHeight: 21 },
   demoNote: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   demoLink: {
@@ -248,12 +233,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
-  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 13 },
-  list: { gap: 12, marginTop: 4 },
+  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  list: { gap: 0 },
   item: {
     gap: 4,
-    paddingTop: 8,
-    borderTopWidth: 1,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
   from: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 12 },
@@ -280,7 +265,7 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
 })

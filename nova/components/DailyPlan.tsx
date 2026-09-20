@@ -5,6 +5,7 @@ import type { CalendarEvent, Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { durationForPriority, minutesToHm, parseHmToMinutes } from '../lib/scheduleDay'
 import { SoftPressable } from './SoftPressable'
+import { HomeSection } from './HomeSection'
 
 type Props = {
   tasks: Task[]
@@ -107,190 +108,179 @@ export function DailyPlan({
 
   return (
     <Animated.View entering={FadeIn.duration(380)} style={styles.wrap}>
-      <View style={styles.head}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Today</Text>
-          <Text style={styles.meta}>
-            {dayKind === 'light' ? 'Light day · ' : ''}
-            {workdayStart}–{workdayEnd}
-            {openCount ? ` · ${openCount} open` : ' · clear'}
-            {eventCount ? ` · ${eventCount} event${eventCount === 1 ? '' : 's'}` : ''}
-          </Text>
-        </View>
-        {onPlanDay ? (
-          <SoftPressable
-            style={[styles.planBtn, (planning || (!hasUntimed && openCount === 0)) && styles.planDisabled]}
-            onPress={onPlanDay}
-            disabled={!!planning}
-          >
-            <Text style={styles.planBtnText}>{planning ? 'Planning…' : 'Plan day'}</Text>
-          </SoftPressable>
-        ) : null}
-      </View>
-
-      {empty ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            No tasks or calendar events yet. Connect Google for meetings, or add a task below.
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.timeline}>
-          <View style={styles.spine} />
-          {allDay.map((ev, i) => (
-            <Animated.View
-              key={ev.id}
-              entering={FadeInRight.delay(Math.min(i, 6) * 30).duration(280)}
-              style={styles.row}
+      <HomeSection
+        title="Today"
+        zone
+        meta={`${dayKind === 'light' ? 'Light day · ' : ''}${workdayStart}–${workdayEnd}${
+          openCount ? ` · ${openCount} open` : ' · clear'
+        }${eventCount ? ` · ${eventCount} event${eventCount === 1 ? '' : 's'}` : ''}`}
+        action={
+          onPlanDay ? (
+            <SoftPressable
+              style={[
+                styles.planBtn,
+                (planning || (!hasUntimed && openCount === 0)) && styles.planDisabled,
+              ]}
+              onPress={onPlanDay}
+              disabled={!!planning}
             >
-              <View style={styles.nodeCol}>
-                <View style={styles.nodeEvent} />
-              </View>
-              <Text style={styles.timeCol}>Day</Text>
-              <View style={styles.taskBody}>
-                <Text style={styles.eventTitle} numberOfLines={2}>
-                  {ev.title}
-                </Text>
-                <Text style={styles.eventMeta}>Calendar · all day</Text>
-              </View>
-            </Animated.View>
-          ))}
-          {timed.map((slot, i) =>
-            slot.kind === 'free' ? (
+              <Text style={styles.planBtnText}>{planning ? 'Planning…' : 'Plan day'}</Text>
+            </SoftPressable>
+          ) : null
+        }
+      >
+        {empty ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>
+              No tasks or calendar events yet. Connect Google for meetings, or add a task below.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.timeline}>
+            <View style={styles.spine} />
+            {allDay.map((ev, i) => (
               <Animated.View
-                key={`free-${i}`}
-                entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
-                style={styles.row}
-              >
-                <View style={styles.nodeCol}>
-                  <View style={styles.nodeFree} />
-                </View>
-                <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
-                <Text style={styles.freeText}>
-                  free · {Math.max(0, slot.end - slot.start)}m
-                </Text>
-              </Animated.View>
-            ) : slot.kind === 'event' ? (
-              <Animated.View
-                key={slot.event.id}
-                entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
+                key={ev.id}
+                entering={FadeInRight.delay(Math.min(i, 6) * 30).duration(280)}
                 style={styles.row}
               >
                 <View style={styles.nodeCol}>
                   <View style={styles.nodeEvent} />
                 </View>
-                <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
+                <Text style={styles.timeCol}>Day</Text>
                 <View style={styles.taskBody}>
                   <Text style={styles.eventTitle} numberOfLines={2}>
-                    {slot.event.title}
+                    {ev.title}
                   </Text>
-                  <Text style={styles.eventMeta}>
-                    Calendar
-                    {slot.event.location ? ` · ${slot.event.location}` : ''}
-                    {` · ${Math.max(15, slot.end - slot.start)}m`}
-                  </Text>
+                  <Text style={styles.eventMeta}>Calendar · all day</Text>
                 </View>
               </Animated.View>
-            ) : (
-              <Animated.View
-                key={slot.task.id}
-                entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
-              >
-                <View style={styles.row}>
-                  <Pressable
-                    style={styles.nodeCol}
-                    onPress={() => onToggle(slot.task)}
-                    hitSlop={8}
-                    accessibilityRole="checkbox"
-                    accessibilityLabel="Mark done"
-                  >
-                    <View
-                      style={[styles.nodeOn, { backgroundColor: NODE[slot.task.priority] }]}
-                    />
-                  </Pressable>
-                  <Pressable
-                    style={styles.rowBody}
-                    onPress={() => (onEdit ? onEdit(slot.task) : onToggle(slot.task))}
-                    accessibilityRole="button"
-                    accessibilityLabel="Edit task"
-                  >
-                    <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
-                    <View style={styles.taskBody}>
-                      <Text
-                        style={[styles.taskTitle, slot.task.completed && styles.taskDone]}
-                        numberOfLines={2}
-                      >
-                        {slot.task.title}
-                      </Text>
-                    </View>
-                  </Pressable>
-                </View>
-              </Animated.View>
-            ),
-          )}
-          {untimed.length > 0 ? (
-            <View style={styles.untimed}>
-              <Text style={styles.untimedLabel}>Later</Text>
-              {untimed.map((t, i) => (
+            ))}
+            {timed.map((slot, i) =>
+              slot.kind === 'free' ? (
                 <Animated.View
-                  key={t.id}
-                  entering={FadeInRight.delay(120 + Math.min(i, 6) * 40).duration(280)}
+                  key={`free-${i}`}
+                  entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
+                  style={styles.row}
+                >
+                  <View style={styles.nodeCol}>
+                    <View style={styles.nodeFree} />
+                  </View>
+                  <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
+                  <Text style={styles.freeText}>
+                    free · {Math.max(0, slot.end - slot.start)}m
+                  </Text>
+                </Animated.View>
+              ) : slot.kind === 'event' ? (
+                <Animated.View
+                  key={slot.event.id}
+                  entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
+                  style={styles.row}
+                >
+                  <View style={styles.nodeCol}>
+                    <View style={styles.nodeEvent} />
+                  </View>
+                  <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
+                  <View style={styles.taskBody}>
+                    <Text style={styles.eventTitle} numberOfLines={2}>
+                      {slot.event.title}
+                    </Text>
+                    <Text style={styles.eventMeta}>
+                      Calendar
+                      {slot.event.location ? ` · ${slot.event.location}` : ''}
+                      {` · ${Math.max(15, slot.end - slot.start)}m`}
+                    </Text>
+                  </View>
+                </Animated.View>
+              ) : (
+                <Animated.View
+                  key={slot.task.id}
+                  entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
                 >
                   <View style={styles.row}>
                     <Pressable
                       style={styles.nodeCol}
-                      onPress={() => onToggle(t)}
+                      onPress={() => onToggle(slot.task)}
                       hitSlop={8}
                       accessibilityRole="checkbox"
                       accessibilityLabel="Mark done"
                     >
-                      <View style={[styles.nodeOn, { backgroundColor: NODE[t.priority] }]} />
+                      <View
+                        style={[styles.nodeOn, { backgroundColor: NODE[slot.task.priority] }]}
+                      />
                     </Pressable>
                     <Pressable
                       style={styles.rowBody}
-                      onPress={() => (onEdit ? onEdit(t) : onToggle(t))}
+                      onPress={() => (onEdit ? onEdit(slot.task) : onToggle(slot.task))}
                       accessibilityRole="button"
                       accessibilityLabel="Edit task"
                     >
-                      <Text style={styles.timeCol}>—</Text>
+                      <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
                       <View style={styles.taskBody}>
-                        <Text style={styles.taskTitle} numberOfLines={2}>
-                          {t.title}
+                        <Text
+                          style={[styles.taskTitle, slot.task.completed && styles.taskDone]}
+                          numberOfLines={2}
+                        >
+                          {slot.task.title}
                         </Text>
                       </View>
                     </Pressable>
                   </View>
                 </Animated.View>
-              ))}
-            </View>
-          ) : null}
-        </View>
-      )}
+              ),
+            )}
+            {untimed.length > 0 ? (
+              <View style={styles.untimed}>
+                <Text style={styles.untimedLabel}>Later</Text>
+                {untimed.map((t, i) => (
+                  <Animated.View
+                    key={t.id}
+                    entering={FadeInRight.delay(120 + Math.min(i, 6) * 40).duration(280)}
+                  >
+                    <View style={styles.row}>
+                      <Pressable
+                        style={styles.nodeCol}
+                        onPress={() => onToggle(t)}
+                        hitSlop={8}
+                        accessibilityRole="checkbox"
+                        accessibilityLabel="Mark done"
+                      >
+                        <View style={[styles.nodeOn, { backgroundColor: NODE[t.priority] }]} />
+                      </Pressable>
+                      <Pressable
+                        style={styles.rowBody}
+                        onPress={() => (onEdit ? onEdit(t) : onToggle(t))}
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit task"
+                      >
+                        <Text style={styles.timeCol}>—</Text>
+                        <View style={styles.taskBody}>
+                          <Text style={styles.taskTitle} numberOfLines={2}>
+                            {t.title}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    </View>
+                  </Animated.View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        )}
 
-      {suggestion ? <Text style={styles.hint}>{suggestion}</Text> : null}
-      {!suggestion && hasUntimed ? (
-        <Text style={styles.hint}>Plan day places untimed tasks into free gaps around calendar events.</Text>
-      ) : null}
+        {suggestion ? <Text style={styles.hint}>{suggestion}</Text> : null}
+        {!suggestion && hasUntimed ? (
+          <Text style={styles.hint}>
+            Plan day places untimed tasks into free gaps around calendar events.
+          </Text>
+        ) : null}
+      </HomeSection>
     </Animated.View>
   )
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.sm, marginTop: 4 },
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 4,
-  },
-  title: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 20,
-    letterSpacing: -0.3,
-  },
-  meta: { color: colors.textDim, fontFamily: fonts.body, fontSize: 13, marginTop: 2 },
+  wrap: { marginTop: 4 },
   planBtn: {
     borderWidth: 1.5,
     borderColor: colors.accent,
@@ -375,7 +365,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     marginLeft: 38,
   },
-  empty: { paddingVertical: spacing.md },
+  empty: { paddingVertical: spacing.sm },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   hint: {
     color: colors.textDim,
