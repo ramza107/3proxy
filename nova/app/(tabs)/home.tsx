@@ -160,7 +160,7 @@ export default function HomeScreen() {
           <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
 
           {showEveningClear ? (
-            <Pressable style={styles.eveningRow} onPress={() => router.push('/evening')}>
+            <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
               <View style={styles.eveningNode} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.eveningTitle}>Evening Clear</Text>
@@ -168,7 +168,7 @@ export default function HomeScreen() {
                   Close today · {todayTasks.length} open
                 </Text>
               </View>
-              <Text style={styles.eveningCta}>Open</Text>
+              <Text style={styles.eveningCta}>Open ›</Text>
             </Pressable>
           ) : null}
 
@@ -185,23 +185,20 @@ export default function HomeScreen() {
           />
           <Text style={styles.editHint}>Tap a task to edit · tap the dot to complete.</Text>
 
-          <HomeSection title="From Google" zone meta="Mail & calendar signals">
-            <View style={styles.mailStack}>
-              <CalendarBrief
-                userId={userId}
-                onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
-              />
-              <InboxBrief userId={userId} enabled={emailDigestEnabled} />
-              <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
-              <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
-            </View>
-          </HomeSection>
+          <Text style={styles.groupLabel}>From Google</Text>
+          <CalendarBrief
+            userId={userId}
+            onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
+          />
+          <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+          <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
+          <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
 
-          <HomeSection title="Ask Wahrly" zone>
+          <HomeSection title="Ask Wahrly" emphasize>
             <Text style={styles.prompt}>What do you need to do?</Text>
             <AIInput loading={loading} onSend={onSend} />
             <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
-              <Text style={styles.askText}>Open chat</Text>
+              <Text style={styles.askText}>Open chat ›</Text>
             </Pressable>
           </HomeSection>
         </ScrollView>
@@ -271,13 +268,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   content: {
     padding: spacing.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
     paddingBottom: 96,
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 520 : undefined,
     alignSelf: 'center',
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 0 },
   brandMark: {
     color: colors.accentStrong,
     fontFamily: fonts.brand,
@@ -290,7 +287,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgElevated,
+    backgroundColor: colors.bgCardSolid,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
@@ -305,27 +302,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: fonts.bodyMedium,
     letterSpacing: -0.2,
-    marginTop: 8,
+    marginTop: 4,
   },
   date: {
     color: colors.textDim,
     fontSize: 14,
     fontFamily: fonts.body,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  eveningRow: {
+  eveningCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    marginBottom: 4,
   },
   eveningNode: {
-    width: 10,
-    height: 10,
+    width: 12,
+    height: 12,
     borderRadius: 99,
     backgroundColor: colors.accent,
   },
@@ -349,13 +347,22 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 12,
-    marginTop: 2,
+    marginTop: -8,
+    marginBottom: 2,
+    paddingHorizontal: 4,
   },
-  mailStack: {
-    gap: spacing.lg,
+  groupLabel: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: -4,
+    marginTop: 4,
+    paddingHorizontal: 4,
   },
   prompt: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.bodyMedium },
-  ask: { alignSelf: 'flex-start' },
+  ask: { alignSelf: 'flex-start', marginTop: 2 },
   askText: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,

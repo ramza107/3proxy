@@ -1,53 +1,70 @@
 import type { ReactNode } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
-import { colors, fonts, spacing } from '../constants/theme'
+import { Platform, StyleSheet, Text, View } from 'react-native'
+import { colors, fonts, radii, spacing } from '../constants/theme'
 
 type Props = {
   title: string
   meta?: string
   action?: ReactNode
   children: ReactNode
-  /** Larger zone title (Today / From Google / Ask) */
-  zone?: boolean
+  /** Slightly larger title for primary blocks (Today, Ask) */
+  emphasize?: boolean
 }
 
-/** Shared Home section chrome — hairline head + optional count/meta, like Bills. */
-export function HomeSection({ title, meta, action, children, zone }: Props) {
+/**
+ * Home content card — Spectrum-style block on the mist field.
+ * Soft mint-white surface, rounded corners, quiet shadow. Teal accents unchanged.
+ */
+export function HomeSection({ title, meta, action, children, emphasize }: Props) {
   return (
-    <View style={[styles.wrap, zone && styles.zone]}>
+    <View style={styles.card}>
       <View style={styles.head}>
         <View style={styles.headText}>
-          <Text style={zone ? styles.zoneTitle : styles.title}>{title}</Text>
+          <Text style={emphasize ? styles.titleLg : styles.title}>{title}</Text>
           {meta ? <Text style={styles.meta}>{meta}</Text> : null}
         </View>
         {action ? <View style={styles.action}>{action}</View> : null}
       </View>
+      <View style={styles.divider} />
       <View style={styles.body}>{children}</View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: spacing.sm,
-  },
-  zone: {
-    marginTop: spacing.md,
+  card: {
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    paddingBottom: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    gap: spacing.sm,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0F2A32',
+        shadowOpacity: 0.07,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 3 },
+      },
+      android: { elevation: 2 },
+      default: {
+        shadowColor: '#0F2A32',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+      },
+    }),
   },
   head: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: 12,
-    paddingBottom: 8,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
-  headText: { flex: 1, gap: 2 },
-  zoneTitle: {
+  headText: { flex: 1, gap: 3 },
+  titleLg: {
     color: colors.text,
     fontFamily: fonts.bodyBold,
     fontSize: 18,
@@ -63,7 +80,13 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 12,
+    lineHeight: 16,
   },
-  action: { paddingBottom: 1 },
+  action: { paddingTop: 1 },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginHorizontal: -spacing.md,
+  },
   body: { gap: 8 },
 })

@@ -110,7 +110,7 @@ export function DailyPlan({
     <Animated.View entering={FadeIn.duration(380)} style={styles.wrap}>
       <HomeSection
         title="Today"
-        zone
+        emphasize
         meta={`${dayKind === 'light' ? 'Light day · ' : ''}${workdayStart}–${workdayEnd}${
           openCount ? ` · ${openCount} open` : ' · clear'
         }${eventCount ? ` · ${eventCount} event${eventCount === 1 ? '' : 's'}` : ''}`}
@@ -280,7 +280,7 @@ export function DailyPlan({
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: 4 },
+  wrap: { marginTop: 0 },
   planBtn: {
     borderWidth: 1.5,
     borderColor: colors.accent,
