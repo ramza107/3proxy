@@ -170,13 +170,20 @@ export default function HomeScreen() {
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.brandRow}>
-            <BrandMark size={36} />
-            <Text style={styles.pageTitle} numberOfLines={1}>
-              {t('tabs.home')}
-            </Text>
-            <View style={{ flex: 1 }} />
-            <Pressable onPress={() => setQuickOpen(true)} hitSlop={8} style={styles.menuBtn}>
+          <View style={styles.topBar}>
+            <View style={styles.brandLockup}>
+              <BrandMark size={28} color={colors.accentStrong} />
+              <Text style={styles.brandWord} numberOfLines={1}>
+                {brand.name}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setQuickOpen(true)}
+              hitSlop={10}
+              style={styles.menuBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t('quick.title')}
+            >
               <Text style={styles.menuBtnText}>···</Text>
             </Pressable>
           </View>
@@ -302,24 +309,29 @@ const styles = StyleSheet.create({
     maxWidth: Platform.OS === 'web' ? 520 : undefined,
     alignSelf: 'center',
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 0 },
-  pageTitle: {
-    color: colors.accentStrong,
-    fontFamily: fonts.brand,
-    fontSize: 28,
-    letterSpacing: -0.6,
-    flexShrink: 0,
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
   },
-  brandMark: {
+  brandLockup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
+  },
+  brandWord: {
     color: colors.accentStrong,
     fontFamily: fonts.brand,
-    fontSize: 28,
-    letterSpacing: -0.6,
+    fontSize: 24,
+    letterSpacing: -0.5,
+    lineHeight: 28,
   },
   menuBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.bgCardSolid,
@@ -329,21 +341,22 @@ const styles = StyleSheet.create({
   menuBtnText: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
-    fontSize: 18,
-    marginTop: -6,
+    fontSize: 16,
+    marginTop: -5,
+    letterSpacing: 1,
   },
   hello: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 22,
     fontFamily: fonts.bodyMedium,
-    letterSpacing: -0.2,
-    marginTop: 4,
+    letterSpacing: -0.35,
+    marginTop: 14,
   },
   date: {
     color: colors.textDim,
     fontSize: 14,
     fontFamily: fonts.body,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   eveningCard: {
     flexDirection: 'row',
