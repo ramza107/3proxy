@@ -66,9 +66,9 @@ export function InboxBrief({ userId, enabled }: Props) {
   const highlightCount = digest?.highlights?.length || digest?.senders?.length || 0
   const meta = connected
     ? highlightCount
-      ? `${highlightCount} from inbox`
+      ? t.tf('home.fromInbox', { n: highlightCount })
       : digest
-        ? 'Quiet'
+        ? t('home.quiet')
         : undefined
     : undefined
 
@@ -90,9 +90,7 @@ export function InboxBrief({ userId, enabled }: Props) {
         <Text style={styles.error}>{error}</Text>
       ) : !connected ? (
         <>
-          <Text style={styles.summary}>
-            Connect Gmail once — each morning Wahrly shows who wrote yesterday.
-          </Text>
+          <Text style={styles.summary}>{t('home.yesterdayConnect')}</Text>
           <Pressable style={styles.btn} onPress={() => router.push('/settings')}>
             <Text style={styles.btnText}>{t('home.connectGoogle')}</Text>
           </Pressable>
@@ -127,11 +125,11 @@ export function InboxBrief({ userId, enabled }: Props) {
               ))}
             </View>
           ) : (
-            <Text style={styles.quiet}>Yesterday’s inbox looks quiet.</Text>
+            <Text style={styles.quiet}>{t('home.yesterdayQuiet')}</Text>
           )}
         </>
       ) : (
-        <Text style={styles.quiet}>Loading yesterday’s mail…</Text>
+        <Text style={styles.quiet}>{t('home.yesterdayLoading')}</Text>
       )}
     </HomeSection>
   )

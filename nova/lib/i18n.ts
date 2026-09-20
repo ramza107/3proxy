@@ -51,6 +51,62 @@ const en: Dict = {
   'home.refresh': 'Refresh',
   'home.scan': 'Scan',
 
+  'home.lightDay': 'Light day',
+  'home.openCount': '{n} open',
+  'home.clear': 'clear',
+  'home.eventOne': '{n} event',
+  'home.eventsCount': '{n} events',
+  'home.emptyToday':
+    'No tasks or calendar events yet. Connect Google for meetings, or add a task below.',
+  'home.freeMin': 'free · {n}m',
+  'home.later': 'Later',
+  'home.planHint': 'Plan day places untimed tasks into free gaps around calendar events.',
+  'home.calendarMeta': '{n} today · on the rail above',
+  'home.calendarPrimary': 'Primary calendar',
+  'home.calendarConnect':
+    'Connect Google once — today’s meetings land on the Today rail (readonly).',
+  'home.calendarEmpty': 'No events on the primary calendar today.',
+  'home.calendarOnSignal': 'Meetings are on the Today signal above.',
+  'home.yesterdayConnect':
+    'Connect Gmail once — each morning Wahrly shows who wrote yesterday.',
+  'home.yesterdayQuiet': 'Yesterday’s inbox looks quiet.',
+  'home.yesterdayLoading': 'Loading yesterday’s mail…',
+  'home.fromInbox': '{n} from inbox',
+  'home.quiet': 'Quiet',
+  'home.inboxConnect':
+    'Meet / call / report emails become tasks — and push when something new lands.',
+  'home.inboxEmpty': 'No meeting or report asks in recent inbox.',
+  'home.demoPreview': 'Demo preview',
+  'home.previewAlerts': 'Preview with demo alerts',
+  'home.previewPromises': 'Preview with demo promises',
+  'home.addTask': 'Add task',
+  'home.dismiss': 'Dismiss',
+  'home.intentMeet': 'meet',
+  'home.intentReport': 'report',
+  'home.intentCall': 'call',
+  'home.promisesConnect':
+    'Commitments like “I’ll send…” in your sent mail become real tasks.',
+  'home.promisesEmpty': 'No open promises — clear slate.',
+  'home.promisesCaughtUp': 'Caught up — new promises land in Tasks automatically.',
+  'home.autoTasks': 'Auto → Tasks',
+  'home.openShort': 'open',
+  'home.to': 'To {name}',
+  'home.adding': 'Adding…',
+  'home.close': 'Close',
+
+  'quick.title': 'Quick actions',
+  'quick.packGaps': 'Pack tasks into free gaps',
+  'quick.chat': 'Chat with Wahrly',
+  'quick.chatSub': 'Ask or dictate',
+  'quick.tasks': 'All tasks',
+  'quick.tasksSub': 'Today, tomorrow, upcoming',
+  'quick.bills': 'Bills',
+  'quick.billsSub': 'Monthly rent, subs, utilities',
+  'quick.morning': 'Morning brief',
+  'quick.morningSub': 'Weather + today’s list',
+  'quick.eveningSub': 'Close today, shape tomorrow',
+  'quick.settingsSub': 'Rituals, Gmail, weather city',
+
   'settings.title': 'Settings',
   'settings.localDemo': 'Local demo account',
   'settings.yourName': 'Your name',
@@ -90,6 +146,60 @@ const ru: Dict = {
   'home.reconnectGoogle': 'Переподключить Google',
   'home.refresh': 'Обновить',
   'home.scan': 'Сканировать',
+  'home.lightDay': 'Лёгкий день',
+  'home.openCount': '{n} открыто',
+  'home.clear': 'свободно',
+  'home.eventOne': '{n} событие',
+  'home.eventsCount': '{n} событий',
+  'home.emptyToday':
+    'Пока нет задач и событий. Подключи Google для встреч или добавь задачу ниже.',
+  'home.freeMin': 'свободно · {n}м',
+  'home.later': 'Позже',
+  'home.planHint': 'План дня раскладывает задачи без времени в свободные окна вокруг календаря.',
+  'home.calendarMeta': '{n} сегодня · на шкале выше',
+  'home.calendarPrimary': 'Основной календарь',
+  'home.calendarConnect':
+    'Подключи Google один раз — встречи на сегодня появятся на шкале (только чтение).',
+  'home.calendarEmpty': 'На основном календаре сегодня пусто.',
+  'home.calendarOnSignal': 'Встречи уже на шкале «Сегодня» выше.',
+  'home.yesterdayConnect':
+    'Подключи Gmail один раз — каждое утро Wahrly покажет, кто писал вчера.',
+  'home.yesterdayQuiet': 'Вчерашняя почта выглядит спокойной.',
+  'home.yesterdayLoading': 'Загружаю вчерашнюю почту…',
+  'home.fromInbox': '{n} из входящих',
+  'home.quiet': 'Тихо',
+  'home.inboxConnect':
+    'Письма про встречу / звонок / отчёт становятся задачами — и push, когда приходит новое.',
+  'home.inboxEmpty': 'В недавней почте нет просьб о встрече или отчёте.',
+  'home.demoPreview': 'Демо-пример',
+  'home.previewAlerts': 'Посмотреть демо-просьбы',
+  'home.previewPromises': 'Посмотреть демо-обещания',
+  'home.addTask': 'В задачу',
+  'home.dismiss': 'Скрыть',
+  'home.intentMeet': 'встреча',
+  'home.intentReport': 'отчёт',
+  'home.intentCall': 'звонок',
+  'home.promisesConnect':
+    'Фразы вроде «отправлю…» в твоих исходящих превращаются в настоящие задачи.',
+  'home.promisesEmpty': 'Открытых обещаний нет — чисто.',
+  'home.promisesCaughtUp': 'Всё учтено — новые обещания попадут в Задачи сами.',
+  'home.autoTasks': 'Авто → Задачи',
+  'home.openShort': 'открыто',
+  'home.to': 'Кому {name}',
+  'home.adding': 'Добавляю…',
+  'home.close': 'Закрыть',
+  'quick.title': 'Быстрые действия',
+  'quick.packGaps': 'Разложить задачи по окнам',
+  'quick.chat': 'Чат с Wahrly',
+  'quick.chatSub': 'Спросить или надиктовать',
+  'quick.tasks': 'Все задачи',
+  'quick.tasksSub': 'Сегодня, завтра, дальше',
+  'quick.bills': 'Счета',
+  'quick.billsSub': 'Аренда, подписки, коммуналка',
+  'quick.morning': 'Утренний брифинг',
+  'quick.morningSub': 'Погода + список на сегодня',
+  'quick.eveningSub': 'Закрыть день, собрать завтра',
+  'quick.settingsSub': 'Ритуалы, Gmail, город погоды',
   'settings.title': 'Настройки',
   'settings.localDemo': 'Локальный демо-аккаунт',
   'settings.yourName': 'Ваше имя',
@@ -129,6 +239,60 @@ const uk: Dict = {
   'home.reconnectGoogle': "Перепід'єднати Google",
   'home.refresh': 'Оновити',
   'home.scan': 'Сканувати',
+  'home.lightDay': 'Легкий день',
+  'home.openCount': '{n} відкрито',
+  'home.clear': 'вільно',
+  'home.eventOne': '{n} подія',
+  'home.eventsCount': '{n} подій',
+  'home.emptyToday':
+    'Поки немає задач і подій. Під’єднай Google для зустрічей або додай задачу нижче.',
+  'home.freeMin': 'вільно · {n}хв',
+  'home.later': 'Пізніше',
+  'home.planHint': 'План дня розкладає задачі без часу у вільні вікна навколо календаря.',
+  'home.calendarMeta': '{n} сьогодні · на шкалі вище',
+  'home.calendarPrimary': 'Основний календар',
+  'home.calendarConnect':
+    'Під’єднай Google один раз — зустрічі на сьогодні з’являться на шкалі (лише читання).',
+  'home.calendarEmpty': 'В основному календарі сьогодні порожньо.',
+  'home.calendarOnSignal': 'Зустрічі вже на шкалі «Сьогодні» вище.',
+  'home.yesterdayConnect':
+    'Під’єднай Gmail один раз — щоранку Wahrly покаже, хто писав учора.',
+  'home.yesterdayQuiet': 'Учорашня пошта виглядає спокійною.',
+  'home.yesterdayLoading': 'Завантажую вчорашню пошту…',
+  'home.fromInbox': '{n} з вхідних',
+  'home.quiet': 'Тихо',
+  'home.inboxConnect':
+    'Листи про зустріч / дзвінок / звіт стають задачами — і push, коли з’являється нове.',
+  'home.inboxEmpty': 'У недавній пошті немає прохань про зустріч чи звіт.',
+  'home.demoPreview': 'Демо-приклад',
+  'home.previewAlerts': 'Переглянути демо-прохання',
+  'home.previewPromises': 'Переглянути демо-обіцянки',
+  'home.addTask': 'У задачу',
+  'home.dismiss': 'Сховати',
+  'home.intentMeet': 'зустріч',
+  'home.intentReport': 'звіт',
+  'home.intentCall': 'дзвінок',
+  'home.promisesConnect':
+    'Фрази на кшталт «надішлю…» у твоїх вихідних стають справжніми задачами.',
+  'home.promisesEmpty': 'Відкритих обіцянок немає — чисто.',
+  'home.promisesCaughtUp': 'Усе враховано — нові обіцянки потраплять у Завдання самі.',
+  'home.autoTasks': 'Авто → Завдання',
+  'home.openShort': 'відкрито',
+  'home.to': 'Кому {name}',
+  'home.adding': 'Додаю…',
+  'home.close': 'Закрити',
+  'quick.title': 'Швидкі дії',
+  'quick.packGaps': 'Розкласти задачі по вікнах',
+  'quick.chat': 'Чат із Wahrly',
+  'quick.chatSub': 'Запитати або надиктувати',
+  'quick.tasks': 'Усі задачі',
+  'quick.tasksSub': 'Сьогодні, завтра, далі',
+  'quick.bills': 'Рахунки',
+  'quick.billsSub': 'Оренда, підписки, комуналка',
+  'quick.morning': 'Ранковий бриф',
+  'quick.morningSub': 'Погода + список на сьогодні',
+  'quick.eveningSub': 'Закрити день, зібрати завтра',
+  'quick.settingsSub': 'Ритуали, Gmail, місто погоди',
   'settings.title': 'Налаштування',
   'settings.localDemo': 'Локальний демо-акаунт',
   'settings.yourName': "Ваше ім'я",
@@ -430,6 +594,19 @@ export function t(lang: AppLanguage | string | undefined | null, key: string): s
   return catalogs[code][key] || catalogs.en[key] || key
 }
 
+/** Simple `{n}` / `{name}` interpolation. */
+export function tf(
+  lang: AppLanguage | string | undefined | null,
+  key: string,
+  vars: Record<string, string | number>,
+): string {
+  let out = t(lang, key)
+  for (const [k, v] of Object.entries(vars)) {
+    out = out.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v))
+  }
+  return out
+}
+
 export function deviceLanguageFallback(): AppLanguage {
   try {
     const raw =
@@ -441,4 +618,12 @@ export function deviceLanguageFallback(): AppLanguage {
     // ignore
   }
   return 'en'
+}
+
+/** date-fns locale code for formatting weekdays/months. */
+export function dateFnsLocaleCode(lang: AppLanguage | string | undefined | null): string {
+  const code = isAppLanguage(lang) ? lang : 'en'
+  if (code === 'zh') return 'zhCN'
+  if (code === 'pt') return 'ptBR'
+  return code
 }
