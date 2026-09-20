@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import type { ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
+import type { Bill, ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
 import { defaultTypicalWeek } from '../types'
 
 const ssrSafeStorage = {
@@ -33,6 +33,7 @@ type NovaState = {
   sessionEmail: string | null
   settings: UserSettings
   tasks: Task[]
+  bills: Bill[]
   reminders: Reminder[]
   messages: ChatMessage[]
   dismissedPromiseIds: string[]
@@ -47,6 +48,10 @@ type NovaState = {
   setTasks: (tasks: Task[]) => void
   upsertTask: (task: Task) => void
   removeTask: (id: string) => void
+  setBills: (bills: Bill[]) => void
+  upsertBill: (bill: Bill) => void
+  removeBill: (id: string) => void
+  markBillPaid: (id: string, month?: string) => void
   dismissPromise: (id: string) => void
   markMeetingNotified: (id: string) => void
   dismissMeeting: (id: string) => void
@@ -60,6 +65,14 @@ type NovaState = {
     priority?: Priority
     userId: string
   }) => Task
+  createBillLocal: (input: {
+    title: string
+    amount: number
+    currency?: string
+    dayOfMonth: number
+    category?: string
+    notes?: string | null
+  }) => Bill
 }
 
 const defaultSettings: UserSettings = {
@@ -91,6 +104,7 @@ export const useNovaStore = create<NovaState>()(
       sessionEmail: null,
       settings: defaultSettings,
       tasks: [],
+      bills: [],
       reminders: [],
       messages: [],
       dismissedPromiseIds: [],
@@ -112,6 +126,7 @@ export const useNovaStore = create<NovaState>()(
           sessionUserId: null,
           sessionEmail: null,
           tasks: [],
+          bills: [],
           reminders: [],
           messages: [],
           dismissedPromiseIds: [],
@@ -134,6 +149,28 @@ export const useNovaStore = create<NovaState>()(
         }
       },
       removeTask: (id) => set({ tasks: get().tasks.filter((t) => t.id !== id) }),
+      setBills: (bills) => set({ bills }),
+      upsertBill: (bill) => {
+        const existing = get().bills
+        const idx = existing.findIndex((b) => b.id === bill.id)
+        if (idx >= 0) {
+          const next = [...existing]
+          next[idx] = bill
+          set({ bills: next })
+        } else {
+          set({ bills: [bill, ...existing] })
+        }
+      },
+      removeBill: (id) => set({ bills: get().bills.filter((b) => b.id !== id) }),
+      markBillPaid: (id, month) => {
+        const stamp = month || new Date().toISOString().slice(0, 7)
+        const now = new Date().toISOString()
+        set({
+          bills: get().bills.map((b) =>
+            b.id === id ? { ...b, lastPaidMonth: stamp, updated_at: now } : b,
+          ),
+        })
+      },
       dismissPromise: (id) =>
         set({
           dismissedPromiseIds: [...new Set([...get().dismissedPromiseIds, id])].slice(-80),
@@ -177,6 +214,32 @@ export const useNovaStore = create<NovaState>()(
         set({ tasks: [task, ...get().tasks] })
         return task
       },
+      createBillLocal: ({
+        title,
+        amount,
+        currency = 'UAH',
+        dayOfMonth,
+        category = 'General',
+        notes = null,
+      }) => {
+        const now = new Date().toISOString()
+        const day = Math.min(28, Math.max(1, Math.round(dayOfMonth) || 1))
+        const bill: Bill = {
+          id: uid('bill'),
+          title: title.trim() || 'Payment',
+          amount: Math.max(0, Number(amount) || 0),
+          currency: currency.trim() || 'UAH',
+          dayOfMonth: day,
+          category: category.trim() || 'General',
+          notes: notes?.trim() || null,
+          active: true,
+          lastPaidMonth: null,
+          created_at: now,
+          updated_at: now,
+        }
+        set({ bills: [bill, ...get().bills] })
+        return bill
+      },
     }),
     {
       name: 'nova-store-v1',
@@ -187,6 +250,7 @@ export const useNovaStore = create<NovaState>()(
         sessionEmail: s.sessionEmail,
         settings: s.settings,
         tasks: s.tasks,
+        bills: s.bills,
         reminders: s.reminders,
         messages: s.messages,
         dismissedPromiseIds: s.dismissedPromiseIds,
@@ -206,6 +270,7 @@ export const useNovaStore = create<NovaState>()(
               ? state.settings.typicalWeek.anchors
               : [],
           }
+          state.bills = Array.isArray(state.bills) ? state.bills : []
           state.dismissedPromiseIds = Array.isArray(state.dismissedPromiseIds)
             ? state.dismissedPromiseIds
             : []

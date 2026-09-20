@@ -225,6 +225,7 @@ export default function HomeScreen() {
         onPlanDay={onPlanDay}
         onOpenChat={() => router.push('/chat')}
         onOpenTasks={() => router.push('/tasks')}
+        onOpenBills={() => router.push('/bills')}
         onOpenSettings={() => router.push('/settings')}
         onOpenEvening={() => router.push('/evening')}
         onOpenMorning={() => {

@@ -10,6 +10,7 @@ type Props = {
   onPlanDay: () => void
   onOpenChat: () => void
   onOpenTasks: () => void
+  onOpenBills?: () => void
   onOpenSettings: () => void
   onOpenEvening?: () => void
   onOpenMorning?: () => void
@@ -24,6 +25,7 @@ export function QuickActionsSheet({
   onPlanDay,
   onOpenChat,
   onOpenTasks,
+  onOpenBills,
   onOpenSettings,
   onOpenEvening,
   onOpenMorning,
@@ -45,6 +47,13 @@ export function QuickActionsSheet({
         />
         <Action label="Chat with Wahrly" sub="Ask or dictate" onPress={() => run(onOpenChat)} />
         <Action label="All tasks" sub="Today, tomorrow, upcoming" onPress={() => run(onOpenTasks)} />
+        {onOpenBills ? (
+          <Action
+            label="Bills"
+            sub="Monthly rent, subs, utilities"
+            onPress={() => run(onOpenBills)}
+          />
+        ) : null}
         {onOpenMorning ? (
           <Action
             label="Morning brief"

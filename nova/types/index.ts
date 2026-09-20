@@ -23,6 +23,24 @@ export type Reminder = {
   created_at: string
 }
 
+/** Recurring monthly payment / subscription */
+export type Bill = {
+  id: string
+  title: string
+  /** Amount in major units (e.g. 499.00) */
+  amount: number
+  currency: string
+  /** Day of month 1–28 (clamped for short months) */
+  dayOfMonth: number
+  category: string
+  notes: string | null
+  active: boolean
+  /** YYYY-MM — last month marked paid */
+  lastPaidMonth: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type Profile = {
   id: string
   email: string
