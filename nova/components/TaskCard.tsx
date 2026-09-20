@@ -1,7 +1,8 @@
 import { format, parseISO } from 'date-fns'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import type { Task } from '../types'
+import type { Priority, Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
+import { durationForPriority } from '../lib/scheduleDay'
 
 type Props = {
   task: Task
@@ -9,9 +10,11 @@ type Props = {
   onPress?: () => void
   onPostpone?: () => void
   onMoveTomorrow?: () => void
+  /** Hide date in meta when already under a day header */
+  hideDate?: boolean
 }
 
-const priorityLabel = {
+const priorityLabel: Record<Priority, string> = {
   high: 'High',
   medium: 'Med',
   low: 'Low',
@@ -20,19 +23,42 @@ const priorityLabel = {
 function friendlyDate(date: string | null) {
   if (!date) return 'No date'
   try {
-    return format(parseISO(date), 'MMM d')
+    return format(parseISO(date), 'EEE MMM d')
   } catch {
     return date
   }
 }
 
-export function TaskCard({ task, onToggle, onPress, onPostpone, onMoveTomorrow }: Props) {
-  const meta = [friendlyDate(task.date), task.time, priorityLabel[task.priority]]
-    .filter(Boolean)
-    .join(' · ')
+function isOverdue(task: Task) {
+  if (task.completed || !task.date) return false
+  const today = format(new Date(), 'yyyy-MM-dd')
+  if (task.date < today) return true
+  if (task.date > today || !task.time) return false
+  const [hh, mm] = task.time.split(':').map(Number)
+  const when = new Date()
+  when.setHours(hh, mm, 0, 0)
+  return when.getTime() < Date.now()
+}
+
+export function TaskCard({
+  task,
+  onToggle,
+  onPress,
+  onPostpone,
+  onMoveTomorrow,
+  hideDate,
+}: Props) {
+  const overdue = isOverdue(task)
+  const mins = durationForPriority(task.priority)
+  const metaParts = [
+    hideDate ? null : friendlyDate(task.date),
+    task.time || 'Anytime',
+    `~${mins}m`,
+    priorityLabel[task.priority],
+  ].filter(Boolean)
 
   return (
-    <View style={[styles.card, task.completed && styles.done]}>
+    <View style={[styles.card, task.completed && styles.done, overdue && styles.overdueCard]}>
       <View style={styles.main}>
         <Pressable
           onPress={onToggle}
@@ -41,15 +67,27 @@ export function TaskCard({ task, onToggle, onPress, onPostpone, onMoveTomorrow }
           accessibilityRole="checkbox"
           accessibilityState={{ checked: task.completed }}
         >
-          <View style={[styles.check, task.completed && styles.checkOn]}>
+          <View style={[styles.check, task.completed && styles.checkOn, overdue && styles.checkOverdue]}>
             {task.completed ? <Text style={styles.checkMark}>✓</Text> : null}
           </View>
         </Pressable>
         <Pressable onPress={onPress} style={styles.body} accessibilityRole="button">
-          <Text style={[styles.title, task.completed && styles.titleDone]} numberOfLines={2}>
-            {task.title}
-          </Text>
-          <Text style={styles.meta}>{meta}</Text>
+          <View style={styles.titleRow}>
+            <Text style={[styles.title, task.completed && styles.titleDone]} numberOfLines={2}>
+              {task.title}
+            </Text>
+            {overdue ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>Overdue</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={styles.meta}>{metaParts.join(' · ')}</Text>
+          {task.description ? (
+            <Text style={styles.desc} numberOfLines={2}>
+              {task.description}
+            </Text>
+          ) : null}
         </Pressable>
         <View style={[styles.dot, { backgroundColor: colors[task.priority] }]} />
       </View>
@@ -83,13 +121,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   done: { opacity: 0.5 },
+  overdueCard: {
+    borderBottomColor: 'rgba(196,69,74,0.25)',
+  },
   main: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
     paddingVertical: 8,
   },
-  checkWrap: { padding: 2 },
+  checkWrap: { padding: 2, paddingTop: 2 },
   check: {
     width: 22,
     height: 22,
@@ -104,12 +145,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderColor: colors.accent,
   },
+  checkOverdue: { borderColor: colors.danger },
   checkMark: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 12 },
   body: { flex: 1, gap: 3 },
-  title: { color: colors.text, fontSize: 16, fontFamily: fonts.bodyMedium },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  title: { flex: 1, color: colors.text, fontSize: 16, fontFamily: fonts.bodyMedium, lineHeight: 22 },
   titleDone: { textDecorationLine: 'line-through', color: colors.textMuted },
+  badge: {
+    backgroundColor: 'rgba(196,69,74,0.12)',
+    borderRadius: radii.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  badgeText: { color: colors.danger, fontFamily: fonts.bodyBold, fontSize: 10 },
   meta: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.body },
-  dot: { width: 8, height: 8, borderRadius: 99 },
+  desc: { color: colors.textDim, fontSize: 13, fontFamily: fonts.body, lineHeight: 18, marginTop: 2 },
+  dot: { width: 8, height: 8, borderRadius: 99, marginTop: 8 },
   actions: {
     flexDirection: 'row',
     gap: 8,
