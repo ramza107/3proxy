@@ -130,7 +130,7 @@ export function AIInput({
           {transcribing ? (
             <ActivityIndicator color={colors.accentStrong} />
           ) : (
-            <Text style={styles.micText}>{recording ? '■' : '🎙'}</Text>
+            <Text style={styles.micText}>{recording ? 'Stop' : 'Mic'}</Text>
           )}
         </Pressable>
         <Pressable
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   micHot: {
     backgroundColor: colors.danger,
   },
-  micText: { fontSize: 18, color: colors.text },
+  micText: { fontSize: 16, color: colors.text, fontFamily: fonts.bodyBold },
   send: {
     backgroundColor: colors.accent,
     borderRadius: radii.full,

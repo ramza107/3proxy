@@ -7,8 +7,9 @@ import { SoftPressable } from './SoftPressable'
 
 type Props = {
   tasks: Task[]
+  /** Complete / reopen via the check node */
   onToggle: (task: Task) => void
-  /** Long-press opens editor sheet */
+  /** Tap the row body → edit sheet */
   onEdit?: (task: Task) => void
   workdayStart?: string
   workdayEnd?: string
@@ -123,27 +124,36 @@ export function DailyPlan({
                 key={slot.task.id}
                 entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
               >
-                <Pressable
-                  style={styles.row}
-                  onPress={() => onToggle(slot.task)}
-                  onLongPress={onEdit ? () => onEdit(slot.task) : undefined}
-                  delayLongPress={280}
-                >
-                  <View style={styles.nodeCol}>
+                <View style={styles.row}>
+                  <Pressable
+                    style={styles.nodeCol}
+                    onPress={() => onToggle(slot.task)}
+                    hitSlop={8}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: !!slot.task.completed }}
+                    accessibilityLabel="Mark done"
+                  >
                     <View
                       style={[styles.nodeOn, { backgroundColor: NODE[slot.task.priority] }]}
                     />
-                  </View>
-                  <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
-                  <View style={styles.taskBody}>
-                    <Text
-                      style={[styles.taskTitle, slot.task.completed && styles.taskDone]}
-                      numberOfLines={2}
-                    >
-                      {slot.task.title}
-                    </Text>
-                  </View>
-                </Pressable>
+                  </Pressable>
+                  <Pressable
+                    style={styles.rowBody}
+                    onPress={() => (onEdit ? onEdit(slot.task) : onToggle(slot.task))}
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit task"
+                  >
+                    <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
+                    <View style={styles.taskBody}>
+                      <Text
+                        style={[styles.taskTitle, slot.task.completed && styles.taskDone]}
+                        numberOfLines={2}
+                      >
+                        {slot.task.title}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </View>
               </Animated.View>
             ),
           )}
@@ -155,22 +165,30 @@ export function DailyPlan({
                   key={t.id}
                   entering={FadeInRight.delay(120 + Math.min(i, 6) * 40).duration(280)}
                 >
-                  <Pressable
-                    style={styles.row}
-                    onPress={() => onToggle(t)}
-                    onLongPress={onEdit ? () => onEdit(t) : undefined}
-                    delayLongPress={280}
-                  >
-                    <View style={styles.nodeCol}>
+                  <View style={styles.row}>
+                    <Pressable
+                      style={styles.nodeCol}
+                      onPress={() => onToggle(t)}
+                      hitSlop={8}
+                      accessibilityRole="checkbox"
+                      accessibilityLabel="Mark done"
+                    >
                       <View style={[styles.nodeOn, { backgroundColor: NODE[t.priority] }]} />
-                    </View>
-                    <Text style={styles.timeCol}>—</Text>
-                    <View style={styles.taskBody}>
-                      <Text style={styles.taskTitle} numberOfLines={2}>
-                        {t.title}
-                      </Text>
-                    </View>
-                  </Pressable>
+                    </Pressable>
+                    <Pressable
+                      style={styles.rowBody}
+                      onPress={() => (onEdit ? onEdit(t) : onToggle(t))}
+                      accessibilityRole="button"
+                      accessibilityLabel="Edit task"
+                    >
+                      <Text style={styles.timeCol}>—</Text>
+                      <View style={styles.taskBody}>
+                        <Text style={styles.taskTitle} numberOfLines={2}>
+                          {t.title}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </View>
                 </Animated.View>
               ))}
             </View>
@@ -228,12 +246,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     paddingVertical: 9,
-    minHeight: 40,
+    minHeight: 44,
   },
-  nodeCol: { width: 24, alignItems: 'center', paddingTop: 4 },
+  rowBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  nodeCol: { width: 28, alignItems: 'center', paddingTop: 4 },
   nodeOn: {
-    width: 10,
-    height: 10,
+    width: 18,
+    height: 18,
     borderRadius: 99,
     borderWidth: 2,
     borderColor: colors.bg,
@@ -269,7 +293,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
     marginBottom: 2,
-    marginLeft: 34,
+    marginLeft: 38,
   },
   empty: { paddingVertical: spacing.md },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },

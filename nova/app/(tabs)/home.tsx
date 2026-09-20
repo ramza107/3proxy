@@ -178,7 +178,7 @@ export default function HomeScreen() {
             onPlanDay={onPlanDay}
             planning={planning}
           />
-          <Text style={styles.editHint}>Long-press a task to edit in a sheet.</Text>
+          <Text style={styles.editHint}>Tap a task to edit · tap the dot to complete.</Text>
 
           <View style={styles.mailBlock}>
             <InboxBrief userId={userId} enabled={emailDigestEnabled} />
