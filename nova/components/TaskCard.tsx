@@ -50,13 +50,13 @@ export function TaskCard({
   hideDate,
 }: Props) {
   const overdue = isOverdue(task)
-  const mins = durationForPriority(task.priority)
+  const mins = durationForPriority(task.priority || 'medium')
   const rec = recurrenceLabel(task.recurrence)
   const metaParts = [
     hideDate ? null : friendlyDate(task.date),
     task.time || 'Anytime',
     `~${mins}m`,
-    priorityLabel[task.priority],
+    priorityLabel[task.priority] || 'Med',
     rec,
   ].filter(Boolean)
 
@@ -92,7 +92,7 @@ export function TaskCard({
             </Text>
           ) : null}
         </Pressable>
-        <View style={[styles.dot, { backgroundColor: colors[task.priority] }]} />
+        <View style={[styles.dot, { backgroundColor: colors[task.priority] || colors.medium }]} />
       </View>
 
       {!task.completed ? (

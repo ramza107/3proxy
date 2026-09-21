@@ -79,8 +79,8 @@ export default function TasksScreen() {
     for (let i = 0; i < 7; i++) {
       const iso = format(addDays(new Date(`${today}T12:00:00`), i), 'yyyy-MM-dd')
       const win = resolveDayWindow(settings, iso)
-      const label =
-        i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : format(parseISO(iso), 'EEEE')
+      // Short weekday always (Mon/Tue…) — avoid slicing "Today"/"Tomorrow" to "Tod"/"Tom"
+      const label = i === 0 ? 'Today' : i === 1 ? 'Tmw' : format(parseISO(iso), 'EEE')
       const sub = format(parseISO(iso), 'MMM d')
       days.push({
         iso,
@@ -163,40 +163,42 @@ export default function TasksScreen() {
           <Stat label="Timed" value={stats.timed} />
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.weekStrip}
-        >
-          <Pressable
-            onPress={() => setFocusDay(null)}
-            style={[styles.dayChip, !focusDay && styles.dayChipOn]}
+        <View style={styles.weekStripWrap}>
+          <ScrollView
+            horizontal
+            style={styles.weekStripScroll}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.weekStrip}
           >
-            <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]}>Week</Text>
-            <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]}>
-              {stats.week}
-            </Text>
-          </Pressable>
-          {week.map((d) => {
-            const on = focusDay === d.iso
-            const n = d.tasks.length + d.anchors.length
-            return (
-              <Pressable
-                key={d.iso}
-                onPress={() => setFocusDay(on ? null : d.iso)}
-                style={[styles.dayChip, on && styles.dayChipOn]}
-              >
-                <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]}>
-                  {d.label.slice(0, 3)}
-                </Text>
-                <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]}>{d.sub}</Text>
-                <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]}>{n}</Text>
-              </Pressable>
-            )
-          })}
-        </ScrollView>
+            <Pressable
+              onPress={() => setFocusDay(null)}
+              style={[styles.dayChip, !focusDay && styles.dayChipOn]}
+            >
+              <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]}>Week</Text>
+              <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]}>
+                {stats.week}
+              </Text>
+            </Pressable>
+            {week.map((d) => {
+              const on = focusDay === d.iso
+              const n = d.tasks.length + d.anchors.length
+              return (
+                <Pressable
+                  key={d.iso}
+                  onPress={() => setFocusDay(on ? null : d.iso)}
+                  style={[styles.dayChip, on && styles.dayChipOn]}
+                >
+                  <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]}>{d.label}</Text>
+                  <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]}>{d.sub}</Text>
+                  <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]}>{n}</Text>
+                </Pressable>
+              )
+            })}
+          </ScrollView>
+        </View>
 
         <ScrollView
+          style={styles.listScroll}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -391,13 +393,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 11,
   },
+  weekStripWrap: {
+    zIndex: 2,
+    backgroundColor: colors.bg,
+    paddingBottom: 4,
+  },
+  /** Keep the rail at intrinsic height so the list below cannot collapse to blank. */
+  weekStripScroll: {
+    flexGrow: 0,
+  },
   weekStrip: {
     paddingHorizontal: spacing.lg,
     gap: 8,
-    paddingBottom: 10,
+    paddingBottom: 8,
+    alignItems: 'stretch',
   },
   dayChip: {
-    minWidth: 64,
+    minWidth: 68,
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: radii.md,
@@ -405,6 +417,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
     gap: 2,
+  },
+  listScroll: {
+    flex: 1,
   },
   dayChipOn: {
     backgroundColor: colors.accentSoft,
