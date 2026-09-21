@@ -39,7 +39,8 @@
         "EXPO_PUBLIC_API_URL": "https://threeproxy-x9bi.onrender.com",
         "EXPO_PUBLIC_APP_URL": "wahrly://",
         "EXPO_PUBLIC_PLATFORM": "native",
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EAS_BUILD_NO_EXPO_GO_WARNING": "true"
       }
     }
   },

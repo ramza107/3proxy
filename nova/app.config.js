@@ -74,7 +74,7 @@ module.exports = ({ config }) => {
             {
               name: 'WahrlyToday',
               displayName: 'Wahrly Today',
-              description: 'Today’s next task and upcoming bill at a glance.',
+              description: "Today's next task and upcoming bill at a glance.",
               ios: {
                 supportedFamilies: [
                   'systemSmall',
