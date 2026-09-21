@@ -22,7 +22,7 @@ type GoogleEvent = {
 
 /**
  * List primary calendar events between from/to (ISO strings).
- * Requires calendar.readonly on the Google token (reconnect if only Gmail was granted).
+ * Requires calendar.events (or readonly) on the Google token.
  */
 export async function listCalendarEvents(
   userId: string,
@@ -65,6 +65,62 @@ export async function listCalendarEvents(
     .filter(Boolean) as CalendarEvent[]
 
   return { email: conn.email, events }
+}
+
+export async function createCalendarEvent(
+  userId: string,
+  params: {
+    title: string
+    start: string
+    end: string
+    allDay?: boolean
+    location?: string | null
+    description?: string | null
+  },
+): Promise<CalendarEvent> {
+  const conn = await withFreshToken(userId)
+  const body: Record<string, unknown> = {
+    summary: params.title,
+    location: params.location || undefined,
+    description: params.description || undefined,
+  }
+  if (params.allDay) {
+    const day = params.start.slice(0, 10)
+    const endDay = params.end.slice(0, 10)
+    body.start = { date: day }
+    body.end = { date: endDay }
+  } else {
+    body.start = { dateTime: params.start }
+    body.end = { dateTime: params.end }
+  }
+
+  const res = await fetch(`${CALENDAR_API}/calendars/primary/events`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${conn.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  if (res.status === 403) {
+    throw new Error('Calendar write permission missing — reconnect Google in Settings')
+  }
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text.slice(0, 200) || `Create event failed (${res.status})`)
+  }
+  const item = (await res.json()) as GoogleEvent
+  const start = item.start?.dateTime || item.start?.date || params.start
+  const end = item.end?.dateTime || item.end?.date || params.end
+  return {
+    id: item.id || `created-${Date.now()}`,
+    title: item.summary || params.title,
+    start,
+    end,
+    allDay: Boolean(item.start?.date && !item.start?.dateTime),
+    location: item.location || params.location || null,
+    calendar: 'primary',
+  }
 }
 
 /** Demo events for UI when not connected. */

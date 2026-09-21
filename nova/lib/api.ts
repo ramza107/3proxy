@@ -1,5 +1,5 @@
 import Constants from 'expo-constants'
-import type { AIChatResponse, Task } from '../types'
+import type { AIChatResponse, Bill, Task } from '../types'
 
 const extra = Constants.expoConfig?.extra ?? {}
 
@@ -11,6 +11,7 @@ export async function chatWithNova(params: {
   userId: string
   userName?: string | null
   tasks: Task[]
+  bills?: Bill[]
   history: { role: 'user' | 'assistant'; content: string }[]
   accessToken?: string | null
 }): Promise<AIChatResponse> {
@@ -25,6 +26,16 @@ export async function chatWithNova(params: {
       user_id: params.userId,
       user_name: params.userName,
       tasks: params.tasks,
+      bills: (params.bills || []).map((b) => ({
+        id: b.id,
+        title: b.title,
+        amount: b.amount,
+        currency: b.currency,
+        dayOfMonth: b.dayOfMonth,
+        category: b.category,
+        lastPaidMonth: b.lastPaidMonth,
+        active: b.active,
+      })),
       history: params.history.slice(-8),
       current_date: new Date().toISOString().slice(0, 10),
     }),

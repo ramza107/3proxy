@@ -43,6 +43,24 @@ function describeWhere(action: AIAction): SavedItem | null {
       where: 'Tasks → Tomorrow',
     }
   }
+  if (action.type === 'create_bill') {
+    return {
+      title: `${action.title} · ${action.amount} ${action.currency || ''}`.trim(),
+      where: 'Bills',
+    }
+  }
+  if (action.type === 'mark_bill_paid') {
+    return {
+      title: action.title_hint || 'Bill paid',
+      where: 'Bills',
+    }
+  }
+  if (action.type === 'create_calendar_event') {
+    return {
+      title: `${action.title} · ${action.date} ${action.time}`,
+      where: 'Google Calendar',
+    }
+  }
   return null
 }
 

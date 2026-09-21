@@ -125,3 +125,12 @@ drop policy if exists "Users can delete own email connection" on public.email_co
 create policy "Users can delete own email connection"
   on public.email_connections for delete
   using (auth.uid() = user_id);
+
+-- Expo push tokens for meeting alerts when the app is closed (server / service role)
+create table if not exists public.push_tokens (
+  user_id uuid primary key references public.users (id) on delete cascade,
+  token text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.push_tokens enable row level security;

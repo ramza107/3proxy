@@ -115,6 +115,9 @@ export default function RootLayout() {
     if (!hydrated || !sessionUserId || !onboardingComplete) return
     syncDailyRitualNotifications(settings, tasks).catch(() => undefined)
     syncBillReminders(bills, settings).catch(() => undefined)
+    import('../lib/widgetSync')
+      .then((m) => m.refreshWidgetSnapshot())
+      .catch(() => undefined)
   }, [
     hydrated,
     sessionUserId,
@@ -148,7 +151,17 @@ export default function RootLayout() {
           return
         }
         if (data.kind === 'bill') {
-          router.push('/bills')
+          const billId = typeof data.billId === 'string' ? data.billId : ''
+          router.push(billId ? { pathname: '/bills', params: { billId } } : '/bills')
+          return
+        }
+        if (data.kind === 'task' || data.taskId) {
+          const taskId = typeof data.taskId === 'string' ? data.taskId : ''
+          router.push(taskId ? { pathname: '/tasks', params: { taskId } } : '/tasks')
+          return
+        }
+        if (data.kind === 'meeting') {
+          router.push('/home')
           return
         }
         if (data.kind === 'morning') {

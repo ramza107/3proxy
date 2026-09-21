@@ -78,8 +78,8 @@ export default function PrivacyScreen() {
 
           <H>3. Google / Gmail + Calendar access</H>
           <P>
-            If you connect Google, Wahrly requests read-only scopes: gmail.readonly and
-            calendar.readonly.
+            If you connect Google, Wahrly requests: gmail.readonly, gmail.send, gmail.compose, and
+            calendar.events. Reconnect in Settings if you connected earlier with fewer scopes.
           </P>
           <P>With those permissions, Wahrly may:</P>
           <Bullet>
@@ -93,11 +93,19 @@ export default function PrivacyScreen() {
           </Bullet>
           <Bullet>
             Read today’s events from your primary Google Calendar to show them on the Home signal
-            timeline.
+            timeline and to avoid those times when packing Plan day.
+          </Bullet>
+          <Bullet>
+            Create calendar events when you use Plan day or ask Wahrly to schedule something —
+            only after you confirm / trigger that flow.
+          </Bullet>
+          <Bullet>
+            Send or create a draft reply when you tap Send on an inbox ask or promise (with an
+            on-device confirmation).
           </Bullet>
           <P>Wahrly does not:</P>
-          <Bullet>Send, delete, or modify your email.</Bullet>
-          <Bullet>Create, edit, or delete calendar events.</Bullet>
+          <Bullet>Delete your email or calendar events.</Bullet>
+          <Bullet>Send mail or create events without your explicit tap / Plan day / chat action.</Bullet>
           <Bullet>Read your mail or calendar without your explicit Connect / Allow step.</Bullet>
           <Bullet>Sell your Google content to third parties.</Bullet>
           <P>

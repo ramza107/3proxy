@@ -342,9 +342,9 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <Text style={styles.rowTitle}>{tr('settings.google')}</Text>
             <Text style={styles.rowSub}>
-              One Allow connects Gmail + Calendar (readonly). Morning inbox, Inbox asks, Promises,
-              and today&apos;s meetings on the Home signal. If you connected earlier, Connect again
-              to grant Calendar.
+              One Allow connects Gmail (read + send/draft) and Calendar (read + create events).
+              Morning inbox, Inbox asks, Promises, Plan day → Calendar, and Send replies on Home.
+              If you connected earlier, Connect again to grant send and calendar write.
             </Text>
 
             {gmailConnected ? (

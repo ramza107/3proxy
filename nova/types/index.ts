@@ -107,6 +107,29 @@ export type AIAction =
       time: string
       task_id?: string
     }
+  | {
+      type: 'create_bill'
+      title: string
+      amount: number
+      currency?: string
+      dayOfMonth: number
+      category?: string
+      payHowTo?: string | null
+    }
+  | {
+      type: 'mark_bill_paid'
+      bill_id?: string | null
+      title_hint?: string | null
+      month?: string | null
+    }
+  | {
+      type: 'create_calendar_event'
+      title: string
+      date: string
+      time: string
+      durationMin?: number
+      location?: string | null
+    }
 
 export type AIChatResponse = {
   reply: string
@@ -235,7 +258,7 @@ export type EmailPromise = {
   promise: string
   suggestedTask: string
   suggestedDate: string | null
-  /** Short draft the user can copy (no send) */
+  /** Short draft the user can copy or send via Gmail */
   suggestedReply?: string | null
   sentAt: string
 }
@@ -263,7 +286,7 @@ export type MeetingAlert = {
   notifyBody: string
   suggestedDate: string | null
   suggestedTime: string | null
-  /** Short draft the user can copy (no send) */
+  /** Short draft the user can copy or send via Gmail */
   suggestedReply?: string | null
   receivedAt: string
 }

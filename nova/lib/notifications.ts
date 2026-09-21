@@ -85,7 +85,7 @@ export async function scheduleTaskNotification(
     content: {
       title: 'Wahrly',
       body: `Time to ${task.title.toLowerCase()}`,
-      data: { taskId: task.id },
+      data: { kind: 'task', taskId: task.id, route: '/tasks' },
     },
     trigger: {
       type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
@@ -312,7 +312,7 @@ export async function syncBillReminders(
           content: {
             title: 'Wahrly · Bills',
             body: `${bill.title} ${whenLabel}`,
-            data: { kind: 'bill', billId: bill.id, ritualId: id },
+        data: { kind: 'bill', billId: bill.id, ritualId: id, route: '/bills' },
           },
           trigger: {
             type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
@@ -347,7 +347,7 @@ export async function notifyMeetingEmail(params: {
       content: {
         title: params.title || 'Wahrly · Inbox',
         body: params.body,
-        data: { kind: 'meeting', alertId: params.alertId },
+        data: { kind: 'meeting', alertId: params.alertId, route: '/home' },
       },
       trigger: null,
     })

@@ -1,4 +1,4 @@
-import type { AIChatResponse, Priority, Task } from '../types'
+import type { AIChatResponse, Bill, Priority, Task } from '../types'
 
 function addDays(isoDate: string, days: number) {
   const d = new Date(`${isoDate}T12:00:00`)
@@ -107,7 +107,11 @@ function splitTasks(text: string): string[] {
 }
 
 /** Offline fallback when the AI server / OpenAI is unavailable. */
-export function clientLocalAI(message: string, tasks: Task[]): AIChatResponse {
+export function clientLocalAI(
+  message: string,
+  tasks: Task[],
+  bills?: Bill[],
+): AIChatResponse {
   const today = new Date().toISOString().slice(0, 10)
   const text = message.trim()
   const lower = normalize(text)
@@ -151,6 +155,76 @@ export function clientLocalAI(message: string, tasks: Task[]): AIChatResponse {
         reply: `Nice. Marked "${match.title}" as completed ✓`,
         actions: [{ type: 'complete_task', task_id: match.id }],
       }
+    }
+  }
+
+  // Bills: "add bill Netflix 15 on the 5th" / "оплатил интернет"
+  const paidBill =
+    /(оплатил|оплатила|заплатил|mark\s+\w+\s+paid|paid\s+(the\s+)?)/i.test(lower) ||
+    /\b(mark|mark as)\b.{0,20}\bpaid\b/i.test(lower)
+  if (paidBill && bills?.length) {
+    const hint =
+      text
+        .replace(/^(i\s+)?(paid|оплатил|оплатила|заплатил)\s*/i, '')
+        .replace(/\b(mark|as|paid|the|bill|счет|счёт)\b/gi, '')
+        .trim() || lower
+    const match = bills.find((b) => b.title.toLowerCase().includes(hint.toLowerCase().slice(0, 12)))
+    if (match) {
+      return {
+        reply: /[а-яё]/i.test(text)
+          ? `Отметил «${match.title}» как оплаченный → Bills.`
+          : `Marked “${match.title}” paid → Bills.`,
+        actions: [{ type: 'mark_bill_paid', bill_id: match.id, title_hint: match.title }],
+      }
+    }
+  }
+
+  const billCreate =
+    /\b(add|create|new)\b.{0,12}\bbill\b/i.test(lower) ||
+    /(добав(ь|ить)|создай).{0,20}(счет|счёт|платеж)/i.test(lower) ||
+    /\bbill\b.{0,20}\b(\d+)/i.test(lower)
+  if (billCreate) {
+    const dayMatch =
+      text.match(/\bon\s+the\s+(\d{1,2})(?:st|nd|rd|th)?\b/i) ||
+      text.match(/\bday\s+(\d{1,2})\b/i) ||
+      text.match(/(\d{1,2})\s*(числа|числ)/i)
+    let dayOfMonth = dayMatch ? Number(dayMatch[1]) : new Date().getDate()
+    if (dayOfMonth < 1 || dayOfMonth > 28) dayOfMonth = Math.min(28, Math.max(1, dayOfMonth))
+
+    const amountMatch = text.match(/\b(\d+[.,]?\d*)\b/)
+    const amount = amountMatch ? Number(amountMatch[1].replace(',', '.')) : 0
+    const title =
+      text
+        .replace(/\b(add|create|new|bill|счет|счёт|платеж|добавь|добавить|создай)\b/gi, ' ')
+        .replace(/\bon\s+the\s+\d{1,2}(?:st|nd|rd|th)?\b/gi, ' ')
+        .replace(/\bday\s+\d{1,2}\b/gi, ' ')
+        .replace(/\d{1,2}\s*(числа|числ)/gi, ' ')
+        .replace(/\b(\d+[.,]?\d*)\b/g, ' ')
+        .replace(/\b(uah|usd|eur|грн|\$|€)\b/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 40) || 'Bill'
+    const currency = /\b(uah|грн)\b/i.test(lower)
+      ? 'UAH'
+      : /\b(usd|\$)\b/i.test(lower)
+        ? 'USD'
+        : /\b(eur|€)\b/i.test(lower)
+          ? 'EUR'
+          : 'UAH'
+    return {
+      reply: /[а-яё]/i.test(text)
+        ? `Счёт «${title}» ${amount || '—'} ${currency} → Bills.`
+        : `Bill “${title}” ${amount || '—'} ${currency} → Bills.`,
+      actions: [
+        {
+          type: 'create_bill',
+          title,
+          amount: amount || 0,
+          currency,
+          dayOfMonth,
+          category: 'General',
+        },
+      ],
     }
   }
 
