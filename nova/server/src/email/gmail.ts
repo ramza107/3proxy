@@ -217,6 +217,57 @@ async function withFreshToken(userId: string): Promise<EmailConnection> {
 /** Shared by Gmail + Calendar routes — refresh access token when needed. */
 export { withFreshToken }
 
+export class GmailQuotaError extends Error {
+  constructor(message = 'Gmail is busy — try again in a minute') {
+    super(message)
+    this.name = 'GmailQuotaError'
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms))
+}
+
+function isQuotaResponse(status: number, text: string) {
+  return (
+    status === 429 ||
+    (status === 403 &&
+      /Quota exceeded|rateLimitExceeded|userRateLimitExceeded|Total Query Cost/i.test(text))
+  )
+}
+
+/** Gmail fetch with short backoff on per-user quota / 429. */
+async function gmailFetch(
+  url: string,
+  accessToken: string,
+  init?: RequestInit,
+): Promise<Response> {
+  let lastText = ''
+  let lastStatus = 0
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init?.headers || {}),
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    if (res.ok) return res
+    lastText = await res.text()
+    lastStatus = res.status
+    if (isQuotaResponse(res.status, lastText) && attempt < 2) {
+      await sleep(2000 * (attempt + 1) * (attempt + 1))
+      continue
+    }
+    if (isQuotaResponse(res.status, lastText)) {
+      throw new GmailQuotaError()
+    }
+    throw new Error(`Gmail request failed (${res.status})`)
+  }
+  if (isQuotaResponse(lastStatus, lastText)) throw new GmailQuotaError()
+  throw new Error(`Gmail request failed (${lastStatus || 500})`)
+}
+
 function headerValue(headers: { name: string; value: string }[] | undefined, name: string) {
   return headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || ''
 }
@@ -244,25 +295,26 @@ export async function listOvernightMessages(
 ): Promise<GmailMessagePreview[]> {
   const conn = await withFreshToken(userId)
   const window = previousLocalDayWindow(opts?.timeZone)
-  const max = opts?.max ?? 40
+  const max = Math.min(25, Math.max(5, opts?.max ?? 18))
   const q = encodeURIComponent(previousDayQuery(window))
-  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, {
-    headers: { Authorization: `Bearer ${conn.accessToken}` },
-  })
-  if (!listRes.ok) {
-    const text = await listRes.text()
-    throw new Error(`Gmail list failed: ${text.slice(0, 200)}`)
-  }
+  const listRes = await gmailFetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, conn.accessToken)
   const list = (await listRes.json()) as { messages?: { id: string }[] }
   const ids = (list.messages || []).map((m) => m.id)
   const previews: GmailMessagePreview[] = []
 
-  for (const id of ids) {
-    const msgRes = await fetch(
-      `${GMAIL_API}/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-      { headers: { Authorization: `Bearer ${conn.accessToken}` } },
-    )
-    if (!msgRes.ok) continue
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i]
+    if (i > 0) await sleep(40)
+    let msgRes: Response
+    try {
+      msgRes = await gmailFetch(
+        `${GMAIL_API}/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+        conn.accessToken,
+      )
+    } catch (e) {
+      if (e instanceof GmailQuotaError) throw e
+      continue
+    }
     const msg = (await msgRes.json()) as {
       id: string
       snippet?: string
@@ -346,25 +398,24 @@ export async function listRecentSentMessages(
 ): Promise<SentMessagePreview[]> {
   const conn = await withFreshToken(userId)
   const days = Math.min(30, Math.max(1, opts?.days ?? 7))
-  const max = opts?.max ?? 25
+  const max = Math.min(20, Math.max(5, opts?.max ?? 12))
   const afterSec = Math.floor((Date.now() - days * 24 * 60 * 60 * 1000) / 1000)
   const q = encodeURIComponent(`in:sent after:${afterSec}`)
-  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, {
-    headers: { Authorization: `Bearer ${conn.accessToken}` },
-  })
-  if (!listRes.ok) {
-    const text = await listRes.text()
-    throw new Error(`Gmail sent list failed: ${text.slice(0, 200)}`)
-  }
+  const listRes = await gmailFetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, conn.accessToken)
   const list = (await listRes.json()) as { messages?: { id: string }[] }
   const ids = (list.messages || []).map((m) => m.id)
   const previews: SentMessagePreview[] = []
 
-  for (const id of ids) {
-    const msgRes = await fetch(`${GMAIL_API}/messages/${id}?format=full`, {
-      headers: { Authorization: `Bearer ${conn.accessToken}` },
-    })
-    if (!msgRes.ok) continue
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i]
+    if (i > 0) await sleep(40)
+    let msgRes: Response
+    try {
+      msgRes = await gmailFetch(`${GMAIL_API}/messages/${id}?format=full`, conn.accessToken)
+    } catch (e) {
+      if (e instanceof GmailQuotaError) throw e
+      continue
+    }
     const msg = (await msgRes.json()) as {
       id: string
       snippet?: string
@@ -406,27 +457,26 @@ export async function listRecentInboxMessages(
 ): Promise<InboxMessagePreview[]> {
   const conn = await withFreshToken(userId)
   const hours = Math.min(168, Math.max(6, opts?.hours ?? 48))
-  const max = opts?.max ?? 30
+  const max = Math.min(20, Math.max(5, opts?.max ?? 12))
   const afterSec = Math.floor((Date.now() - hours * 60 * 60 * 1000) / 1000)
   const q = encodeURIComponent(
     `in:inbox after:${afterSec} -category:promotions -category:social`,
   )
-  const listRes = await fetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, {
-    headers: { Authorization: `Bearer ${conn.accessToken}` },
-  })
-  if (!listRes.ok) {
-    const text = await listRes.text()
-    throw new Error(`Gmail inbox list failed: ${text.slice(0, 200)}`)
-  }
+  const listRes = await gmailFetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, conn.accessToken)
   const list = (await listRes.json()) as { messages?: { id: string }[] }
   const ids = (list.messages || []).map((m) => m.id)
   const previews: InboxMessagePreview[] = []
 
-  for (const id of ids) {
-    const msgRes = await fetch(`${GMAIL_API}/messages/${id}?format=full`, {
-      headers: { Authorization: `Bearer ${conn.accessToken}` },
-    })
-    if (!msgRes.ok) continue
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i]
+    if (i > 0) await sleep(40)
+    let msgRes: Response
+    try {
+      msgRes = await gmailFetch(`${GMAIL_API}/messages/${id}?format=full`, conn.accessToken)
+    } catch (e) {
+      if (e instanceof GmailQuotaError) throw e
+      continue
+    }
     const msg = (await msgRes.json()) as {
       id: string
       snippet?: string

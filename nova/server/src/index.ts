@@ -19,6 +19,13 @@ import {
   sendGmailMessage,
   createGmailDraft,
 } from './email/gmail.js'
+import {
+  enqueueGmailUser,
+  friendlyGmailError,
+  gmailCacheKey,
+  isGmailQuotaError,
+  withGmailCache,
+} from './email/gmailGuard.js'
 import { buildMeetingsDigest, demoMeetings } from './email/meetings.js'
 import { buildPromisesDigest, demoPromises } from './email/promises.js'
 import {
@@ -310,6 +317,7 @@ app.get('/api/email/digest', async (req, res) => {
     const userId = String(req.query.user_id || '')
     const timeZone = String(req.query.timezone || req.query.tz || '')
     const allowDemo = String(req.query.demo || '') === '1'
+    const force = String(req.query.refresh || '') === '1'
     if (!userId) return res.status(400).json({ error: 'user_id required' })
 
     const conn = await getConnection(userId)
@@ -327,19 +335,29 @@ app.get('/api/email/digest', async (req, res) => {
       })
     }
 
-    const messages = await listOvernightMessages(userId, { timeZone })
-    const provider = resolveProvider()
-    const digest = await buildDigest({
-      messages,
-      email: conn.email,
-      timeZone,
-      provider: provider ? { client: provider.client, model: provider.model } : null,
-    })
+    const cacheKey = gmailCacheKey(userId, 'digest', timeZone || 'local')
+    const digest = await enqueueGmailUser(userId, () =>
+      withGmailCache(
+        cacheKey,
+        async () => {
+          const messages = await listOvernightMessages(userId, { timeZone, max: 18 })
+          const provider = resolveProvider()
+          return buildDigest({
+            messages,
+            email: conn.email,
+            timeZone,
+            provider: provider ? { client: provider.client, model: provider.model } : null,
+          })
+        },
+        { force },
+      ),
+    )
     return res.json(digest)
   } catch (error) {
     console.error('digest', error)
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : 'digest failed',
+    const status = isGmailQuotaError(error) ? 429 : 500
+    return res.status(status).json({
+      error: friendlyGmailError(error, 'Couldn’t load yesterday’s inbox'),
     })
   }
 })
@@ -349,6 +367,7 @@ app.get('/api/email/promises', async (req, res) => {
     const userId = String(req.query.user_id || '')
     const allowDemo = String(req.query.demo || '') === '1'
     const days = Number(req.query.days || 7)
+    const force = String(req.query.refresh || '') === '1'
     if (!userId) return res.status(400).json({ error: 'user_id required' })
 
     const conn = await getConnection(userId)
@@ -366,19 +385,30 @@ app.get('/api/email/promises', async (req, res) => {
       })
     }
 
-    const messages = await listRecentSentMessages(userId, { days, max: 25 })
-    const provider = resolveProvider()
-    const digest = await buildPromisesDigest({
-      messages,
-      email: conn.email,
-      days: Number.isFinite(days) ? days : 7,
-      provider: provider ? { client: provider.client, model: provider.model } : null,
-    })
+    const safeDays = Number.isFinite(days) ? days : 7
+    const cacheKey = gmailCacheKey(userId, 'promises', String(safeDays))
+    const digest = await enqueueGmailUser(userId, () =>
+      withGmailCache(
+        cacheKey,
+        async () => {
+          const messages = await listRecentSentMessages(userId, { days: safeDays, max: 12 })
+          const provider = resolveProvider()
+          return buildPromisesDigest({
+            messages,
+            email: conn.email,
+            days: safeDays,
+            provider: provider ? { client: provider.client, model: provider.model } : null,
+          })
+        },
+        { force },
+      ),
+    )
     return res.json(digest)
   } catch (error) {
     console.error('promises', error)
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : 'promises failed',
+    const status = isGmailQuotaError(error) ? 429 : 500
+    return res.status(status).json({
+      error: friendlyGmailError(error, 'Couldn’t scan sent mail'),
     })
   }
 })
@@ -389,6 +419,7 @@ app.get('/api/email/meetings', async (req, res) => {
     const userId = String(req.query.user_id || '')
     const allowDemo = String(req.query.demo || '') === '1'
     const hours = Number(req.query.hours || 48)
+    const force = String(req.query.refresh || '') === '1'
     if (!userId) return res.status(400).json({ error: 'user_id required' })
 
     const conn = await getConnection(userId)
@@ -407,19 +438,32 @@ app.get('/api/email/meetings', async (req, res) => {
     }
 
     const safeHours = Number.isFinite(hours) ? hours : 48
-    const messages = await listRecentInboxMessages(userId, { hours: safeHours, max: 30 })
-    const provider = resolveProvider()
-    const digest = await buildMeetingsDigest({
-      messages,
-      email: conn.email,
-      hours: safeHours,
-      provider: provider ? { client: provider.client, model: provider.model } : null,
-    })
+    const cacheKey = gmailCacheKey(userId, 'meetings', String(safeHours))
+    const digest = await enqueueGmailUser(userId, () =>
+      withGmailCache(
+        cacheKey,
+        async () => {
+          const messages = await listRecentInboxMessages(userId, {
+            hours: safeHours,
+            max: 12,
+          })
+          const provider = resolveProvider()
+          return buildMeetingsDigest({
+            messages,
+            email: conn.email,
+            hours: safeHours,
+            provider: provider ? { client: provider.client, model: provider.model } : null,
+          })
+        },
+        { force },
+      ),
+    )
     return res.json(digest)
   } catch (error) {
     console.error('meetings', error)
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : 'meetings failed',
+    const status = isGmailQuotaError(error) ? 429 : 500
+    return res.status(status).json({
+      error: friendlyGmailError(error, 'Couldn’t scan inbox asks'),
     })
   }
 })
@@ -673,13 +717,18 @@ async function pollMeetingPushes() {
     const conn = await getConnection(userId)
     if (!conn) continue
     try {
-      const messages = await listRecentInboxMessages(userId, { hours: 48, max: 25 })
-      const digest = await buildMeetingsDigest({
-        messages,
-        email: conn.email,
-        hours: 48,
-        provider: provider ? { client: provider.client, model: provider.model } : null,
-      })
+      const cacheKey = gmailCacheKey(userId, 'meetings', '48')
+      const digest = await enqueueGmailUser(userId, () =>
+        withGmailCache(cacheKey, async () => {
+          const messages = await listRecentInboxMessages(userId, { hours: 48, max: 12 })
+          return buildMeetingsDigest({
+            messages,
+            email: conn.email,
+            hours: 48,
+            provider: provider ? { client: provider.client, model: provider.model } : null,
+          })
+        }),
+      )
       for (const m of digest.meetings) {
         if (wasAlertPushed(userId, m.id)) continue
         const ok = await sendExpoPush({

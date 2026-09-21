@@ -53,7 +53,7 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
 
   const openTasks = useMemo(() => tasks.filter((x) => !x.completed), [tasks])
 
-  const load = async (allowDemo = false) => {
+  const load = async (allowDemo = false, refresh = false) => {
     if (!userId) return
     setLoading(true)
     setError('')
@@ -70,11 +70,10 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
         }
         return
       }
-      const [p, m] = await Promise.all([
-        fetchEmailPromises(userId, { days: 7 }),
-        fetchEmailMeetings(userId, { hours: 48 }),
-      ])
+      // Sequential — parallel promises+meetings + Yesterday digest blew Gmail quota.
+      const p = await fetchEmailPromises(userId, { days: 7, refresh })
       setPromises(p)
+      const m = await fetchEmailMeetings(userId, { hours: 48, refresh })
       setMeetings(m)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not scan mail')
@@ -98,10 +97,14 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
   useEffect(() => {
     if (!userId || !meetingAlertsEnabled) return
     const id = setInterval(() => {
-      if (AppState.currentState === 'active') load(false).catch(() => undefined)
-    }, 5 * 60 * 1000)
+      // Meetings-only soft refresh (server cache absorbs most calls).
+      if (AppState.currentState === 'active') {
+        fetchEmailMeetings(userId, { hours: 48 })
+          .then((m) => setMeetings(m))
+          .catch(() => undefined)
+      }
+    }, 10 * 60 * 1000)
     return () => clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, meetingAlertsEnabled])
 
   useEffect(() => {
@@ -310,7 +313,7 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
       }
       action={
         connected ? (
-          <Pressable onPress={() => load(false)} hitSlop={8}>
+          <Pressable onPress={() => load(false, true)} hitSlop={8}>
             <Text style={styles.refresh}>{loading ? '…' : t('home.scan')}</Text>
           </Pressable>
         ) : null
