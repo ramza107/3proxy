@@ -3,6 +3,8 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
+import { copyText } from '../lib/clipboard'
+import { draftForPromise } from '../lib/draftReply'
 import { useNovaStore } from '../lib/store'
 import type { EmailPromise, PromisesDigest } from '../types'
 import { HomeSection } from './HomeSection'
@@ -134,6 +136,21 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
     Alert.alert('Added to Tasks', p.suggestedTask)
   }
 
+  const onDraft = async (p: EmailPromise) => {
+    try {
+      const draft = draftForPromise(p)
+      const mode = await copyText(draft)
+      Alert.alert(
+        mode === 'copied' ? 'Draft copied' : 'Draft ready',
+        mode === 'copied'
+          ? 'Paste into Gmail when you follow up.'
+          : 'Share sheet opened — send or copy from there.',
+      )
+    } catch (e) {
+      Alert.alert('Draft', e instanceof Error ? e.message : 'Could not copy')
+    }
+  }
+
   return (
     <HomeSection
       title={t('home.promises')}
@@ -203,6 +220,9 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
                     >
                       <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
                     </Pressable>
+                    <Pressable style={styles.draftBtn} onPress={() => onDraft(p)}>
+                      <Text style={styles.draftBtnText}>{t('home.draftReply')}</Text>
+                    </Pressable>
                     <Pressable onPress={() => dismissPromise(p.id)} hitSlop={8}>
                       <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
                     </Pressable>
@@ -270,6 +290,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   addBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
+  draftBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radii.full,
+  },
+  draftBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   btn: {
     alignSelf: 'flex-start',

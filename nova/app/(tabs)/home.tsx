@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { ar, de, enUS, es, fr, hi, ptBR, ru, uk, zhCN } from 'date-fns/locale'
 import { useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
@@ -13,6 +13,7 @@ import { HomeSection } from '../../components/HomeSection'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { MorningBrief } from '../../components/MorningBrief'
+import { BillsBrief } from '../../components/BillsBrief'
 import { PlanDaySheet } from '../../components/PlanDaySheet'
 import { PromisesBrief } from '../../components/PromisesBrief'
 import { QuickActionsSheet } from '../../components/QuickActionsSheet'
@@ -157,10 +158,10 @@ export default function HomeScreen() {
 
   const openPlanSheet = () => setPlanOpen(true)
 
-  const onArrangeDay = async () => {
+  const onArrangeDay = async (skipTaskIds: string[] = []) => {
     setPlanning(true)
     try {
-      const res = await organizeMyDay({ includeUndated: true })
+      const res = await organizeMyDay({ includeUndated: true, skipTaskIds })
       if (showMorningBrief) dismissMorningBrief()
       setPlanOpen(false)
       Alert.alert('Smart day', res.reply)
@@ -170,6 +171,8 @@ export default function HomeScreen() {
       setPlanning(false)
     }
   }
+
+  const tomorrowISO = () => format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
   return (
     <Screen>
@@ -225,6 +228,8 @@ export default function HomeScreen() {
           />
           <Text style={styles.editHint}>{t('home.editHint')}</Text>
 
+          <BillsBrief />
+
           <Text style={styles.groupLabel}>{t('home.fromGoogle')}</Text>
           <CalendarBrief
             userId={userId}
@@ -272,6 +277,18 @@ export default function HomeScreen() {
         weatherCity={settings.weatherCity}
         planning={planning}
         onArrange={onArrangeDay}
+        onMoveTomorrow={(task) => {
+          updateTaskFields(task, { date: tomorrowISO() })
+        }}
+        onDrop={(task) => {
+          deleteTask(task.id)
+        }}
+        onSetTime={(task, time) => {
+          updateTaskFields(task, {
+            time,
+            date: task.date || todayISO(),
+          })
+        }}
       />
 
       <QuickActionsSheet

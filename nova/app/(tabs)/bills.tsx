@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { useMemo, useState, type ReactNode } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BillEditor } from '../../components/BillEditor'
 import { Screen } from '../../components/Screen'
@@ -143,7 +143,12 @@ export default function BillsScreen() {
                     setEditing(bill)
                   }}
                   onPaid={() =>
-                    upsertBill({ ...bill, lastPaidMonth: null, updated_at: new Date().toISOString() })
+                    upsertBill({
+                      ...bill,
+                      lastPaidMonth: null,
+                      paidHistory: (bill.paidHistory || []).filter((m) => m !== month),
+                      updated_at: new Date().toISOString(),
+                    })
                   }
                 />
               ))}
@@ -238,6 +243,10 @@ function BillRow({
   onPaid?: () => void
 }) {
   const due = nextDueDate(bill)
+  const pay = bill.payHowTo?.trim()
+  const isUrl = pay ? /^https?:\/\//i.test(pay) : false
+  const histCount = bill.paidHistory?.length || 0
+
   return (
     <View style={[styles.row, paid && styles.rowPaid]}>
       <Pressable style={styles.rowMain} onPress={onPress}>
@@ -246,7 +255,21 @@ function BillRow({
           <Text style={styles.rowTitle}>{bill.title}</Text>
           <Text style={styles.rowMeta}>
             {bill.category} · day {bill.dayOfMonth} · next {format(due, 'MMM d')}
+            {histCount ? ` · ${histCount} paid` : ''}
           </Text>
+          {pay ? (
+            <Pressable
+              onPress={() => {
+                if (isUrl) Linking.openURL(pay).catch(() => undefined)
+                else onPress()
+              }}
+              hitSlop={4}
+            >
+              <Text style={styles.payHow} numberOfLines={1}>
+                {isUrl ? 'Pay link ›' : `Pay · ${pay}`}
+              </Text>
+            </Pressable>
+          ) : null}
           {bill.notes ? (
             <Text style={styles.rowNotes} numberOfLines={1}>
               {bill.notes}
@@ -347,6 +370,12 @@ const styles = StyleSheet.create({
   nodePaid: { backgroundColor: colors.signalMuted },
   rowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 16 },
   rowMeta: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
+  payHow: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    marginTop: 3,
+  },
   rowNotes: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
   rowAmount: {
     color: colors.text,

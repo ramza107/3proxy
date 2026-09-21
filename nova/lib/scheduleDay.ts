@@ -98,6 +98,8 @@ export function planDayActions(params: {
   settings: Pick<UserSettings, 'workdayStart' | 'workdayEnd' | 'typicalWeek'>
   /** Also pull undated open tasks into today */
   includeUndated?: boolean
+  /** Skip these task ids (Plan day “protect”) */
+  skipTaskIds?: string[]
 }): { actions: Extract<AIAction, { type: 'update_task' }>[]; summary: string; placed: number } {
   const window = resolveDayWindow(params.settings, params.day)
   const start = parseHmToMinutes(window.start) ?? 9 * 60
@@ -110,7 +112,8 @@ export function planDayActions(params: {
     }
   }
 
-  const open = params.tasks.filter((t) => !t.completed)
+  const skip = new Set(params.skipTaskIds || [])
+  const open = params.tasks.filter((t) => !t.completed && !skip.has(t.id))
   const dayTasks = open.filter((t) => t.date === params.day)
   const undated = params.includeUndated ? open.filter((t) => !t.date) : []
 

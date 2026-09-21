@@ -11,18 +11,29 @@ import {
 } from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { parseHm } from '../lib/notifications'
-import type { Priority, Task } from '../types'
+import type { Dow, Priority, Task, TaskRecurrence } from '../types'
 
 type Props = {
   task: Task | null
   visible: boolean
   onClose: () => void
-  onSave: (patch: Partial<Pick<Task, 'title' | 'date' | 'time' | 'priority'>>) => void
+  onSave: (
+    patch: Partial<Pick<Task, 'title' | 'date' | 'time' | 'priority' | 'recurrence'>>,
+  ) => void
   onComplete: () => void
   onDelete: () => void
 }
 
 const PRIORITIES: Priority[] = ['high', 'medium', 'low']
+const DOW_SHORT: { key: Dow; label: string }[] = [
+  { key: 1, label: 'Mon' },
+  { key: 2, label: 'Tue' },
+  { key: 3, label: 'Wed' },
+  { key: 4, label: 'Thu' },
+  { key: 5, label: 'Fri' },
+  { key: 6, label: 'Sat' },
+  { key: 0, label: 'Sun' },
+]
 
 function today() {
   return format(new Date(), 'yyyy-MM-dd')
@@ -41,6 +52,8 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [priority, setPriority] = useState<Priority>('medium')
+  const [recFreq, setRecFreq] = useState<'none' | 'daily' | 'weekly'>('none')
+  const [recDays, setRecDays] = useState<Dow[]>([1, 2, 3, 4, 5])
   const [error, setError] = useState('')
   // Web: the same click that opens the modal can hit the backdrop and close it instantly.
   const [canDismiss, setCanDismiss] = useState(false)
@@ -51,6 +64,15 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
     setDate(task.date || '')
     setTime(task.time || '')
     setPriority(task.priority)
+    if (task.recurrence?.freq === 'daily') {
+      setRecFreq('daily')
+      setRecDays(task.recurrence.days || [1, 2, 3, 4, 5])
+    } else if (task.recurrence?.freq === 'weekly') {
+      setRecFreq('weekly')
+      setRecDays(task.recurrence.days?.length ? task.recurrence.days : [1])
+    } else {
+      setRecFreq('none')
+    }
     setError('')
   }, [task])
 
@@ -85,11 +107,17 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
       setError('Date must be YYYY-MM-DD')
       return
     }
+    let recurrence: TaskRecurrence | null = null
+    if (recFreq === 'daily') recurrence = { freq: 'daily' }
+    if (recFreq === 'weekly') {
+      recurrence = { freq: 'weekly', days: recDays.length ? recDays : [1] }
+    }
     onSave({
       title: nextTitle,
       date: date || null,
       time: time || null,
       priority,
+      recurrence,
     })
     onClose()
   }
@@ -176,6 +204,48 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
                 </Pressable>
               ))}
             </View>
+
+            <Text style={styles.label}>Repeat</Text>
+            <View style={styles.row}>
+              {(
+                [
+                  ['none', 'Once'],
+                  ['daily', 'Daily'],
+                  ['weekly', 'Weekly'],
+                ] as const
+              ).map(([id, label]) => (
+                <Pressable
+                  key={id}
+                  style={[styles.chip, recFreq === id && styles.chipOn]}
+                  onPress={() => setRecFreq(id)}
+                >
+                  <Text style={[styles.chipText, recFreq === id && styles.chipTextOn]}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {recFreq === 'weekly' ? (
+              <View style={styles.row}>
+                {DOW_SHORT.map(({ key, label }) => {
+                  const on = recDays.includes(key)
+                  return (
+                    <Pressable
+                      key={key}
+                      style={[styles.chip, on && styles.chipOn]}
+                      onPress={() =>
+                        setRecDays((prev) =>
+                          on ? prev.filter((d) => d !== key) : [...prev, key].sort(),
+                        )
+                      }
+                    >
+                      <Text style={[styles.chipText, on && styles.chipTextOn]}>{label}</Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
+            ) : null}
+            {recFreq !== 'none' ? (
+              <Text style={styles.hint}>Completing spawns the next occurrence automatically.</Text>
+            ) : null}
 
             <Text style={styles.label}>Quick move</Text>
             <View style={styles.row}>
@@ -345,4 +415,11 @@ const styles = StyleSheet.create({
   cancel: { alignItems: 'center', paddingVertical: 14 },
   cancelText: { color: colors.textMuted, fontFamily: fonts.bodyMedium },
   error: { color: colors.danger, fontFamily: fonts.body, marginTop: 8 },
+  hint: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: 4,
+    marginBottom: 2,
+  },
 })

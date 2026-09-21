@@ -188,7 +188,11 @@ export async function refreshTasks(userId: string) {
   }
 }
 
-export async function organizeMyDay(opts?: { includeUndated?: boolean }): Promise<AIChatResponse> {
+export async function organizeMyDay(opts?: {
+  includeUndated?: boolean
+  /** Task ids to leave alone (protected in Plan day triage) */
+  skipTaskIds?: string[]
+}): Promise<AIChatResponse> {
   const store = useNovaStore.getState()
   const userId = store.sessionUserId
   if (!userId) throw new Error('Not signed in')
@@ -198,6 +202,7 @@ export async function organizeMyDay(opts?: { includeUndated?: boolean }): Promis
     day: todayISO(),
     settings: store.settings,
     includeUndated: opts?.includeUndated !== false,
+    skipTaskIds: opts?.skipTaskIds,
   })
 
   if (planned.actions.length) {
@@ -258,9 +263,10 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
 export async function toggleTaskCompleted(task: Task) {
   const store = useNovaStore.getState()
+  const completing = !task.completed
   const next = {
     ...task,
-    completed: !task.completed,
+    completed: completing,
     updated_at: new Date().toISOString(),
   }
   if (isSupabaseConfigured && !store.demoMode) {
@@ -268,11 +274,26 @@ export async function toggleTaskCompleted(task: Task) {
     await supabase?.from('tasks').update({ completed: next.completed }).eq('id', task.id)
   }
   store.upsertTask(next)
+
+  // Spawn next occurrence when completing a recurring task
+  if (completing && task.recurrence) {
+    const base = task.date || todayISO()
+    const { nextOccurrenceDate } = await import('../lib/recurrence')
+    const nextDate = nextOccurrenceDate(base, task.recurrence)
+    store.createTaskLocal({
+      title: task.title,
+      date: nextDate,
+      time: task.time,
+      priority: task.priority,
+      userId: task.user_id,
+      recurrence: task.recurrence,
+    })
+  }
 }
 
 export async function updateTaskFields(
   task: Task,
-  patch: Partial<Pick<Task, 'title' | 'date' | 'time' | 'priority'>>,
+  patch: Partial<Pick<Task, 'title' | 'date' | 'time' | 'priority' | 'recurrence'>>,
 ) {
   const store = useNovaStore.getState()
   const next = { ...task, ...patch, updated_at: new Date().toISOString() }

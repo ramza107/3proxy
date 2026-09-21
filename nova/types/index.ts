@@ -1,5 +1,12 @@
 export type Priority = 'low' | 'medium' | 'high'
 
+/** How a task repeats after completion */
+export type TaskRecurrence = {
+  freq: 'daily' | 'weekly'
+  /** For weekly — JS getDay() 0=Sun … 6=Sat */
+  days?: Dow[]
+}
+
 export type Task = {
   id: string
   user_id: string
@@ -9,6 +16,8 @@ export type Task = {
   time: string | null
   priority: Priority
   completed: boolean
+  /** When set, completing spawns the next occurrence */
+  recurrence?: TaskRecurrence | null
   created_at: string
   updated_at: string
 }
@@ -34,9 +43,13 @@ export type Bill = {
   dayOfMonth: number
   category: string
   notes: string | null
+  /** How / where to pay — link or short note */
+  payHowTo?: string | null
   active: boolean
   /** YYYY-MM — last month marked paid */
   lastPaidMonth: string | null
+  /** Recent months marked paid (YYYY-MM), newest last */
+  paidHistory?: string[]
   /** Per-bill reminder override; undefined = follow Settings */
   remindEnabled?: boolean
   created_at: string
@@ -215,6 +228,8 @@ export type EmailPromise = {
   promise: string
   suggestedTask: string
   suggestedDate: string | null
+  /** Short draft the user can copy (no send) */
+  suggestedReply?: string | null
   sentAt: string
 }
 
@@ -241,6 +256,8 @@ export type MeetingAlert = {
   notifyBody: string
   suggestedDate: string | null
   suggestedTime: string | null
+  /** Short draft the user can copy (no send) */
+  suggestedReply?: string | null
   receivedAt: string
 }
 
