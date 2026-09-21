@@ -26,6 +26,7 @@ type Props = {
     category: string
     notes: string | null
     active: boolean
+    remindEnabled: boolean
   }) => void
   onDelete?: () => void
 }
@@ -38,6 +39,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
   const [category, setCategory] = useState('General')
   const [notes, setNotes] = useState('')
   const [active, setActive] = useState(true)
+  const [remindEnabled, setRemindEnabled] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
     setCategory(bill?.category || 'General')
     setNotes(bill?.notes || '')
     setActive(bill?.active !== false)
+    setRemindEnabled(bill?.remindEnabled !== false)
     setError('')
   }, [bill, visible])
 
@@ -76,6 +79,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
       category: category.trim() || 'General',
       notes: notes.trim() || null,
       active,
+      remindEnabled,
     })
     onClose()
   }
@@ -169,6 +173,14 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         <Text style={styles.toggleValue}>{active ? 'On' : 'Paused'}</Text>
       </Pressable>
 
+      <Pressable style={styles.toggleRow} onPress={() => setRemindEnabled((v) => !v)}>
+        <View style={{ flex: 1, paddingRight: 12 }}>
+          <Text style={styles.toggleLabel}>Reminders</Text>
+          <Text style={styles.toggleHint}>Uses the cadence from Settings</Text>
+        </View>
+        <Text style={styles.toggleValue}>{remindEnabled ? 'On' : 'Off'}</Text>
+      </Pressable>
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.save} onPress={save}>
@@ -238,6 +250,12 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   toggleLabel: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  toggleHint: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: 2,
+  },
   toggleValue: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 14 },
   error: { color: colors.danger, fontFamily: fonts.body, marginTop: 8 },
   save: {

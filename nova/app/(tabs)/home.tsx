@@ -13,6 +13,7 @@ import { HomeSection } from '../../components/HomeSection'
 import { InboxBrief } from '../../components/InboxBrief'
 import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { MorningBrief } from '../../components/MorningBrief'
+import { PlanDaySheet } from '../../components/PlanDaySheet'
 import { PromisesBrief } from '../../components/PromisesBrief'
 import { QuickActionsSheet } from '../../components/QuickActionsSheet'
 import { Screen } from '../../components/Screen'
@@ -110,6 +111,7 @@ export default function HomeScreen() {
   )
   const [loading, setLoading] = useState(false)
   const [planning, setPlanning] = useState(false)
+  const [planOpen, setPlanOpen] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
@@ -153,11 +155,14 @@ export default function HomeScreen() {
     }
   }
 
-  const onPlanDay = async () => {
+  const openPlanSheet = () => setPlanOpen(true)
+
+  const onArrangeDay = async () => {
     setPlanning(true)
     try {
       const res = await organizeMyDay({ includeUndated: true })
       if (showMorningBrief) dismissMorningBrief()
+      setPlanOpen(false)
       Alert.alert('Smart day', res.reply)
     } catch (e) {
       Alert.alert(brand.name, e instanceof Error ? e.message : 'Could not plan the day')
@@ -215,7 +220,7 @@ export default function HomeScreen() {
             workdayStart={dayWindow.start}
             workdayEnd={dayWindow.end}
             dayKind={dayWindow.kind}
-            onPlanDay={onPlanDay}
+            onPlanDay={openPlanSheet}
             planning={planning}
           />
           <Text style={styles.editHint}>{t('home.editHint')}</Text>
@@ -255,17 +260,26 @@ export default function HomeScreen() {
           workdayEnd={dayWindow.end}
           weatherCity={settings.weatherCity}
           planning={planning}
-          onPlanDay={onPlanDay}
+          onPlanDay={openPlanSheet}
           onDismiss={dismissMorningBrief}
         />
       </BottomSheet>
+
+      <PlanDaySheet
+        visible={planOpen}
+        onClose={() => setPlanOpen(false)}
+        tasks={todayTasks}
+        weatherCity={settings.weatherCity}
+        planning={planning}
+        onArrange={onArrangeDay}
+      />
 
       <QuickActionsSheet
         visible={quickOpen}
         onClose={() => setQuickOpen(false)}
         planning={planning}
         showEvening={showEveningClear}
-        onPlanDay={onPlanDay}
+        onPlanDay={openPlanSheet}
         onOpenChat={() => router.push('/chat')}
         onOpenTasks={() => router.push('/tasks')}
         onOpenBills={() => router.push('/bills')}

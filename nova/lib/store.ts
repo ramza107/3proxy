@@ -73,6 +73,8 @@ type NovaState = {
     dayOfMonth: number
     category?: string
     notes?: string | null
+    active?: boolean
+    remindEnabled?: boolean
   }) => Bill
 }
 
@@ -92,6 +94,10 @@ const defaultSettings: UserSettings = {
   emailDigestEnabled: true,
   emailPromisesAutoEnabled: false,
   meetingEmailAlertsEnabled: true,
+  billRemindersEnabled: true,
+  billRemindLeadDays: 3,
+  billRemindCadence: 'daily',
+  billRemindTime: '09:00',
   workdayStart: '09:00',
   workdayEnd: '18:00',
   typicalWeek: defaultTypicalWeek(),
@@ -223,6 +229,8 @@ export const useNovaStore = create<NovaState>()(
         dayOfMonth,
         category = 'General',
         notes = null,
+        active = true,
+        remindEnabled = true,
       }) => {
         const now = new Date().toISOString()
         const day = Math.min(28, Math.max(1, Math.round(dayOfMonth) || 1))
@@ -234,7 +242,8 @@ export const useNovaStore = create<NovaState>()(
           dayOfMonth: day,
           category: category.trim() || 'General',
           notes: notes?.trim() || null,
-          active: true,
+          active: active !== false,
+          remindEnabled: remindEnabled !== false,
           lastPaidMonth: null,
           created_at: now,
           updated_at: now,
