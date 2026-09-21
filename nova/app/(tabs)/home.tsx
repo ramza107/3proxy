@@ -11,12 +11,12 @@ import { CalendarBrief } from '../../components/CalendarBrief'
 import { DailyPlan } from '../../components/DailyPlan'
 import { HomeSection } from '../../components/HomeSection'
 import { InboxBrief } from '../../components/InboxBrief'
-import { MeetingAlerts } from '../../components/MeetingAlerts'
 import { MorningBrief } from '../../components/MorningBrief'
 import { BillsBrief } from '../../components/BillsBrief'
+import { OpenLoopsBrief } from '../../components/OpenLoopsBrief'
 import { PlanDaySheet } from '../../components/PlanDaySheet'
-import { PromisesBrief } from '../../components/PromisesBrief'
 import { QuickActionsSheet } from '../../components/QuickActionsSheet'
+import { WeeklyBrief } from '../../components/WeeklyBrief'
 import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { TaskEditor } from '../../components/TaskEditor'
@@ -26,6 +26,7 @@ import type { AppLanguage } from '../../lib/i18n'
 import { parseHm } from '../../lib/notifications'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
+import { isMonday } from '../../lib/weekRange'
 import { useT } from '../../lib/useT'
 import {
   deleteTask,
@@ -102,6 +103,8 @@ export default function HomeScreen() {
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const forceMorningBrief = useNovaStore((s) => s.forceMorningBrief)
   const setForceMorningBrief = useNovaStore((s) => s.setForceMorningBrief)
+  const forceWeeklyBrief = useNovaStore((s) => s.forceWeeklyBrief)
+  const setForceWeeklyBrief = useNovaStore((s) => s.setForceWeeklyBrief)
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const emailPromisesAutoEnabled = useNovaStore(
@@ -113,6 +116,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false)
   const [planning, setPlanning] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
+  const [weekOpen, setWeekOpen] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
@@ -135,6 +139,14 @@ export default function HomeScreen() {
     forceMorningBrief,
   )
 
+  const showWeeklyBrief =
+    !showMorningBrief &&
+    (forceWeeklyBrief ||
+      (settings.weeklyBriefEnabled !== false &&
+        isMonday(day) &&
+        settings.lastWeeklyBriefDate !== day &&
+        shouldOfferMorningBrief(true, settings.morningBriefTime || '08:00', null, false)))
+
   const showEveningClear =
     settings.eveningClearEnabled !== false &&
     shouldOfferEveningClear(settings.eveningClearTime || '21:30', settings.lastEveningClearDate)
@@ -143,6 +155,16 @@ export default function HomeScreen() {
     setForceMorningBrief(false)
     updateSettings({ lastMorningBriefDate: todayISO() })
   }
+
+  const dismissWeeklyBrief = () => {
+    setForceWeeklyBrief(false)
+    setWeekOpen(false)
+    updateSettings({ lastWeeklyBriefDate: todayISO() })
+  }
+
+  useEffect(() => {
+    if (showWeeklyBrief || forceWeeklyBrief) setWeekOpen(true)
+  }, [showWeeklyBrief, forceWeeklyBrief])
 
   const onSend = async (text: string) => {
     setLoading(true)
@@ -236,8 +258,11 @@ export default function HomeScreen() {
             onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
           />
           <InboxBrief userId={userId} enabled={emailDigestEnabled} />
-          <MeetingAlerts userId={userId} alertsEnabled={meetingEmailAlertsEnabled} />
-          <PromisesBrief userId={userId} autoCreate={emailPromisesAutoEnabled} />
+          <OpenLoopsBrief
+            userId={userId}
+            autoPromises={emailPromisesAutoEnabled}
+            meetingAlertsEnabled={meetingEmailAlertsEnabled}
+          />
 
           <HomeSection title={t('home.askWahrly')} emphasize>
             <Text style={styles.prompt}>{t('home.askPrompt')}</Text>
@@ -267,6 +292,24 @@ export default function HomeScreen() {
           planning={planning}
           onPlanDay={openPlanSheet}
           onDismiss={dismissMorningBrief}
+        />
+      </BottomSheet>
+
+      <BottomSheet visible={weekOpen} onClose={dismissWeeklyBrief} title="Weekly brief">
+        <WeeklyBrief
+          onClose={dismissWeeklyBrief}
+          onPlanDay={() => {
+            dismissWeeklyBrief()
+            openPlanSheet()
+          }}
+          onOpenTasks={() => {
+            dismissWeeklyBrief()
+            router.push('/tasks')
+          }}
+          onOpenBills={() => {
+            dismissWeeklyBrief()
+            router.push('/bills')
+          }}
         />
       </BottomSheet>
 
@@ -305,6 +348,10 @@ export default function HomeScreen() {
         onOpenMorning={() => {
           updateSettings({ lastMorningBriefDate: null })
           setForceMorningBrief(true)
+        }}
+        onOpenWeekly={() => {
+          updateSettings({ lastWeeklyBriefDate: null })
+          setForceWeeklyBrief(true)
         }}
       />
 

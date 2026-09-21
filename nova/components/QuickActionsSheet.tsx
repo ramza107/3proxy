@@ -15,6 +15,7 @@ type Props = {
   onOpenSettings: () => void
   onOpenEvening?: () => void
   onOpenMorning?: () => void
+  onOpenWeekly?: () => void
 }
 
 /** Floating “more” menu — rituals and destinations without another tab. */
@@ -30,6 +31,7 @@ export function QuickActionsSheet({
   onOpenSettings,
   onOpenEvening,
   onOpenMorning,
+  onOpenWeekly,
 }: Props) {
   const t = useT()
   const run = (fn: () => void) => {
@@ -68,6 +70,13 @@ export function QuickActionsSheet({
             label={t('quick.morning')}
             sub={t('quick.morningSub')}
             onPress={() => run(onOpenMorning)}
+          />
+        ) : null}
+        {onOpenWeekly ? (
+          <Action
+            label={t('quick.weekly')}
+            sub={t('quick.weeklySub')}
+            onPress={() => run(onOpenWeekly)}
           />
         ) : null}
         {showEvening && onOpenEvening ? (

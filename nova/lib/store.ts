@@ -41,11 +41,13 @@ type NovaState = {
   notifiedMeetingIds: string[]
   /** Settings → Show Morning brief now (ignores time-of-day gate) */
   forceMorningBrief: boolean
+  forceWeeklyBrief: boolean
   setHydrated: (v: boolean) => void
   setDemoSession: (email: string, name?: string) => void
   clearSession: () => void
   updateSettings: (patch: Partial<UserSettings>) => void
   setForceMorningBrief: (v: boolean) => void
+  setForceWeeklyBrief: (v: boolean) => void
   setTasks: (tasks: Task[]) => void
   upsertTask: (task: Task) => void
   removeTask: (id: string) => void
@@ -66,6 +68,8 @@ type NovaState = {
     priority?: Priority
     userId: string
     recurrence?: TaskRecurrence | null
+    sourceKind?: 'promise' | 'meeting' | null
+    sourceId?: string | null
   }) => Task
   createBillLocal: (input: {
     title: string
@@ -93,6 +97,8 @@ const defaultSettings: UserSettings = {
   eveningClearTime: '21:30',
   eveningClearEnabled: true,
   lastEveningClearDate: null,
+  weeklyBriefEnabled: true,
+  lastWeeklyBriefDate: null,
   emailDigestEnabled: true,
   emailPromisesAutoEnabled: false,
   meetingEmailAlertsEnabled: true,
@@ -120,6 +126,7 @@ export const useNovaStore = create<NovaState>()(
       dismissedPromiseIds: [],
       notifiedMeetingIds: [],
       forceMorningBrief: false,
+      forceWeeklyBrief: false,
       setHydrated: (v) => set({ hydrated: v }),
       setDemoSession: (email, name) =>
         set({
@@ -142,10 +149,12 @@ export const useNovaStore = create<NovaState>()(
           dismissedPromiseIds: [],
           notifiedMeetingIds: [],
           forceMorningBrief: false,
+          forceWeeklyBrief: false,
           settings: defaultSettings,
         }),
       updateSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
       setForceMorningBrief: (v) => set({ forceMorningBrief: v }),
+      setForceWeeklyBrief: (v) => set({ forceWeeklyBrief: v }),
       setTasks: (tasks) => set({ tasks }),
       upsertTask: (task) => {
         const existing = get().tasks
@@ -222,6 +231,8 @@ export const useNovaStore = create<NovaState>()(
         priority = 'medium',
         userId,
         recurrence = null,
+        sourceKind = null,
+        sourceId = null,
       }) => {
         const now = new Date().toISOString()
         const task: Task = {
@@ -234,6 +245,8 @@ export const useNovaStore = create<NovaState>()(
           priority,
           completed: false,
           recurrence: recurrence || null,
+          sourceKind: sourceKind || null,
+          sourceId: sourceId || null,
           created_at: now,
           updated_at: now,
         }

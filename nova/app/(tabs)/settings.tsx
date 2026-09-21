@@ -53,6 +53,7 @@ export default function SettingsScreen() {
   const userId = useNovaStore((s) => s.sessionUserId)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const setForceMorningBrief = useNovaStore((s) => s.setForceMorningBrief)
+  const setForceWeeklyBrief = useNovaStore((s) => s.setForceWeeklyBrief)
   const clearSession = useNovaStore((s) => s.clearSession)
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
@@ -539,6 +540,32 @@ export default function SettingsScreen() {
             </View>
             <Pressable style={styles.openRitual} onPress={() => router.push('/evening')}>
               <Text style={styles.openRitualText}>Open Evening Clear</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>Weekly brief</Text>
+                <Text style={styles.rowSub}>
+                  Monday morning overview: open tasks, bills due this week, and three focuses.
+                </Text>
+              </View>
+              <Switch
+                value={settings.weeklyBriefEnabled !== false}
+                onValueChange={(v) => updateSettings({ weeklyBriefEnabled: v })}
+                trackColor={{ true: colors.accent, false: colors.bgSoft }}
+              />
+            </View>
+            <Pressable
+              style={styles.openRitual}
+              onPress={() => {
+                updateSettings({ lastWeeklyBriefDate: null })
+                setForceWeeklyBrief(true)
+                router.push('/home')
+              }}
+            >
+              <Text style={styles.openRitualText}>Show Weekly brief now</Text>
             </Pressable>
           </View>
 
