@@ -36,6 +36,13 @@ export function AIInput({
   const [recording, setRecording] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
   const busy = useRef(false)
+  const abortRef = useRef<AbortController | null>(null)
+
+  const resetVoiceUi = () => {
+    setRecording(false)
+    setTranscribing(false)
+    busy.current = false
+  }
 
   const submit = async (value?: string) => {
     const next = (value ?? text).trim()
@@ -44,36 +51,65 @@ export function AIInput({
     await onSend(next)
   }
 
+  const cancelActiveVoice = async () => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    await cancelVoiceRecording().catch(() => undefined)
+    resetVoiceUi()
+  }
+
   const onMic = async () => {
-    if (loading || transcribing || busy.current) return
+    if (loading) return
+
+    // Tap again while stuck on "Transcribing…" cancels instead of no-op.
+    if (transcribing) {
+      await cancelActiveVoice()
+      return
+    }
+
+    if (busy.current) return
 
     if (recording) {
       busy.current = true
       setRecording(false)
       setTranscribing(true)
+      const abort = new AbortController()
+      abortRef.current = abort
       try {
         const file = await stopVoiceRecording()
+        if (abort.signal.aborted) return
+
         const lang =
           typeof Intl !== 'undefined' &&
           Intl.DateTimeFormat().resolvedOptions().locale?.toLowerCase().startsWith('ru')
             ? 'ru'
             : undefined
-        const { text: heard } = await transcribeVoice(file, { language: lang })
+        const { text: heard } = await transcribeVoice(file, {
+          language: lang,
+          signal: abort.signal,
+        })
+        if (abort.signal.aborted) return
+
         if (!heard.trim()) {
           Alert.alert('Voice', 'Could not hear anything — try again.')
           return
         }
+
+        // Clear voice UI before chat send — onSend can be slow and must not
+        // leave the mic button disabled forever on "Transcribing…".
         setText(heard)
-        await submit(heard)
+        resetVoiceUi()
+        abortRef.current = null
+        await onSend(heard.trim())
       } catch (e) {
+        if (abort.signal.aborted) return
         await cancelVoiceRecording().catch(() => undefined)
-        Alert.alert(
-          'Voice',
-          e instanceof Error ? e.message : 'Transcription failed. Check the AI server / API key.',
-        )
+        const message =
+          e instanceof Error ? e.message : 'Transcription failed. Check the AI server / API key.'
+        Alert.alert('Voice', message)
       } finally {
-        setTranscribing(false)
-        busy.current = false
+        if (abortRef.current === abort) abortRef.current = null
+        resetVoiceUi()
       }
       return
     }
@@ -93,6 +129,7 @@ export function AIInput({
       await startVoiceRecording()
       setRecording(true)
     } catch (e) {
+      await cancelVoiceRecording().catch(() => undefined)
       Alert.alert('Microphone', e instanceof Error ? e.message : 'Could not start recording')
     } finally {
       busy.current = false
@@ -100,7 +137,7 @@ export function AIInput({
   }
 
   const status = transcribing
-    ? 'Transcribing with AI…'
+    ? 'Transcribing… tap Cancel to stop'
     : recording
       ? 'Listening… tap mic to stop'
       : null
@@ -114,29 +151,36 @@ export function AIInput({
         placeholderTextColor={colors.textDim}
         style={styles.input}
         multiline
-        editable={!loading && !transcribing}
+        editable={!loading && !transcribing && !recording}
         onSubmitEditing={() => submit()}
       />
       {status ? <Text style={styles.status}>{status}</Text> : null}
       <View style={styles.actions}>
         <Pressable
           onPress={onMic}
-          style={[styles.mic, recording && styles.micHot]}
+          style={[styles.mic, recording && styles.micHot, transcribing && styles.micCancel]}
           hitSlop={8}
-          disabled={loading || transcribing}
+          disabled={loading}
           accessibilityRole="button"
-          accessibilityLabel={recording ? 'Stop recording' : 'Start voice input'}
+          accessibilityLabel={
+            transcribing ? 'Cancel transcription' : recording ? 'Stop recording' : 'Start voice input'
+          }
         >
           {transcribing ? (
-            <ActivityIndicator color={colors.accentStrong} />
+            <Text style={styles.micText}>✕</Text>
+          ) : recording ? (
+            <Text style={styles.micText}>Stop</Text>
           ) : (
-            <Text style={styles.micText}>{recording ? 'Stop' : 'Mic'}</Text>
+            <Text style={styles.micText}>Mic</Text>
           )}
         </Pressable>
         <Pressable
           onPress={() => submit()}
-          disabled={loading || transcribing || !text.trim()}
-          style={[styles.send, (!text.trim() || loading || transcribing) && styles.sendDisabled]}
+          disabled={loading || transcribing || recording || !text.trim()}
+          style={[
+            styles.send,
+            (!text.trim() || loading || transcribing || recording) && styles.sendDisabled,
+          ]}
         >
           {loading ? (
             <ActivityIndicator color={colors.textOnAccent} />
@@ -184,6 +228,11 @@ const styles = StyleSheet.create({
   },
   micHot: {
     backgroundColor: colors.danger,
+  },
+  micCancel: {
+    backgroundColor: colors.bgSoft,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.danger,
   },
   micText: { fontSize: 16, color: colors.text, fontFamily: fonts.bodyBold },
   send: {
