@@ -106,9 +106,9 @@ export function MorningBrief({
           onPress={onPlanDay}
           disabled={!!planning}
         >
-          <Text style={styles.planText}>{planning ? 'Planning…' : 'Plan day'}</Text>
+          <Text style={styles.planText}>{planning ? 'Arranging…' : 'Plan day'}</Text>
         </SoftPressable>
-        <Text style={styles.hint}>Packs untimed tasks into free gaps for today.</Text>
+        <Text style={styles.hint}>Opens weather, a classic line, and today’s list — you choose when to arrange.</Text>
       </View>
     </>
   )

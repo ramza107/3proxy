@@ -37,9 +37,14 @@ export type Bill = {
   active: boolean
   /** YYYY-MM — last month marked paid */
   lastPaidMonth: string | null
+  /** Per-bill reminder override; undefined = follow Settings */
+  remindEnabled?: boolean
   created_at: string
   updated_at: string
 }
+
+/** How bill due reminders repeat after the first ping */
+export type BillRemindCadence = 'once' | 'daily'
 
 export type Profile = {
   id: string
@@ -125,6 +130,17 @@ export type UserSettings = {
    * fire push / local notifications for new ones.
    */
   meetingEmailAlertsEnabled: boolean
+  /**
+   * Bill due reminders (local notifications).
+   * Default: start 3 days before due, then every day until paid.
+   */
+  billRemindersEnabled: boolean
+  /** First ping this many days before due (0 = due day only) */
+  billRemindLeadDays: number
+  /** once = only the lead day; daily = every day from lead through due */
+  billRemindCadence: BillRemindCadence
+  /** HH:MM — when bill reminders fire */
+  billRemindTime: string
   /** HH:MM — smart day packer window start (weekdays) */
   workdayStart: string
   /** HH:MM — smart day packer window end (weekdays) */

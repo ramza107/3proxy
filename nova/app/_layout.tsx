@@ -14,7 +14,11 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { ActivityIndicator, Platform, View } from 'react-native'
 import { colors } from '../constants/theme'
-import { getNotifications } from '../lib/notifications'
+import {
+  getNotifications,
+  syncBillReminders,
+  syncDailyRitualNotifications,
+} from '../lib/notifications'
 import { isSupabaseConfigured, getSupabase } from '../lib/supabase'
 import { useNovaStore } from '../lib/store'
 
@@ -40,6 +44,9 @@ export default function RootLayout() {
   const hydrated = useNovaStore((s) => s.hydrated)
   const sessionUserId = useNovaStore((s) => s.sessionUserId)
   const onboardingComplete = useNovaStore((s) => s.settings.onboardingComplete)
+  const settings = useNovaStore((s) => s.settings)
+  const tasks = useNovaStore((s) => s.tasks)
+  const bills = useNovaStore((s) => s.bills)
   const setDemoSession = useNovaStore((s) => s.setDemoSession)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const clearSession = useNovaStore((s) => s.clearSession)
@@ -103,7 +110,30 @@ export default function RootLayout() {
     }
   }, [hydrated, fontsReady, sessionUserId, onboardingComplete, segments, router])
 
-  // Evening Clear / Morning brief notification → open ritual
+  // Keep ritual + bill local notifications in sync with store
+  useEffect(() => {
+    if (!hydrated || !sessionUserId || !onboardingComplete) return
+    syncDailyRitualNotifications(settings, tasks).catch(() => undefined)
+    syncBillReminders(bills, settings).catch(() => undefined)
+  }, [
+    hydrated,
+    sessionUserId,
+    onboardingComplete,
+    tasks,
+    bills,
+    settings.notificationsEnabled,
+    settings.morningBriefEnabled,
+    settings.morningBriefTime,
+    settings.eveningClearEnabled,
+    settings.eveningClearTime,
+    settings.emailDigestEnabled,
+    settings.billRemindersEnabled,
+    settings.billRemindLeadDays,
+    settings.billRemindCadence,
+    settings.billRemindTime,
+  ])
+
+  // Evening Clear / Morning brief / Bills notification → open ritual or bills
   useEffect(() => {
     if (!hydrated || !fontsReady || !sessionUserId || !onboardingComplete) return
     if (Platform.OS === 'web') return
@@ -115,6 +145,10 @@ export default function RootLayout() {
         if (!data) return
         if (data.kind === 'evening' || data.route === '/evening') {
           router.push('/evening')
+          return
+        }
+        if (data.kind === 'bill') {
+          router.push('/bills')
           return
         }
         if (data.kind === 'morning') {

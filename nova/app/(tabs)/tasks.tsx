@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
+import { HomeSection } from '../../components/HomeSection'
 import { TaskCard } from '../../components/TaskCard'
 import { TaskEditor } from '../../components/TaskEditor'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
@@ -213,13 +214,11 @@ export default function TasksScreen() {
           ) : null}
 
           {overdue.length > 0 && !focusDay ? (
-            <View style={styles.dayBlock}>
-              <View style={styles.dayHead}>
-                <View>
-                  <Text style={[styles.dayTitle, styles.overdueTitle]}>Overdue</Text>
-                  <Text style={styles.dayMeta}>{overdue.length} still open</Text>
-                </View>
-              </View>
+            <HomeSection
+              title="Overdue"
+              meta={`${overdue.length} still open`}
+              emphasize
+            >
               {overdue.map((task) => (
                 <TaskCard
                   key={task.id}
@@ -230,28 +229,22 @@ export default function TasksScreen() {
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
               ))}
-            </View>
+            </HomeSection>
           ) : null}
 
           {visibleDays.map((day) => (
-            <View key={day.iso} style={styles.dayBlock}>
-              <View style={styles.dayHead}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.dayTitle}>
-                    {day.label}
-                    <Text style={styles.dayTitleMuted}> · {day.sub}</Text>
-                  </Text>
-                  <Text style={styles.dayMeta}>
-                    {day.kind === 'light' ? 'Light day' : 'Workday'}
-                    {' · '}
-                    {day.tasks.length} task{day.tasks.length === 1 ? '' : 's'}
-                    {day.anchors.length
-                      ? ` · ${day.anchors.length} anchor${day.anchors.length === 1 ? '' : 's'}`
-                      : ''}
-                  </Text>
-                </View>
-              </View>
-
+            <HomeSection
+              key={day.iso}
+              title={day.label}
+              meta={`${day.sub} · ${day.kind === 'light' ? 'Light' : 'Work'} · ${day.tasks.length} task${
+                day.tasks.length === 1 ? '' : 's'
+              }${
+                day.anchors.length
+                  ? ` · ${day.anchors.length} anchor${day.anchors.length === 1 ? '' : 's'}`
+                  : ''
+              }`}
+              emphasize={day.iso === today}
+            >
               {day.anchors.map((a) => (
                 <View key={`${day.iso}-${a.title}-${a.time}`} style={styles.anchorRow}>
                   <View style={styles.anchorNode} />
@@ -277,21 +270,16 @@ export default function TasksScreen() {
               ))}
 
               {day.tasks.length === 0 && day.anchors.length === 0 ? (
-                <Text style={styles.dayEmpty}>Free day on the signal — add a task anytime.</Text>
+                <Text style={styles.dayEmpty}>Free day — add a task anytime.</Text>
               ) : null}
-            </View>
+            </HomeSection>
           ))}
 
           {undated.length > 0 && !focusDay ? (
-            <View style={styles.dayBlock}>
-              <View style={styles.dayHead}>
-                <View>
-                  <Text style={styles.dayTitle}>Later / undated</Text>
-                  <Text style={styles.dayMeta}>
-                    {undated.length} waiting for a day — Plan day can place them
-                  </Text>
-                </View>
-              </View>
+            <HomeSection
+              title="Later / undated"
+              meta={`${undated.length} waiting — Plan day can place them`}
+            >
               {undated.map((task) => (
                 <TaskCard
                   key={task.id}
@@ -302,7 +290,7 @@ export default function TasksScreen() {
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
               ))}
-            </View>
+            </HomeSection>
           ) : null}
 
           <Pressable style={styles.doneToggle} onPress={() => setShowDone((v) => !v)}>
@@ -444,51 +432,20 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    gap: 4,
+    gap: spacing.md,
     paddingBottom: 48,
-  },
-  dayBlock: {
-    marginBottom: 18,
-    gap: 4,
-  },
-  dayHead: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginBottom: 6,
-    paddingBottom: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  dayTitle: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 18,
-    letterSpacing: -0.2,
-  },
-  dayTitleMuted: {
-    color: colors.textDim,
-    fontFamily: fonts.bodyMedium,
-    fontSize: 15,
-  },
-  overdueTitle: { color: colors.danger },
-  dayMeta: {
-    color: colors.textDim,
-    fontFamily: fonts.body,
-    fontSize: 12,
-    marginTop: 2,
   },
   dayEmpty: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
-    paddingVertical: 8,
-    paddingLeft: 4,
+    paddingVertical: 4,
   },
   anchorRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     opacity: 0.85,
@@ -500,7 +457,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.signalMuted,
     marginTop: 5,
-    marginLeft: 6,
+    marginLeft: 2,
   },
   anchorTitle: {
     color: colors.textMuted,

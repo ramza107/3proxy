@@ -21,7 +21,6 @@ import { disconnectEmail, emailConnectUrl, fetchEmailStatus } from '../../lib/em
 import {
   ensureNotificationPermissions,
   parseHm,
-  syncDailyRitualNotifications,
 } from '../../lib/notifications'
 import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
@@ -35,6 +34,8 @@ const NATIVE_OAUTH_RETURN = 'wahrly://settings'
 
 const MORNING_PRESETS = ['06:30', '07:00', '07:30', '08:00', '08:30', '09:00']
 const EVENING_PRESETS = ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30']
+const BILL_LEAD_PRESETS = [0, 1, 3, 5, 7]
+const BILL_TIME_PRESETS = ['08:00', '09:00', '10:00', '12:00', '18:00']
 const WORK_START_PRESETS = ['08:00', '09:00', '10:00']
 const WORK_END_PRESETS = ['17:00', '18:00', '19:00', '20:00']
 const ANCHOR_PRESETS = [
@@ -48,7 +49,6 @@ export default function SettingsScreen() {
   const tr = useT()
   const params = useLocalSearchParams<{ gmail?: string }>()
   const settings = useNovaStore((s) => s.settings)
-  const tasks = useNovaStore((s) => s.tasks)
   const email = useNovaStore((s) => s.sessionEmail)
   const userId = useNovaStore((s) => s.sessionUserId)
   const updateSettings = useNovaStore((s) => s.updateSettings)
@@ -57,6 +57,7 @@ export default function SettingsScreen() {
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
   const [eveningTime, setEveningTime] = useState(settings.eveningClearTime || '21:30')
+  const [billRemindTime, setBillRemindTime] = useState(settings.billRemindTime || '09:00')
   const [workStart, setWorkStart] = useState(settings.workdayStart || '09:00')
   const [workEnd, setWorkEnd] = useState(settings.workdayEnd || '18:00')
   const [weekendStart, setWeekendStart] = useState(
@@ -86,6 +87,7 @@ export default function SettingsScreen() {
   useEffect(() => {
     setMorningTime(settings.morningBriefTime || '08:00')
     setEveningTime(settings.eveningClearTime || '21:30')
+    setBillRemindTime(settings.billRemindTime || '09:00')
     setWorkStart(settings.workdayStart || '09:00')
     setWorkEnd(settings.workdayEnd || '18:00')
     const tw = normalizeTypicalWeek(settings.typicalWeek)
@@ -95,6 +97,7 @@ export default function SettingsScreen() {
   }, [
     settings.morningBriefTime,
     settings.eveningClearTime,
+    settings.billRemindTime,
     settings.workdayStart,
     settings.workdayEnd,
     settings.typicalWeek,
@@ -142,18 +145,6 @@ export default function SettingsScreen() {
   const removeAnchor = (anchorId: string) => {
     patchTypicalWeek({ anchors: typicalWeek.anchors.filter((a) => a.id !== anchorId) })
   }
-
-  useEffect(() => {
-    syncDailyRitualNotifications(settings, tasks).catch(() => undefined)
-  }, [
-    settings.notificationsEnabled,
-    settings.morningBriefEnabled,
-    settings.morningBriefTime,
-    settings.eveningClearEnabled,
-    settings.eveningClearTime,
-    settings.emailDigestEnabled,
-    tasks,
-  ])
 
   useEffect(() => {
     refreshGmail().catch(() => undefined)
@@ -212,6 +203,15 @@ export default function SettingsScreen() {
     }
     setEveningTime(value)
     updateSettings({ eveningClearTime: value })
+  }
+
+  const applyBillRemindTime = (value: string) => {
+    if (!parseHm(value)) {
+      Alert.alert('Time', 'Use HH:MM, for example 09:00')
+      return
+    }
+    setBillRemindTime(value)
+    updateSettings({ billRemindTime: value })
   }
 
   const applyWorkStart = (value: string) => {
@@ -543,9 +543,86 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>Bill reminders</Text>
+                <Text style={styles.rowSub}>
+                  Default: first ping 3 days before due, then every day until you mark paid. Pick
+                  your own lead and cadence below. Per-bill Off is in the bill editor.
+                </Text>
+              </View>
+              <Switch
+                value={settings.billRemindersEnabled !== false}
+                onValueChange={(v) => updateSettings({ billRemindersEnabled: v })}
+                trackColor={{ true: colors.accent, false: colors.bgSoft }}
+              />
+            </View>
+            <Text style={styles.label}>First remind</Text>
+            <View style={styles.presets}>
+              {BILL_LEAD_PRESETS.map((d) => {
+                const on = (settings.billRemindLeadDays ?? 3) === d
+                const label = d === 0 ? 'Due day' : d === 1 ? '1 day before' : `${d} days before`
+                return (
+                  <Pressable
+                    key={d}
+                    style={[styles.chip, on && styles.chipOn]}
+                    onPress={() => updateSettings({ billRemindLeadDays: d })}
+                  >
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{label}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+            <Text style={styles.label}>Then</Text>
+            <View style={styles.presets}>
+              {(
+                [
+                  { id: 'daily' as const, label: 'Every day until paid' },
+                  { id: 'once' as const, label: 'Only once' },
+                ] as const
+              ).map((opt) => {
+                const on = (settings.billRemindCadence || 'daily') === opt.id
+                return (
+                  <Pressable
+                    key={opt.id}
+                    style={[styles.chip, on && styles.chipOn]}
+                    onPress={() => updateSettings({ billRemindCadence: opt.id })}
+                  >
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{opt.label}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+            <Text style={styles.label}>Time</Text>
+            <TextInput
+              value={billRemindTime}
+              onChangeText={setBillRemindTime}
+              onEndEditing={() => applyBillRemindTime(billRemindTime)}
+              placeholder="09:00"
+              placeholderTextColor={colors.textDim}
+              style={styles.input}
+              keyboardType="numbers-and-punctuation"
+              autoCapitalize="none"
+            />
+            <View style={styles.presets}>
+              {BILL_TIME_PRESETS.map((t) => (
+                <Pressable
+                  key={t}
+                  style={[styles.chip, billRemindTime === t && styles.chipOn]}
+                  onPress={() => applyBillRemindTime(t)}
+                >
+                  <Text style={[styles.chipText, billRemindTime === t && styles.chipTextOn]}>
+                    {t}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.card}>
             <Text style={styles.rowTitle}>Workday</Text>
             <Text style={styles.rowSub}>
-              Smart day packs tasks into free slots between these hours (Plan day / “разложи день”)
+              Hours Plan day uses when you tap Arrange into free slots
             </Text>
             <Text style={styles.label}>Start</Text>
             <TextInput

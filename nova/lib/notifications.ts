@@ -1,11 +1,13 @@
 import { Platform } from 'react-native'
-import type { Task, UserSettings } from '../types'
+import type { Bill, Task, UserSettings } from '../types'
+import { isPaidThisMonth, nextDueDate } from './bills'
 import { tasksForDay, todayISO } from './store'
 
 let Notifications: typeof import('expo-notifications') | null = null
 
 const MORNING_ID_KEY = 'wahrly-morning-brief'
 const EVENING_ID_KEY = 'wahrly-evening-clear'
+const BILL_PREFIX = 'wahrly-bill-'
 
 async function getNotifications() {
   if (Platform.OS === 'web') return null
@@ -204,6 +206,128 @@ export async function syncDailyRitualNotifications(
   }
 
   return { morningOk, eveningOk }
+}
+
+function startOfLocalDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
+}
+
+function addLocalDays(d: Date, days: number) {
+  const n = new Date(d)
+  n.setDate(n.getDate() + days)
+  return n
+}
+
+/**
+ * Bill due reminders: first ping `leadDays` before due, then either once
+ * or every day through the due date (until marked paid).
+ */
+export async function syncBillReminders(
+  bills: Bill[],
+  settings: UserSettings,
+): Promise<{ scheduled: number; webNote?: string }> {
+  if (Platform.OS === 'web') {
+    return {
+      scheduled: 0,
+      webNote: 'Bill reminders work on iOS/Android.',
+    }
+  }
+
+  const NotificationsMod = await getNotifications()
+  if (!NotificationsMod) return { scheduled: 0 }
+
+  // Cancel prior bill schedules
+  try {
+    const all = await NotificationsMod.getAllScheduledNotificationsAsync()
+    await Promise.all(
+      all
+        .filter(
+          (n) =>
+            String(n.content.data?.kind || '') === 'bill' ||
+            String(n.identifier || '').startsWith(BILL_PREFIX),
+        )
+        .map((n) => NotificationsMod.cancelScheduledNotificationAsync(n.identifier)),
+    )
+  } catch {
+    // ignore
+  }
+
+  if (!settings.notificationsEnabled || settings.billRemindersEnabled === false) {
+    return { scheduled: 0 }
+  }
+
+  const granted = await ensureNotificationPermissions()
+  if (!granted) return { scheduled: 0 }
+
+  const hm = parseHm(settings.billRemindTime || '09:00')
+  if (!hm) return { scheduled: 0 }
+
+  const lead = Math.max(0, Math.min(14, Number(settings.billRemindLeadDays ?? 3) || 0))
+  const cadence = settings.billRemindCadence === 'once' ? 'once' : 'daily'
+  const now = Date.now()
+  let scheduled = 0
+
+  for (const bill of bills) {
+    if (bill.active === false) continue
+    if (bill.remindEnabled === false) continue
+    if (isPaidThisMonth(bill)) continue
+
+    const due = nextDueDate(bill)
+    const dueStart = startOfLocalDay(due)
+    const first = addLocalDays(dueStart, -lead)
+    const days: Date[] = []
+
+    if (cadence === 'once') {
+      days.push(first)
+    } else {
+      for (let d = new Date(first); d.getTime() <= dueStart.getTime(); d = addLocalDays(d, 1)) {
+        days.push(new Date(d))
+      }
+    }
+
+    for (const day of days) {
+      const when = new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate(),
+        hm.hour,
+        hm.minute,
+        0,
+        0,
+      )
+      if (when.getTime() <= now + 5000) continue
+
+      const dayIso = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`
+      const id = `${BILL_PREFIX}${bill.id}-${dayIso}`
+      const daysLeft = Math.round((dueStart.getTime() - startOfLocalDay(when).getTime()) / 86400000)
+      const whenLabel =
+        daysLeft <= 0
+          ? 'due today'
+          : daysLeft === 1
+            ? 'due tomorrow'
+            : `due in ${daysLeft} days`
+
+      try {
+        await NotificationsMod.scheduleNotificationAsync({
+          content: {
+            title: 'Wahrly · Bills',
+            body: `${bill.title} ${whenLabel}`,
+            data: { kind: 'bill', billId: bill.id, ritualId: id },
+          },
+          trigger: {
+            type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
+            date: when,
+          },
+          identifier: id,
+        })
+        scheduled += 1
+      } catch {
+        // skip one
+      }
+    }
+  }
+
+  return { scheduled }
 }
 
 /** Immediate local notification for an inbox meeting / report ask. */
