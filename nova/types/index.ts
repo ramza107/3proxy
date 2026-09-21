@@ -18,6 +18,9 @@ export type Task = {
   completed: boolean
   /** When set, completing spawns the next occurrence */
   recurrence?: TaskRecurrence | null
+  /** Link back to a Gmail loop (promise / inbox ask) */
+  sourceKind?: 'promise' | 'meeting' | null
+  sourceId?: string | null
   created_at: string
   updated_at: string
 }
@@ -131,6 +134,10 @@ export type UserSettings = {
   eveningClearEnabled: boolean
   /** YYYY-MM-DD — last time Evening Clear ritual was finished */
   lastEveningClearDate: string | null
+  /** Monday morning weekly overview */
+  weeklyBriefEnabled: boolean
+  /** YYYY-MM-DD — last weekly brief dismissed */
+  lastWeeklyBriefDate: string | null
   /** Show automatic Gmail morning inbox on Home */
   emailDigestEnabled: boolean
   /**
