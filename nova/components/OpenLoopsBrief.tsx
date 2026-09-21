@@ -11,9 +11,7 @@ import {
 } from 'react-native'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
-import { draftForMeeting, draftForPromise } from '../lib/draftReply'
 import { fetchEmailMeetings, fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
-import { confirmSendReply, copyOrShareDraft, sendOrDraftReply } from '../lib/sendReply'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
@@ -244,54 +242,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     Alert.alert('On your list', 'Tracked under Waiting until you complete it.')
   }
 
-  const onDraftPromise = async (p: EmailPromise) => {
-    try {
-      await copyOrShareDraft(draftForPromise(p))
-    } catch (e) {
-      Alert.alert('Draft', e instanceof Error ? e.message : 'Could not copy')
-    }
-  }
-
-  const onDraftMeeting = async (m: MeetingAlert) => {
-    try {
-      await copyOrShareDraft(draftForMeeting(m))
-    } catch (e) {
-      Alert.alert('Draft', e instanceof Error ? e.message : 'Could not copy')
-    }
-  }
-
-  const onSendPromise = (p: EmailPromise) => {
-    if (!userId || !p.toEmail) return
-    confirmSendReply({
-      to: p.toEmail,
-      onConfirm: () => {
-        void sendOrDraftReply({
-          userId,
-          to: p.toEmail,
-          subject: p.subject,
-          body: draftForPromise(p),
-          threadId: p.messageId,
-        })
-      },
-    })
-  }
-
-  const onSendMeeting = (m: MeetingAlert) => {
-    if (!userId || !m.fromEmail) return
-    confirmSendReply({
-      to: m.fromEmail,
-      onConfirm: () => {
-        void sendOrDraftReply({
-          userId,
-          to: m.fromEmail,
-          subject: m.subject,
-          body: draftForMeeting(m),
-          threadId: m.messageId,
-        })
-      },
-    })
-  }
-
   return (
     <HomeSection
       title={t('home.openLoops')}
@@ -351,12 +301,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                       <Pressable style={styles.addBtn} onPress={() => onAddPromise(p)}>
                         <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
                       </Pressable>
-                      <Pressable style={styles.draftBtn} onPress={() => onDraftPromise(p)}>
-                        <Text style={styles.draftBtnText}>{t('home.draftReply')}</Text>
-                      </Pressable>
-                      <Pressable style={styles.sendBtn} onPress={() => onSendPromise(p)}>
-                        <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
-                      </Pressable>
                       <Pressable onPress={() => dismissPromise(p.id)} hitSlop={8}>
                         <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
                       </Pressable>
@@ -396,12 +340,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                   <View style={styles.actions}>
                     <Pressable style={styles.addBtn} onPress={() => onAddMeeting(m)}>
                       <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
-                    </Pressable>
-                    <Pressable style={styles.draftBtn} onPress={() => onDraftMeeting(m)}>
-                      <Text style={styles.draftBtnText}>{t('home.draftReply')}</Text>
-                    </Pressable>
-                    <Pressable style={styles.sendBtn} onPress={() => onSendMeeting(m)}>
-                      <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => {
@@ -477,21 +415,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   addBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
-  draftBtn: {
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radii.full,
-  },
-  draftBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
-  sendBtn: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radii.full,
-  },
-  sendBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   autoPending: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, marginTop: 4 },
   btn: {

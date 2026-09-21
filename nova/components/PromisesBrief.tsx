@@ -3,8 +3,6 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
-import { draftForPromise } from '../lib/draftReply'
-import { confirmSendReply, copyOrShareDraft, sendOrDraftReply } from '../lib/sendReply'
 import { useNovaStore } from '../lib/store'
 import type { EmailPromise, PromisesDigest } from '../types'
 import { HomeSection } from './HomeSection'
@@ -136,39 +134,6 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
     Alert.alert('Added to Tasks', p.suggestedTask)
   }
 
-  const onDraft = async (p: EmailPromise) => {
-    try {
-      await copyOrShareDraft(draftForPromise(p))
-    } catch (e) {
-      Alert.alert('Draft', e instanceof Error ? e.message : 'Could not copy')
-    }
-  }
-
-  const onSend = (p: EmailPromise) => {
-    if (!userId) {
-      Alert.alert('Send', 'Sign in and connect Google first.')
-      return
-    }
-    if (!p.toEmail) {
-      Alert.alert('Send', 'No recipient email on this promise.')
-      return
-    }
-    confirmSendReply({
-      to: p.toEmail,
-      onConfirm: () => {
-        void sendOrDraftReply({
-          userId,
-          to: p.toEmail,
-          subject: p.subject,
-          body: draftForPromise(p),
-          threadId: p.messageId,
-        }).catch((e) =>
-          Alert.alert('Send', e instanceof Error ? e.message : 'Could not send'),
-        )
-      },
-    })
-  }
-
   return (
     <HomeSection
       title={t('home.promises')}
@@ -238,12 +203,6 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
                     >
                       <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
                     </Pressable>
-                    <Pressable style={styles.draftBtn} onPress={() => onDraft(p)}>
-                      <Text style={styles.draftBtnText}>{t('home.draftReply')}</Text>
-                    </Pressable>
-                    <Pressable style={styles.sendBtn} onPress={() => onSend(p)}>
-                      <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
-                    </Pressable>
                     <Pressable onPress={() => dismissPromise(p.id)} hitSlop={8}>
                       <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
                     </Pressable>
@@ -311,21 +270,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   addBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
-  draftBtn: {
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radii.full,
-  },
-  draftBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
-  sendBtn: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radii.full,
-  },
-  sendBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   btn: {
     alignSelf: 'flex-start',
