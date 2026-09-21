@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { format } from 'date-fns'
 import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
@@ -23,8 +24,9 @@ function uid(prefix = 'id') {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}_${Date.now().toString(36)}`
 }
 
+/** Local calendar YYYY-MM-DD (not UTC — evening rituals break across timezones otherwise). */
 function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+  return format(new Date(), 'yyyy-MM-dd')
 }
 
 type NovaState = {
