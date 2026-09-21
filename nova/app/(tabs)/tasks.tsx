@@ -173,6 +173,7 @@ export default function TasksScreen() {
             style={[styles.dayChip, !focusDay && styles.dayChipOn]}
           >
             <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]}>Week</Text>
+            <Text style={styles.dayChipSub}> </Text>
             <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]}>
               {stats.week}
             </Text>
@@ -384,6 +385,8 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: fonts.bodyBold,
     fontSize: 18,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'center',
   },
   statHot: { color: colors.danger },
   statLabel: {
@@ -397,14 +400,16 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   dayChip: {
-    minWidth: 64,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    width: 76,
+    height: 78,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
-    gap: 2,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   dayChipOn: {
     backgroundColor: colors.accentSoft,
@@ -414,19 +419,26 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: fonts.bodyBold,
     fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
   },
   dayChipLabelOn: { color: colors.accentStrong },
   dayChipSub: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 11,
+    textAlign: 'center',
+    width: '100%',
+    fontVariant: ['tabular-nums'],
   },
   dayChipSubOn: { color: colors.accentStrong },
   dayChipCount: {
     color: colors.textDim,
     fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 13,
+    textAlign: 'center',
+    width: '100%',
+    fontVariant: ['tabular-nums'],
   },
   dayChipCountOn: { color: colors.accentStrong },
   list: {

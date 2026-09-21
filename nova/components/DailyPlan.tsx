@@ -264,7 +264,7 @@ export function DailyPlan({
                         accessibilityRole="button"
                         accessibilityLabel="Edit task"
                       >
-                        <Text style={styles.timeCol}>—</Text>
+                        <Text style={[styles.timeCol, styles.timeDash]}>—</Text>
                         <View style={styles.taskBody}>
                           <Text style={styles.taskTitle} numberOfLines={2}>
                             {t.title}
@@ -301,30 +301,31 @@ const styles = StyleSheet.create({
   },
   planDisabled: { opacity: 0.4 },
   planBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
-  timeline: { position: 'relative', paddingLeft: 2, gap: 0 },
+  timeline: { position: 'relative', paddingLeft: 0, gap: 0 },
   spine: {
     position: 'absolute',
-    left: 13,
-    top: 8,
-    bottom: 8,
-    width: 1.5,
+    left: 14,
+    top: 10,
+    bottom: 10,
+    width: 2,
+    marginLeft: -1,
     backgroundColor: colors.signalLine,
     borderRadius: 1,
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    paddingVertical: 9,
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
     minHeight: 44,
   },
   rowBody: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 10,
   },
-  nodeCol: { width: 28, alignItems: 'center', paddingTop: 4 },
+  nodeCol: { width: 28, alignItems: 'center', justifyContent: 'center' },
   nodeOn: {
     width: 18,
     height: 18,
@@ -337,7 +338,6 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 3,
     backgroundColor: colors.bgDeep,
-    marginTop: 2,
   },
   nodeFree: {
     width: 8,
@@ -348,18 +348,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   timeCol: {
-    width: 40,
+    width: 52,
+    flexShrink: 0,
     color: colors.textDim,
     fontFamily: fonts.bodyMedium,
-    fontSize: 12,
-    paddingTop: 2,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    textAlign: 'left',
+    letterSpacing: 0.2,
   },
+  timeDash: { textAlign: 'center' },
   freeText: {
     flex: 1,
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
-    paddingTop: 1,
+    fontVariant: ['tabular-nums'],
   },
   taskBody: { flex: 1, gap: 2 },
   taskTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15, lineHeight: 21 },
@@ -372,7 +376,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 12,
     marginBottom: 2,
-    marginLeft: 38,
+    // node (28) + gap (8) + time (52) + gap (10)
+    marginLeft: 98,
   },
   empty: { paddingVertical: spacing.sm },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
