@@ -27,7 +27,6 @@ type Props = {
   onMoveTomorrow: (task: Task) => void
   onDrop: (task: Task) => void
   onSetTime: (task: Task, time: string | null) => void
-  /** Quick-add a timed task into a day slot */
   onAddTask?: (input: { title: string; time: string }) => void
 }
 
@@ -39,10 +38,10 @@ type DaySlot = {
 }
 
 const DAY_SLOTS: DaySlot[] = [
-  { id: 'morning', label: 'Morning', time: '09:00', hint: 'Focus block' },
-  { id: 'midday', label: 'Midday', time: '12:30', hint: 'Calls & errands' },
+  { id: 'morning', label: 'Morning', time: '09:00', hint: 'Focus' },
+  { id: 'midday', label: 'Midday', time: '12:30', hint: 'Calls' },
   { id: 'afternoon', label: 'Afternoon', time: '15:00', hint: 'Deep work' },
-  { id: 'evening', label: 'Evening', time: '18:30', hint: 'Home & people' },
+  { id: 'evening', label: 'Evening', time: '18:30', hint: 'Home' },
 ]
 
 function weatherPalette(code?: number): [string, string] {
@@ -86,8 +85,8 @@ function nearestSlot(time: string | null): string | null {
 }
 
 /**
- * Intentional Plan day: weather scene + fillable day menu + triage,
- * then Arrange packs the rest into free calendar gaps.
+ * Structured-inspired Plan day: weather hero, one timeline spine,
+ * sticky Arrange footer. Calm hierarchy — one job per zone.
  */
 export function PlanDaySheet({
   visible,
@@ -111,6 +110,7 @@ export function PlanDaySheet({
   const [draftSlot, setDraftSlot] = useState<string | null>(null)
   const [draftTitle, setDraftTitle] = useState('')
   const [poolOpen, setPoolOpen] = useState(false)
+  const [showPoem, setShowPoem] = useState(false)
 
   useEffect(() => {
     if (!visible) {
@@ -118,6 +118,7 @@ export function PlanDaySheet({
       setDraftSlot(null)
       setDraftTitle('')
       setPoolOpen(false)
+      setShowPoem(false)
       return
     }
     let cancelled = false
@@ -150,6 +151,7 @@ export function PlanDaySheet({
   const untimed = open.filter((t) => !t.time)
   const arrangeable = open.filter((t) => !protectedIds.has(t.id))
   const palette = weatherPalette(weather?.code)
+  const filled = DAY_SLOTS.filter((s) => (bySlot[s.id] || []).length > 0).length
 
   const toggleProtect = (id: string) => {
     setProtectedIds((prev) => {
@@ -168,10 +170,41 @@ export function PlanDaySheet({
     setDraftSlot(null)
   }
 
+  const footer = (
+    <>
+      <SoftPressable
+        style={[
+          styles.primary,
+          (planning || arrangeable.length === 0) && styles.primaryDisabled,
+        ]}
+        onPress={() => onArrange([...protectedIds])}
+        disabled={!!planning || arrangeable.length === 0}
+      >
+        <Text style={styles.primaryText}>
+          {planning ? 'Arranging…' : 'Arrange into free slots'}
+        </Text>
+      </SoftPressable>
+      <Pressable onPress={onClose} style={styles.secondary} hitSlop={8}>
+        <Text style={styles.secondaryText}>Not now</Text>
+      </Pressable>
+    </>
+  )
+
   return (
-    <BottomSheet visible={visible} onClose={onClose} title="Plan day">
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      title="Plan day"
+      subtitle={`${filled} of ${DAY_SLOTS.length} blocks · tap a task to protect it`}
+      footer={footer}
+    >
       <Animated.View entering={FadeIn.duration(380)} style={styles.weatherWrap}>
-        <LinearGradient colors={palette} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.weatherCard}>
+        <LinearGradient
+          colors={palette}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.weatherCard}
+        >
           {weatherLoading ? (
             <ActivityIndicator color={colors.accentStrong} />
           ) : weather ? (
@@ -182,13 +215,26 @@ export function PlanDaySheet({
                     {weather.place}
                   </Text>
                   <Text style={styles.weatherLabel}>{weather.label}</Text>
+                  <Text style={styles.weatherMood}>{weatherMood(weather.code)}</Text>
                 </View>
                 <Text style={styles.weatherTemp}>{weather.tempC}°</Text>
               </View>
-              <Text style={styles.weatherRange}>
-                H {weather.highC}° · L {weather.lowC}°
-              </Text>
-              <Text style={styles.weatherMood}>{weatherMood(weather.code)}</Text>
+              <Pressable onPress={() => setShowPoem((v) => !v)} hitSlop={8}>
+                <Text style={styles.poemToggle}>
+                  {showPoem ? 'Hide verse' : 'A line for the day'}
+                </Text>
+              </Pressable>
+              {showPoem ? (
+                <View style={styles.poemInline}>
+                  <Text style={styles.poemLines} numberOfLines={3}>
+                    {poem.lines}
+                  </Text>
+                  <Text style={styles.poemMeta}>
+                    — {poem.author}
+                    {poem.work ? ` · ${poem.work}` : ''}
+                  </Text>
+                </View>
+              ) : null}
             </>
           ) : (
             <Text style={styles.weatherFallback}>
@@ -198,101 +244,98 @@ export function PlanDaySheet({
         </LinearGradient>
       </Animated.View>
 
-      <Animated.View entering={FadeInDown.delay(60).duration(360)} style={styles.poemCard}>
-        <Text style={styles.poemLines} numberOfLines={4}>
-          {poem.lines}
-        </Text>
-        <Text style={styles.poemMeta}>
-          — {poem.author}
-          {poem.work ? ` · ${poem.work}` : ''}
-        </Text>
-      </Animated.View>
-
-      <Text style={styles.sectionLabel}>Day menu · fill the blocks</Text>
-      <View style={styles.menu}>
+      <View style={styles.timeline}>
+        <View style={styles.spine} />
         {DAY_SLOTS.map((slot, i) => {
           const items = bySlot[slot.id] || []
           const drafting = draftSlot === slot.id
           return (
             <Animated.View
               key={slot.id}
-              entering={FadeInDown.delay(90 + i * 45).duration(320)}
-              style={styles.slot}
+              entering={FadeInDown.delay(70 + i * 40).duration(300)}
+              style={styles.block}
             >
-              <View style={styles.slotHead}>
-                <View>
-                  <Text style={styles.slotLabel}>{slot.label}</Text>
-                  <Text style={styles.slotMeta}>
-                    {slot.time} · {slot.hint}
-                  </Text>
+              <View style={styles.blockRail}>
+                <View style={[styles.node, items.length > 0 && styles.nodeFilled]} />
+              </View>
+              <View style={styles.blockBody}>
+                <View style={styles.blockHead}>
+                  <View>
+                    <Text style={styles.blockTime}>{slot.time}</Text>
+                    <Text style={styles.blockLabel}>
+                      {slot.label}
+                      <Text style={styles.blockHint}> · {slot.hint}</Text>
+                    </Text>
+                  </View>
+                  {onAddTask ? (
+                    <Pressable
+                      style={styles.slotAdd}
+                      onPress={() => {
+                        setDraftSlot(drafting ? null : slot.id)
+                        setDraftTitle('')
+                      }}
+                    >
+                      <Text style={styles.slotAddText}>{drafting ? 'Close' : '+'}</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
-                {onAddTask ? (
-                  <Pressable
-                    style={styles.slotAdd}
-                    onPress={() => {
-                      setDraftSlot(drafting ? null : slot.id)
-                      setDraftTitle('')
-                    }}
-                  >
-                    <Text style={styles.slotAddText}>{drafting ? 'Close' : '+ Add'}</Text>
-                  </Pressable>
+
+                {items.length === 0 && !drafting ? (
+                  <Text style={styles.slotEmpty}>Open — add or place from the pool</Text>
+                ) : (
+                  items.map((t) => {
+                    const locked = protectedIds.has(t.id)
+                    return (
+                      <View key={t.id} style={[styles.slotItem, locked && styles.slotItemLocked]}>
+                        <Pressable style={styles.slotItemMain} onPress={() => toggleProtect(t.id)}>
+                          <View
+                            style={[
+                              styles.dot,
+                              t.priority === 'high' && styles.dotHigh,
+                              t.priority === 'low' && styles.dotLow,
+                              locked && styles.dotLocked,
+                            ]}
+                          />
+                          <Text style={styles.slotItemTitle} numberOfLines={1}>
+                            {locked ? '◆ ' : ''}
+                            {t.title}
+                          </Text>
+                        </Pressable>
+                        <View style={styles.slotItemActions}>
+                          <Pressable onPress={() => onMoveTomorrow(t)} hitSlop={6}>
+                            <Text style={styles.miniAct}>Tomorrow</Text>
+                          </Pressable>
+                          <Pressable onPress={() => onDrop(t)} hitSlop={6}>
+                            <Text style={styles.miniDanger}>Drop</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    )
+                  })
+                )}
+
+                {drafting ? (
+                  <View style={styles.draftRow}>
+                    <TextInput
+                      value={draftTitle}
+                      onChangeText={setDraftTitle}
+                      placeholder={`Add to ${slot.label.toLowerCase()}…`}
+                      placeholderTextColor={colors.textDim}
+                      style={styles.draftInput}
+                      autoFocus
+                      onSubmitEditing={() => submitDraft(slot)}
+                      returnKeyType="done"
+                    />
+                    <Pressable
+                      style={[styles.draftSave, !draftTitle.trim() && styles.draftSaveOff]}
+                      onPress={() => submitDraft(slot)}
+                      disabled={!draftTitle.trim()}
+                    >
+                      <Text style={styles.draftSaveText}>Save</Text>
+                    </Pressable>
+                  </View>
                 ) : null}
               </View>
-
-              {items.length === 0 && !drafting ? (
-                <Text style={styles.slotEmpty}>Empty — add something or place from the pool</Text>
-              ) : (
-                items.map((t) => {
-                  const locked = protectedIds.has(t.id)
-                  return (
-                    <View key={t.id} style={[styles.slotItem, locked && styles.slotItemLocked]}>
-                      <Pressable style={styles.slotItemMain} onPress={() => toggleProtect(t.id)}>
-                        <View
-                          style={[
-                            styles.dot,
-                            t.priority === 'high' && styles.dotHigh,
-                            t.priority === 'low' && styles.dotLow,
-                          ]}
-                        />
-                        <Text style={styles.slotItemTitle} numberOfLines={1}>
-                          {t.time ? `${t.time} · ` : ''}
-                          {t.title}
-                        </Text>
-                      </Pressable>
-                      <View style={styles.slotItemActions}>
-                        <Pressable onPress={() => onMoveTomorrow(t)} hitSlop={6}>
-                          <Text style={styles.miniAct}>Tomorrow</Text>
-                        </Pressable>
-                        <Pressable onPress={() => onDrop(t)} hitSlop={6}>
-                          <Text style={styles.miniDanger}>Drop</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  )
-                })
-              )}
-
-              {drafting ? (
-                <View style={styles.draftRow}>
-                  <TextInput
-                    value={draftTitle}
-                    onChangeText={setDraftTitle}
-                    placeholder={`Add to ${slot.label.toLowerCase()}…`}
-                    placeholderTextColor={colors.textDim}
-                    style={styles.draftInput}
-                    autoFocus
-                    onSubmitEditing={() => submitDraft(slot)}
-                    returnKeyType="done"
-                  />
-                  <Pressable
-                    style={[styles.draftSave, !draftTitle.trim() && styles.draftSaveOff]}
-                    onPress={() => submitDraft(slot)}
-                    disabled={!draftTitle.trim()}
-                  >
-                    <Text style={styles.draftSaveText}>Save</Text>
-                  </Pressable>
-                </View>
-              ) : null}
             </Animated.View>
           )
         })}
@@ -301,9 +344,7 @@ export function PlanDaySheet({
       {untimed.length > 0 ? (
         <View style={styles.pool}>
           <Pressable style={styles.poolHead} onPress={() => setPoolOpen((v) => !v)}>
-            <Text style={styles.sectionLabel}>
-              Untimed pool · {untimed.length}
-            </Text>
+            <Text style={styles.sectionLabel}>Untimed · {untimed.length}</Text>
             <Text style={styles.poolToggle}>{poolOpen ? 'Hide' : 'Place'}</Text>
           </Pressable>
           {poolOpen
@@ -328,27 +369,6 @@ export function PlanDaySheet({
             : null}
         </View>
       ) : null}
-
-      <Text style={styles.hint}>
-        Fill the blocks, protect what must stay, then Arrange drops the rest into free calendar gaps.
-      </Text>
-
-      <SoftPressable
-        style={[
-          styles.primary,
-          (planning || arrangeable.length === 0) && styles.primaryDisabled,
-        ]}
-        onPress={() => onArrange([...protectedIds])}
-        disabled={!!planning || arrangeable.length === 0}
-      >
-        <Text style={styles.primaryText}>
-          {planning ? 'Arranging…' : 'Arrange into free slots'}
-        </Text>
-      </SoftPressable>
-
-      <Pressable onPress={onClose} style={styles.secondary}>
-        <Text style={styles.secondaryText}>Not now</Text>
-      </Pressable>
     </BottomSheet>
   )
 }
@@ -358,47 +378,38 @@ const styles = StyleSheet.create({
   weatherCard: {
     borderRadius: radii.lg,
     padding: spacing.md,
-    minHeight: 118,
+    minHeight: 108,
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
     overflow: 'hidden',
   },
   weatherTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   weatherPlace: {
     color: colors.textMuted,
     fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 0.4,
+    fontSize: 11,
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   weatherLabel: {
     color: colors.text,
     fontFamily: fonts.brand,
-    fontSize: 26,
+    fontSize: 24,
     letterSpacing: -0.4,
     marginTop: 2,
   },
   weatherTemp: {
     color: colors.text,
     fontFamily: fonts.brand,
-    fontSize: 48,
+    fontSize: 44,
     letterSpacing: -1.5,
-    lineHeight: 52,
-  },
-  weatherRange: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyMedium,
-    fontSize: 13,
-    fontVariant: ['tabular-nums'],
-    marginTop: 4,
+    lineHeight: 48,
   },
   weatherMood: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 8,
+    marginTop: 6,
   },
   weatherFallback: {
     color: colors.textMuted,
@@ -406,77 +417,117 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  poemCard: {
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.md,
-    gap: 8,
-    marginBottom: spacing.md,
+  poemToggle: {
+    marginTop: 10,
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
   },
+  poemInline: { marginTop: 8, gap: 4 },
   poemLines: {
     color: colors.text,
     fontFamily: fonts.brandItalic,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
   },
   poemMeta: {
     color: colors.textDim,
     fontFamily: fonts.body,
-    fontSize: 12,
+    fontSize: 11,
   },
-  sectionLabel: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+  timeline: {
+    position: 'relative',
+    marginBottom: spacing.md,
+    paddingLeft: 2,
+  },
+  spine: {
+    position: 'absolute',
+    left: 11,
+    top: 10,
+    bottom: 10,
+    width: 2,
+    backgroundColor: colors.signalLine,
+    borderRadius: 1,
+  },
+  block: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 4,
+    minHeight: 72,
+  },
+  blockRail: {
+    width: 24,
+    alignItems: 'center',
+    paddingTop: 6,
+  },
+  node: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    backgroundColor: colors.bgElevated,
+  },
+  nodeFilled: {
+    backgroundColor: colors.accent,
+  },
+  blockBody: {
+    flex: 1,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.md,
+    padding: 12,
+    gap: 6,
     marginBottom: 8,
   },
-  menu: { gap: 10, marginBottom: spacing.md },
-  slot: {
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: 12,
-    gap: 8,
-  },
-  slotHead: {
+  blockHead: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
   },
-  slotLabel: {
+  blockTime: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.3,
+  },
+  blockLabel: {
     color: colors.text,
     fontFamily: fonts.bodyBold,
-    fontSize: 15,
+    fontSize: 16,
+    letterSpacing: -0.2,
+    marginTop: 1,
   },
-  slotMeta: {
+  blockHint: {
     color: colors.textDim,
     fontFamily: fonts.body,
-    fontSize: 12,
-    marginTop: 1,
-    fontVariant: ['tabular-nums'],
+    fontSize: 13,
+    fontWeight: '400',
   },
   slotAdd: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: colors.accent,
-    borderRadius: radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  slotAddText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 12 },
+  slotAddText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 16 },
   slotEmpty: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
-  slotItem: { gap: 4, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  slotItemLocked: { opacity: 0.7 },
+  slotItem: {
+    gap: 4,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  slotItemLocked: { opacity: 0.85 },
   slotItemMain: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   slotItemTitle: {
     flex: 1,
@@ -495,6 +546,7 @@ const styles = StyleSheet.create({
   },
   dotHigh: { backgroundColor: colors.danger },
   dotLow: { backgroundColor: colors.signalMuted },
+  dotLocked: { backgroundColor: colors.bgDeep },
   draftRow: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 4 },
   draftInput: {
     flex: 1,
@@ -518,13 +570,26 @@ const styles = StyleSheet.create({
   },
   draftSaveOff: { opacity: 0.4 },
   draftSaveText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
-  pool: { marginBottom: spacing.md },
+  pool: { marginBottom: spacing.sm },
   poolHead: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  poolToggle: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13, marginBottom: 8 },
+  sectionLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  poolToggle: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    marginBottom: 8,
+  },
   poolRow: {
     gap: 6,
     paddingVertical: 8,
@@ -547,17 +612,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontVariant: ['tabular-nums'],
   },
-  hint: {
-    color: colors.textDim,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: spacing.md,
-  },
   primary: {
     backgroundColor: colors.bgDeep,
     borderRadius: radii.full,
-    height: 48,
+    height: 50,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -570,7 +628,7 @@ const styles = StyleSheet.create({
   },
   secondary: {
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   secondaryText: {
     color: colors.textMuted,

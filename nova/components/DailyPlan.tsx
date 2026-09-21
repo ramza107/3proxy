@@ -172,15 +172,26 @@ export function DailyPlan({
                 <Animated.View
                   key={`free-${i}`}
                   entering={FadeInRight.delay(Math.min(i, 8) * 40).duration(280)}
-                  style={styles.row}
+                  style={[
+                    styles.row,
+                    styles.freeRow,
+                    {
+                      minHeight: Math.min(
+                        120,
+                        Math.max(36, Math.round((slot.end - slot.start) * 0.55)),
+                      ),
+                    },
+                  ]}
                 >
                   <View style={styles.nodeCol}>
                     <View style={styles.nodeFree} />
                   </View>
                   <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
-                  <Text style={styles.freeText}>
-                    {t.tf('home.freeMin', { n: Math.max(0, slot.end - slot.start) })}
-                  </Text>
+                  <View style={styles.freeBlock}>
+                    <Text style={styles.freeText}>
+                      {t.tf('home.freeMin', { n: Math.max(0, slot.end - slot.start) })}
+                    </Text>
+                  </View>
                 </Animated.View>
               ) : slot.kind === 'event' ? (
                 <Animated.View
@@ -358,10 +369,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   timeDash: { textAlign: 'center' },
-  freeText: {
+  freeRow: {
+    alignItems: 'stretch',
+  },
+  freeBlock: {
     flex: 1,
-    color: colors.textDim,
-    fontFamily: fonts.body,
+    backgroundColor: colors.accentSoft,
+    borderRadius: radii.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.14)',
+  },
+  freeText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
     fontSize: 13,
     fontVariant: ['tabular-nums'],
   },
