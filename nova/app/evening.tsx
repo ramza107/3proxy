@@ -87,10 +87,15 @@ export default function EveningClearScreen() {
   }
 
   const moveAllTodayToTomorrow = async () => {
-    for (const task of todayOpen) {
+    const batch = [...todayOpen]
+    if (!batch.length) return
+    let n = 0
+    for (const task of batch) {
       await updateTaskFields(task, { date: tomorrow })
-      setMovedCount((n) => n + 1)
+      n += 1
     }
+    setMovedCount((c) => c + n)
+    setStep('tomorrow')
   }
 
   return (
@@ -121,45 +126,48 @@ export default function EveningClearScreen() {
                   <Text style={styles.emptyText}>Nothing left open — shape tomorrow next.</Text>
                 </View>
               ) : (
-                <View style={styles.list}>
-                  {todayOpen.map((task) => (
-                    <View key={task.id} style={styles.row}>
-                      <View style={styles.rowBody}>
-                        <Text style={styles.rowTitle} numberOfLines={2}>
-                          {task.title}
-                        </Text>
-                        {taskMeta(task) ? (
-                          <Text style={styles.rowMeta}>{taskMeta(task)}</Text>
-                        ) : null}
-                        {!task.date ? (
-                          <Text style={styles.undated}>No date</Text>
-                        ) : null}
-                      </View>
-                      <View style={styles.actions}>
-                        <Pressable style={styles.actionDone} onPress={() => onDone(task)}>
-                          <Text style={styles.actionDoneText}>Done</Text>
-                        </Pressable>
-                        <Pressable style={styles.action} onPress={() => onTomorrow(task)}>
-                          <Text style={styles.actionText}>Tomorrow</Text>
-                        </Pressable>
-                        <Pressable style={styles.actionGhost} onPress={() => onDrop(task)}>
-                          <Text style={styles.actionGhostText}>Drop</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
+                <>
+                  <Pressable style={styles.moveAll} onPress={moveAllTodayToTomorrow}>
+                    <Text style={styles.moveAllTitle}>Move unfinished to tomorrow</Text>
+                    <Text style={styles.moveAllSub}>
+                      {todayOpen.length} open · one tap, then shape tomorrow
+                    </Text>
+                  </Pressable>
 
-              {todayOpen.length > 1 ? (
-                <Pressable style={styles.secondary} onPress={moveAllTodayToTomorrow}>
-                  <Text style={styles.secondaryText}>Move all to tomorrow</Text>
-                </Pressable>
-              ) : null}
+                  <View style={styles.list}>
+                    {todayOpen.map((task) => (
+                      <View key={task.id} style={styles.row}>
+                        <View style={styles.rowBody}>
+                          <Text style={styles.rowTitle} numberOfLines={2}>
+                            {task.title}
+                          </Text>
+                          {taskMeta(task) ? (
+                            <Text style={styles.rowMeta}>{taskMeta(task)}</Text>
+                          ) : null}
+                          {!task.date ? (
+                            <Text style={styles.undated}>No date</Text>
+                          ) : null}
+                        </View>
+                        <View style={styles.actions}>
+                          <Pressable style={styles.actionDone} onPress={() => onDone(task)}>
+                            <Text style={styles.actionDoneText}>Done</Text>
+                          </Pressable>
+                          <Pressable style={styles.action} onPress={() => onTomorrow(task)}>
+                            <Text style={styles.actionText}>Tomorrow</Text>
+                          </Pressable>
+                          <Pressable style={styles.actionGhost} onPress={() => onDrop(task)}>
+                            <Text style={styles.actionGhostText}>Drop</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
 
               <Pressable style={styles.primary} onPress={() => setStep('tomorrow')}>
                 <Text style={styles.primaryText}>
-                  {todayOpen.length ? 'Continue' : 'Shape tomorrow'}
+                  {todayOpen.length ? 'Continue without moving' : 'Shape tomorrow'}
                 </Text>
               </Pressable>
             </>
@@ -216,6 +224,11 @@ export default function EveningClearScreen() {
               {todayOpen.length > 0 ? (
                 <View style={styles.leftover}>
                   <Text style={styles.leftoverLabel}>Still on today</Text>
+                  <Pressable style={styles.moveAllCompact} onPress={moveAllTodayToTomorrow}>
+                    <Text style={styles.moveAllCompactText}>
+                      Move all {todayOpen.length} unfinished → tomorrow
+                    </Text>
+                  </Pressable>
                   {todayOpen.map((task) => (
                     <View key={task.id} style={styles.leftoverRow}>
                       <Text style={styles.leftoverTitle} numberOfLines={1}>
@@ -353,6 +366,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 16 },
+  moveAll: {
+    backgroundColor: colors.accentSoft,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    padding: 16,
+    gap: 4,
+  },
+  moveAllTitle: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+  },
+  moveAllSub: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  moveAllCompact: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accentSoft,
+    borderRadius: radii.full,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 4,
+  },
+  moveAllCompactText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+  },
   secondary: {
     alignSelf: 'flex-start',
     paddingVertical: 8,
