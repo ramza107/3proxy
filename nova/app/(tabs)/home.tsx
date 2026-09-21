@@ -105,6 +105,7 @@ export default function HomeScreen() {
   const setForceMorningBrief = useNovaStore((s) => s.setForceMorningBrief)
   const forceWeeklyBrief = useNovaStore((s) => s.forceWeeklyBrief)
   const setForceWeeklyBrief = useNovaStore((s) => s.setForceWeeklyBrief)
+  const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const emailPromisesAutoEnabled = useNovaStore(
@@ -330,6 +331,16 @@ export default function HomeScreen() {
           updateTaskFields(task, {
             time,
             date: task.date || todayISO(),
+          })
+        }}
+        onAddTask={({ title, time }) => {
+          if (!userId) return
+          createTaskLocal({
+            title,
+            date: todayISO(),
+            time,
+            priority: 'medium',
+            userId,
           })
         }}
       />
