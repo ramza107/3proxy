@@ -15,6 +15,8 @@ export type MeetingAlert = {
   notifyBody: string
   suggestedDate: string | null
   suggestedTime: string | null
+  /** Optional draft reply body (client can also generate) */
+  suggestedReply?: string | null
   receivedAt: string
 }
 
@@ -162,6 +164,12 @@ export function extractMeetingsLocal(
       notifyBody: clean(notifyBody, 120),
       suggestedDate: date,
       suggestedTime: time,
+      suggestedReply:
+        intent === 'meet'
+          ? `Hi ${who},\n\nThanks — ${whenBits || 'happy to meet'}. Looking forward to it.\n\nBest`
+          : intent === 'report'
+            ? `Hi ${who},\n\nGot it — I'll send the report${whenBits ? ` by ${whenBits}` : ' soon'}.\n\nBest`
+            : `Hi ${who},\n\nHappy to talk${whenBits ? ` · ${whenBits}` : ''}.\n\nBest`,
       receivedAt: msg.date,
     })
     if (out.length >= 8) break
@@ -269,6 +277,8 @@ export function demoMeetings(): MeetingsDigest {
         notifyBody: 'Aaz wrote — wants to meet Sep 23 at 6pm',
         suggestedDate: '2026-09-23',
         suggestedTime: '18:00',
+        suggestedReply:
+          'Hi Aaz,\n\nThanks — Sep 23 at 18:00 works for me. Looking forward to it.\n\nBest',
         receivedAt: new Date().toISOString(),
       },
       {
@@ -282,6 +292,8 @@ export function demoMeetings(): MeetingsDigest {
         notifyBody: 'Alex wrote — wants the report tomorrow by 10:00',
         suggestedDate: add1,
         suggestedTime: '10:00',
+        suggestedReply:
+          "Hi Alex,\n\nGot it — I'll send the report by tomorrow 10:00.\n\nBest",
         receivedAt: new Date().toISOString(),
       },
     ],

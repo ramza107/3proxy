@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Priority, Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { durationForPriority } from '../lib/scheduleDay'
+import { recurrenceLabel } from '../lib/recurrence'
 
 type Props = {
   task: Task
@@ -50,11 +51,13 @@ export function TaskCard({
 }: Props) {
   const overdue = isOverdue(task)
   const mins = durationForPriority(task.priority)
+  const rec = recurrenceLabel(task.recurrence)
   const metaParts = [
     hideDate ? null : friendlyDate(task.date),
     task.time || 'Anytime',
     `~${mins}m`,
     priorityLabel[task.priority],
+    rec,
   ].filter(Boolean)
 
   return (

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import type { Bill, ChatMessage, Priority, Reminder, Task, UserSettings } from '../types'
+import type { Bill, ChatMessage, Priority, Reminder, Task, TaskRecurrence, UserSettings } from '../types'
 import { defaultTypicalWeek } from '../types'
 import { deviceLanguageFallback, isAppLanguage } from './i18n'
 
@@ -65,6 +65,7 @@ type NovaState = {
     time?: string | null
     priority?: Priority
     userId: string
+    recurrence?: TaskRecurrence | null
   }) => Task
   createBillLocal: (input: {
     title: string
@@ -73,6 +74,7 @@ type NovaState = {
     dayOfMonth: number
     category?: string
     notes?: string | null
+    payHowTo?: string | null
     active?: boolean
     remindEnabled?: boolean
   }) => Bill
@@ -174,9 +176,17 @@ export const useNovaStore = create<NovaState>()(
         const stamp = month || new Date().toISOString().slice(0, 7)
         const now = new Date().toISOString()
         set({
-          bills: get().bills.map((b) =>
-            b.id === id ? { ...b, lastPaidMonth: stamp, updated_at: now } : b,
-          ),
+          bills: get().bills.map((b) => {
+            if (b.id !== id) return b
+            const hist = [...(b.paidHistory || [])]
+            if (!hist.includes(stamp)) hist.push(stamp)
+            return {
+              ...b,
+              lastPaidMonth: stamp,
+              paidHistory: hist.slice(-24),
+              updated_at: now,
+            }
+          }),
         })
       },
       dismissPromise: (id) =>
@@ -205,7 +215,14 @@ export const useNovaStore = create<NovaState>()(
           ],
         }),
       clearMessages: () => set({ messages: [] }),
-      createTaskLocal: ({ title, date = null, time = null, priority = 'medium', userId }) => {
+      createTaskLocal: ({
+        title,
+        date = null,
+        time = null,
+        priority = 'medium',
+        userId,
+        recurrence = null,
+      }) => {
         const now = new Date().toISOString()
         const task: Task = {
           id: uid('task'),
@@ -216,6 +233,7 @@ export const useNovaStore = create<NovaState>()(
           time,
           priority,
           completed: false,
+          recurrence: recurrence || null,
           created_at: now,
           updated_at: now,
         }
@@ -229,6 +247,7 @@ export const useNovaStore = create<NovaState>()(
         dayOfMonth,
         category = 'General',
         notes = null,
+        payHowTo = null,
         active = true,
         remindEnabled = true,
       }) => {
@@ -242,9 +261,11 @@ export const useNovaStore = create<NovaState>()(
           dayOfMonth: day,
           category: category.trim() || 'General',
           notes: notes?.trim() || null,
+          payHowTo: payHowTo?.trim() || null,
           active: active !== false,
           remindEnabled: remindEnabled !== false,
           lastPaidMonth: null,
+          paidHistory: [],
           created_at: now,
           updated_at: now,
         }

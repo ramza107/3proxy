@@ -25,6 +25,7 @@ type Props = {
     dayOfMonth: number
     category: string
     notes: string | null
+    payHowTo: string | null
     active: boolean
     remindEnabled: boolean
   }) => void
@@ -38,6 +39,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
   const [day, setDay] = useState('1')
   const [category, setCategory] = useState('General')
   const [notes, setNotes] = useState('')
+  const [payHowTo, setPayHowTo] = useState('')
   const [active, setActive] = useState(true)
   const [remindEnabled, setRemindEnabled] = useState(true)
   const [error, setError] = useState('')
@@ -50,6 +52,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
     setDay(String(bill?.dayOfMonth || 1))
     setCategory(bill?.category || 'General')
     setNotes(bill?.notes || '')
+    setPayHowTo(bill?.payHowTo || '')
     setActive(bill?.active !== false)
     setRemindEnabled(bill?.remindEnabled !== false)
     setError('')
@@ -78,11 +81,14 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
       dayOfMonth: Math.round(nextDay),
       category: category.trim() || 'General',
       notes: notes.trim() || null,
+      payHowTo: payHowTo.trim() || null,
       active,
       remindEnabled,
     })
     onClose()
   }
+
+  const history = (bill?.paidHistory || []).slice().reverse().slice(0, 8)
 
   return (
     <BottomSheet
@@ -168,6 +174,29 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         multiline
       />
 
+      <Text style={styles.label}>How to pay</Text>
+      <TextInput
+        value={payHowTo}
+        onChangeText={setPayHowTo}
+        style={styles.input}
+        placeholder="Link or short note — Privat24, IBAN…"
+        placeholderTextColor={colors.textDim}
+        autoCapitalize="none"
+      />
+
+      {!creating && history.length > 0 ? (
+        <>
+          <Text style={styles.label}>Paid history</Text>
+          <View style={styles.chips}>
+            {history.map((m) => (
+              <View key={m} style={styles.histChip}>
+                <Text style={styles.histText}>{m}</Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
+
       <Pressable style={styles.toggleRow} onPress={() => setActive((v) => !v)}>
         <Text style={styles.toggleLabel}>Active each month</Text>
         <Text style={styles.toggleValue}>{active ? 'On' : 'Paused'}</Text>
@@ -240,6 +269,15 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
   chipTextOn: { color: colors.accentStrong },
+  histChip: {
+    backgroundColor: colors.bgSoft,
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  histText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

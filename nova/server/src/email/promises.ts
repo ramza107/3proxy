@@ -12,6 +12,8 @@ export type EmailPromise = {
   /** Ready-to-create task title */
   suggestedTask: string
   suggestedDate: string | null
+  /** Optional draft follow-up body */
+  suggestedReply?: string | null
   sentAt: string
 }
 
@@ -81,6 +83,7 @@ export function extractPromisesLocal(messages: SentMessagePreview[], today: stri
           promise,
           suggestedTask,
           suggestedDate,
+          suggestedReply: `Hi ${toName},\n\nJust a quick note — I'm on track for: ${suggestedTask}${suggestedDate ? ` by ${suggestedDate}` : ''}.\n\nBest`,
           sentAt: msg.date,
         })
         if (out.length >= 8) return out
@@ -213,6 +216,8 @@ export function demoPromises(): PromisesDigest {
         promise: "I'll send the updated slides tomorrow",
         suggestedTask: 'Send updated Q3 slides to Alex',
         suggestedDate: add(1),
+        suggestedReply:
+          "Hi Alex,\n\nJust a quick note — I'm on track for: Send updated Q3 slides to Alex.\n\nBest",
         sentAt: new Date().toISOString(),
       },
       {
@@ -224,6 +229,8 @@ export function demoPromises(): PromisesDigest {
         promise: 'Я перезвоню вечером',
         suggestedTask: 'Call Mom back this evening',
         suggestedDate: today,
+        suggestedReply:
+          "Hi Mom,\n\nJust a quick note — I'm on track for: Call Mom back this evening.\n\nBest",
         sentAt: new Date().toISOString(),
       },
     ],

@@ -28,6 +28,20 @@ export function isPaidThisMonth(bill: Bill, month = currentMonthKey()) {
   return bill.lastPaidMonth === month
 }
 
+/** Due (unpaid) amounts this month, grouped by currency. */
+export function dueTotalsByCurrency(bills: Bill[], month = currentMonthKey()) {
+  const byCur: Record<string, number> = {}
+  let count = 0
+  for (const b of bills) {
+    if (b.active === false) continue
+    if (isPaidThisMonth(b, month)) continue
+    const cur = (b.currency || 'UAH').toUpperCase()
+    byCur[cur] = (byCur[cur] || 0) + b.amount
+    count += 1
+  }
+  return { byCur, count }
+}
+
 export function formatMoney(amount: number, currency: string) {
   const cur = (currency || 'UAH').toUpperCase()
   try {
@@ -73,8 +87,10 @@ export function sampleBills(): Omit<Bill, 'id' | 'created_at' | 'updated_at'>[] 
       dayOfMonth: 1,
       category: 'Housing',
       notes: 'Apartment',
+      payHowTo: 'Bank transfer · IBAN in notes',
       active: true,
       lastPaidMonth: null,
+      paidHistory: [],
     },
     {
       title: 'Internet',
@@ -83,8 +99,10 @@ export function sampleBills(): Omit<Bill, 'id' | 'created_at' | 'updated_at'>[] 
       dayOfMonth: 5,
       category: 'Internet',
       notes: null,
+      payHowTo: 'https://my.provider.example/pay',
       active: true,
       lastPaidMonth: null,
+      paidHistory: [],
     },
     {
       title: 'Netflix',
@@ -93,8 +111,10 @@ export function sampleBills(): Omit<Bill, 'id' | 'created_at' | 'updated_at'>[] 
       dayOfMonth: 12,
       category: 'Streaming',
       notes: null,
+      payHowTo: 'App Store / Google Play subscription',
       active: true,
       lastPaidMonth: null,
+      paidHistory: [],
     },
     {
       title: 'Phone',
@@ -103,8 +123,10 @@ export function sampleBills(): Omit<Bill, 'id' | 'created_at' | 'updated_at'>[] 
       dayOfMonth: 15,
       category: 'Phone',
       notes: null,
+      payHowTo: null,
       active: true,
       lastPaidMonth: null,
+      paidHistory: [],
     },
     {
       title: 'Gym',
@@ -113,8 +135,10 @@ export function sampleBills(): Omit<Bill, 'id' | 'created_at' | 'updated_at'>[] 
       dayOfMonth: 20,
       category: 'Fitness',
       notes: null,
+      payHowTo: 'Front desk or bank app',
       active: true,
       lastPaidMonth: null,
+      paidHistory: [],
     },
   ]
 }
