@@ -12,6 +12,8 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
+import { draftForMeeting, draftForPromise } from '../lib/draftReply'
+import { confirmSendReply, copyDraftOnly, sendGmailOnly } from '../lib/sendReply'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
@@ -242,6 +244,60 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     Alert.alert('On your list', 'Tracked under Waiting until you complete it.')
   }
 
+  const onCopyPromise = async (p: EmailPromise) => {
+    try {
+      await copyDraftOnly(draftForPromise(p))
+    } catch (e) {
+      Alert.alert('Copy', e instanceof Error ? e.message : 'Could not copy')
+    }
+  }
+
+  const onCopyMeeting = async (m: MeetingAlert) => {
+    try {
+      await copyDraftOnly(draftForMeeting(m))
+    } catch (e) {
+      Alert.alert('Copy', e instanceof Error ? e.message : 'Could not copy')
+    }
+  }
+
+  const onSendPromise = (p: EmailPromise) => {
+    if (!userId || !p.toEmail) {
+      Alert.alert('Send', 'Connect Google in Settings to send from Wahrly.')
+      return
+    }
+    confirmSendReply({
+      to: p.toEmail,
+      onConfirm: () => {
+        void sendGmailOnly({
+          userId,
+          to: p.toEmail,
+          subject: p.subject,
+          body: draftForPromise(p),
+          threadId: p.messageId,
+        })
+      },
+    })
+  }
+
+  const onSendMeeting = (m: MeetingAlert) => {
+    if (!userId || !m.fromEmail) {
+      Alert.alert('Send', 'Connect Google in Settings to send from Wahrly.')
+      return
+    }
+    confirmSendReply({
+      to: m.fromEmail,
+      onConfirm: () => {
+        void sendGmailOnly({
+          userId,
+          to: m.fromEmail,
+          subject: m.subject,
+          body: draftForMeeting(m),
+          threadId: m.messageId,
+        })
+      },
+    })
+  }
+
   return (
     <HomeSection
       title={t('home.openLoops')}
@@ -301,6 +357,12 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                       <Pressable style={styles.addBtn} onPress={() => onAddPromise(p)}>
                         <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
                       </Pressable>
+                      <Pressable style={styles.copyBtn} onPress={() => onCopyPromise(p)}>
+                        <Text style={styles.copyBtnText}>{t('home.draftReply')}</Text>
+                      </Pressable>
+                      <Pressable style={styles.sendBtn} onPress={() => onSendPromise(p)}>
+                        <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
+                      </Pressable>
                       <Pressable onPress={() => dismissPromise(p.id)} hitSlop={8}>
                         <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
                       </Pressable>
@@ -340,6 +402,12 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                   <View style={styles.actions}>
                     <Pressable style={styles.addBtn} onPress={() => onAddMeeting(m)}>
                       <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
+                    </Pressable>
+                    <Pressable style={styles.copyBtn} onPress={() => onCopyMeeting(m)}>
+                      <Text style={styles.copyBtnText}>{t('home.draftReply')}</Text>
+                    </Pressable>
+                    <Pressable style={styles.sendBtn} onPress={() => onSendMeeting(m)}>
+                      <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => {
@@ -415,6 +483,21 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   addBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
+  copyBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radii.full,
+  },
+  copyBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
+  sendBtn: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radii.full,
+  },
+  sendBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   autoPending: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, marginTop: 4 },
   btn: {

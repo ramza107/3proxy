@@ -1,3 +1,4 @@
+import { Alert } from 'react-native'
 import { chatWithNova } from '../lib/api'
 import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
 import { currentMonthKey } from '../lib/bills'
@@ -201,24 +202,15 @@ export async function applyActions(
     }
 
     if (action.type === 'create_calendar_event') {
-      try {
-        const dur = Math.min(180, Math.max(15, action.durationMin || 60))
-        const startMin = parseHmToMinutes(action.time) ?? 9 * 60
-        const endMin = startMin + dur
-        const pad = (n: number) => String(n).padStart(2, '0')
-        const endH = Math.floor(endMin / 60) % 24
-        const endM = endMin % 60
-        const start = `${action.date}T${action.time}:00`
-        const end = `${action.date}T${pad(endH)}:${pad(endM)}:00`
-        await createCalendarEvent(userId, {
-          title: action.title,
-          start,
-          end,
-          location: action.location,
-        })
-      } catch {
-        // Calendar may be disconnected — task/bill actions still apply
-      }
+      // Local timed task only — Google write happens after explicit confirm (Plan day).
+      const task = store.createTaskLocal({
+        title: action.title,
+        date: action.date,
+        time: action.time,
+        priority: 'high',
+        userId,
+      })
+      await scheduleTaskNotification(task, notificationsEnabled)
     }
   }
 
@@ -239,13 +231,76 @@ export async function refreshTasks(userId: string) {
   }
 }
 
+export type CalendarCandidate = {
+  title: string
+  start: string
+  end: string
+}
+
+export type OrganizeMyDayResult = AIChatResponse & {
+  calendarCandidates: CalendarCandidate[]
+}
+
+/** Push previously planned timed tasks to Google Calendar (after user confirms). */
+export async function syncPlannedTasksToCalendar(
+  candidates: CalendarCandidate[],
+): Promise<{ ok: number; failed: number }> {
+  const store = useNovaStore.getState()
+  const userId = store.sessionUserId
+  if (!userId || !candidates.length) return { ok: 0, failed: 0 }
+
+  let ok = 0
+  let failed = 0
+  for (const c of candidates) {
+    try {
+      await createCalendarEvent(userId, {
+        title: c.title,
+        start: c.start,
+        end: c.end,
+        description: 'Scheduled by Wahrly Plan day',
+      })
+      ok += 1
+    } catch {
+      failed += 1
+    }
+  }
+  return { ok, failed }
+}
+
+function candidatesFromPlanActions(
+  actions: Extract<AIAction, { type: 'update_task' }>[],
+): CalendarCandidate[] {
+  const latest = useNovaStore.getState().tasks
+  const out: CalendarCandidate[] = []
+  const pad = (n: number) => String(n).padStart(2, '0')
+  for (const action of actions) {
+    const task = latest.find((t) => t.id === action.task_id)
+    if (!task?.date || !task.time) continue
+    const dur = durationForPriority(task.priority)
+    const startMin = parseHmToMinutes(task.time)
+    if (startMin == null) continue
+    const endMin = startMin + dur
+    const endH = Math.floor(endMin / 60) % 24
+    const endM = endMin % 60
+    out.push({
+      title: task.title,
+      start: `${task.date}T${task.time}:00`,
+      end: `${task.date}T${pad(endH)}:${pad(endM)}:00`,
+    })
+  }
+  return out
+}
+
 export async function organizeMyDay(opts?: {
   includeUndated?: boolean
   /** Task ids to leave alone (protected in Plan day triage) */
   skipTaskIds?: string[]
-  /** Also push scheduled blocks to Google Calendar when connected */
+  /**
+   * If true, write to Google Calendar immediately (legacy).
+   * Default false — return calendarCandidates for a confirm step.
+   */
   syncCalendar?: boolean
-}): Promise<AIChatResponse> {
+}): Promise<OrganizeMyDayResult> {
   const store = useNovaStore.getState()
   const userId = store.sessionUserId
   if (!userId) throw new Error('Not signed in')
@@ -286,34 +341,57 @@ export async function organizeMyDay(opts?: {
 
   if (planned.actions.length) {
     await applyActions(planned.actions, userId, store.settings.notificationsEnabled)
-
-    if (opts?.syncCalendar !== false) {
-      const latest = useNovaStore.getState().tasks
-      for (const action of planned.actions) {
-        const task = latest.find((t) => t.id === action.task_id)
-        if (!task?.date || !task.time) continue
-        const dur = durationForPriority(task.priority)
-        const startMin = parseHmToMinutes(task.time)
-        if (startMin == null) continue
-        const endMin = startMin + dur
-        const pad = (n: number) => String(n).padStart(2, '0')
-        const endH = Math.floor(endMin / 60) % 24
-        const endM = endMin % 60
-        try {
-          await createCalendarEvent(userId, {
-            title: task.title,
-            start: `${task.date}T${task.time}:00`,
-            end: `${task.date}T${pad(endH)}:${pad(endM)}:00`,
-            description: 'Scheduled by Wahrly Plan day',
-          })
-        } catch {
-          // optional — user may need to reconnect with write scope
-        }
-      }
-    }
   }
 
-  return { reply: planned.summary, actions: planned.actions }
+  const calendarCandidates = candidatesFromPlanActions(planned.actions)
+
+  if (opts?.syncCalendar === true && calendarCandidates.length) {
+    await syncPlannedTasksToCalendar(calendarCandidates)
+  }
+
+  return {
+    reply: planned.summary,
+    actions: planned.actions,
+    calendarCandidates: opts?.syncCalendar === true ? [] : calendarCandidates,
+  }
+}
+
+/** Ask before writing Plan day blocks to Google Calendar. */
+export function confirmAddToGoogleCalendar(
+  candidates: CalendarCandidate[],
+  onDone?: (result: { ok: number; failed: number }) => void,
+) {
+  if (!candidates.length) return
+  const n = candidates.length
+  Alert.alert(
+    'Google Calendar',
+    `Add ${n} planned block${n === 1 ? '' : 's'} to Google Calendar?`,
+    [
+      { text: 'Not now', style: 'cancel' },
+      {
+        text: 'Add',
+        style: 'default',
+        onPress: () => {
+          void syncPlannedTasksToCalendar(candidates).then((result) => {
+            if (result.failed && !result.ok) {
+              Alert.alert(
+                'Calendar',
+                'Could not add events — reconnect Google in Settings (calendar write).',
+              )
+            } else if (result.ok) {
+              Alert.alert(
+                'Calendar',
+                result.failed
+                  ? `Added ${result.ok}. ${result.failed} failed.`
+                  : `Added ${result.ok} to Google Calendar.`,
+              )
+            }
+            onDone?.(result)
+          })
+        },
+      },
+    ],
+  )
 }
 
 export async function sendNovaMessage(message: string): Promise<AIChatResponse> {
@@ -323,7 +401,7 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
   store.addMessage({ role: 'user', content: message })
 
-  let response: AIChatResponse
+  let response: AIChatResponse | OrganizeMyDayResult
 
   // Real Gmail check — don't fall through to the Tasks canned reply
   if (isCheckEmailIntent(message)) {
@@ -334,9 +412,12 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
   // Smart day packer — Motion-style slot filling for today's tasks
   if (isOrganizeDayIntent(message)) {
-    response = await organizeMyDay()
-    store.addMessage({ role: 'assistant', content: response.reply })
-    return response
+    const planned = await organizeMyDay()
+    store.addMessage({ role: 'assistant', content: planned.reply })
+    if (planned.calendarCandidates.length) {
+      confirmAddToGoogleCalendar(planned.calendarCandidates)
+    }
+    return planned
   }
 
   const history = store.messages.slice(-8).map((m) => ({ role: m.role, content: m.content }))
