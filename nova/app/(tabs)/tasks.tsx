@@ -173,6 +173,7 @@ export default function TasksScreen() {
             style={[styles.dayChip, !focusDay && styles.dayChipOn]}
           >
             <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]}>Week</Text>
+            <Text style={styles.dayChipSub}> </Text>
             <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]}>
               {stats.week}
             </Text>
@@ -400,14 +401,15 @@ const styles = StyleSheet.create({
   },
   dayChip: {
     width: 76,
-    paddingVertical: 10,
+    height: 78,
+    paddingVertical: 8,
     paddingHorizontal: 6,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
     alignItems: 'center',
-    gap: 2,
+    justifyContent: 'space-between',
   },
   dayChipOn: {
     backgroundColor: colors.accentSoft,
@@ -434,7 +436,6 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.bodyBold,
     fontSize: 13,
-    marginTop: 2,
     textAlign: 'center',
     width: '100%',
     fontVariant: ['tabular-nums'],
