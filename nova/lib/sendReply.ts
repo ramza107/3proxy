@@ -1,15 +1,12 @@
+/** Gmail send/draft helpers — kept for a later release; UI currently read-only. */
+
 import { Alert } from 'react-native'
 import { createEmailDraft, sendEmailReply } from './emailApi'
 import { copyText } from './clipboard'
 
-export async function copyOrShareDraft(text: string) {
-  const mode = await copyText(text)
-  Alert.alert(
-    mode === 'copied' ? 'Draft copied' : 'Draft ready',
-    mode === 'copied'
-      ? 'Paste into Gmail when you reply — or use Send in Wahrly after reconnecting Google.'
-      : 'Share sheet opened — send or copy from there.',
-  )
+export async function copyDraftOnly(text: string) {
+  await copyText(text)
+  Alert.alert('Draft copied', 'Paste into Gmail when you reply.')
 }
 
 export async function sendOrDraftReply(params: {
@@ -40,18 +37,13 @@ export async function sendOrDraftReply(params: {
         body: params.body,
         threadId: params.threadId,
       })
-      Alert.alert(
-        'Draft in Gmail',
-        'Could not send directly — opened a draft in Gmail. Reconnect Google in Settings if send keeps failing.',
-      )
+      Alert.alert('Draft in Gmail', 'Could not send — opened a draft in Gmail.')
       return 'draft'
     } catch {
-      await copyOrShareDraft(params.body)
+      await copyDraftOnly(params.body)
       Alert.alert(
         'Copy instead',
-        sendErr instanceof Error
-          ? `${sendErr.message}\n\nDraft copied — reconnect Google with send permission in Settings.`
-          : 'Draft copied — reconnect Google in Settings to send from Wahrly.',
+        sendErr instanceof Error ? sendErr.message : 'Could not send from Wahrly.',
       )
       return 'copied'
     }
