@@ -1,4 +1,4 @@
-import type { AIChatResponse, Priority } from '../../types'
+import type { AIChatResponse, Dow, Priority, TaskRecurrence } from '../../types'
 
 type TaskLike = {
   id: string
@@ -26,6 +26,72 @@ function addDays(isoDate: string, days: number) {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+function firstOccurrence(today: string, rec: TaskRecurrence): string {
+  if (rec.freq === 'daily') return today
+  const target = rec.days?.[0] ?? 1
+  const base = new Date(`${today}T12:00:00`)
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(base)
+    d.setDate(base.getDate() + i)
+    if (d.getDay() === target) {
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
+    }
+  }
+  return today
+}
+
+const WEEKDAY_MAP: Record<string, Dow> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+  воскресенье: 0,
+  понедельник: 1,
+  вторник: 2,
+  среду: 3,
+  среда: 3,
+  четверг: 4,
+  пятницу: 5,
+  пятница: 5,
+  субботу: 6,
+  суббота: 6,
+}
+
+function parseRecurrence(text: string): TaskRecurrence | null {
+  const lower = normalize(text)
+  if (/\bevery\s+day\b|\bdaily\b/.test(lower) || /(каждый\s+день|ежедневно)/i.test(lower)) {
+    return { freq: 'daily' }
+  }
+  const en = lower.match(
+    /\bevery\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/,
+  )
+  if (en) return { freq: 'weekly', days: [WEEKDAY_MAP[en[1]]] }
+  const ru = lower.match(
+    /кажд(?:ый|ую|ое)\s+(понедельник|вторник|среду|среда|четверг|пятницу|пятница|субботу|суббота|воскресенье)/i,
+  )
+  if (ru) return { freq: 'weekly', days: [WEEKDAY_MAP[ru[1].toLowerCase()]] }
+  return null
+}
+
+function stripRecurrenceWords(title: string): string {
+  return title
+    .replace(/\bevery\s+(day|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi, ' ')
+    .replace(/\bdaily\b/gi, ' ')
+    .replace(/(?:^|[^\p{L}])(каждый\s+день|ежедневно)(?=[^\p{L}]|$)/giu, ' ')
+    .replace(
+      /(?:^|[^\p{L}])кажд(?:ый|ую|ое)\s+(понедельник|вторник|среду|среда|четверг|пятницу|пятница|субботу|суббота|воскресенье)(?=[^\p{L}]|$)/giu,
+      ' ',
+    )
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function normalize(text: string) {
@@ -111,9 +177,10 @@ function hasTaskIntent(text: string) {
       lower,
     ) ||
     /\b(tomorrow|today|at\s+\d{1,2})\b/.test(lower) ||
-    /(надо|нужно|должен|должна|купи|купить|позвони|убер|постира|забер|забр|приготов|напомни|завтра|сегодня|задач|через\s+\d+)/i.test(
+    /(надо|нужно|должен|должна|купи|купить|позвони|убер|постира|забер|забр|приготов|напомни|завтра|сегодня|задач|через\s+\d+|кажд|ежеднев)/i.test(
       lower,
-    )
+    ) ||
+    /\bevery\b|\bdaily\b/.test(lower)
   )
 }
 
@@ -353,15 +420,18 @@ export function localAI(
 
   const date = parseDate(text, today)
   const time = parseTime(text)
+  const recurrence = parseRecurrence(text)
   const isReminder = /remind me|напомни/i.test(lower)
   const titles = splitTasks(text).slice(0, 6)
 
   if (isReminder && date && time && titles[0]) {
-    const title = titles[0]
-      .replace(/^to\s+/i, '')
-      .replace(/^remind me to\s+/i, '')
-      .replace(/^remind me\s+/i, '')
-      .replace(/^напомни(ть)?\s*(мне)?\s*(о|про)?\s*/i, '')
+    const title = stripRecurrenceWords(
+      titles[0]
+        .replace(/^to\s+/i, '')
+        .replace(/^remind me to\s+/i, '')
+        .replace(/^remind me\s+/i, '')
+        .replace(/^напомни(ть)?\s*(мне)?\s*(о|про)?\s*/i, ''),
+    )
     return {
       reply: isRu(text)
         ? `Готово. Напоминание → ${whereLabel(date, today)} в ${time}.`
@@ -371,28 +441,43 @@ export function localAI(
   }
 
   if (titles.length) {
+    const resolvedDate = recurrence
+      ? firstOccurrence(date || today, recurrence)
+      : date
     const actions = titles.map((title, index) => ({
       type: 'create_task' as const,
-      title: title.replace(/^to\s+/i, '').replace(/^(надо|нужно)\s+/i, ''),
-      date,
+      title: stripRecurrenceWords(
+        title.replace(/^to\s+/i, '').replace(/^(надо|нужно)\s+/i, ''),
+      ),
+      date: resolvedDate,
       time: index === 0 ? time : null,
       priority: time ? ('high' as const) : ('medium' as const),
+      recurrence: recurrence || null,
     }))
-    const place = whereLabel(date, today)
+    const place = whereLabel(resolvedDate, today)
+    const repeatNote = recurrence
+      ? recurrence.freq === 'daily'
+        ? isRu(text)
+          ? ' (каждый день)'
+          : ' (every day)'
+        : isRu(text)
+          ? ' (еженедельно)'
+          : ' (weekly)'
+      : ''
 
     if (actions.length === 1) {
       return {
         reply: isRu(text)
-          ? `Сохранил «${actions[0].title}» → ${place}${time ? ` в ${time}` : ''}.`
-          : `Saved "${actions[0].title}" → open ${place}${time ? ` at ${time}` : ''}.`,
+          ? `Сохранил «${actions[0].title}» → ${place}${time ? ` в ${time}` : ''}${repeatNote}.`
+          : `Saved "${actions[0].title}" → open ${place}${time ? ` at ${time}` : ''}${repeatNote}.`,
         actions,
       }
     }
 
     return {
       reply: isRu(text)
-        ? `Сохранил ${actions.length} задач → ${place}.`
-        : `Saved ${actions.length} tasks → open ${place}.`,
+        ? `Сохранил ${actions.length} задач → ${place}${repeatNote}.`
+        : `Saved ${actions.length} tasks → open ${place}${repeatNote}.`,
       actions,
     }
   }

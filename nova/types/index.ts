@@ -83,6 +83,8 @@ export type AIAction =
       date: string | null
       time: string | null
       priority: Priority
+      /** When set, completing the task spawns the next occurrence */
+      recurrence?: TaskRecurrence | null
     }
   | {
       type: 'update_task'

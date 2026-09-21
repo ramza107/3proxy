@@ -15,6 +15,7 @@ export async function chatWithNova(params: {
   bills?: Bill[]
   history: { role: 'user' | 'assistant'; content: string }[]
   accessToken?: string | null
+  aiTone?: 'friendly' | 'concise' | 'coach'
 }): Promise<AIChatResponse> {
   const currentDate = localISODate()
   const timeZone = deviceTimeZone()
@@ -43,6 +44,7 @@ export async function chatWithNova(params: {
       current_date: currentDate,
       timezone: timeZone,
       weekday: localWeekdayName(currentDate),
+      ai_tone: params.aiTone || 'friendly',
     }),
   })
 
