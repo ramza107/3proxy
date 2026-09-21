@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { ChatBubble } from '../../components/ChatBubble'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { addLocalDays, localISODate } from '../../lib/localDate'
 import { useNovaStore } from '../../lib/store'
 import { sendNovaMessage } from '../../services/ai'
 import type { AIAction } from '../../types'
@@ -26,8 +27,8 @@ type SavedItem = {
 
 function describeWhere(action: AIAction): SavedItem | null {
   if (action.type === 'create_task') {
-    const today = new Date().toISOString().slice(0, 10)
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+    const today = localISODate()
+    const tomorrow = addLocalDays(today, 1)
     let where = 'Tasks → Upcoming'
     if (action.date === today) where = 'Tasks → Today'
     else if (action.date === tomorrow) where = 'Tasks → Tomorrow'
@@ -38,9 +39,15 @@ function describeWhere(action: AIAction): SavedItem | null {
     }
   }
   if (action.type === 'create_reminder') {
+    const today = localISODate()
+    const tomorrow = addLocalDays(today, 1)
+    let where = 'Tasks → Upcoming'
+    if (action.date === today) where = 'Tasks → Today'
+    else if (action.date === tomorrow) where = 'Tasks → Tomorrow'
+    else if (action.date) where = `Tasks → Upcoming`
     return {
       title: action.title + (action.time ? ` · ${action.time}` : ''),
-      where: 'Tasks → Tomorrow',
+      where,
     }
   }
   if (action.type === 'create_bill') {

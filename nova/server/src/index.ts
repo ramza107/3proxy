@@ -100,6 +100,8 @@ const bodySchema = z.object({
   user_id: z.string().min(1),
   user_name: z.string().nullable().optional(),
   current_date: z.string().optional(),
+  timezone: z.string().optional(),
+  weekday: z.string().optional(),
   tasks: z
     .array(
       z.object({
@@ -142,6 +144,8 @@ const bodySchema = z.object({
 function buildContext(input: z.infer<typeof bodySchema>) {
   const today = input.current_date || new Date().toISOString().slice(0, 10)
   const month = today.slice(0, 7)
+  const tz = input.timezone || 'local'
+  const weekday = input.weekday || ''
   const open = input.tasks.filter((t) => !t.completed)
   const todayTasks = open.filter((t) => t.date === today)
   const upcoming = open
@@ -162,8 +166,11 @@ function buildContext(input: z.infer<typeof bodySchema>) {
         .join('\n')
     : '- none unpaid'
 
-  return `Current date:
-${today}
+  return `Current date (user local calendar — NOT UTC):
+${today}${weekday ? ` (${weekday})` : ''}
+Timezone: ${tz}
+Tomorrow is the next calendar day after Current date.
+
 User:
 ${input.user_name || 'Friend'}
 

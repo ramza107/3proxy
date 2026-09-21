@@ -1,5 +1,6 @@
 import Constants from 'expo-constants'
 import type { AIChatResponse, Bill, Task } from '../types'
+import { deviceTimeZone, localISODate, localWeekdayName } from './localDate'
 
 const extra = Constants.expoConfig?.extra ?? {}
 
@@ -15,6 +16,8 @@ export async function chatWithNova(params: {
   history: { role: 'user' | 'assistant'; content: string }[]
   accessToken?: string | null
 }): Promise<AIChatResponse> {
+  const currentDate = localISODate()
+  const timeZone = deviceTimeZone()
   const res = await fetch(`${apiUrl}/api/ai/chat`, {
     method: 'POST',
     headers: {
@@ -37,7 +40,9 @@ export async function chatWithNova(params: {
         active: b.active,
       })),
       history: params.history.slice(-8),
-      current_date: new Date().toISOString().slice(0, 10),
+      current_date: currentDate,
+      timezone: timeZone,
+      weekday: localWeekdayName(currentDate),
     }),
   })
 
