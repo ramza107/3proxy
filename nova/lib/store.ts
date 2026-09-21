@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import type { Bill, ChatMessage, Priority, Reminder, Task, TaskRecurrence, UserSettings } from '../types'
 import { defaultTypicalWeek } from '../types'
 import { deviceLanguageFallback, isAppLanguage } from './i18n'
+import { localISODate, localISOMonth } from './localDate'
 
 const ssrSafeStorage = {
   getItem: async (_name: string) => null as string | null,
@@ -24,7 +25,7 @@ function uid(prefix = 'id') {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+  return localISODate()
 }
 
 type NovaState = {
@@ -182,7 +183,7 @@ export const useNovaStore = create<NovaState>()(
       },
       removeBill: (id) => set({ bills: get().bills.filter((b) => b.id !== id) }),
       markBillPaid: (id, month) => {
-        const stamp = month || new Date().toISOString().slice(0, 7)
+        const stamp = month || localISOMonth()
         const now = new Date().toISOString()
         set({
           bills: get().bills.map((b) => {

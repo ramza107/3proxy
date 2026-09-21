@@ -1,9 +1,8 @@
 import type { AIChatResponse, Bill, Priority, Task } from '../types'
+import { addLocalDays, localISODate } from '../lib/localDate'
 
 function addDays(isoDate: string, days: number) {
-  const d = new Date(`${isoDate}T12:00:00`)
-  d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+  return addLocalDays(isoDate, days)
 }
 
 function normalize(text: string) {
@@ -27,11 +26,14 @@ function parseTime(text: string): string | null {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
   }
   const twentyFour =
-    text.match(/\bat\s+(\d{1,2}):(\d{2})\b/i) || text.match(/\b(\d{1,2}):(\d{2})\b/)
+    text.match(/\bat\s+(\d{1,2}):(\d{2})\b/i) ||
+    text.match(/(?:^|[^\p{L}])в\s+(\d{1,2}):(\d{2})(?=[^\p{L}]|$)/iu) ||
+    text.match(/\b(\d{1,2}):(\d{2})\b/)
   if (twentyFour) {
     return `${String(Number(twentyFour[1])).padStart(2, '0')}:${twentyFour[2]}`
   }
-  const hourOnly = text.match(/\bat\s+(\d{1,2})\b/i)
+  const hourOnly =
+    text.match(/\bat\s+(\d{1,2})\b/i) || text.match(/(?:^|[^\p{L}])в\s+(\d{1,2})(?=[^\p{L}]|$)/iu)
   if (hourOnly) {
     const h = Number(hourOnly[1])
     if (h >= 0 && h <= 23) return `${String(h).padStart(2, '0')}:00`
@@ -41,9 +43,19 @@ function parseTime(text: string): string | null {
 
 function parseDate(text: string, today: string): string | null {
   const lower = normalize(text)
-  if (/\btoday\b/.test(lower)) return today
-  if (/\btomorrow\b/.test(lower)) return addDays(today, 1)
-  const inDays = lower.match(/\bin\s+(\d+)\s+days?\b/)
+  if (/\btoday\b/.test(lower) || /(^|[^\p{L}])сегодня(?=[^\p{L}]|$)/u.test(lower)) return today
+  if (/\btomorrow\b/.test(lower) || /(^|[^\p{L}])завтра(?=[^\p{L}]|$)/u.test(lower)) {
+    return addDays(today, 1)
+  }
+  if (
+    /\bday after tomorrow\b/.test(lower) ||
+    /(^|[^\p{L}])послезавтра(?=[^\p{L}]|$)/u.test(lower)
+  ) {
+    return addDays(today, 2)
+  }
+  const inDays =
+    lower.match(/\bin\s+(\d+)\s+days?\b/) ||
+    lower.match(/(?:^|[^\p{L}])через\s+(\d+)\s+(день|дня|дней)(?=[^\p{L}]|$)/u)
   if (inDays) return addDays(today, Number(inDays[1]))
   return null
 }
@@ -54,6 +66,7 @@ function isSmallTalk(text: string) {
     /^(hi|hello|hey|yo|sup|thanks|thank you|ok|okay|cool|nice|bye|good\s*(morning|evening|night)?)\b/.test(
       lower,
     ) ||
+    /^(привет|здравствуй|здравствуйте|спасибо|пока|доброе\s*(утро|день|вечер))\b/.test(lower) ||
     /^(who are you|who r u|what are you|what'?s up|how are you|how r u|how do you do)\b/.test(
       lower,
     ) ||
@@ -63,7 +76,6 @@ function isSmallTalk(text: string) {
 
 function hasTaskIntent(text: string) {
   const lower = normalize(text)
-  // Don't treat “check my email” as creating a to-do
   if (
     /(проверь|проверить|посмотри|покажи).{0,40}(почт|inbox|gmail|письм)/i.test(lower) ||
     /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail|gmail)\b/i.test(lower)
@@ -75,7 +87,10 @@ function hasTaskIntent(text: string) {
     /\b(need to|have to|gotta|must|should|buy|call|clean|finish|pay|send|pick up|book|meet)\b/.test(
       lower,
     ) ||
-    /\b(tomorrow|today|at\s+\d{1,2})\b/.test(lower)
+    /\b(tomorrow|today|at\s+\d{1,2})\b/.test(lower) ||
+    /(надо|нужно|должен|должна|купи|купить|позвони|убер|постира|забер|забр|приготов|напомни|завтра|сегодня|задач|через\s+\d+)/i.test(
+      lower,
+    )
   )
 }
 
@@ -88,22 +103,35 @@ function whereLabel(date: string | null, today: string) {
 
 function splitTasks(text: string): string[] {
   const cleaned = normalize(text)
-    .replace(/^(remind me to|remind me|i need to|i have to|need to|please|can you)\s+/i, '')
+    .replace(
+      /^(remind me to|remind me|i need to|i have to|need to|please|can you|напомни(ть)?\s*(мне)?\s*(о|про)?|надо|нужно|пожалуйста)\s+/i,
+      '',
+    )
     .trim()
 
-  return cleaned
-    .split(/,| and | & | then /i)
+  const parts = cleaned
+    .split(/,| and | & | then | и | потом | а также /i)
     .map((p) =>
       p
         .replace(
-          /\b(tomorrow|today|at\s+\d{1,2}(?::\d{2})?\s*(am|pm)?|\d{1,2}:\d{2})\b/gi,
+          /\b(tomorrow|today|day after tomorrow|at\s+\d{1,2}(?::\d{2})?\s*(am|pm)?|\d{1,2}:\d{2})\b/gi,
           '',
         )
-        .replace(/^(to|need to|have to)\s+/i, '')
+        .replace(/(?:^|[^\p{L}])(завтра|сегодня|послезавтра)(?=[^\p{L}]|$)/giu, ' ')
+        .replace(/(?:^|[^\p{L}])через\s+\d+\s+(день|дня|дней)(?=[^\p{L}]|$)/giu, ' ')
+        .replace(/(?:^|[^\p{L}])в\s+\d{1,2}(?::\d{2})?(?=[^\p{L}]|$)/giu, ' ')
+        .replace(/\bin\s+\d+\s+days?\b/gi, ' ')
+        .replace(/^(to|need to|have to|надо|нужно)\s+/i, '')
         .replace(/\s+/g, ' ')
         .trim(),
     )
     .filter((p) => p.length > 1)
+
+  return parts.length ? parts : [cleaned]
+}
+
+function isRu(text: string) {
+  return /[а-яё]/i.test(text)
 }
 
 /** Offline fallback when the AI server / OpenAI is unavailable. */
@@ -112,15 +140,16 @@ export function clientLocalAI(
   tasks: Task[],
   bills?: Bill[],
 ): AIChatResponse {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localISODate()
   const text = message.trim()
   const lower = normalize(text)
   const open = tasks.filter((t) => !t.completed)
 
   if (isSmallTalk(text)) {
     return {
-      reply:
-        "I'm Wahrly — your life assistant. Tell me something to do (for example: \"Tomorrow buy groceries\") and I'll put it in Tasks.",
+      reply: isRu(text)
+        ? 'Я Wahrly — помощник по делам. Скажи, что сделать (например: «Завтра купить продукты») — добавлю в Tasks.'
+        : "I'm Wahrly — your life assistant. Tell me something to do (for example: \"Tomorrow buy groceries\") and I'll put it in Tasks.",
       actions: [],
     }
   }
@@ -137,22 +166,40 @@ export function clientLocalAI(
     }
   }
 
-  if (/what.*(today|do i have|need to do)/i.test(lower)) {
+  if (
+    /what.*(today|do i have|need to do)/i.test(lower) ||
+    /(что|какие).{0,20}(сегодня|дела|задач)/i.test(lower)
+  ) {
     const todayTasks = open.filter((t) => t.date === today)
     if (!todayTasks.length) {
-      return { reply: 'Your day looks clear. Want me to add something?', actions: [] }
+      return {
+        reply: isRu(text)
+          ? 'На сегодня пусто. Добавить что-нибудь?'
+          : 'Your day looks clear. Want me to add something?',
+        actions: [],
+      }
     }
     const lines = todayTasks
       .map((t, i) => `${i + 1}. ${t.title}${t.time ? ` — ${t.time}` : ''}`)
       .join('\n')
-    return { reply: `You have ${todayTasks.length} things today:\n${lines}`, actions: [] }
+    return {
+      reply: isRu(text)
+        ? `На сегодня ${todayTasks.length}:\n${lines}`
+        : `You have ${todayTasks.length} things today:\n${lines}`,
+      actions: [],
+    }
   }
 
-  if (/finished|done|completed|i bought|i called/i.test(lower)) {
+  if (
+    /finished|done|completed|i bought|i called/i.test(lower) ||
+    /(сделал|сделала|купил|купила|позвонил|закончил|готово)\b/i.test(lower)
+  ) {
     const match = open.find((t) => lower.includes(t.title.toLowerCase().split(' ')[0]))
     if (match) {
       return {
-        reply: `Nice. Marked "${match.title}" as completed ✓`,
+        reply: isRu(text)
+          ? `Ок. «${match.title}» отмечена ✓`
+          : `Nice. Marked "${match.title}" as completed ✓`,
         actions: [{ type: 'complete_task', task_id: match.id }],
       }
     }
@@ -195,12 +242,14 @@ export function clientLocalAI(
     const amount = amountMatch ? Number(amountMatch[1].replace(',', '.')) : 0
     const title =
       text
-        .replace(/\b(add|create|new|bill|счет|счёт|платеж|добавь|добавить|создай)\b/gi, ' ')
+        .replace(/\b(add|create|new|bill)\b/gi, ' ')
+        .replace(/(?:^|[^\p{L}])(счет|счёт|платеж|добавь|добавить|создай)(?=[^\p{L}]|$)/giu, ' ')
         .replace(/\bon\s+the\s+\d{1,2}(?:st|nd|rd|th)?\b/gi, ' ')
         .replace(/\bday\s+\d{1,2}\b/gi, ' ')
         .replace(/\d{1,2}\s*(числа|числ)/gi, ' ')
         .replace(/\b(\d+[.,]?\d*)\b/g, ' ')
-        .replace(/\b(uah|usd|eur|грн|\$|€)\b/gi, ' ')
+        .replace(/\b(uah|usd|eur|\$|€)\b/gi, ' ')
+        .replace(/(?:^|[^\p{L}])грн(?=[^\p{L}]|$)/giu, ' ')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 40) || 'Bill'
@@ -230,8 +279,9 @@ export function clientLocalAI(
 
   if (!hasTaskIntent(text)) {
     return {
-      reply:
-        'I save real to-dos in the Tasks tab. Try: "Remind me to call Mom tomorrow at 7" or "Buy groceries tomorrow".',
+      reply: isRu(text)
+        ? 'Я сохраняю дела во вкладке Tasks. Попробуй: «Напомни позвонить маме завтра в 19» или «Купить продукты завтра».'
+        : 'I save real to-dos in the Tasks tab. Try: "Remind me to call Mom tomorrow at 7" or "Buy groceries tomorrow".',
       actions: [],
     }
   }
@@ -239,12 +289,16 @@ export function clientLocalAI(
   const date = parseDate(text, today)
   const time = parseTime(text)
   const titles = splitTasks(text).slice(0, 6)
-  const isReminder = /remind me/i.test(lower)
+  const isReminder = /remind me|напомни/i.test(lower)
 
   if (isReminder && date && time && titles[0]) {
-    const title = titles[0].replace(/^to\s+/i, '')
+    const title = titles[0]
+      .replace(/^to\s+/i, '')
+      .replace(/^напомни(ть)?\s*(мне)?\s*(о|про)?\s*/i, '')
     return {
-      reply: `Done. Reminder saved → ${whereLabel(date, today)} at ${time}.`,
+      reply: isRu(text)
+        ? `Готово. Напоминание → ${whereLabel(date, today)} в ${time}.`
+        : `Done. Reminder saved → ${whereLabel(date, today)} at ${time}.`,
       actions: [{ type: 'create_reminder', title, date, time }],
     }
   }
@@ -252,15 +306,18 @@ export function clientLocalAI(
   if (titles.length) {
     const actions = titles.map((title, index) => ({
       type: 'create_task' as const,
-      title: title.replace(/^to\s+/i, ''),
+      title: title.replace(/^to\s+/i, '').replace(/^(надо|нужно)\s+/i, ''),
       date,
       time: index === 0 ? time : null,
       priority: (time ? 'high' : 'medium') as Priority,
     }))
     const place = whereLabel(date, today)
     return {
-      reply:
-        actions.length === 1
+      reply: isRu(text)
+        ? actions.length === 1
+          ? `Сохранил «${actions[0].title}» → ${place}.`
+          : `Сохранил ${actions.length} задач → ${place}.`
+        : actions.length === 1
           ? `Saved "${actions[0].title}" → open ${place}.`
           : `Saved ${actions.length} tasks → open ${place}.`,
       actions,
@@ -268,7 +325,9 @@ export function clientLocalAI(
   }
 
   return {
-    reply: 'Tell me what you need to get done — I\'ll add it under Tasks.',
+    reply: isRu(text)
+      ? 'Скажи, что нужно сделать — добавлю в Tasks.'
+      : 'Tell me what you need to get done — I\'ll add it under Tasks.',
     actions: [],
   }
 }
