@@ -24,6 +24,8 @@ export async function transcribeAudio(params: {
   let raw = ''
   let provider = ''
 
+  const whisperTimeoutMs = 40_000
+
   if (params.groqKey && !params.groqKey.includes('your_groq')) {
     const form = new FormData()
     form.append('file', file)
@@ -36,6 +38,7 @@ export async function transcribeAudio(params: {
       method: 'POST',
       headers: { Authorization: `Bearer ${params.groqKey}` },
       body: form,
+      signal: AbortSignal.timeout(whisperTimeoutMs),
     })
     if (!res.ok) {
       const err = await res.text()
@@ -55,6 +58,7 @@ export async function transcribeAudio(params: {
       method: 'POST',
       headers: { Authorization: `Bearer ${params.openaiKey}` },
       body: form,
+      signal: AbortSignal.timeout(whisperTimeoutMs),
     })
     if (!res.ok) {
       const err = await res.text()
