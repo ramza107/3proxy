@@ -18,6 +18,7 @@ import type { Task } from '../types'
 
 type Step = 'today' | 'tomorrow' | 'done'
 
+/** Local calendar date — must match todayISO() from the store. */
 function tomorrowISO() {
   return format(addDays(new Date(), 1), 'yyyy-MM-dd')
 }
