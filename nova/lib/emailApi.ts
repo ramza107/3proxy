@@ -119,6 +119,80 @@ export async function fetchCalendarEvents(
   return res.json()
 }
 
+export async function createCalendarEvent(
+  userId: string,
+  params: {
+    title: string
+    start: string
+    end: string
+    allDay?: boolean
+    location?: string | null
+    description?: string | null
+  },
+): Promise<import('../types').CalendarEvent> {
+  const res = await fetch(`${apiUrl}/api/calendar/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      title: params.title,
+      start: params.start,
+      end: params.end,
+      allDay: params.allDay || false,
+      location: params.location || null,
+      description: params.description || null,
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(friendlyApiError(text, `Couldn’t create calendar event (${res.status})`))
+  }
+  const data = (await res.json()) as { event: import('../types').CalendarEvent }
+  return data.event
+}
+
+export async function sendEmailReply(
+  userId: string,
+  params: { to: string; subject: string; body: string; threadId?: string | null },
+): Promise<void> {
+  const res = await fetch(`${apiUrl}/api/email/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+      thread_id: params.threadId || null,
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(friendlyApiError(text, `Couldn’t send email (${res.status})`))
+  }
+}
+
+export async function createEmailDraft(
+  userId: string,
+  params: { to: string; subject: string; body: string; threadId?: string | null },
+): Promise<void> {
+  const res = await fetch(`${apiUrl}/api/email/draft`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+      thread_id: params.threadId || null,
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(friendlyApiError(text, `Couldn’t create Gmail draft (${res.status})`))
+  }
+}
+
 export async function registerPushToken(userId: string, token: string): Promise<void> {
   await fetch(`${apiUrl}/api/push/register`, {
     method: 'POST',

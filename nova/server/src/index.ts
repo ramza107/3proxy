@@ -6,7 +6,7 @@ import multer from 'multer'
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { buildDigest, demoDigest } from './email/digest.js'
-import { demoCalendarEvents, listCalendarEvents } from './email/calendar.js'
+import { demoCalendarEvents, listCalendarEvents, createCalendarEvent } from './email/calendar.js'
 import {
   buildAuthUrl,
   exchangeCode,
@@ -16,11 +16,14 @@ import {
   listRecentInboxMessages,
   listRecentSentMessages,
   parseOAuthState,
+  sendGmailMessage,
+  createGmailDraft,
 } from './email/gmail.js'
 import { buildMeetingsDigest, demoMeetings } from './email/meetings.js'
 import { buildPromisesDigest, demoPromises } from './email/promises.js'
 import {
   getPushToken,
+  hydratePushTokensFromSupabase,
   listPushUsers,
   markAlertPushed,
   savePushToken,
@@ -103,6 +106,21 @@ const bodySchema = z.object({
     )
     .optional()
     .default([]),
+  bills: z
+    .array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        amount: z.number().optional(),
+        currency: z.string().optional(),
+        dayOfMonth: z.number().optional(),
+        category: z.string().optional(),
+        lastPaidMonth: z.string().nullable().optional(),
+        active: z.boolean().optional(),
+      }),
+    )
+    .optional()
+    .default([]),
   history: z
     .array(
       z.object({
@@ -116,6 +134,7 @@ const bodySchema = z.object({
 
 function buildContext(input: z.infer<typeof bodySchema>) {
   const today = input.current_date || new Date().toISOString().slice(0, 10)
+  const month = today.slice(0, 7)
   const open = input.tasks.filter((t) => !t.completed)
   const todayTasks = open.filter((t) => t.date === today)
   const upcoming = open
@@ -123,6 +142,18 @@ function buildContext(input: z.infer<typeof bodySchema>) {
     .slice(0, 8)
     .map((t) => `- ${t.title}${t.date ? ` (${t.date}${t.time ? ` ${t.time}` : ''})` : ''} [id:${t.id}]`)
     .join('\n')
+
+  const activeBills = (input.bills || []).filter((b) => b.active !== false)
+  const unpaid = activeBills.filter((b) => !b.lastPaidMonth || b.lastPaidMonth < month)
+  const billsBlock = unpaid.length
+    ? unpaid
+        .slice(0, 12)
+        .map(
+          (b) =>
+            `- ${b.title} ${b.amount ?? '?'} ${b.currency || ''} due day ${b.dayOfMonth ?? '?'} [id:${b.id}]`,
+        )
+        .join('\n')
+    : '- none unpaid'
 
   return `Current date:
 ${today}
@@ -143,6 +174,9 @@ ${
 
 Upcoming:
 ${upcoming || '- none'}
+
+Unpaid bills this month (use ids for mark_bill_paid):
+${billsBlock}
 
 All open tasks with ids (use these ids for update/complete/delete):
 ${
@@ -442,6 +476,78 @@ app.get('/api/calendar/events', async (req, res) => {
   }
 })
 
+/** Create a Google Calendar event on the primary calendar. */
+app.post('/api/calendar/events', async (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '')
+    const title = String(req.body?.title || '').trim()
+    const start = String(req.body?.start || '')
+    const end = String(req.body?.end || '')
+    const location = req.body?.location ? String(req.body.location) : null
+    const description = req.body?.description ? String(req.body.description) : null
+    const allDay = Boolean(req.body?.allDay)
+    if (!userId || !title || !start || !end) {
+      return res.status(400).json({ error: 'user_id, title, start, end required' })
+    }
+    const event = await createCalendarEvent(userId, {
+      title,
+      start,
+      end,
+      allDay,
+      location,
+      description,
+    })
+    return res.json({ ok: true, event })
+  } catch (error) {
+    console.error('calendar create', error)
+    const msg = error instanceof Error ? error.message : 'calendar create failed'
+    const needsReconnect = /permission missing|reconnect/i.test(msg)
+    return res.status(needsReconnect ? 403 : 500).json({ error: msg })
+  }
+})
+
+/** Send a Gmail reply as the connected user. */
+app.post('/api/email/send', async (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '')
+    const to = String(req.body?.to || '').trim()
+    const subject = String(req.body?.subject || '').trim()
+    const body = String(req.body?.body || '')
+    const threadId = req.body?.thread_id ? String(req.body.thread_id) : null
+    if (!userId || !to || !subject || !body.trim()) {
+      return res.status(400).json({ error: 'user_id, to, subject, body required' })
+    }
+    const result = await sendGmailMessage(userId, { to, subject, body, threadId })
+    return res.json({ ok: true, ...result })
+  } catch (error) {
+    console.error('email send', error)
+    const msg = error instanceof Error ? error.message : 'send failed'
+    const needsReconnect = /permission missing|reconnect/i.test(msg)
+    return res.status(needsReconnect ? 403 : 500).json({ error: msg })
+  }
+})
+
+/** Create a Gmail draft (does not send). */
+app.post('/api/email/draft', async (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '')
+    const to = String(req.body?.to || '').trim()
+    const subject = String(req.body?.subject || '').trim()
+    const body = String(req.body?.body || '')
+    const threadId = req.body?.thread_id ? String(req.body.thread_id) : null
+    if (!userId || !to || !subject || !body.trim()) {
+      return res.status(400).json({ error: 'user_id, to, subject, body required' })
+    }
+    const result = await createGmailDraft(userId, { to, subject, body, threadId })
+    return res.json({ ok: true, ...result })
+  } catch (error) {
+    console.error('email draft', error)
+    const msg = error instanceof Error ? error.message : 'draft failed'
+    const needsReconnect = /permission missing|reconnect/i.test(msg)
+    return res.status(needsReconnect ? 403 : 500).json({ error: msg })
+  }
+})
+
 /** Register Expo push token for meeting-email alerts while the app is closed. */
 app.post('/api/push/register', async (req, res) => {
   try {
@@ -501,7 +607,7 @@ app.post('/api/ai/chat', async (req, res) => {
     const provider = resolveProvider()
 
     if (!provider) {
-      const local = localAI(input.message, input.tasks, today)
+      const local = localAI(input.message, input.tasks, today, input.bills)
       return res.json({ ...local, provider: 'local' })
     }
 
@@ -528,7 +634,7 @@ app.post('/api/ai/chat', async (req, res) => {
       return res.json({ ...json, provider: provider.name })
     } catch (providerError) {
       console.warn(`${provider.name} unavailable, using local AI:`, providerError)
-      const local = localAI(input.message, input.tasks, today)
+      const local = localAI(input.message, input.tasks, today, input.bills)
       return res.json({ ...local, fallback: true, provider: 'local' })
     }
   } catch (error) {
@@ -543,6 +649,8 @@ app.listen(Port, '0.0.0.0', () => {
   const provider = resolveProvider()
   console.log(`Wahrly AI server listening on http://0.0.0.0:${Port}`)
   console.log(`Provider: ${provider?.name || 'local'} ${provider?.model || ''}`.trim())
+
+  hydratePushTokensFromSupabase().catch(() => undefined)
 
   // Poll connected users who registered a push token (~every 10 min).
   // Free Render may sleep — alerts also fire when the app opens Home.
@@ -578,7 +686,12 @@ async function pollMeetingPushes() {
           token,
           title: 'Wahrly · Inbox',
           body: m.notifyBody,
-          data: { kind: 'meeting', alertId: m.id, messageId: m.messageId },
+          data: {
+            kind: 'meeting',
+            alertId: m.id,
+            messageId: m.messageId,
+            route: '/home',
+          },
         })
         if (ok) markAlertPushed(userId, m.id)
       }

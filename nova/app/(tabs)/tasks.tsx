@@ -1,5 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns'
-import { useMemo, useState } from 'react'
+import { useLocalSearchParams } from 'expo-router'
+import { useEffect, useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
@@ -61,6 +62,7 @@ function sampleWeekTasks(userId: string, today: string): Task[] {
 }
 
 export default function TasksScreen() {
+  const { taskId } = useLocalSearchParams<{ taskId?: string }>()
   const tasks = useNovaStore((s) => s.tasks)
   const settings = useNovaStore((s) => s.settings)
   const userId = useNovaStore((s) => s.sessionUserId) || 'local'
@@ -68,6 +70,12 @@ export default function TasksScreen() {
   const [editing, setEditing] = useState<Task | null>(null)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
+
+  useEffect(() => {
+    if (!taskId || typeof taskId !== 'string') return
+    const found = tasks.find((t) => t.id === taskId)
+    if (found) setEditing(found)
+  }, [taskId, tasks])
 
   const today = todayISO()
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')

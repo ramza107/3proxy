@@ -3,8 +3,8 @@ import { ActivityIndicator, Alert, AppState, Platform, Pressable, StyleSheet, Te
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailStatus } from '../lib/emailApi'
-import { copyText } from '../lib/clipboard'
 import { draftForMeeting } from '../lib/draftReply'
+import { confirmSendReply, copyOrShareDraft, sendOrDraftReply } from '../lib/sendReply'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
 import type { MeetingAlert, MeetingsDigest } from '../types'
@@ -144,17 +144,35 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
 
   const onDraft = async (m: MeetingAlert) => {
     try {
-      const draft = draftForMeeting(m)
-      const mode = await copyText(draft)
-      Alert.alert(
-        mode === 'copied' ? 'Draft copied' : 'Draft ready',
-        mode === 'copied'
-          ? 'Paste into Gmail when you reply.'
-          : 'Share sheet opened — send or copy from there.',
-      )
+      await copyOrShareDraft(draftForMeeting(m))
     } catch (e) {
       Alert.alert('Draft', e instanceof Error ? e.message : 'Could not copy')
     }
+  }
+
+  const onSend = (m: MeetingAlert) => {
+    if (!userId) {
+      Alert.alert('Send', 'Sign in and connect Google first.')
+      return
+    }
+    if (!m.fromEmail) {
+      Alert.alert('Send', 'No sender email on this alert.')
+      return
+    }
+    confirmSendReply({
+      to: m.fromEmail,
+      onConfirm: () => {
+        void sendOrDraftReply({
+          userId,
+          to: m.fromEmail,
+          subject: m.subject,
+          body: draftForMeeting(m),
+          threadId: m.messageId,
+        }).catch((e) =>
+          Alert.alert('Send', e instanceof Error ? e.message : 'Could not send'),
+        )
+      },
+    })
   }
 
   return (
@@ -220,6 +238,9 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
                   <Pressable style={styles.draftBtn} onPress={() => onDraft(m)}>
                     <Text style={styles.draftBtnText}>{t('home.draftReply')}</Text>
                   </Pressable>
+                  <Pressable style={styles.sendBtn} onPress={() => onSend(m)}>
+                    <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
+                  </Pressable>
                   <Pressable
                     onPress={() => {
                       markMeetingNotified(m.id)
@@ -282,6 +303,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   draftBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
+  sendBtn: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radii.full,
+  },
+  sendBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   btn: {
     alignSelf: 'flex-start',

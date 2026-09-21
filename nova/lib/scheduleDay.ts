@@ -100,6 +100,8 @@ export function planDayActions(params: {
   includeUndated?: boolean
   /** Skip these task ids (Plan day “protect”) */
   skipTaskIds?: string[]
+  /** Existing Google Calendar blocks (minutes from midnight) */
+  calendarBusy?: { start: number; end: number; title: string }[]
 }): { actions: Extract<AIAction, { type: 'update_task' }>[]; summary: string; placed: number } {
   const window = resolveDayWindow(params.settings, params.day)
   const start = parseHmToMinutes(window.start) ?? 9 * 60
@@ -154,6 +156,15 @@ export function planDayActions(params: {
       end: s + a.durationMin,
       taskId: `anchor:${a.id}`,
       title: a.title,
+    })
+  }
+  for (const c of params.calendarBusy || []) {
+    if (!Number.isFinite(c.start) || !Number.isFinite(c.end) || c.end <= c.start) continue
+    busy.push({
+      start: c.start,
+      end: c.end,
+      taskId: `cal:${c.start}-${c.end}`,
+      title: c.title || 'Calendar',
     })
   }
   busy.sort((a, b) => a.start - b.start)

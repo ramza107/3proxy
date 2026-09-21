@@ -66,6 +66,27 @@ module.exports = ({ config }) => {
           microphonePermission: 'Allow Wahrly to use the microphone to dictate tasks.',
         },
       ],
+      [
+        'expo-widgets',
+        {
+          groupIdentifier: 'group.com.wahrly.assistant',
+          widgets: [
+            {
+              name: 'WahrlyToday',
+              displayName: 'Wahrly Today',
+              description: 'Today’s next task and upcoming bill at a glance.',
+              ios: {
+                supportedFamilies: [
+                  'systemSmall',
+                  'systemMedium',
+                  'accessoryRectangular',
+                  'accessoryInline',
+                ],
+              },
+            },
+          ],
+        },
+      ],
     ],
     experiments: IS_NATIVE_EAS
       ? { typedRoutes: true }

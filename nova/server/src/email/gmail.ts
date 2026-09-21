@@ -2,10 +2,12 @@ import crypto from 'crypto'
 import { isInWindow, previousLocalDayWindow, type DayWindow } from './timeWindow.js'
 import { deleteConnection, getConnection, saveConnection, type EmailConnection } from './store.js'
 
-const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
-const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly'
-/** Gmail + Calendar — reconnect needed for users who connected before Calendar was added. */
-const GOOGLE_SCOPES = `${GMAIL_SCOPE} ${CALENDAR_SCOPE}`
+const GMAIL_READONLY = 'https://www.googleapis.com/auth/gmail.readonly'
+const GMAIL_SEND = 'https://www.googleapis.com/auth/gmail.send'
+const GMAIL_COMPOSE = 'https://www.googleapis.com/auth/gmail.compose'
+const CALENDAR_EVENTS = 'https://www.googleapis.com/auth/calendar.events'
+/** Read mail + send/compose replies + create/read calendar events. Reconnect if older scopes. */
+const GOOGLE_SCOPES = `${GMAIL_READONLY} ${GMAIL_SEND} ${GMAIL_COMPOSE} ${CALENDAR_EVENTS}`
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me'
@@ -455,4 +457,100 @@ export async function listRecentInboxMessages(
   }
 
   return previews
+}
+
+function encodeRawMessage(raw: string) {
+  return Buffer.from(raw)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
+
+function buildRfc822(params: {
+  to: string
+  subject: string
+  body: string
+  inReplyTo?: string | null
+  references?: string | null
+}) {
+  const headers = [
+    `To: ${params.to}`,
+    `Subject: ${params.subject}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset="UTF-8"',
+  ]
+  if (params.inReplyTo) headers.push(`In-Reply-To: ${params.inReplyTo}`)
+  if (params.references) headers.push(`References: ${params.references}`)
+  return `${headers.join('\r\n')}\r\n\r\n${params.body}`
+}
+
+/** Send a plain-text email as the connected user (gmail.send). */
+export async function sendGmailMessage(
+  userId: string,
+  params: {
+    to: string
+    subject: string
+    body: string
+    threadId?: string | null
+    inReplyTo?: string | null
+    references?: string | null
+  },
+): Promise<{ id: string; threadId: string | null }> {
+  const conn = await withFreshToken(userId)
+  const raw = encodeRawMessage(buildRfc822(params))
+  const payload: Record<string, string> = { raw }
+  if (params.threadId) payload.threadId = params.threadId
+
+  const res = await fetch(`${GMAIL_API}/messages/send`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${conn.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+  if (res.status === 403) {
+    throw new Error('Gmail send permission missing — reconnect Google in Settings')
+  }
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text.slice(0, 200) || `Send failed (${res.status})`)
+  }
+  const data = (await res.json()) as { id?: string; threadId?: string }
+  return { id: data.id || '', threadId: data.threadId || null }
+}
+
+/** Create a Gmail draft (gmail.compose) — does not send. */
+export async function createGmailDraft(
+  userId: string,
+  params: {
+    to: string
+    subject: string
+    body: string
+    threadId?: string | null
+  },
+): Promise<{ id: string }> {
+  const conn = await withFreshToken(userId)
+  const raw = encodeRawMessage(buildRfc822(params))
+  const message: Record<string, string> = { raw }
+  if (params.threadId) message.threadId = params.threadId
+
+  const res = await fetch(`${GMAIL_API}/drafts`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${conn.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message }),
+  })
+  if (res.status === 403) {
+    throw new Error('Gmail compose permission missing — reconnect Google in Settings')
+  }
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text.slice(0, 200) || `Draft failed (${res.status})`)
+  }
+  const data = (await res.json()) as { id?: string }
+  return { id: data.id || '' }
 }

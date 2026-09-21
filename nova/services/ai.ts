@@ -1,9 +1,12 @@
 import { chatWithNova } from '../lib/api'
 import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
-import { scheduleTaskNotification, cancelNotification } from '../lib/notifications'
-import { isOrganizeDayIntent, planDayActions } from '../lib/scheduleDay'
+import { currentMonthKey } from '../lib/bills'
+import { createCalendarEvent, fetchCalendarEvents } from '../lib/emailApi'
+import { scheduleTaskNotification, cancelNotification, syncBillReminders } from '../lib/notifications'
+import { durationForPriority, isOrganizeDayIntent, planDayActions, parseHmToMinutes } from '../lib/scheduleDay'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import { todayISO, uid, useNovaStore } from '../lib/store'
+import { refreshWidgetSnapshot } from '../lib/widgetSync'
 import { clientLocalAI } from './localAI'
 import type { AIAction, AIChatResponse, Priority, Reminder, Task } from '../types'
 
@@ -171,7 +174,55 @@ export async function applyActions(
       })
       await scheduleTaskNotification(mirrored, notificationsEnabled)
     }
+
+    if (action.type === 'create_bill') {
+      store.createBillLocal({
+        title: action.title,
+        amount: action.amount,
+        currency: action.currency || 'UAH',
+        dayOfMonth: action.dayOfMonth,
+        category: action.category || 'General',
+        payHowTo: action.payHowTo ?? null,
+      })
+      await syncBillReminders(useNovaStore.getState().bills, store.settings)
+    }
+
+    if (action.type === 'mark_bill_paid') {
+      const hint = (action.title_hint || '').toLowerCase().trim()
+      const bill =
+        (action.bill_id && store.bills.find((b) => b.id === action.bill_id)) ||
+        (hint
+          ? store.bills.find((b) => b.title.toLowerCase().includes(hint))
+          : null)
+      if (bill) {
+        store.markBillPaid(bill.id, action.month || currentMonthKey())
+        await syncBillReminders(useNovaStore.getState().bills, store.settings)
+      }
+    }
+
+    if (action.type === 'create_calendar_event') {
+      try {
+        const dur = Math.min(180, Math.max(15, action.durationMin || 60))
+        const startMin = parseHmToMinutes(action.time) ?? 9 * 60
+        const endMin = startMin + dur
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const endH = Math.floor(endMin / 60) % 24
+        const endM = endMin % 60
+        const start = `${action.date}T${action.time}:00`
+        const end = `${action.date}T${pad(endH)}:${pad(endM)}:00`
+        await createCalendarEvent(userId, {
+          title: action.title,
+          start,
+          end,
+          location: action.location,
+        })
+      } catch {
+        // Calendar may be disconnected — task/bill actions still apply
+      }
+    }
   }
+
+  await refreshWidgetSnapshot().catch(() => undefined)
 }
 
 export async function refreshTasks(userId: string) {
@@ -192,21 +243,74 @@ export async function organizeMyDay(opts?: {
   includeUndated?: boolean
   /** Task ids to leave alone (protected in Plan day triage) */
   skipTaskIds?: string[]
+  /** Also push scheduled blocks to Google Calendar when connected */
+  syncCalendar?: boolean
 }): Promise<AIChatResponse> {
   const store = useNovaStore.getState()
   const userId = store.sessionUserId
   if (!userId) throw new Error('Not signed in')
 
+  const day = todayISO()
+  let calendarBusy: { start: number; end: number; title: string }[] = []
+  try {
+    const from = `${day}T00:00:00`
+    const to = `${day}T23:59:59`
+    const digest = await fetchCalendarEvents(userId, { from, to })
+    calendarBusy = (digest.events || [])
+      .filter((e) => !e.allDay)
+      .map((e) => {
+        const start = new Date(e.start)
+        const end = new Date(e.end)
+        return {
+          start: start.getHours() * 60 + start.getMinutes(),
+          end: Math.max(
+            start.getHours() * 60 + start.getMinutes() + 15,
+            end.getHours() * 60 + end.getMinutes(),
+          ),
+          title: e.title,
+        }
+      })
+      .filter((b) => Number.isFinite(b.start) && Number.isFinite(b.end))
+  } catch {
+    calendarBusy = []
+  }
+
   const planned = planDayActions({
     tasks: store.tasks,
-    day: todayISO(),
+    day,
     settings: store.settings,
     includeUndated: opts?.includeUndated !== false,
     skipTaskIds: opts?.skipTaskIds,
+    calendarBusy,
   })
 
   if (planned.actions.length) {
     await applyActions(planned.actions, userId, store.settings.notificationsEnabled)
+
+    if (opts?.syncCalendar !== false) {
+      const latest = useNovaStore.getState().tasks
+      for (const action of planned.actions) {
+        const task = latest.find((t) => t.id === action.task_id)
+        if (!task?.date || !task.time) continue
+        const dur = durationForPriority(task.priority)
+        const startMin = parseHmToMinutes(task.time)
+        if (startMin == null) continue
+        const endMin = startMin + dur
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const endH = Math.floor(endMin / 60) % 24
+        const endM = endMin % 60
+        try {
+          await createCalendarEvent(userId, {
+            title: task.title,
+            start: `${task.date}T${task.time}:00`,
+            end: `${task.date}T${pad(endH)}:${pad(endM)}:00`,
+            description: 'Scheduled by Wahrly Plan day',
+          })
+        } catch {
+          // optional — user may need to reconnect with write scope
+        }
+      }
+    }
   }
 
   return { reply: planned.summary, actions: planned.actions }
@@ -249,11 +353,12 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
       userId,
       userName: store.settings.name,
       tasks: store.tasks,
+      bills: store.bills,
       history,
       accessToken,
     })
   } catch {
-    response = clientLocalAI(message, store.tasks)
+    response = clientLocalAI(message, store.tasks, store.bills)
   }
 
   store.addMessage({ role: 'assistant', content: response.reply })

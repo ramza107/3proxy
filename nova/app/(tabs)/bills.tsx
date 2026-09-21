@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useLocalSearchParams } from 'expo-router'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BillEditor } from '../../components/BillEditor'
@@ -18,6 +19,7 @@ import { uid, useNovaStore } from '../../lib/store'
 import type { Bill } from '../../types'
 
 export default function BillsScreen() {
+  const { billId } = useLocalSearchParams<{ billId?: string }>()
   const bills = useNovaStore((s) => s.bills)
   const upsertBill = useNovaStore((s) => s.upsertBill)
   const removeBill = useNovaStore((s) => s.removeBill)
@@ -27,6 +29,12 @@ export default function BillsScreen() {
 
   const [editing, setEditing] = useState<Bill | null>(null)
   const [creating, setCreating] = useState(false)
+
+  useEffect(() => {
+    if (!billId || typeof billId !== 'string') return
+    const found = bills.find((b) => b.id === billId)
+    if (found) setEditing(found)
+  }, [billId, bills])
 
   const month = currentMonthKey()
   const monthLabel = format(new Date(), 'MMMM yyyy')
