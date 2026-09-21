@@ -63,11 +63,9 @@ export async function replyFromEmailCheck(
       }
     }
 
-    const [digest, meetings, promises] = await Promise.all([
-      fetchEmailDigest(userId).catch(() => null),
-      fetchEmailMeetings(userId, { hours: 48 }).catch(() => null),
-      fetchEmailPromises(userId, { days: 7 }).catch(() => null),
-    ])
+    const digest = await fetchEmailDigest(userId).catch(() => null)
+    const meetings = await fetchEmailMeetings(userId, { hours: 48 }).catch(() => null)
+    const promises = await fetchEmailPromises(userId, { days: 7 }).catch(() => null)
 
     const parts: string[] = []
     if (ru) {

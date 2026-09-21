@@ -5,21 +5,27 @@ import { apiUrl } from './api'
 
 const extra = Constants.expoConfig?.extra ?? {}
 
-/** Never dump HTML / raw Express errors into the UI. */
+/** Never dump HTML / raw Express / Google quota JSON into the UI. */
 export function friendlyApiError(raw: string, fallback: string): string {
   const text = (raw || '').trim()
   if (!text) return fallback
   if (/^\s*</.test(text) || /Cannot GET|Cannot POST|<html/i.test(text)) {
     return fallback
   }
+  if (/Quota exceeded|Total Query Cost|rateLimitExceeded|userRateLimitExceeded|Gmail is busy/i.test(text)) {
+    return 'Gmail is busy — try again in a minute'
+  }
   try {
     const j = JSON.parse(text) as { error?: string; message?: string }
-    if (j.error) return j.error
-    if (j.message) return j.message
+    const msg = j.error || j.message || ''
+    if (/Quota exceeded|Total Query Cost|rateLimitExceeded|Gmail is busy/i.test(msg)) {
+      return 'Gmail is busy — try again in a minute'
+    }
+    if (msg && msg.length <= 120 && !/^\s*\{/.test(msg)) return msg
   } catch {
     // plain text
   }
-  if (text.length > 160) return fallback
+  if (text.length > 160 || /^\s*\{/.test(text)) return fallback
   return text
 }
 
@@ -43,10 +49,11 @@ export async function fetchEmailStatus(userId: string): Promise<{
 
 export async function fetchEmailDigest(
   userId: string,
-  opts?: { demo?: boolean; timeZone?: string },
+  opts?: { demo?: boolean; timeZone?: string; refresh?: boolean },
 ): Promise<EmailDigest> {
   const q = new URLSearchParams({ user_id: userId })
   if (opts?.demo) q.set('demo', '1')
+  if (opts?.refresh) q.set('refresh', '1')
   const tz =
     opts?.timeZone ||
     (typeof Intl !== 'undefined'
@@ -75,11 +82,12 @@ export async function disconnectEmail(userId: string): Promise<void> {
 
 export async function fetchEmailPromises(
   userId: string,
-  opts?: { demo?: boolean; days?: number },
+  opts?: { demo?: boolean; days?: number; refresh?: boolean },
 ): Promise<import('../types').PromisesDigest> {
   const q = new URLSearchParams({ user_id: userId })
   if (opts?.demo) q.set('demo', '1')
   if (opts?.days) q.set('days', String(opts.days))
+  if (opts?.refresh) q.set('refresh', '1')
   const res = await fetch(`${apiUrl}/api/email/promises?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()
@@ -90,11 +98,12 @@ export async function fetchEmailPromises(
 
 export async function fetchEmailMeetings(
   userId: string,
-  opts?: { demo?: boolean; hours?: number },
+  opts?: { demo?: boolean; hours?: number; refresh?: boolean },
 ): Promise<import('../types').MeetingsDigest> {
   const q = new URLSearchParams({ user_id: userId })
   if (opts?.demo) q.set('demo', '1')
   if (opts?.hours) q.set('hours', String(opts.hours))
+  if (opts?.refresh) q.set('refresh', '1')
   const res = await fetch(`${apiUrl}/api/email/meetings?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()

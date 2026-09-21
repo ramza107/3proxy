@@ -29,7 +29,7 @@ export function InboxBrief({ userId, enabled }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const load = async () => {
+  const load = async (refresh = false) => {
     if (!userId || !enabled) return
     setLoading(true)
     setError('')
@@ -43,6 +43,7 @@ export function InboxBrief({ userId, enabled }: Props) {
       const data = await fetchEmailDigest(userId, {
         demo: false,
         timeZone: deviceTimeZone(),
+        refresh,
       })
       setDigest(data)
     } catch (e) {
@@ -54,7 +55,7 @@ export function InboxBrief({ userId, enabled }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      load().catch(() => undefined)
+      load(false).catch(() => undefined)
     }, [userId, enabled]),
   )
 
@@ -78,7 +79,7 @@ export function InboxBrief({ userId, enabled }: Props) {
       meta={meta}
       action={
         connected ? (
-          <Pressable onPress={() => load()} hitSlop={8}>
+          <Pressable onPress={() => load(true)} hitSlop={8}>
             <Text style={styles.refresh}>{loading ? '…' : t('home.refresh')}</Text>
           </Pressable>
         ) : null
