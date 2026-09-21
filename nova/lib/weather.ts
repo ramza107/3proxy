@@ -3,6 +3,8 @@
 export type WeatherBrief = {
   day: string
   label: string
+  /** Open-Meteo weather_code */
+  code: number
   tempC: number
   highC: number
   lowC: number
@@ -99,6 +101,7 @@ async function forecastAt(
   return {
     day: todayISO(),
     label: weatherLabel(code),
+    code,
     tempC: Math.round(temp),
     highC: Math.round(data.daily?.temperature_2m_max?.[0] ?? temp),
     lowC: Math.round(data.daily?.temperature_2m_min?.[0] ?? temp),
