@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +24,9 @@ type Props = {
   onSend: (text: string) => void | Promise<void>
 }
 
+/** Absolute ceiling so “Transcribing…” can never stick forever. */
+const UI_TRANSCRIBE_GUARD_MS = 40_000
+
 /**
  * Text + mic. Mic records → Groq/OpenAI Whisper on the AI server → sends as chat.
  */
@@ -43,6 +46,22 @@ export function AIInput({
     setTranscribing(false)
     busy.current = false
   }
+
+  // Hard UI guard — if upload/Whisper hangs past the client race, still unlock Mic.
+  useEffect(() => {
+    if (!transcribing) return
+    const timer = setTimeout(() => {
+      abortRef.current?.abort()
+      abortRef.current = null
+      cancelVoiceRecording().catch(() => undefined)
+      resetVoiceUi()
+      Alert.alert(
+        'Voice',
+        'Transcription took too long — try again with a shorter message, or type it.',
+      )
+    }, UI_TRANSCRIBE_GUARD_MS)
+    return () => clearTimeout(timer)
+  }, [transcribing])
 
   const submit = async (value?: string) => {
     const next = (value ?? text).trim()
@@ -137,9 +156,9 @@ export function AIInput({
   }
 
   const status = transcribing
-    ? 'Transcribing… tap Cancel to stop'
+    ? 'Transcribing… tap ✕ to cancel'
     : recording
-      ? 'Listening… tap mic to stop'
+      ? 'Listening… tap Stop when done'
       : null
 
   return (

@@ -15,15 +15,23 @@ type NativeRecorder = {
   release?: () => void
 }
 
+type UploadTaskLike = {
+  uploadAsync: () => Promise<{ status: number; body: string }>
+  cancelAsync: () => Promise<void>
+}
+
 const STOP_MS = 8_000
 const PREPARE_MS = 10_000
-const TRANSCRIBE_MS = 55_000
+/** Keep under Render idle wake + Whisper; fail loudly instead of infinite “Transcribing…”. */
+const TRANSCRIBE_MS = 35_000
+const WAKE_MS = 12_000
 
 let nativeRecording: NativeRecorder | null = null
 let webMediaRecorder: MediaRecorder | null = null
 let webChunks: Blob[] = []
 let webStream: MediaStream | null = null
 let transcribeAbort: AbortController | null = null
+let activeUploadTask: UploadTaskLike | null = null
 
 function formatTranscribeError(body: string, status: number): string {
   const raw = (body || '').trim()
@@ -90,6 +98,30 @@ async function stopWebTracks(): Promise<void> {
   webMediaRecorder = null
   webStream = null
   webChunks = []
+}
+
+async function cancelActiveUpload(): Promise<void> {
+  const task = activeUploadTask
+  activeUploadTask = null
+  if (!task) return
+  try {
+    await task.cancelAsync()
+  } catch {
+    // ignore
+  }
+}
+
+/** Nudge Render awake before the multipart upload (cold starts looked like hung STT). */
+async function wakeTranscribeServer(signal: AbortSignal): Promise<void> {
+  try {
+    await withTimeout(
+      fetch(`${apiUrl}/health`, { method: 'GET', signal }),
+      WAKE_MS,
+      'Wake AI server',
+    )
+  } catch {
+    // Continue — upload may still work; timeout covers hard hangs.
+  }
 }
 
 export async function requestMicPermission(): Promise<boolean> {
@@ -223,6 +255,7 @@ export async function cancelVoiceRecording(): Promise<void> {
     // ignore
   }
   transcribeAbort = null
+  await cancelActiveUpload()
 
   if (Platform.OS === 'web') {
     await stopWebTracks()
@@ -244,9 +277,8 @@ export async function cancelVoiceRecording(): Promise<void> {
 
 /**
  * Upload audio for Whisper.
- * Native: expo-file-system multipart upload (RN {uri,name,type} FormData breaks
- * Expo’s fetch with “Unsupported FormDataPart implementation”).
- * Web: standard Blob FormData.
+ * Native: cancelable createUploadTask (plain uploadAsync ignored Cancel and could hang forever).
+ * Web: standard Blob FormData + AbortSignal.
  */
 export async function transcribeVoice(
   recording: VoiceRecording,
@@ -256,21 +288,36 @@ export async function transcribeVoice(
   const localAbort = new AbortController()
   transcribeAbort = localAbort
 
-  const onExternalAbort = () => localAbort.abort()
+  const onExternalAbort = () => {
+    localAbort.abort()
+    cancelActiveUpload().catch(() => undefined)
+  }
   opts?.signal?.addEventListener('abort', onExternalAbort)
+  if (opts?.signal?.aborted) onExternalAbort()
 
   const timedOut = new Promise<never>((_, reject) => {
     const timer = setTimeout(() => {
       localAbort.abort()
-      reject(new Error(`Transcription timed out after ${Math.round(TRANSCRIBE_MS / 1000)}s`))
+      cancelActiveUpload().catch(() => undefined)
+      reject(
+        new Error(
+          `Transcription timed out after ${Math.round(TRANSCRIBE_MS / 1000)}s — check connection and try a shorter clip`,
+        ),
+      )
     }, TRANSCRIBE_MS)
     localAbort.signal.addEventListener('abort', () => clearTimeout(timer))
   })
 
   try {
+    await wakeTranscribeServer(localAbort.signal)
+    if (localAbort.signal.aborted) {
+      throw new Error('Transcription cancelled')
+    }
+
     if (Platform.OS === 'web') {
       const form = new FormData()
       const blob = await fetch(recording.uri).then((r) => r.blob())
+      if (!blob.size) throw new Error('Empty recording — hold Mic a second longer')
       form.append('audio', blob, recording.filename)
       if (opts?.language) form.append('language', opts.language)
 
@@ -286,25 +333,43 @@ export async function transcribeVoice(
     }
 
     const FileSystem = await import('expo-file-system/legacy')
-    const result = await Promise.race([
-      FileSystem.uploadAsync(url, recording.uri, {
-        httpMethod: 'POST',
-        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        fieldName: 'audio',
-        mimeType: recording.mimeType,
-        parameters: opts?.language ? { language: opts.language } : {},
-      }),
-      timedOut,
-    ])
-
-    if (result.status < 200 || result.status >= 300) {
-      throw new Error(formatTranscribeError(result.body, result.status))
+    try {
+      const info = await FileSystem.getInfoAsync(recording.uri)
+      if (!info.exists || ('size' in info && !info.size)) {
+        throw new Error('Empty recording — hold Mic a second longer')
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('Empty')) throw e
+      // getInfoAsync optional
     }
 
+    const task = FileSystem.createUploadTask(url, recording.uri, {
+      httpMethod: 'POST',
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      fieldName: 'audio',
+      mimeType: recording.mimeType,
+      parameters: opts?.language ? { language: opts.language } : {},
+    }) as UploadTaskLike
+    activeUploadTask = task
+
+    const onAbortUpload = () => {
+      cancelActiveUpload().catch(() => undefined)
+    }
+    localAbort.signal.addEventListener('abort', onAbortUpload)
+
     try {
-      return JSON.parse(result.body) as { text: string; raw: string; provider: string }
-    } catch {
-      throw new Error(result.body || 'Invalid transcribe response')
+      const result = await Promise.race([task.uploadAsync(), timedOut])
+      if (result.status < 200 || result.status >= 300) {
+        throw new Error(formatTranscribeError(result.body, result.status))
+      }
+      try {
+        return JSON.parse(result.body) as { text: string; raw: string; provider: string }
+      } catch {
+        throw new Error(result.body || 'Invalid transcribe response')
+      }
+    } finally {
+      localAbort.signal.removeEventListener('abort', onAbortUpload)
+      if (activeUploadTask === task) activeUploadTask = null
     }
   } finally {
     opts?.signal?.removeEventListener('abort', onExternalAbort)
