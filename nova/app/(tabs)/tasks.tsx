@@ -185,7 +185,7 @@ export default function TasksScreen() {
               <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]} numberOfLines={1}>
                 Week
               </Text>
-              <Text style={[styles.dayChipSub, !focusDay && styles.dayChipSubOn]} numberOfLines={1}>
+              <Text style={styles.dayChipSub} numberOfLines={1}>
                 {' '}
               </Text>
               <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]} numberOfLines={1}>
@@ -220,6 +220,7 @@ export default function TasksScreen() {
         </View>
 
         <ScrollView
+          style={styles.listScroll}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -416,28 +417,36 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 11,
   },
-  // RN Web clips children of borderRadius views — chip height must fit all three lines
-  // with real DM Sans metrics (taller than lineHeight alone).
+  // Keep the strip out of the flex squeeze: list ScrollView takes remaining height,
+  // strip never shrinks — otherwise RN Web clips the chip count digits.
   weekStripOuter: {
-    height: 128,
+    height: 120,
+    minHeight: 120,
+    maxHeight: 120,
+    flexGrow: 0,
+    flexShrink: 0,
     marginBottom: 8,
+    overflow: 'visible',
   },
   weekStripScroll: {
     flexGrow: 0,
     flexShrink: 0,
-    height: 128,
+    height: 120,
+    minHeight: 120,
   },
   weekStrip: {
     paddingHorizontal: spacing.lg,
     gap: 8,
     alignItems: 'center',
-    paddingVertical: 10,
+    height: 120,
+    paddingVertical: 8,
   },
   dayChip: {
     width: 76,
-    height: 108,
+    height: 104,
+    minHeight: 104,
     paddingTop: 10,
-    paddingBottom: 14,
+    paddingBottom: 12,
     paddingHorizontal: 6,
     borderRadius: radii.md,
     borderWidth: 1,
@@ -445,6 +454,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexShrink: 0,
   },
   dayChipOn: {
     backgroundColor: colors.accentSoft,
@@ -481,6 +491,12 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   dayChipCountOn: { color: colors.accentStrong },
+  listScroll: {
+    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0,
+  },
   list: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
