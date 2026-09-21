@@ -623,8 +623,9 @@ app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
       language,
       groqKey,
       openaiKey,
-      polishClient: provider?.client || null,
-      polishModel: provider?.model || null,
+      // Skip LLM polish on the hot path — Whisper text is enough and polish caused hangs.
+      polishClient: null,
+      polishModel: null,
     })
     if (!result.text) {
       return res.status(422).json({ error: 'Could not hear speech — try again closer to the mic' })
