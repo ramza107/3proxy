@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -8,7 +9,15 @@ import {
   View,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { poemForDay } from '../lib/poems'
 import { todayISO } from '../lib/store'
@@ -36,6 +45,8 @@ type DaySlot = {
   time: string
   hint: string
 }
+
+type SlotRect = { id: string; y: number; height: number }
 
 const DAY_SLOTS: DaySlot[] = [
   { id: 'morning', label: 'Morning', time: '09:00', hint: 'Focus' },
@@ -84,9 +95,260 @@ function nearestSlot(time: string | null): string | null {
   return best.id
 }
 
+function hitSlotId(rects: SlotRect[], absoluteY: number): string | null {
+  for (const r of rects) {
+    if (absoluteY >= r.y && absoluteY <= r.y + r.height) return r.id
+  }
+  return null
+}
+
+async function nudge() {
+  try {
+    const Haptics = await import('expo-haptics')
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+  } catch {
+    // web / unavailable
+  }
+}
+
+type DragRowProps = {
+  task: Task
+  locked: boolean
+  draggingId: string | null
+  hoverSlotId: string | null
+  slotRectsRef: React.MutableRefObject<SlotRect[]>
+  onProtect: () => void
+  onMoveTomorrow: () => void
+  onDropTask: () => void
+  onHoverSlot: (slotId: string | null) => void
+  onDragging: (id: string | null) => void
+  onMoveToSlot: (slotId: string) => void
+}
+
+function DraggableTaskRow({
+  task,
+  locked,
+  draggingId,
+  slotRectsRef,
+  onProtect,
+  onMoveTomorrow,
+  onDropTask,
+  onHoverSlot,
+  onDragging,
+  onMoveToSlot,
+}: DragRowProps) {
+  const tx = useSharedValue(0)
+  const ty = useSharedValue(0)
+  const scale = useSharedValue(1)
+  const elev = useSharedValue(0)
+  const isGhost = draggingId === task.id
+
+  const updateHover = (absoluteY: number) => {
+    onHoverSlot(hitSlotId(slotRectsRef.current, absoluteY))
+  }
+
+  const finish = (absoluteY: number) => {
+    const slotId = hitSlotId(slotRectsRef.current, absoluteY)
+    onHoverSlot(null)
+    onDragging(null)
+    if (slotId) {
+      onMoveToSlot(slotId)
+      nudge().catch(() => undefined)
+    }
+  }
+
+  const startDrag = () => {
+    onDragging(task.id)
+    nudge().catch(() => undefined)
+  }
+
+  const cancelDrag = () => {
+    onHoverSlot(null)
+    onDragging(null)
+  }
+
+  const pan = Gesture.Pan()
+    .activateAfterLongPress(Platform.OS === 'web' ? 180 : 260)
+    .maxPointers(1)
+    .onStart(() => {
+      'worklet'
+      scale.value = withSpring(1.04, { damping: 16, stiffness: 280 })
+      elev.value = 1
+      runOnJS(startDrag)()
+    })
+    .onUpdate((e) => {
+      'worklet'
+      tx.value = e.translationX
+      ty.value = e.translationY
+      runOnJS(updateHover)(e.absoluteY)
+    })
+    .onEnd((e) => {
+      'worklet'
+      runOnJS(finish)(e.absoluteY)
+      tx.value = withSpring(0, { damping: 18, stiffness: 260 })
+      ty.value = withSpring(0, { damping: 18, stiffness: 260 })
+      scale.value = withSpring(1)
+      elev.value = 0
+    })
+    .onFinalize((_e, success) => {
+      'worklet'
+      if (!success) {
+        runOnJS(cancelDrag)()
+        tx.value = withSpring(0)
+        ty.value = withSpring(0)
+        scale.value = withSpring(1)
+        elev.value = 0
+      }
+    })
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.value }, { translateY: ty.value }, { scale: scale.value }],
+    zIndex: elev.value ? 40 : 1,
+    shadowOpacity: elev.value ? 0.22 : 0,
+    elevation: elev.value ? 10 : 0,
+    opacity: draggingId && draggingId !== task.id ? 0.55 : 1,
+  }))
+
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View
+        style={[styles.slotItem, locked && styles.slotItemLocked, isGhost && styles.slotItemDragging, anim]}
+      >
+        <Pressable style={styles.slotItemMain} onPress={onProtect}>
+          <View
+            style={[
+              styles.dot,
+              task.priority === 'high' && styles.dotHigh,
+              task.priority === 'low' && styles.dotLow,
+              locked && styles.dotLocked,
+            ]}
+          />
+          <Text style={styles.slotItemTitle} numberOfLines={1}>
+            {locked ? '◆ ' : ''}
+            {task.title}
+          </Text>
+          <Text style={styles.dragHint}>⠿</Text>
+        </Pressable>
+        <View style={styles.slotItemActions}>
+          <Pressable onPress={onMoveTomorrow} hitSlop={6}>
+            <Text style={styles.miniAct}>Tomorrow</Text>
+          </Pressable>
+          <Pressable onPress={onDropTask} hitSlop={6}>
+            <Text style={styles.miniDanger}>Drop</Text>
+          </Pressable>
+        </View>
+      </Animated.View>
+    </GestureDetector>
+  )
+}
+
+type PoolDragProps = {
+  task: Task
+  draggingId: string | null
+  slotRectsRef: React.MutableRefObject<SlotRect[]>
+  onHoverSlot: (slotId: string | null) => void
+  onDragging: (id: string | null) => void
+  onMoveToSlot: (slotId: string) => void
+  onQuickSet: (time: string) => void
+}
+
+function DraggablePoolRow({
+  task,
+  draggingId,
+  slotRectsRef,
+  onHoverSlot,
+  onDragging,
+  onMoveToSlot,
+  onQuickSet,
+}: PoolDragProps) {
+  const tx = useSharedValue(0)
+  const ty = useSharedValue(0)
+  const scale = useSharedValue(1)
+
+  const updateHover = (absoluteY: number) => {
+    onHoverSlot(hitSlotId(slotRectsRef.current, absoluteY))
+  }
+
+  const finish = (absoluteY: number) => {
+    const slotId = hitSlotId(slotRectsRef.current, absoluteY)
+    onHoverSlot(null)
+    onDragging(null)
+    if (slotId) {
+      onMoveToSlot(slotId)
+      nudge().catch(() => undefined)
+    }
+  }
+
+  const startDrag = () => {
+    onDragging(task.id)
+    nudge().catch(() => undefined)
+  }
+
+  const cancelDrag = () => {
+    onHoverSlot(null)
+    onDragging(null)
+  }
+
+  const pan = Gesture.Pan()
+    .activateAfterLongPress(Platform.OS === 'web' ? 180 : 260)
+    .maxPointers(1)
+    .onStart(() => {
+      'worklet'
+      scale.value = withSpring(1.04, { damping: 16, stiffness: 280 })
+      runOnJS(startDrag)()
+    })
+    .onUpdate((e) => {
+      'worklet'
+      tx.value = e.translationX
+      ty.value = e.translationY
+      runOnJS(updateHover)(e.absoluteY)
+    })
+    .onEnd((e) => {
+      'worklet'
+      runOnJS(finish)(e.absoluteY)
+      tx.value = withSpring(0)
+      ty.value = withSpring(0)
+      scale.value = withSpring(1)
+    })
+    .onFinalize((_e, success) => {
+      'worklet'
+      if (!success) {
+        runOnJS(cancelDrag)()
+        tx.value = withSpring(0)
+        ty.value = withSpring(0)
+        scale.value = withSpring(1)
+      }
+    })
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: tx.value }, { translateY: ty.value }, { scale: scale.value }],
+    zIndex: draggingId === task.id ? 40 : 1,
+    opacity: draggingId && draggingId !== task.id ? 0.5 : 1,
+  }))
+
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View style={[styles.poolRow, anim]}>
+        <View style={styles.poolTitleRow}>
+          <Text style={styles.poolTitle} numberOfLines={1}>
+            {task.title}
+          </Text>
+          <Text style={styles.dragHint}>⠿</Text>
+        </View>
+        <View style={styles.poolTimes}>
+          {DAY_SLOTS.map((s) => (
+            <Pressable key={s.id} style={styles.poolChip} onPress={() => onQuickSet(s.time)}>
+              <Text style={styles.poolChipText}>{s.time}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </Animated.View>
+    </GestureDetector>
+  )
+}
+
 /**
- * Structured-inspired Plan day: weather hero, one timeline spine,
- * sticky Arrange footer. Calm hierarchy — one job per zone.
+ * Structured-inspired Plan day with long-press drag between time blocks.
  */
 export function PlanDaySheet({
   visible,
@@ -111,6 +373,29 @@ export function PlanDaySheet({
   const [draftTitle, setDraftTitle] = useState('')
   const [poolOpen, setPoolOpen] = useState(false)
   const [showPoem, setShowPoem] = useState(false)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [hoverSlotId, setHoverSlotId] = useState<string | null>(null)
+  const slotRectsRef = useRef<SlotRect[]>([])
+  const slotViewRefs = useRef<Record<string, View | null>>({})
+
+  const refreshSlotRects = useCallback(() => {
+    for (const slot of DAY_SLOTS) {
+      const node = slotViewRefs.current[slot.id]
+      node?.measureInWindow?.(( _x, y, _w, height) => {
+        const next = slotRectsRef.current.filter((r) => r.id !== slot.id)
+        next.push({ id: slot.id, y, height: Math.max(height, 48) })
+        slotRectsRef.current = next
+      })
+    }
+  }, [])
+
+  const setDragging = useCallback(
+    (id: string | null) => {
+      if (id) refreshSlotRects()
+      setDraggingId(id)
+    },
+    [refreshSlotRects],
+  )
 
   useEffect(() => {
     if (!visible) {
@@ -119,6 +404,8 @@ export function PlanDaySheet({
       setDraftTitle('')
       setPoolOpen(false)
       setShowPoem(false)
+      setDraggingId(null)
+      setHoverSlotId(null)
       return
     }
     let cancelled = false
@@ -170,6 +457,13 @@ export function PlanDaySheet({
     setDraftSlot(null)
   }
 
+  const moveTaskToSlot = (task: Task, slotId: string) => {
+    const slot = DAY_SLOTS.find((s) => s.id === slotId)
+    if (!slot) return
+    if (task.time === slot.time) return
+    onSetTime(task, slot.time)
+  }
+
   const footer = (
     <>
       <SoftPressable
@@ -195,8 +489,13 @@ export function PlanDaySheet({
       visible={visible}
       onClose={onClose}
       title="Plan day"
-      subtitle={`${filled} of ${DAY_SLOTS.length} blocks · tap a task to protect it`}
+      subtitle={
+        draggingId
+          ? 'Drop on a block to reschedule'
+          : `${filled} of ${DAY_SLOTS.length} blocks · hold & drag to move · tap to protect`
+      }
       footer={footer}
+      scrollEnabled={!draggingId}
     >
       <Animated.View entering={FadeIn.duration(380)} style={styles.weatherWrap}>
         <LinearGradient
@@ -249,16 +548,27 @@ export function PlanDaySheet({
         {DAY_SLOTS.map((slot, i) => {
           const items = bySlot[slot.id] || []
           const drafting = draftSlot === slot.id
+          const hot = hoverSlotId === slot.id
           return (
             <Animated.View
               key={slot.id}
               entering={FadeInDown.delay(70 + i * 40).duration(300)}
               style={styles.block}
+              ref={(node: View | null) => {
+                slotViewRefs.current[slot.id] = node
+              }}
+              onLayout={() => refreshSlotRects()}
             >
               <View style={styles.blockRail}>
-                <View style={[styles.node, items.length > 0 && styles.nodeFilled]} />
+                <View
+                  style={[
+                    styles.node,
+                    (items.length > 0 || hot) && styles.nodeFilled,
+                    hot && styles.nodeHot,
+                  ]}
+                />
               </View>
-              <View style={styles.blockBody}>
+              <View style={[styles.blockBody, hot && styles.blockBodyHot]}>
                 <View style={styles.blockHead}>
                   <View>
                     <Text style={styles.blockTime}>{slot.time}</Text>
@@ -280,36 +590,30 @@ export function PlanDaySheet({
                   ) : null}
                 </View>
 
-                {items.length === 0 && !drafting ? (
-                  <Text style={styles.slotEmpty}>Open — add or place from the pool</Text>
+                {hot && draggingId ? (
+                  <Text style={styles.dropHint}>Release to place here</Text>
+                ) : null}
+
+                {items.length === 0 && !drafting && !hot ? (
+                  <Text style={styles.slotEmpty}>Open — drag a task here</Text>
                 ) : (
                   items.map((t) => {
                     const locked = protectedIds.has(t.id)
                     return (
-                      <View key={t.id} style={[styles.slotItem, locked && styles.slotItemLocked]}>
-                        <Pressable style={styles.slotItemMain} onPress={() => toggleProtect(t.id)}>
-                          <View
-                            style={[
-                              styles.dot,
-                              t.priority === 'high' && styles.dotHigh,
-                              t.priority === 'low' && styles.dotLow,
-                              locked && styles.dotLocked,
-                            ]}
-                          />
-                          <Text style={styles.slotItemTitle} numberOfLines={1}>
-                            {locked ? '◆ ' : ''}
-                            {t.title}
-                          </Text>
-                        </Pressable>
-                        <View style={styles.slotItemActions}>
-                          <Pressable onPress={() => onMoveTomorrow(t)} hitSlop={6}>
-                            <Text style={styles.miniAct}>Tomorrow</Text>
-                          </Pressable>
-                          <Pressable onPress={() => onDrop(t)} hitSlop={6}>
-                            <Text style={styles.miniDanger}>Drop</Text>
-                          </Pressable>
-                        </View>
-                      </View>
+                      <DraggableTaskRow
+                        key={t.id}
+                        task={t}
+                        locked={locked}
+                        draggingId={draggingId}
+                        hoverSlotId={hoverSlotId}
+                        slotRectsRef={slotRectsRef}
+                        onProtect={() => toggleProtect(t.id)}
+                        onMoveTomorrow={() => onMoveTomorrow(t)}
+                        onDropTask={() => onDrop(t)}
+                        onHoverSlot={setHoverSlotId}
+                        onDragging={setDragging}
+                        onMoveToSlot={(slotId) => moveTaskToSlot(t, slotId)}
+                      />
                     )
                   })
                 )}
@@ -349,22 +653,16 @@ export function PlanDaySheet({
           </Pressable>
           {poolOpen
             ? untimed.map((t) => (
-                <View key={t.id} style={styles.poolRow}>
-                  <Text style={styles.poolTitle} numberOfLines={1}>
-                    {t.title}
-                  </Text>
-                  <View style={styles.poolTimes}>
-                    {DAY_SLOTS.map((s) => (
-                      <Pressable
-                        key={s.id}
-                        style={styles.poolChip}
-                        onPress={() => onSetTime(t, s.time)}
-                      >
-                        <Text style={styles.poolChipText}>{s.time}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
+                <DraggablePoolRow
+                  key={t.id}
+                  task={t}
+                  draggingId={draggingId}
+                  slotRectsRef={slotRectsRef}
+                  onHoverSlot={setHoverSlotId}
+                  onDragging={setDragging}
+                  onMoveToSlot={(slotId) => moveTaskToSlot(t, slotId)}
+                  onQuickSet={(time) => onSetTime(t, time)}
+                />
               ))
             : null}
         </View>
@@ -471,6 +769,10 @@ const styles = StyleSheet.create({
   nodeFilled: {
     backgroundColor: colors.accent,
   },
+  nodeHot: {
+    borderColor: colors.accentStrong,
+    transform: [{ scale: 1.15 }],
+  },
   blockBody: {
     flex: 1,
     backgroundColor: colors.bgCardSolid,
@@ -478,6 +780,12 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 6,
     marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  blockBodyHot: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
   },
   blockHead: {
     flexDirection: 'row',
@@ -521,19 +829,42 @@ const styles = StyleSheet.create({
     fontSize: 13,
     paddingVertical: 2,
   },
+  dropHint: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    paddingVertical: 2,
+  },
   slotItem: {
     gap: 4,
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.sm,
+    paddingHorizontal: 4,
+    paddingBottom: 4,
+    shadowColor: '#0F2A32',
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   },
   slotItemLocked: { opacity: 0.85 },
+  slotItemDragging: {
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
   slotItemMain: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   slotItemTitle: {
     flex: 1,
     color: colors.text,
     fontFamily: fonts.bodyMedium,
     fontSize: 14,
+  },
+  dragHint: {
+    color: colors.textDim,
+    fontSize: 14,
+    letterSpacing: 1,
+    paddingHorizontal: 4,
   },
   slotItemActions: { flexDirection: 'row', gap: 12, paddingLeft: 16 },
   miniAct: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 12 },
@@ -595,8 +926,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
+    backgroundColor: colors.bgElevated,
   },
-  poolTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 14 },
+  poolTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  poolTitle: { flex: 1, color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 14 },
   poolTimes: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   poolChip: {
     backgroundColor: colors.bgSoft,

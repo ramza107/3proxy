@@ -30,6 +30,8 @@ type Props = {
   footer?: ReactNode
   sheetStyle?: StyleProp<ViewStyle>
   scroll?: boolean
+  /** Disable scrolling while dragging blocks. */
+  scrollEnabled?: boolean
 }
 
 /**
@@ -45,6 +47,7 @@ export function BottomSheet({
   footer,
   sheetStyle,
   scroll = true,
+  scrollEnabled = true,
 }: Props) {
   const insets = useSafeAreaInsets()
   const progress = useSharedValue(0)
@@ -121,6 +124,7 @@ export function BottomSheet({
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.scroll}
               bounces
+              scrollEnabled={scrollEnabled}
             >
               {children}
             </ScrollView>
