@@ -171,39 +171,53 @@ export default function TasksScreen() {
           <Stat label="Timed" value={stats.timed} />
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.weekStrip}
-        >
-          <Pressable
-            onPress={() => setFocusDay(null)}
-            style={[styles.dayChip, !focusDay && styles.dayChipOn]}
+        <View style={styles.weekStripOuter}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.weekStripScroll}
+            contentContainerStyle={styles.weekStrip}
           >
-            <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]}>Week</Text>
-            <Text style={styles.dayChipSub}> </Text>
-            <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]}>
-              {stats.week}
-            </Text>
-          </Pressable>
-          {week.map((d) => {
-            const on = focusDay === d.iso
-            const n = d.tasks.length + d.anchors.length
-            return (
-              <Pressable
-                key={d.iso}
-                onPress={() => setFocusDay(on ? null : d.iso)}
-                style={[styles.dayChip, on && styles.dayChipOn]}
-              >
-                <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]}>
-                  {d.label.slice(0, 3)}
-                </Text>
-                <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]}>{d.sub}</Text>
-                <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]}>{n}</Text>
-              </Pressable>
-            )
-          })}
-        </ScrollView>
+            <Pressable
+              onPress={() => setFocusDay(null)}
+              style={[styles.dayChip, !focusDay && styles.dayChipOn]}
+            >
+              <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]} numberOfLines={1}>
+                Week
+              </Text>
+              <Text style={[styles.dayChipSub, !focusDay && styles.dayChipSubOn]} numberOfLines={1}>
+                {' '}
+              </Text>
+              <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]} numberOfLines={1}>
+                {stats.week}
+              </Text>
+            </Pressable>
+            {week.map((d) => {
+              const on = focusDay === d.iso
+              const n = d.tasks.length + d.anchors.length
+              const short =
+                d.iso === today ? 'Tod' : d.iso === tomorrow ? 'Tom' : d.label.slice(0, 3)
+              return (
+                <Pressable
+                  key={d.iso}
+                  onPress={() => setFocusDay(on ? null : d.iso)}
+                  style={[styles.dayChip, on && styles.dayChipOn]}
+                  accessibilityLabel={`${d.label} ${d.sub}, ${n} items`}
+                >
+                  <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]} numberOfLines={1}>
+                    {short}
+                  </Text>
+                  <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]} numberOfLines={1}>
+                    {d.sub}
+                  </Text>
+                  <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]} numberOfLines={1}>
+                    {n}
+                  </Text>
+                </Pressable>
+              )
+            })}
+          </ScrollView>
+        </View>
 
         <ScrollView
           contentContainerStyle={styles.list}
@@ -402,24 +416,34 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: 11,
   },
+  // RN Web clips children of borderRadius views — chip height must fit all three lines.
+  weekStripOuter: {
+    height: 112,
+    marginBottom: 8,
+  },
+  weekStripScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+    height: 112,
+  },
   weekStrip: {
     paddingHorizontal: spacing.lg,
     gap: 8,
-    paddingBottom: 10,
+    alignItems: 'center',
+    paddingVertical: 8,
   },
   dayChip: {
-    width: 78,
-    minHeight: 72,
-    paddingTop: 8,
-    paddingBottom: 10,
+    width: 76,
+    height: 96,
+    paddingTop: 10,
+    paddingBottom: 12,
     paddingHorizontal: 6,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 2,
+    justifyContent: 'space-between',
   },
   dayChipOn: {
     backgroundColor: colors.accentSoft,
@@ -438,18 +462,16 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 10,
-    lineHeight: 13,
+    lineHeight: 14,
     textAlign: 'center',
     width: '100%',
-    fontVariant: ['tabular-nums'],
   },
   dayChipSubOn: { color: colors.accentStrong },
   dayChipCount: {
     color: colors.textDim,
     fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    lineHeight: 18,
-    marginTop: 2,
+    fontSize: 15,
+    lineHeight: 20,
     textAlign: 'center',
     width: '100%',
     fontVariant: ['tabular-nums'],
