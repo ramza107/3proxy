@@ -444,8 +444,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 4,
+    justifyContent: 'space-between',
   },
   dayChipOn: {
     backgroundColor: colors.accentSoft,
@@ -477,7 +476,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     height: 22,
-    marginTop: 6,
     textAlign: 'center',
     width: '100%',
     fontVariant: ['tabular-nums'],
