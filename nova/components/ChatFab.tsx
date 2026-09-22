@@ -11,6 +11,11 @@ import { colors, fonts, radii, spacing } from '../constants/theme'
 import { t } from '../lib/i18n'
 import { useNovaStore } from '../lib/store'
 
+/** Local “+” FABs on Home / Bills — keep Chat clear of them. */
+const LOCAL_FAB_SIZE = 54
+const LOCAL_FAB_RIGHT = 22
+const LOCAL_FAB_GAP = 12
+
 /** Floating Wahrly chat control — available on every tab except Chat itself. */
 export function ChatFab() {
   const router = useRouter()
@@ -20,17 +25,22 @@ export function ChatFab() {
   const scale = useSharedValue(1)
 
   const onChat = pathname.includes('/chat')
+  const hasLocalFab = pathname.includes('/home') || pathname.includes('/bills')
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
 
   if (onChat) return null
 
-  // Sit above the tab bar (~64) + safe area
+  // Sit above the tab bar (~64) + safe area — same band as local “+” FABs
   const bottom = Math.max(insets.bottom, 8) + 72
+  // On Home/Bills, sit to the left of the circular “+” so they don’t overlap
+  const right = hasLocalFab
+    ? LOCAL_FAB_RIGHT + LOCAL_FAB_SIZE + LOCAL_FAB_GAP
+    : spacing.md
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { bottom }]}>
+    <View pointerEvents="box-none" style={[styles.wrap, { bottom, right }]}>
       <Animated.View style={style}>
         <Pressable
           accessibilityRole="button"
@@ -55,7 +65,6 @@ export function ChatFab() {
 const styles = StyleSheet.create({
   wrap: {
     position: 'absolute',
-    right: spacing.md,
     zIndex: 50,
     elevation: 8,
   },

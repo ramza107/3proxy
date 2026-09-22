@@ -418,7 +418,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgDeep,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
+    elevation: 5,
+    zIndex: 40,
   },
   fabText: {
     color: colors.textOnAccent,
