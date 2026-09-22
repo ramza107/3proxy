@@ -1,5 +1,5 @@
 import { usePathname, useRouter } from 'expo-router'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,16 +7,21 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BrandMark } from './BrandMark'
-import { colors, fonts, radii, spacing } from '../constants/theme'
+import { colors } from '../constants/theme'
 import { t } from '../lib/i18n'
 import { useNovaStore } from '../lib/store'
 
-/** Local “+” FABs on Home / Bills — keep Chat clear of them. */
-const LOCAL_FAB_SIZE = 54
-const LOCAL_FAB_RIGHT = 22
-const LOCAL_FAB_GAP = 12
+/** Match Home/Bills circular “+” FABs. */
+export const FAB_SIZE = 54
+export const FAB_RIGHT = 22
+/** Space reserved under scroll content so last rows clear Chat / +. */
+export const FAB_SCROLL_INSET = 120
 
-/** Floating Wahrly chat control — available on every tab except Chat itself. */
+const FAB_GAP = 12
+/** Tab bar band above home-indicator — keep in sync with ChatFab bottom math. */
+const TAB_BAR_BAND = 72
+
+/** Compact icon Chat FAB — sits above local “+” on Home/Bills, alone elsewhere. */
 export function ChatFab() {
   const router = useRouter()
   const pathname = usePathname()
@@ -32,21 +37,18 @@ export function ChatFab() {
 
   if (onChat) return null
 
-  // Sit above the tab bar (~64) + safe area — same band as local “+” FABs
-  const bottom = Math.max(insets.bottom, 8) + 72
-  // On Home/Bills, sit to the left of the circular “+” so they don’t overlap
-  const right = hasLocalFab
-    ? LOCAL_FAB_RIGHT + LOCAL_FAB_SIZE + LOCAL_FAB_GAP
-    : spacing.md
+  // Same corner as “+”; stack above it when both are present
+  let bottom = Math.max(insets.bottom, 8) + TAB_BAR_BAND
+  if (hasLocalFab) bottom += FAB_SIZE + FAB_GAP
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { bottom, right }]}>
+    <View pointerEvents="box-none" style={[styles.wrap, { bottom, right: FAB_RIGHT }]}>
       <Animated.View style={style}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t(language, 'tabs.chat')}
           onPressIn={() => {
-            scale.value = withSpring(0.94, { damping: 16, stiffness: 280 })
+            scale.value = withSpring(0.92, { damping: 16, stiffness: 280 })
           }}
           onPressOut={() => {
             scale.value = withSpring(1, { damping: 14, stiffness: 220 })
@@ -55,7 +57,6 @@ export function ChatFab() {
           style={styles.btn}
         >
           <BrandMark size={22} color={colors.textOnAccent} />
-          <Text style={styles.label}>{t(language, 'tabs.chat')}</Text>
         </Pressable>
       </Animated.View>
     </View>
@@ -69,23 +70,16 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   btn: {
-    flexDirection: 'row',
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: radii.full,
+    justifyContent: 'center',
     backgroundColor: colors.accentStrong,
     shadowColor: '#0F2A32',
     shadowOpacity: 0.22,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
-  },
-  label: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    color: colors.textOnAccent,
-    letterSpacing: 0.2,
   },
 })

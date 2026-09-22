@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   statValue: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   statSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 11, marginTop: 2 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 100, gap: 8 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 8 },
   section: { marginTop: 10, gap: 4 },
   sectionHead: {
     flexDirection: 'row',

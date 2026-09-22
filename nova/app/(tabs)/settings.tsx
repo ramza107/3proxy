@@ -836,7 +836,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 40 },
+  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 140 },
   header: { gap: 4, marginBottom: 4 },
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
   sub: { color: colors.textMuted, fontFamily: fonts.body },
