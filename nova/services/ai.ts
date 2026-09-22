@@ -645,6 +645,7 @@ export async function toggleTaskCompleted(task: Task) {
       recurrence: task.recurrence,
     })
   }
+  await refreshWidgetSnapshot().catch(() => undefined)
 }
 
 export async function updateTaskFields(
@@ -659,6 +660,7 @@ export async function updateTaskFields(
   }
   store.upsertTask(next)
   await scheduleTaskNotification(next, store.settings.notificationsEnabled)
+  await refreshWidgetSnapshot().catch(() => undefined)
 }
 
 export async function deleteTask(taskId: string) {
@@ -669,6 +671,7 @@ export async function deleteTask(taskId: string) {
   }
   store.removeTask(taskId)
   await cancelNotification(null)
+  await refreshWidgetSnapshot().catch(() => undefined)
 }
 
 export function matchTaskByTitle(tasks: Task[], hint: string) {
