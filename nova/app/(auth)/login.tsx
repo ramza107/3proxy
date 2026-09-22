@@ -14,8 +14,10 @@ import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
+import { useT } from '../../lib/useT'
 
 export default function LoginScreen() {
+  const t = useT()
   const router = useRouter()
   const setDemoSession = useNovaStore((s) => s.setDemoSession)
   const [email, setEmail] = useState('')
@@ -62,12 +64,12 @@ export default function LoginScreen() {
       >
         <View style={styles.hero}>
           <Text style={styles.brand}>{brand.name}</Text>
-          <Text style={styles.tagline}>{brand.tagline}</Text>
-          <Text style={styles.sub}>Tell Wahrly what matters today — it becomes a clear plan.</Text>
+          <Text style={styles.tagline}>{t('auth.tagline')}</Text>
+          <Text style={styles.sub}>{t('onboarding.welcomeSub')}</Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t('auth.email')}</Text>
           <TextInput
             autoCapitalize="none"
             keyboardType="email-address"
@@ -77,7 +79,7 @@ export default function LoginScreen() {
             placeholderTextColor={colors.textDim}
             style={styles.input}
           />
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>{t('auth.password')}</Text>
           <TextInput
             secureTextEntry
             value={password}
@@ -96,13 +98,13 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color={colors.textOnAccent} />
             ) : (
-              <Text style={styles.btnText}>Sign in</Text>
+              <Text style={styles.btnText}>{t('auth.signIn')}</Text>
             )}
           </Pressable>
         </View>
 
         <Link href="/signup" style={styles.link}>
-          Create an account
+          {t('auth.needAccount')}
         </Link>
 
         <Pressable
@@ -113,7 +115,7 @@ export default function LoginScreen() {
             router.replace('/welcome')
           }}
         >
-          <Text style={styles.demoText}>Continue in demo mode</Text>
+          <Text style={styles.demoText}>{t('auth.demo')}</Text>
         </Pressable>
       </KeyboardAvoidingView>
     </Screen>

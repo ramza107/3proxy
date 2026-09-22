@@ -10,6 +10,7 @@ import { TaskEditor } from '../../components/TaskEditor'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { anchorsForDay, normalizeTypicalWeek, resolveDayWindow } from '../../lib/scheduleDay'
 import { sortTasks, todayISO, uid, useNovaStore } from '../../lib/store'
+import { useT } from '../../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../../services/ai'
 import type { Priority, Task } from '../../types'
 
@@ -62,6 +63,7 @@ function sampleWeekTasks(userId: string, today: string): Task[] {
 }
 
 export default function TasksScreen() {
+  const t = useT()
   const { taskId } = useLocalSearchParams<{ taskId?: string }>()
   const tasks = useNovaStore((s) => s.tasks)
   const settings = useNovaStore((s) => s.settings)
@@ -94,14 +96,14 @@ export default function TasksScreen() {
       const iso = format(addDays(new Date(`${today}T12:00:00`), i), 'yyyy-MM-dd')
       const win = resolveDayWindow(settings, iso)
       const label =
-        i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : format(parseISO(iso), 'EEEE')
+        i === 0 ? t('common.today') : i === 1 ? t('common.tomorrow') : format(parseISO(iso), 'EEEE')
       const sub = format(parseISO(iso), 'MMM d')
       days.push({
         iso,
         label,
         sub,
         kind: win.kind,
-        tasks: open.filter((t) => t.date === iso),
+        tasks: open.filter((task) => task.date === iso),
         anchors: anchorsForDay(tw, iso).map((a) => ({
           title: a.title,
           time: a.time,
@@ -110,7 +112,7 @@ export default function TasksScreen() {
       })
     }
     return days
-  }, [tasks, today, settings, tw])
+  }, [tasks, today, settings, tw, t])
 
   const undated = useMemo(
     () => sortTasks(tasks.filter((t) => !t.completed && !t.date)),
@@ -163,18 +165,16 @@ export default function TasksScreen() {
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.kicker}>Week on the rail</Text>
-          <Text style={styles.title}>Tasks</Text>
-          <Text style={styles.sub}>
-            Seven days ahead · edit, shift, complete — anchors from your typical week stay put
-          </Text>
+          <Text style={styles.kicker}>{t('tasks.kicker')}</Text>
+          <Text style={styles.title}>{t('tasks.title')}</Text>
+          <Text style={styles.sub}>{t('tasks.sub')}</Text>
         </View>
 
         <View style={styles.statsRow}>
-          <Stat label="Open" value={stats.open} />
-          <Stat label="Overdue" value={stats.overdue} hot={stats.overdue > 0} />
-          <Stat label="This week" value={stats.week} />
-          <Stat label="Timed" value={stats.timed} />
+          <Stat label={t('tasks.statOpen')} value={stats.open} />
+          <Stat label={t('tasks.statOverdue')} value={stats.overdue} hot={stats.overdue > 0} />
+          <Stat label={t('tasks.statWeek')} value={stats.week} />
+          <Stat label={t('tasks.statTimed')} value={stats.timed} />
         </View>
 
         <View style={styles.weekStripOuter}>
@@ -189,7 +189,7 @@ export default function TasksScreen() {
               style={[styles.dayChip, !focusDay && styles.dayChipOn]}
             >
               <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]} numberOfLines={1}>
-                Week
+                {t('tasks.week')}
               </Text>
               <Text style={styles.dayChipSub} numberOfLines={1}>
                 {' '}
@@ -234,20 +234,18 @@ export default function TasksScreen() {
         >
           {emptyWeek ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>Your week is clear</Text>
-              <Text style={styles.emptyText}>
-                Add tasks from chat, or drop in a sample week to see how the agenda feels.
-              </Text>
+              <Text style={styles.emptyTitle}>{t('tasks.emptyTitle')}</Text>
+              <Text style={styles.emptyText}>{t('tasks.emptyText')}</Text>
               <Pressable style={styles.sampleBtn} onPress={fillSampleWeek}>
-                <Text style={styles.sampleBtnText}>Fill sample week</Text>
+                <Text style={styles.sampleBtnText}>{t('tasks.fillSample')}</Text>
               </Pressable>
             </View>
           ) : null}
 
           {overdue.length > 0 && !focusDay ? (
             <HomeSection
-              title="Overdue"
-              meta={`${overdue.length} still open`}
+              title={t('tasks.overdue')}
+              meta={t.tf('tasks.overdueMeta', { n: overdue.length })}
               emphasize
             >
               {overdue.map((task) => (
@@ -301,14 +299,14 @@ export default function TasksScreen() {
               ))}
 
               {day.tasks.length === 0 && day.anchors.length === 0 ? (
-                <Text style={styles.dayEmpty}>Free day — add a task anytime.</Text>
+                <Text style={styles.dayEmpty}>{t('tasks.freeDay')}</Text>
               ) : null}
             </HomeSection>
           ))}
 
           {undated.length > 0 && !focusDay ? (
             <HomeSection
-              title="Later / undated"
+              title={t('tasks.later')}
               meta={`${undated.length} waiting — Plan day can place them`}
             >
               {undated.map((task) => (
@@ -326,7 +324,7 @@ export default function TasksScreen() {
 
           <Pressable style={styles.doneToggle} onPress={() => setShowDone((v) => !v)}>
             <Text style={styles.doneToggleText}>
-              {showDone ? 'Hide' : 'Show'} done ({stats.done})
+              {showDone ? t('tasks.hideDone') : t('tasks.showDone')} ({stats.done})
             </Text>
           </Pressable>
           {showDone

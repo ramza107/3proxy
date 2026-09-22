@@ -1,5 +1,7 @@
 /** Lightweight UI i18n — 10 languages, no heavy deps. */
 
+import { pagesFor } from './i18nPages'
+
 export const APP_LANGUAGES = [
   { code: 'en', native: 'English', english: 'English' },
   { code: 'zh', native: '中文', english: 'Chinese' },
@@ -132,7 +134,7 @@ const en: Dict = {
   'settings.yourName': 'Your name',
   'settings.saveName': 'Save name',
   'settings.language': 'Language',
-  'settings.languageSub': 'App interface — Home, tabs, and Settings.',
+  'settings.languageSub': 'App interface — all screens and tabs.',
   'settings.google': 'Google',
   'settings.signOut': 'Sign out',
 }
@@ -245,7 +247,7 @@ const ru: Dict = {
   'settings.yourName': 'Ваше имя',
   'settings.saveName': 'Сохранить имя',
   'settings.language': 'Язык',
-  'settings.languageSub': 'Интерфейс — Главная, вкладки и Настройки.',
+  'settings.languageSub': 'Интерфейс — все экраны и вкладки.',
   'settings.google': 'Google',
   'settings.signOut': 'Выйти',
 }
@@ -356,7 +358,7 @@ const uk: Dict = {
   'settings.yourName': "Ваше ім'я",
   'settings.saveName': "Зберегти ім'я",
   'settings.language': 'Мова',
-  'settings.languageSub': 'Інтерфейс — Головна, вкладки та Налаштування.',
+  'settings.languageSub': 'Інтерфейс — усі екрани і вкладки.',
   'settings.google': 'Google',
   'settings.signOut': 'Вийти',
 }
@@ -450,7 +452,7 @@ const es: Dict = {
   'settings.yourName': 'Tu nombre',
   'settings.saveName': 'Guardar nombre',
   'settings.language': 'Idioma',
-  'settings.languageSub': 'Interfaz — Inicio, pestañas y Ajustes.',
+  'settings.languageSub': 'Interfaz — todas las pantallas y pestañas.',
   'settings.google': 'Google',
   'settings.signOut': 'Cerrar sesión',
 }
@@ -544,7 +546,7 @@ const fr: Dict = {
   'settings.yourName': 'Votre nom',
   'settings.saveName': 'Enregistrer le nom',
   'settings.language': 'Langue',
-  'settings.languageSub': 'Interface — Accueil, onglets et Réglages.',
+  'settings.languageSub': 'Interface — tous les écrans et onglets.',
   'settings.google': 'Google',
   'settings.signOut': 'Se déconnecter',
 }
@@ -638,7 +640,7 @@ const de: Dict = {
   'settings.yourName': 'Dein Name',
   'settings.saveName': 'Name speichern',
   'settings.language': 'Sprache',
-  'settings.languageSub': 'Oberfläche — Start, Tabs und Einstellungen.',
+  'settings.languageSub': 'Oberfläche — alle Bildschirme und Tabs.',
   'settings.google': 'Google',
   'settings.signOut': 'Abmelden',
 }
@@ -732,7 +734,7 @@ const pt: Dict = {
   'settings.yourName': 'Seu nome',
   'settings.saveName': 'Salvar nome',
   'settings.language': 'Idioma',
-  'settings.languageSub': 'Interface — Início, abas e Ajustes.',
+  'settings.languageSub': 'Interface — todas as telas e abas.',
   'settings.google': 'Google',
   'settings.signOut': 'Sair',
 }
@@ -820,7 +822,7 @@ const zh: Dict = {
   'settings.yourName': '你的名字',
   'settings.saveName': '保存名字',
   'settings.language': '语言',
-  'settings.languageSub': '界面 — 首页、标签和设置。',
+  'settings.languageSub': '界面 — 所有页面和标签。',
   'settings.google': 'Google',
   'settings.signOut': '退出登录',
 }
@@ -913,7 +915,7 @@ const hi: Dict = {
   'settings.yourName': 'आपका नाम',
   'settings.saveName': 'नाम सहेजें',
   'settings.language': 'भाषा',
-  'settings.languageSub': 'इंटरफ़ेस — होम, टैब और सेटिंग्स।',
+  'settings.languageSub': 'इंटरफ़ेस — सभी स्क्रीन और टैब।',
   'settings.google': 'Google',
   'settings.signOut': 'साइन आउट',
 }
@@ -1006,7 +1008,7 @@ const ar: Dict = {
   'settings.yourName': 'اسمك',
   'settings.saveName': 'حفظ الاسم',
   'settings.language': 'اللغة',
-  'settings.languageSub': 'الواجهة — الرئيسية والتبويبات والإعدادات.',
+  'settings.languageSub': 'الواجهة — كل الشاشات وعلامات التبويب.',
   'settings.google': 'Google',
   'settings.signOut': 'تسجيل الخروج',
 }
@@ -1024,9 +1026,26 @@ const catalogs: Record<AppLanguage, Dict> = {
   de,
 }
 
+function withPages(lang: AppLanguage, base: Dict): Dict {
+  return { ...base, ...pagesFor(lang) }
+}
+
+const catalogsWithPages: Record<AppLanguage, Dict> = {
+  en: withPages('en', catalogs.en),
+  zh: withPages('zh', catalogs.zh),
+  hi: withPages('hi', catalogs.hi),
+  es: withPages('es', catalogs.es),
+  fr: withPages('fr', catalogs.fr),
+  ar: withPages('ar', catalogs.ar),
+  pt: withPages('pt', catalogs.pt),
+  ru: withPages('ru', catalogs.ru),
+  uk: withPages('uk', catalogs.uk),
+  de: withPages('de', catalogs.de),
+}
+
 export function t(lang: AppLanguage | string | undefined | null, key: string): string {
   const code = isAppLanguage(lang) ? lang : 'en'
-  return catalogs[code][key] || catalogs.en[key] || key
+  return catalogsWithPages[code][key] || catalogsWithPages.en[key] || key
 }
 
 /** Simple `{n}` / `{name}` interpolation. */

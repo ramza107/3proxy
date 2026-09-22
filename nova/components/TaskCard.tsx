@@ -4,6 +4,7 @@ import type { Priority, Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { durationForPriority } from '../lib/scheduleDay'
 import { recurrenceLabel } from '../lib/recurrence'
+import { useT } from '../lib/useT'
 
 type Props = {
   task: Task
@@ -49,6 +50,7 @@ export function TaskCard({
   onMoveTomorrow,
   hideDate,
 }: Props) {
+  const t = useT()
   const overdue = isOverdue(task)
   const mins = durationForPriority(task.priority)
   const rec = recurrenceLabel(task.recurrence)
@@ -81,7 +83,7 @@ export function TaskCard({
             </Text>
             {overdue ? (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>Overdue</Text>
+                <Text style={styles.badgeText}>{t('tasks.overdue')}</Text>
               </View>
             ) : null}
           </View>
@@ -98,7 +100,7 @@ export function TaskCard({
       {!task.completed ? (
         <View style={styles.actions}>
           <Pressable onPress={onPress} style={styles.actionBtn} hitSlop={6} accessibilityRole="button">
-            <Text style={styles.actionText}>Edit</Text>
+            <Text style={styles.actionText}>{t('common.edit')}</Text>
           </Pressable>
           {onPostpone ? (
             <Pressable onPress={onPostpone} style={styles.actionBtn} hitSlop={6}>
@@ -107,7 +109,7 @@ export function TaskCard({
           ) : null}
           {onMoveTomorrow ? (
             <Pressable onPress={onMoveTomorrow} style={styles.actionBtn} hitSlop={6}>
-              <Text style={styles.actionText}>Tomorrow</Text>
+              <Text style={styles.actionText}>{t('tasks.postpone')}</Text>
             </Pressable>
           ) : null}
         </View>

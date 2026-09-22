@@ -17,6 +17,7 @@ import { ChatBubble } from '../../components/ChatBubble'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { addLocalDays, localISODate } from '../../lib/localDate'
 import { useNovaStore } from '../../lib/store'
+import { useT } from '../../lib/useT'
 import { sendNovaMessage } from '../../services/ai'
 import type { AIAction } from '../../types'
 
@@ -85,6 +86,7 @@ function describeWhere(action: AIAction): SavedItem | null {
 }
 
 export default function ChatScreen() {
+  const t = useT()
   const router = useRouter()
   const messages = useNovaStore((s) => s.messages)
   const name = useNovaStore((s) => s.settings.name) || 'there'
@@ -101,7 +103,7 @@ export default function ChatScreen() {
         .filter((x): x is SavedItem => Boolean(x))
       setSaved(items)
     } catch (e) {
-      Alert.alert('Wahrly', e instanceof Error ? e.message : 'AI unavailable')
+      Alert.alert(brand.name, e instanceof Error ? e.message : t('chat.unavailable'))
     } finally {
       setLoading(false)
       requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }))
@@ -124,11 +126,11 @@ export default function ChatScreen() {
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Done"
+              accessibilityLabel={t('chat.done')}
               style={styles.doneBtn}
               onPress={() => (router.canGoBack() ? router.back() : router.replace('/tasks'))}
             >
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={styles.doneText}>{t('chat.done')}</Text>
             </Pressable>
           </View>
         </View>
@@ -141,15 +143,13 @@ export default function ChatScreen() {
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>Hi {name}</Text>
-              <Text style={styles.emptyText}>
-                Tell me what you need to get done. I&apos;ll save it under the Tasks tab.
-              </Text>
+              <Text style={styles.emptyTitle}>{t.tf('chat.emptyTitle', { name })}</Text>
+              <Text style={styles.emptyText}>{t('chat.emptyText')}</Text>
               <Pressable
                 style={styles.chip}
                 onPress={() => onSend('Remind me to call Mom tomorrow at 7 PM')}
               >
-                <Text style={styles.chipText}>Remind me to call Mom tomorrow at 7</Text>
+                <Text style={styles.chipText}>{t('chat.chipRemind')}</Text>
               </Pressable>
               <Pressable
                 style={styles.chip}
@@ -157,7 +157,7 @@ export default function ChatScreen() {
                   onSend('I need to clean my apartment, buy food and do laundry tomorrow')
                 }
               >
-                <Text style={styles.chipText}>Organize 3 tasks for tomorrow</Text>
+                <Text style={styles.chipText}>{t('chat.chipOrganize')}</Text>
               </Pressable>
             </View>
           }
@@ -166,7 +166,7 @@ export default function ChatScreen() {
 
         {saved.length > 0 && (
           <View style={styles.savedCard}>
-            <Text style={styles.savedLabel}>SAVED</Text>
+            <Text style={styles.savedLabel}>{t('chat.saved')}</Text>
             {saved.map((item, i) => (
               <Text key={`${item.title}-${i}`} style={styles.savedItem}>
                 • {item.title}
@@ -178,7 +178,7 @@ export default function ChatScreen() {
               style={styles.savedBtn}
               onPress={() => router.push('/tasks')}
             >
-              <Text style={styles.savedBtnText}>Open Tasks</Text>
+              <Text style={styles.savedBtnText}>{t('chat.openTasks')}</Text>
             </Pressable>
           </View>
         )}
@@ -186,7 +186,7 @@ export default function ChatScreen() {
         <View style={styles.inputWrap}>
           <AIInput
             loading={loading}
-            placeholder="Tomorrow I need to..."
+            placeholder={t('chat.placeholder')}
             onSend={onSend}
           />
         </View>

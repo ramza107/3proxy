@@ -10,6 +10,7 @@ import {
 import type { Bill } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { BILL_CATEGORIES } from '../lib/bills'
+import { useT } from '../lib/useT'
 import { BottomSheet } from './BottomSheet'
 
 type Props = {
@@ -33,6 +34,7 @@ type Props = {
 }
 
 export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete }: Props) {
+  const t = useT()
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('UAH')
@@ -94,9 +96,9 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
     <BottomSheet
       visible={visible}
       onClose={onClose}
-      title={creating ? 'New payment' : 'Edit payment'}
+      title={creating ? t('editor.newBill') : t('editor.editBill')}
     >
-      <Text style={styles.label}>Name</Text>
+      <Text style={styles.label}>{t('auth.name')}</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
@@ -107,7 +109,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
 
       <View style={styles.row2}>
         <View style={{ flex: 1.4 }}>
-          <Text style={styles.label}>Amount</Text>
+          <Text style={styles.label}>{t('editor.amount')}</Text>
           <TextInput
             value={amount}
             onChangeText={setAmount}
@@ -130,7 +132,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         </View>
       </View>
 
-      <Text style={styles.label}>Day of month (1–28)</Text>
+      <Text style={styles.label}>{t('editor.dayOfMonth')}</Text>
       <View style={styles.chips}>
         {[1, 5, 10, 15, 20, 25, 28].map((d) => (
           <Pressable
@@ -174,7 +176,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         multiline
       />
 
-      <Text style={styles.label}>How to pay</Text>
+      <Text style={styles.label}>{t('editor.howToPay')}</Text>
       <TextInput
         value={payHowTo}
         onChangeText={setPayHowTo}
@@ -198,8 +200,8 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
       ) : null}
 
       <Pressable style={styles.toggleRow} onPress={() => setActive((v) => !v)}>
-        <Text style={styles.toggleLabel}>Active each month</Text>
-        <Text style={styles.toggleValue}>{active ? 'On' : 'Paused'}</Text>
+        <Text style={styles.toggleLabel}>{t('editor.activeMonth')}</Text>
+        <Text style={styles.toggleValue}>{active ? 'On' : t('bills.paused')}</Text>
       </Pressable>
 
       <Pressable style={styles.toggleRow} onPress={() => setRemindEnabled((v) => !v)}>
@@ -213,7 +215,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.save} onPress={save}>
-        <Text style={styles.saveText}>{creating ? 'Add payment' : 'Save'}</Text>
+        <Text style={styles.saveText}>{creating ? t('editor.create') : t('common.save')}</Text>
       </Pressable>
 
       {!creating && onDelete ? (
@@ -224,7 +226,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
             onClose()
           }}
         >
-          <Text style={styles.dangerText}>Delete</Text>
+          <Text style={styles.dangerText}>{t('common.delete')}</Text>
         </Pressable>
       ) : null}
 

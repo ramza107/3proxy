@@ -11,6 +11,7 @@ import {
 } from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { parseHm } from '../lib/notifications'
+import { useT } from '../lib/useT'
 import type { Dow, Priority, Task, TaskRecurrence } from '../types'
 
 type Props = {
@@ -48,6 +49,7 @@ function plusDays(n: number) {
 }
 
 export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelete }: Props) {
+  const t = useT()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -128,10 +130,10 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
         <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} accessibilityLabel="Close editor" />
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.heading}>Edit task</Text>
+          <Text style={styles.heading}>{t('editor.editTask')}</Text>
 
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <Text style={styles.label}>Title</Text>
+            <Text style={styles.label}>{t('editor.title')}</Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
@@ -144,8 +146,8 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
             <View style={styles.row}>
               {(
                 [
-                  ['Today', today()],
-                  ['Tomorrow', tomorrow()],
+                  [t('common.today'), today()],
+                  [t('common.tomorrow'), tomorrow()],
                   ['+3 days', plusDays(3)],
                   ['+1 week', plusDays(7)],
                   ['Clear', ''],
@@ -192,7 +194,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
               autoCapitalize="none"
             />
 
-            <Text style={styles.label}>Priority</Text>
+            <Text style={styles.label}>{t('editor.priority')}</Text>
             <View style={styles.row}>
               {PRIORITIES.map((p) => (
                 <Pressable
@@ -205,13 +207,13 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
               ))}
             </View>
 
-            <Text style={styles.label}>Repeat</Text>
+            <Text style={styles.label}>{t('editor.repeat')}</Text>
             <View style={styles.row}>
               {(
                 [
-                  ['none', 'Once'],
-                  ['daily', 'Daily'],
-                  ['weekly', 'Weekly'],
+                  ['none', t('editor.once')],
+                  ['daily', t('editor.daily')],
+                  ['weekly', t('editor.weekly')],
                 ] as const
               ).map(([id, label]) => (
                 <Pressable
@@ -256,7 +258,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
                   onClose()
                 }}
               >
-                <Text style={styles.actionText}>→ Today</Text>
+                <Text style={styles.actionText}>→ {t('common.today')}</Text>
               </Pressable>
               <Pressable
                 style={styles.action}
@@ -265,7 +267,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
                   onClose()
                 }}
               >
-                <Text style={styles.actionText}>→ Tomorrow</Text>
+                <Text style={styles.actionText}>→ {t('common.tomorrow')}</Text>
               </Pressable>
               <Pressable
                 style={styles.action}
@@ -282,7 +284,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Pressable style={styles.save} onPress={save}>
-              <Text style={styles.saveText}>Save changes</Text>
+              <Text style={styles.saveText}>{t('editor.saveChanges')}</Text>
             </Pressable>
 
             <View style={styles.footerRow}>
@@ -298,12 +300,12 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
                   onClose()
                 }}
               >
-                <Text style={styles.dangerText}>Delete</Text>
+                <Text style={styles.dangerText}>{t('common.delete')}</Text>
               </Pressable>
             </View>
 
             <Pressable onPress={onClose} style={styles.cancel}>
-              <Text style={styles.cancelText}>Close</Text>
+              <Text style={styles.cancelText}>{t('common.close')}</Text>
             </Pressable>
           </ScrollView>
         </View>

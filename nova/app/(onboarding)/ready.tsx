@@ -3,8 +3,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { useNovaStore } from '../../lib/store'
+import { useT } from '../../lib/useT'
 
 export default function ReadyScreen() {
+  const t = useT()
   const router = useRouter()
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const updateSettings = useNovaStore((s) => s.updateSettings)
@@ -12,12 +14,10 @@ export default function ReadyScreen() {
   return (
     <Screen>
       <View style={styles.screen}>
-        <Text style={styles.title}>Nice to meet you, {name}.</Text>
-        <Text style={styles.body}>Try saying:</Text>
+        <Text style={styles.title}>{t.tf('onboarding.readyTitle', { name })}</Text>
+        <Text style={styles.body}>{t('onboarding.trySaying')}</Text>
         <View style={styles.example}>
-          <Text style={styles.exampleText}>
-            &quot;Remind me to call Mom tomorrow at 7.&quot;
-          </Text>
+          <Text style={styles.exampleText}>&quot;{t('onboarding.example')}&quot;</Text>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -27,7 +27,7 @@ export default function ReadyScreen() {
             router.replace('/tasks')
           }}
         >
-          <Text style={styles.btnText}>Start using Wahrly</Text>
+          <Text style={styles.btnText}>{t('onboarding.start')}</Text>
         </Pressable>
       </View>
     </Screen>
