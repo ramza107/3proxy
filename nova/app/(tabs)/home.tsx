@@ -523,7 +523,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 5,
+    zIndex: 40,
   },
   fabText: {
     color: colors.textOnAccent,
