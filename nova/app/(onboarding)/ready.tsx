@@ -24,7 +24,7 @@ export default function ReadyScreen() {
           style={styles.btn}
           onPress={() => {
             updateSettings({ onboardingComplete: true })
-            router.replace('/home')
+            router.replace('/tasks')
           }}
         >
           <Text style={styles.btnText}>Start using Wahrly</Text>

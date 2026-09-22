@@ -106,7 +106,7 @@ export default function RootLayout() {
     }
 
     if (inAuth || inOnboarding || root === undefined) {
-      router.replace('/home')
+      router.replace('/tasks')
     }
   }, [hydrated, fontsReady, sessionUserId, onboardingComplete, segments, router])
 
