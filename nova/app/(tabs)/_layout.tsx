@@ -5,7 +5,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated'
 import { useEffect } from 'react'
-import { BrandMark } from '../../components/BrandMark'
+import { View } from 'react-native'
+import { ChatFab } from '../../components/ChatFab'
 import { colors } from '../../constants/theme'
 import { t } from '../../lib/i18n'
 import { useNovaStore } from '../../lib/store'
@@ -33,60 +34,61 @@ export default function TabsLayout() {
   const language = useNovaStore((s) => s.settings.language)
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.bgElevated,
-          borderTopColor: colors.border,
-          height: 64,
-          paddingBottom: 10,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: colors.accentStrong,
-        tabBarInactiveTintColor: colors.textDim,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        animation: 'fade',
-      }}
-    >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: t(language, 'tabs.home'),
-          tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+    <View style={{ flex: 1 }}>
+      <Tabs
+        initialRouteName="tasks"
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: colors.bgElevated,
+            borderTopColor: colors.border,
+            height: 64,
+            paddingBottom: 10,
+            paddingTop: 8,
+          },
+          tabBarActiveTintColor: colors.accentStrong,
+          tabBarInactiveTintColor: colors.textDim,
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+          animation: 'fade',
         }}
-      />
-      <Tabs.Screen
-        name="chat"
-        options={{
-          // Short label — "Wahrly" was truncating in the tab bar
-          title: t(language, 'tabs.chat'),
-          tabBarIcon: ({ focused }) => (
-            <BrandMark size={22} color={focused ? colors.signal : colors.signalMuted} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tasks"
-        options={{
-          title: t(language, 'tabs.tasks'),
-          tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="bills"
-        options={{
-          title: t(language, 'tabs.bills'),
-          tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: t(language, 'tabs.settings'),
-          href: null,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="tasks"
+          options={{
+            title: t(language, 'tabs.tasks'),
+            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="home"
+          options={{
+            title: t(language, 'tabs.home'),
+            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="bills"
+          options={{
+            title: t(language, 'tabs.bills'),
+            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: t(language, 'tabs.settings'),
+            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            title: t(language, 'tabs.chat'),
+            href: null,
+          }}
+        />
+      </Tabs>
+      <ChatFab />
+    </View>
   )
 }

@@ -46,7 +46,7 @@ export default function LoginScreen() {
       } else {
         setDemoSession(email.trim())
       }
-      router.replace('/home')
+      router.replace('/tasks')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Login failed')
     } finally {

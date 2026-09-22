@@ -265,8 +265,8 @@ export default function EveningClearScreen() {
                       .join(' · ')
                   : `${tomorrowOpen.length} on tomorrow. Rest well.`}
               </Text>
-              <Pressable style={styles.primary} onPress={() => router.replace('/home')}>
-                <Text style={styles.primaryText}>Back home</Text>
+              <Pressable style={styles.primary} onPress={() => router.replace('/tasks')}>
+                <Text style={styles.primaryText}>Back to Tasks</Text>
               </Pressable>
             </>
           ) : null}

@@ -117,8 +117,20 @@ export default function ChatScreen() {
         keyboardVerticalOffset={8}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>{brand.name}</Text>
-          <Text style={styles.sub}>{brand.tagline}</Text>
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title}>{brand.name}</Text>
+              <Text style={styles.sub}>{brand.tagline}</Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Done"
+              style={styles.doneBtn}
+              onPress={() => (router.canGoBack() ? router.back() : router.replace('/tasks'))}
+            >
+              <Text style={styles.doneText}>Done</Text>
+            </Pressable>
+          </View>
         </View>
 
         <FlatList
@@ -187,8 +199,20 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.sm, gap: 2 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { color: colors.text, fontSize: 34, fontFamily: fonts.brand, letterSpacing: -0.8 },
   sub: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13, letterSpacing: 0.3 },
+  doneBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentSoft,
+  },
+  doneText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+  },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexGrow: 1 },
   empty: { gap: 12, paddingTop: 24 },
   emptyTitle: { color: colors.text, fontSize: 22, fontFamily: fonts.bodyBold },
