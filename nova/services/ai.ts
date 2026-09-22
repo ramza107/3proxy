@@ -4,14 +4,19 @@ import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
 import { currentMonthKey } from '../lib/bills'
 import { createCalendarEvent, fetchCalendarEvents } from '../lib/emailApi'
 import { scheduleTaskNotification, cancelNotification, syncBillReminders } from '../lib/notifications'
+import { firstOccurrenceDate, nextOccurrenceDate } from '../lib/recurrence'
+import { isDestructiveAction, sanitizeAIActions } from '../lib/sanitizeActions'
 import { durationForPriority, isOrganizeDayIntent, planDayActions, parseHmToMinutes } from '../lib/scheduleDay'
 import { getSupabase, isSupabaseConfigured } from '../lib/supabase'
 import { todayISO, uid, useNovaStore } from '../lib/store'
 import { refreshWidgetSnapshot } from '../lib/widgetSync'
 import { clientLocalAI } from './localAI'
-import type { AIAction, AIChatResponse, Priority, Reminder, Task } from '../types'
+import type { AIAction, AIChatResponse, Priority, Reminder, Task, TaskRecurrence } from '../types'
 
-async function createTaskRemote(userId: string, action: Extract<AIAction, { type: 'create_task' }>) {
+async function createTaskRemote(
+  userId: string,
+  action: Extract<AIAction, { type: 'create_task' }>,
+) {
   const supabase = getSupabase()
   if (!supabase) return null
   const { data, error } = await supabase
@@ -26,7 +31,11 @@ async function createTaskRemote(userId: string, action: Extract<AIAction, { type
     .select('*')
     .single()
   if (error) throw error
-  return data as Task
+  const task = data as Task
+  if (action.recurrence) {
+    return { ...task, recurrence: action.recurrence }
+  }
+  return task
 }
 
 async function updateTaskRemote(action: Extract<AIAction, { type: 'update_task' }>) {
@@ -57,10 +66,18 @@ export async function applyActions(
 
   for (const action of actions) {
     if (action.type === 'create_task') {
+      let date = action.date
+      const recurrence: TaskRecurrence | null = action.recurrence || null
+      if (recurrence && !date) {
+        date = firstOccurrenceDate(todayISO(), recurrence)
+      } else if (recurrence && date) {
+        date = firstOccurrenceDate(date, recurrence)
+      }
       let task: Task | null = null
+      const createPayload = { ...action, date, recurrence }
       if (useRemote) {
         try {
-          task = await createTaskRemote(userId, action)
+          task = await createTaskRemote(userId, createPayload)
         } catch {
           task = null
         }
@@ -68,13 +85,14 @@ export async function applyActions(
       if (!task) {
         task = store.createTaskLocal({
           title: action.title,
-          date: action.date,
+          date,
           time: action.time,
           priority: action.priority,
           userId,
+          recurrence,
         })
       } else {
-        store.upsertTask(task)
+        store.upsertTask({ ...task, recurrence: recurrence || task.recurrence || null })
       }
       await scheduleTaskNotification(task, notificationsEnabled)
     }
@@ -117,6 +135,18 @@ export async function applyActions(
           completed: true,
           updated_at: new Date().toISOString(),
         })
+        if (local.recurrence) {
+          const base = local.date || todayISO()
+          const nextDate = nextOccurrenceDate(base, local.recurrence)
+          store.createTaskLocal({
+            title: local.title,
+            date: nextDate,
+            time: local.time,
+            priority: local.priority,
+            userId: local.user_id,
+            recurrence: local.recurrence,
+          })
+        }
       }
     }
 
@@ -192,9 +222,7 @@ export async function applyActions(
       const hint = (action.title_hint || '').toLowerCase().trim()
       const bill =
         (action.bill_id && store.bills.find((b) => b.id === action.bill_id)) ||
-        (hint
-          ? store.bills.find((b) => b.title.toLowerCase().includes(hint))
-          : null)
+        (hint ? store.bills.find((b) => b.title.toLowerCase().includes(hint)) : null)
       if (bill) {
         store.markBillPaid(bill.id, action.month || currentMonthKey())
         await syncBillReminders(useNovaStore.getState().bills, store.settings)
@@ -202,7 +230,7 @@ export async function applyActions(
     }
 
     if (action.type === 'create_calendar_event') {
-      // Local timed task only — Google write happens after explicit confirm (Plan day).
+      // Local timed task; Google write offered via confirmAddToGoogleCalendar after apply.
       const task = store.createTaskLocal({
         title: action.title,
         date: action.date,
@@ -217,6 +245,123 @@ export async function applyActions(
   await refreshWidgetSnapshot().catch(() => undefined)
 }
 
+export type CalendarCandidate = {
+  title: string
+  start: string
+  end: string
+}
+
+function calendarCandidateFromAction(
+  action: Extract<AIAction, { type: 'create_calendar_event' }>,
+): CalendarCandidate {
+  const [hh, mm] = action.time.split(':').map(Number)
+  const start = new Date(
+    `${action.date}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`,
+  )
+  const end = new Date(start.getTime() + (action.durationMin || 60) * 60_000)
+  return {
+    title: action.title,
+    start: start.toISOString(),
+    end: end.toISOString(),
+  }
+}
+
+/** Snapshot tasks before destructive apply so Undo can restore. */
+type DestructiveSnapshot = {
+  action: Extract<AIAction, { type: 'complete_task' | 'delete_task' }>
+  task: Task
+}
+
+function confirmDestructiveActions(
+  snapshots: DestructiveSnapshot[],
+  userId: string,
+  notificationsEnabled: boolean,
+): Promise<AIAction[]> {
+  if (!snapshots.length) return Promise.resolve([])
+
+  const labels = snapshots.map((s) => {
+    const verb = s.action.type === 'delete_task' ? 'Delete' : 'Complete'
+    return `${verb} “${s.task.title}”`
+  })
+  const title = snapshots.length === 1 ? labels[0] : `Apply ${snapshots.length} changes?`
+  const body =
+    snapshots.length === 1
+      ? snapshots[0].action.type === 'delete_task'
+        ? 'This removes the task from Tasks.'
+        : 'Mark this task done?'
+      : labels.join('\n')
+
+  return new Promise((resolve) => {
+    Alert.alert(title, body, [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+        onPress: () => resolve([]),
+      },
+      {
+        text: 'Confirm',
+        style: snapshots.some((s) => s.action.type === 'delete_task') ? 'destructive' : 'default',
+        onPress: () => {
+          void (async () => {
+            const actions = snapshots.map((s) => s.action)
+            await applyActions(actions, userId, notificationsEnabled)
+            offerUndoDestructive(snapshots, notificationsEnabled)
+            resolve(actions)
+          })()
+        },
+      },
+    ])
+  })
+}
+
+function offerUndoDestructive(snapshots: DestructiveSnapshot[], notificationsEnabled: boolean) {
+  const store = useNovaStore.getState()
+  Alert.alert('Done', 'Undo?', [
+    { text: 'Keep', style: 'cancel' },
+    {
+      text: 'Undo',
+      style: 'default',
+      onPress: () => {
+        void (async () => {
+          for (const snap of snapshots) {
+            if (snap.action.type === 'complete_task') {
+              if (snap.task.recurrence) {
+                const spawned = useNovaStore
+                  .getState()
+                  .tasks.find(
+                    (t) =>
+                      t.id !== snap.task.id &&
+                      !t.completed &&
+                      t.title === snap.task.title &&
+                      Boolean(t.recurrence) &&
+                      t.created_at >= snap.task.updated_at,
+                  )
+                if (spawned) store.removeTask(spawned.id)
+              }
+              const restored = {
+                ...snap.task,
+                completed: false,
+                updated_at: new Date().toISOString(),
+              }
+              if (isSupabaseConfigured && !store.demoMode) {
+                const supabase = getSupabase()
+                await supabase?.from('tasks').update({ completed: false }).eq('id', snap.task.id)
+              }
+              store.upsertTask(restored)
+              await scheduleTaskNotification(restored, notificationsEnabled)
+            }
+            if (snap.action.type === 'delete_task') {
+              store.upsertTask({ ...snap.task, updated_at: new Date().toISOString() })
+              await scheduleTaskNotification(snap.task, notificationsEnabled)
+            }
+          }
+          await refreshWidgetSnapshot().catch(() => undefined)
+        })()
+      },
+    },
+  ])
+}
+
 export async function refreshTasks(userId: string) {
   const store = useNovaStore.getState()
   if (!isSupabaseConfigured || store.demoMode) return
@@ -229,12 +374,6 @@ export async function refreshTasks(userId: string) {
   if (!error && data) {
     useNovaStore.getState().setTasks(data as Task[])
   }
-}
-
-export type CalendarCandidate = {
-  title: string
-  start: string
-  end: string
 }
 
 export type OrganizeMyDayResult = AIChatResponse & {
@@ -437,14 +576,45 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
       bills: store.bills,
       history,
       accessToken,
+      aiTone: store.settings.aiTone,
     })
   } catch {
     response = clientLocalAI(message, store.tasks, store.bills)
   }
 
+  const actions = sanitizeAIActions(response.actions || [], store.tasks, store.bills)
+  const safe = actions.filter((a) => !isDestructiveAction(a))
+  const destructive = actions.filter(isDestructiveAction) as Extract<
+    AIAction,
+    { type: 'complete_task' | 'delete_task' }
+  >[]
+
   store.addMessage({ role: 'assistant', content: response.reply })
-  await applyActions(response.actions || [], userId, store.settings.notificationsEnabled)
-  return response
+  await applyActions(safe, userId, store.settings.notificationsEnabled)
+
+  const calendarActions = safe.filter(
+    (a): a is Extract<AIAction, { type: 'create_calendar_event' }> =>
+      a.type === 'create_calendar_event',
+  )
+  if (calendarActions.length) {
+    confirmAddToGoogleCalendar(calendarActions.map(calendarCandidateFromAction))
+  }
+
+  let appliedDestructive: AIAction[] = []
+  if (destructive.length) {
+    const snapshots: DestructiveSnapshot[] = []
+    for (const action of destructive) {
+      const task = store.tasks.find((t) => t.id === action.task_id)
+      if (task) snapshots.push({ action, task: { ...task } })
+    }
+    appliedDestructive = await confirmDestructiveActions(
+      snapshots,
+      userId,
+      store.settings.notificationsEnabled,
+    )
+  }
+
+  return { ...response, actions: [...safe, ...appliedDestructive] }
 }
 
 export async function toggleTaskCompleted(task: Task) {

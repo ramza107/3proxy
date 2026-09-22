@@ -39,7 +39,9 @@ import {
 } from './email/pushStore.js'
 import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
+import { sanitizeAIActions } from './aiActions.js'
 import { SYSTEM_PROMPT } from './prompt.js'
+import { toneInstructions } from './tone.js'
 import { transcribeAudio } from './transcribe.js'
 
 dotenv.config({ path: new URL('../../.env', import.meta.url).pathname })
@@ -102,6 +104,7 @@ const bodySchema = z.object({
   current_date: z.string().optional(),
   timezone: z.string().optional(),
   weekday: z.string().optional(),
+  ai_tone: z.enum(['friendly', 'concise', 'coach']).optional(),
   tasks: z
     .array(
       z.object({
@@ -660,7 +663,10 @@ app.post('/api/ai/chat', async (req, res) => {
 
     if (!provider) {
       const local = localAI(input.message, input.tasks, today, input.bills)
-      return res.json({ ...local, provider: 'local' })
+      const knownTasks = new Set(input.tasks.map((t) => t.id))
+      const knownBills = new Set(input.bills.map((b) => b.id))
+      const { actions } = sanitizeAIActions(local.actions, knownTasks, knownBills)
+      return res.json({ reply: local.reply, actions, provider: 'local' })
     }
 
     try {
@@ -670,6 +676,7 @@ app.post('/api/ai/chat', async (req, res) => {
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: toneInstructions(input.ai_tone) },
           { role: 'system', content: context },
           ...input.history.map((h) => ({ role: h.role, content: h.content })),
           { role: 'user', content: input.message },
@@ -683,11 +690,24 @@ app.post('/api/ai/chat', async (req, res) => {
       if (!json.reply || !Array.isArray(json.actions)) {
         return res.status(502).json({ error: 'Malformed AI response', raw: json })
       }
-      return res.json({ ...json, provider: provider.name })
+      const knownTasks = new Set(input.tasks.map((t) => t.id))
+      const knownBills = new Set(input.bills.map((b) => b.id))
+      const { actions, dropped } = sanitizeAIActions(json.actions, knownTasks, knownBills)
+      let reply = String(json.reply)
+      if (dropped > 0 && actions.length === 0) {
+        reply =
+          /[а-яё]/i.test(input.message)
+            ? `${reply}\n\nНе смог применить действие — уточни задачу или скажи иначе.`
+            : `${reply}\n\nI couldn’t apply that action — name the task more clearly?`
+      }
+      return res.json({ reply, actions, provider: provider.name, dropped })
     } catch (providerError) {
       console.warn(`${provider.name} unavailable, using local AI:`, providerError)
       const local = localAI(input.message, input.tasks, today, input.bills)
-      return res.json({ ...local, fallback: true, provider: 'local' })
+      const knownTasks = new Set(input.tasks.map((t) => t.id))
+      const knownBills = new Set(input.bills.map((b) => b.id))
+      const { actions } = sanitizeAIActions(local.actions, knownTasks, knownBills)
+      return res.json({ reply: local.reply, actions, fallback: true, provider: 'local' })
     }
   } catch (error) {
     console.error(error)

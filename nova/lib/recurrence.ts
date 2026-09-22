@@ -3,6 +3,23 @@
 import { addDays, format, parseISO } from 'date-fns'
 import type { Dow, TaskRecurrence } from '../types'
 
+/** First date on/after fromISO that matches the recurrence (for new recurring tasks). */
+export function firstOccurrenceDate(fromISO: string, rec: TaskRecurrence): string {
+  let from: Date
+  try {
+    from = parseISO(fromISO)
+  } catch {
+    from = new Date()
+  }
+  if (Number.isNaN(from.getTime())) from = new Date()
+
+  if (rec.freq === 'daily') return format(from, 'yyyy-MM-dd')
+
+  const days = (rec.days?.length ? rec.days : [from.getDay() as Dow]).slice().sort()
+  if (days.includes(from.getDay() as Dow)) return format(from, 'yyyy-MM-dd')
+  return nextOccurrenceDate(fromISO, rec)
+}
+
 export function nextOccurrenceDate(fromISO: string, rec: TaskRecurrence): string {
   let from: Date
   try {

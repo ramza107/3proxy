@@ -33,6 +33,8 @@ function describeWhere(action: AIAction): SavedItem | null {
     if (action.date === today) where = 'Tasks → Today'
     else if (action.date === tomorrow) where = 'Tasks → Tomorrow'
     else if (action.date) where = `Tasks → Upcoming`
+    if (action.recurrence?.freq === 'daily') where += ' · repeats daily'
+    else if (action.recurrence?.freq === 'weekly') where += ' · repeats weekly'
     return {
       title: action.title + (action.time ? ` · ${action.time}` : ''),
       where,
@@ -63,10 +65,21 @@ function describeWhere(action: AIAction): SavedItem | null {
     }
   }
   if (action.type === 'create_calendar_event') {
+    const today = localISODate()
+    const tomorrow = addLocalDays(today, 1)
+    let where = 'Tasks (timed)'
+    if (action.date === today) where = 'Tasks → Today'
+    else if (action.date === tomorrow) where = 'Tasks → Tomorrow'
     return {
-      title: `${action.title} · ${action.date} ${action.time}`,
-      where: 'Google Calendar',
+      title: `${action.title} · ${action.time}`,
+      where: `${where} · Google optional`,
     }
+  }
+  if (action.type === 'complete_task') {
+    return { title: 'Task completed', where: 'Tasks' }
+  }
+  if (action.type === 'delete_task') {
+    return { title: 'Task removed', where: 'Tasks' }
   }
   return null
 }
