@@ -73,8 +73,8 @@ module.exports = ({ config }) => {
           widgets: [
             {
               name: 'WahrlyToday',
-              displayName: 'Wahrly Today',
-              description: "Today's next task and upcoming bill at a glance.",
+              displayName: 'Next task',
+              description: 'Shows your nearest upcoming Wahrly task.',
               ios: {
                 supportedFamilies: [
                   'systemSmall',
