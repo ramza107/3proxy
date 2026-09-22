@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { formatMoney } from '../lib/bills'
+import { dateLocale } from '../lib/dateLocale'
 import {
   billsDueThisWeek,
   focusTitles,
@@ -10,6 +11,7 @@ import {
   weekSunday,
 } from '../lib/weekRange'
 import { useNovaStore } from '../lib/store'
+import { useT } from '../lib/useT'
 import { SoftPressable } from './SoftPressable'
 
 type Props = {
@@ -21,6 +23,7 @@ type Props = {
 
 /** Monday overview: unfinished week, bills due, three focuses. */
 export function WeeklyBrief({ onClose, onPlanDay, onOpenBills, onOpenTasks }: Props) {
+  const t = useT()
   const tasks = useNovaStore((s) => s.tasks)
   const bills = useNovaStore((s) => s.bills)
   const day = format(new Date(), 'yyyy-MM-dd')
@@ -29,10 +32,12 @@ export function WeeklyBrief({ onClose, onPlanDay, onOpenBills, onOpenTasks }: Pr
   const open = unfinishedThisWeek(tasks, day)
   const dueBills = billsDueThisWeek(bills, day)
   const focuses = focusTitles(tasks, 3)
+  const locale = dateLocale(t.language)
 
-  const rangeLabel = `${format(parseISO(`${from}T12:00:00`), 'MMM d')} – ${format(
+  const rangeLabel = `${format(parseISO(`${from}T12:00:00`), 'MMM d', { locale })} – ${format(
     parseISO(`${to}T12:00:00`),
     'MMM d',
+    { locale },
   )}`
 
   return (

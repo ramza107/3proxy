@@ -8,6 +8,7 @@ import { HomeSection } from '../../components/HomeSection'
 import { TaskCard } from '../../components/TaskCard'
 import { TaskEditor } from '../../components/TaskEditor'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { dateLocale } from '../../lib/dateLocale'
 import { anchorsForDay, normalizeTypicalWeek, resolveDayWindow } from '../../lib/scheduleDay'
 import { sortTasks, todayISO, uid, useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
@@ -18,6 +19,7 @@ type DayBucket = {
   iso: string
   label: string
   sub: string
+  short: string
   kind: 'work' | 'light'
   tasks: Task[]
   anchors: { title: string; time: string; durationMin: number }[]
@@ -88,6 +90,7 @@ export default function TasksScreen() {
   const today = todayISO()
   const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
   const tw = normalizeTypicalWeek(settings.typicalWeek)
+  const locale = dateLocale(t.language)
 
   const week = useMemo(() => {
     const open = sortTasks(tasks.filter((t) => !t.completed))
@@ -95,13 +98,21 @@ export default function TasksScreen() {
     for (let i = 0; i < 7; i++) {
       const iso = format(addDays(new Date(`${today}T12:00:00`), i), 'yyyy-MM-dd')
       const win = resolveDayWindow(settings, iso)
+      const d = parseISO(`${iso}T12:00:00`)
       const label =
-        i === 0 ? t('common.today') : i === 1 ? t('common.tomorrow') : format(parseISO(iso), 'EEEE')
-      const sub = format(parseISO(iso), 'MMM d')
+        i === 0 ? t('common.today') : i === 1 ? t('common.tomorrow') : format(d, 'EEEE', { locale })
+      const sub = format(d, 'MMM d', { locale })
+      const short =
+        i === 0
+          ? t('common.today').slice(0, 3)
+          : i === 1
+            ? t('common.tomorrow').slice(0, 3)
+            : format(d, 'EEE', { locale })
       days.push({
         iso,
         label,
         sub,
+        short,
         kind: win.kind,
         tasks: open.filter((task) => task.date === iso),
         anchors: anchorsForDay(tw, iso).map((a) => ({
@@ -112,7 +123,7 @@ export default function TasksScreen() {
       })
     }
     return days
-  }, [tasks, today, settings, tw, t])
+  }, [tasks, today, settings, tw, t, locale])
 
   const undated = useMemo(
     () => sortTasks(tasks.filter((t) => !t.completed && !t.date)),
@@ -201,17 +212,15 @@ export default function TasksScreen() {
             {week.map((d) => {
               const on = focusDay === d.iso
               const n = d.tasks.length + d.anchors.length
-              const short =
-                d.iso === today ? 'Tod' : d.iso === tomorrow ? 'Tom' : d.label.slice(0, 3)
               return (
                 <Pressable
                   key={d.iso}
                   onPress={() => setFocusDay(on ? null : d.iso)}
                   style={[styles.dayChip, on && styles.dayChipOn]}
-                  accessibilityLabel={`${d.label} ${d.sub}, ${n} items`}
+                  accessibilityLabel={`${d.label} ${d.sub}, ${n}`}
                 >
                   <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]} numberOfLines={1}>
-                    {short}
+                    {d.short}
                   </Text>
                   <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]} numberOfLines={1}>
                     {d.sub}
@@ -261,17 +270,22 @@ export default function TasksScreen() {
             </HomeSection>
           ) : null}
 
-          {visibleDays.map((day) => (
+          {visibleDays.map((day) => {
+            const kindLabel = day.kind === 'light' ? t('tasks.light') : t('tasks.work')
+            const taskMeta =
+              day.tasks.length === 1
+                ? t.tf('tasks.taskOne', { n: day.tasks.length })
+                : t.tf('tasks.taskCount', { n: day.tasks.length })
+            const anchorMeta = day.anchors.length
+              ? day.anchors.length === 1
+                ? ` · ${t.tf('tasks.anchorOne', { n: day.anchors.length })}`
+                : ` · ${t.tf('tasks.anchorCount', { n: day.anchors.length })}`
+              : ''
+            return (
             <HomeSection
               key={day.iso}
               title={day.label}
-              meta={`${day.sub} · ${day.kind === 'light' ? 'Light' : 'Work'} · ${day.tasks.length} task${
-                day.tasks.length === 1 ? '' : 's'
-              }${
-                day.anchors.length
-                  ? ` · ${day.anchors.length} anchor${day.anchors.length === 1 ? '' : 's'}`
-                  : ''
-              }`}
+              meta={`${day.sub} · ${kindLabel} · ${taskMeta}${anchorMeta}`}
               emphasize={day.iso === today}
             >
               {day.anchors.map((a) => (
@@ -280,7 +294,7 @@ export default function TasksScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.anchorTitle}>{a.title}</Text>
                     <Text style={styles.anchorMeta}>
-                      Recurring · {a.time} · {a.durationMin}m
+                      {t('tasks.recurring')} · {a.time} · {a.durationMin}m
                     </Text>
                   </View>
                 </View>
@@ -302,12 +316,13 @@ export default function TasksScreen() {
                 <Text style={styles.dayEmpty}>{t('tasks.freeDay')}</Text>
               ) : null}
             </HomeSection>
-          ))}
+            )
+          })}
 
           {undated.length > 0 && !focusDay ? (
             <HomeSection
               title={t('tasks.later')}
-              meta={`${undated.length} waiting — Plan day can place them`}
+              meta={t.tf('tasks.laterMeta', { n: undated.length })}
             >
               {undated.map((task) => (
                 <TaskCard

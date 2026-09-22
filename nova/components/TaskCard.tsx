@@ -1,7 +1,8 @@
 import { format, parseISO } from 'date-fns'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import type { Priority, Task } from '../types'
+import type { Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
+import { dateLocale } from '../lib/dateLocale'
 import { durationForPriority } from '../lib/scheduleDay'
 import { recurrenceLabel } from '../lib/recurrence'
 import { useT } from '../lib/useT'
@@ -16,32 +17,6 @@ type Props = {
   hideDate?: boolean
 }
 
-const priorityLabel: Record<Priority, string> = {
-  high: 'High',
-  medium: 'Med',
-  low: 'Low',
-}
-
-function friendlyDate(date: string | null) {
-  if (!date) return 'No date'
-  try {
-    return format(parseISO(date), 'EEE MMM d')
-  } catch {
-    return date
-  }
-}
-
-function isOverdue(task: Task) {
-  if (task.completed || !task.date) return false
-  const today = format(new Date(), 'yyyy-MM-dd')
-  if (task.date < today) return true
-  if (task.date > today || !task.time) return false
-  const [hh, mm] = task.time.split(':').map(Number)
-  const when = new Date()
-  when.setHours(hh, mm, 0, 0)
-  return when.getTime() < Date.now()
-}
-
 export function TaskCard({
   task,
   onToggle,
@@ -51,14 +26,33 @@ export function TaskCard({
   hideDate,
 }: Props) {
   const t = useT()
+  const locale = dateLocale(t.language)
   const overdue = isOverdue(task)
   const mins = durationForPriority(task.priority)
-  const rec = recurrenceLabel(task.recurrence)
+  const priorityKey =
+    task.priority === 'high'
+      ? 'priority.high'
+      : task.priority === 'low'
+        ? 'priority.low'
+        : 'priority.medium'
+  const rec = recurrenceLabel(task.recurrence, {
+    locale,
+    daily: t('editor.daily'),
+    weekly: t('editor.weekly'),
+  })
+  const friendly = (() => {
+    if (!task.date) return t('common.noDate')
+    try {
+      return format(parseISO(`${task.date}T12:00:00`), 'EEE MMM d', { locale })
+    } catch {
+      return task.date
+    }
+  })()
   const metaParts = [
-    hideDate ? null : friendlyDate(task.date),
-    task.time || 'Anytime',
+    hideDate ? null : friendly,
+    task.time || t('common.anytime'),
     `~${mins}m`,
-    priorityLabel[task.priority],
+    t(priorityKey),
     rec,
   ].filter(Boolean)
 
@@ -104,7 +98,7 @@ export function TaskCard({
           </Pressable>
           {onPostpone ? (
             <Pressable onPress={onPostpone} style={styles.actionBtn} hitSlop={6}>
-              <Text style={styles.actionText}>+1 day</Text>
+              <Text style={styles.actionText}>{t('tasks.plusOneDay')}</Text>
             </Pressable>
           ) : null}
           {onMoveTomorrow ? (
@@ -116,6 +110,17 @@ export function TaskCard({
       ) : null}
     </View>
   )
+}
+
+function isOverdue(task: Task) {
+  if (task.completed || !task.date) return false
+  const today = format(new Date(), 'yyyy-MM-dd')
+  if (task.date < today) return true
+  if (task.date > today || !task.time) return false
+  const [hh, mm] = task.time.split(':').map(Number)
+  const when = new Date()
+  when.setHours(hh, mm, 0, 0)
+  return when.getTime() < Date.now()
 }
 
 const styles = StyleSheet.create({
