@@ -1,6 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns'
 import { useLocalSearchParams } from 'expo-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
@@ -70,6 +70,12 @@ export default function TasksScreen() {
   const [editing, setEditing] = useState<Task | null>(null)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
+  const listRef = useRef<ScrollView>(null)
+
+  // Each day chip should open from the top — don't keep the previous day's scroll.
+  useEffect(() => {
+    listRef.current?.scrollTo({ y: 0, animated: false })
+  }, [focusDay])
 
   useEffect(() => {
     if (!taskId || typeof taskId !== 'string') return
@@ -220,6 +226,7 @@ export default function TasksScreen() {
         </View>
 
         <ScrollView
+          ref={listRef}
           style={styles.listScroll}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
