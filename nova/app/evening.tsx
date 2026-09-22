@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../components/Screen'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { sortTasks, todayISO, useNovaStore } from '../lib/store'
+import { useT } from '../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../services/ai'
 import type { Task } from '../types'
 
@@ -27,6 +28,7 @@ function taskMeta(task: Task) {
 }
 
 export default function EveningClearScreen() {
+  const t = useT()
   const router = useRouter()
   const tasks = useNovaStore((s) => s.tasks)
   const userId = useNovaStore((s) => s.sessionUserId)
@@ -103,10 +105,14 @@ export default function EveningClearScreen() {
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.topBar}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Text style={styles.back}>Close</Text>
+            <Text style={styles.back}>{t('common.close')}</Text>
           </Pressable>
           <Text style={styles.stepHint}>
-            {step === 'today' ? '1 · Today' : step === 'tomorrow' ? '2 · Tomorrow' : 'Done'}
+            {step === 'today'
+              ? `1 · ${t('common.today')}`
+              : step === 'tomorrow'
+                ? `2 · ${t('common.tomorrow')}`
+                : t('common.done')}
           </Text>
         </View>
 
@@ -117,20 +123,20 @@ export default function EveningClearScreen() {
         >
           {step === 'today' ? (
             <>
-              <Text style={styles.brand}>Evening Clear</Text>
-              <Text style={styles.lead}>Close what you can. Move what still matters.</Text>
+              <Text style={styles.brand}>{t('evening.title')}</Text>
+              <Text style={styles.lead}>{t('evening.sub')}</Text>
 
               {todayOpen.length === 0 ? (
                 <View style={styles.empty}>
-                  <Text style={styles.emptyTitle}>Today is clear</Text>
-                  <Text style={styles.emptyText}>Nothing left open — shape tomorrow next.</Text>
+                  <Text style={styles.emptyTitle}>{t('evening.clearTitle')}</Text>
+                  <Text style={styles.emptyText}>{t('evening.clearSub')}</Text>
                 </View>
               ) : (
                 <>
                   <Pressable style={styles.moveAll} onPress={moveAllTodayToTomorrow}>
-                    <Text style={styles.moveAllTitle}>Move unfinished to tomorrow</Text>
+                    <Text style={styles.moveAllTitle}>{t('evening.moveAll')}</Text>
                     <Text style={styles.moveAllSub}>
-                      {todayOpen.length} open · one tap, then shape tomorrow
+                      {todayOpen.length} · {t('common.continue')}
                     </Text>
                   </Pressable>
 
@@ -145,18 +151,18 @@ export default function EveningClearScreen() {
                             <Text style={styles.rowMeta}>{taskMeta(task)}</Text>
                           ) : null}
                           {!task.date ? (
-                            <Text style={styles.undated}>No date</Text>
+                            <Text style={styles.undated}>{t('tasks.later')}</Text>
                           ) : null}
                         </View>
                         <View style={styles.actions}>
                           <Pressable style={styles.actionDone} onPress={() => onDone(task)}>
-                            <Text style={styles.actionDoneText}>Done</Text>
+                            <Text style={styles.actionDoneText}>{t('evening.done')}</Text>
                           </Pressable>
                           <Pressable style={styles.action} onPress={() => onTomorrow(task)}>
-                            <Text style={styles.actionText}>Tomorrow</Text>
+                            <Text style={styles.actionText}>{t('evening.tomorrow')}</Text>
                           </Pressable>
                           <Pressable style={styles.actionGhost} onPress={() => onDrop(task)}>
-                            <Text style={styles.actionGhostText}>Drop</Text>
+                            <Text style={styles.actionGhostText}>{t('evening.drop')}</Text>
                           </Pressable>
                         </View>
                       </View>
@@ -166,25 +172,23 @@ export default function EveningClearScreen() {
               )}
 
               <Pressable style={styles.primary} onPress={() => setStep('tomorrow')}>
-                <Text style={styles.primaryText}>
-                  {todayOpen.length ? 'Continue without moving' : 'Shape tomorrow'}
-                </Text>
+                <Text style={styles.primaryText}>{t('common.continue')}</Text>
               </Pressable>
             </>
           ) : null}
 
           {step === 'tomorrow' ? (
             <>
-              <Text style={styles.brand}>Tomorrow</Text>
+              <Text style={styles.brand}>{t('common.tomorrow')}</Text>
               <Text style={styles.lead}>
-                {format(addDays(new Date(), 1), 'EEEE, MMM d')} — add only what matters.
+                {format(addDays(new Date(), 1), 'EEEE, MMM d')} — {t('evening.sub')}
               </Text>
 
               <View style={styles.addRow}>
                 <TextInput
                   value={draft}
                   onChangeText={setDraft}
-                  placeholder="Add for tomorrow…"
+                  placeholder={t('common.tomorrow')}
                   placeholderTextColor={colors.textDim}
                   style={styles.input}
                   onSubmitEditing={addTomorrow}
@@ -201,10 +205,8 @@ export default function EveningClearScreen() {
 
               {tomorrowOpen.length === 0 ? (
                 <View style={styles.empty}>
-                  <Text style={styles.emptyTitle}>Tomorrow is empty</Text>
-                  <Text style={styles.emptyText}>
-                    That can be fine. Add one thing if you know it already.
-                  </Text>
+                  <Text style={styles.emptyTitle}>{t('evening.clearTitle')}</Text>
+                  <Text style={styles.emptyText}>{t('evening.clearSub')}</Text>
                 </View>
               ) : (
                 <View style={styles.list}>
@@ -223,11 +225,9 @@ export default function EveningClearScreen() {
 
               {todayOpen.length > 0 ? (
                 <View style={styles.leftover}>
-                  <Text style={styles.leftoverLabel}>Still on today</Text>
+                  <Text style={styles.leftoverLabel}>{t('common.today')}</Text>
                   <Pressable style={styles.moveAllCompact} onPress={moveAllTodayToTomorrow}>
-                    <Text style={styles.moveAllCompactText}>
-                      Move all {todayOpen.length} unfinished → tomorrow
-                    </Text>
+                    <Text style={styles.moveAllCompactText}>{t('evening.moveAll')}</Text>
                   </Pressable>
                   {todayOpen.map((task) => (
                     <View key={task.id} style={styles.leftoverRow}>
@@ -235,7 +235,7 @@ export default function EveningClearScreen() {
                         {task.title}
                       </Text>
                       <Pressable onPress={() => onTomorrow(task)}>
-                        <Text style={styles.leftoverAction}>→ Tomorrow</Text>
+                        <Text style={styles.leftoverAction}>→ {t('evening.tomorrow')}</Text>
                       </Pressable>
                     </View>
                   ))}
@@ -243,30 +243,28 @@ export default function EveningClearScreen() {
               ) : null}
 
               <Pressable style={styles.primary} onPress={finish}>
-                <Text style={styles.primaryText}>Finish Evening Clear</Text>
+                <Text style={styles.primaryText}>{t('evening.finish')}</Text>
               </Pressable>
               <Pressable style={styles.link} onPress={() => setStep('today')}>
-                <Text style={styles.linkText}>Back to today</Text>
+                <Text style={styles.linkText}>{t('common.today')}</Text>
               </Pressable>
             </>
           ) : null}
 
           {step === 'done' ? (
             <>
-              <Text style={styles.brand}>You&apos;re clear</Text>
+              <Text style={styles.brand}>{t('evening.clearTitle')}</Text>
               <Text style={styles.lead}>
                 {doneCount || movedCount
-                  ? [
-                      doneCount ? `${doneCount} done` : null,
-                      movedCount ? `${movedCount} moved to tomorrow` : null,
-                      `${tomorrowOpen.length} on tomorrow`,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')
-                  : `${tomorrowOpen.length} on tomorrow. Rest well.`}
+                  ? t.tf('evening.summary', {
+                      done: doneCount,
+                      moved: movedCount,
+                      tomorrow: tomorrowOpen.length,
+                    })
+                  : t('evening.clearSub')}
               </Text>
               <Pressable style={styles.primary} onPress={() => router.replace('/tasks')}>
-                <Text style={styles.primaryText}>Back to Tasks</Text>
+                <Text style={styles.primaryText}>{t('evening.back')}</Text>
               </Pressable>
             </>
           ) : null}

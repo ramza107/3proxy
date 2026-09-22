@@ -2,25 +2,24 @@ import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { useT } from '../../lib/useT'
 
 export default function WelcomeScreen() {
+  const t = useT()
   const router = useRouter()
 
   return (
     <Screen>
       <View style={styles.screen}>
         <Text style={styles.brand}>{brand.name}</Text>
-        <Text style={styles.title}>Hi — let&apos;s get clear.</Text>
-        <Text style={styles.body}>
-          I&apos;m Wahrly.{"\n"}
-          Tell me what you need done, and I&apos;ll turn it into a calm plan.
-        </Text>
+        <Text style={styles.title}>{t('onboarding.welcomeTitle')}</Text>
+        <Text style={styles.body}>{t('onboarding.welcomeSub')}</Text>
         <Pressable
           accessibilityRole="button"
           style={styles.btn}
           onPress={() => router.push('/name')}
         >
-          <Text style={styles.btnText}>Get started</Text>
+          <Text style={styles.btnText}>{t('onboarding.getStarted')}</Text>
         </Pressable>
       </View>
     </Screen>

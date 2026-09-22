@@ -16,9 +16,11 @@ import {
   sortBills,
 } from '../../lib/bills'
 import { uid, useNovaStore } from '../../lib/store'
+import { useT } from '../../lib/useT'
 import type { Bill } from '../../types'
 
 export default function BillsScreen() {
+  const t = useT()
   const { billId } = useLocalSearchParams<{ billId?: string }>()
   const bills = useNovaStore((s) => s.bills)
   const upsertBill = useNovaStore((s) => s.upsertBill)
@@ -76,8 +78,8 @@ export default function BillsScreen() {
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.kicker}>Monthly</Text>
-          <Text style={styles.title}>Bills</Text>
+          <Text style={styles.kicker}>{t('bills.kicker')}</Text>
+          <Text style={styles.title}>{t('bills.title')}</Text>
           <Text style={styles.sub}>
             Recurring payments for {monthLabel} — mark paid when you send them
           </Text>
@@ -87,17 +89,17 @@ export default function BillsScreen() {
           {Object.keys(totals).length === 0 ? (
             <View style={styles.statWide}>
               <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>No payments yet</Text>
+              <Text style={styles.statLabel}>{t('bills.emptyTitle')}</Text>
             </View>
           ) : (
-            Object.entries(totals).map(([cur, t]) => (
+            Object.entries(totals).map(([cur, tot]) => (
               <View key={cur} style={styles.stat}>
                 <Text style={styles.statValue} numberOfLines={1}>
-                  {formatMoney(t.due, cur)}
+                  {formatMoney(tot.due, cur)}
                 </Text>
                 <Text style={styles.statLabel}>Due · {cur}</Text>
                 <Text style={styles.statSub}>
-                  Paid {formatMoney(t.paid, cur)} / {formatMoney(t.all, cur)}
+                  Paid {formatMoney(tot.paid, cur)} / {formatMoney(tot.all, cur)}
                 </Text>
               </View>
             ))
@@ -111,24 +113,23 @@ export default function BillsScreen() {
         >
           {bills.length === 0 ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>Track rent, subs, utilities</Text>
-              <Text style={styles.emptyText}>
-                Add each monthly payment once — Wahrly shows what’s due this month and what you’ve
-                already paid.
-              </Text>
+              <Text style={styles.emptyTitle}>{t('bills.emptyTitle')}</Text>
+              <Text style={styles.emptyText}>{t('bills.emptyText')}</Text>
               <Pressable style={styles.sampleBtn} onPress={fillSamples}>
-                <Text style={styles.sampleBtnText}>Add sample bills</Text>
+                <Text style={styles.sampleBtnText}>{t('bills.addSample')}</Text>
               </Pressable>
             </View>
           ) : null}
 
           {due.length > 0 ? (
-            <Section title="Due this month" count={due.length}>
+            <Section title={t('bills.due')} count={due.length}>
               {due.map((bill) => (
                 <BillRow
                   key={bill.id}
                   bill={bill}
                   paid={false}
+                  markPaidLabel={t('bills.markPaid')}
+                  undoLabel={t('bills.undo')}
                   onPress={() => {
                     setCreating(false)
                     setEditing(bill)
@@ -140,12 +141,14 @@ export default function BillsScreen() {
           ) : null}
 
           {paid.length > 0 ? (
-            <Section title="Paid this month" count={paid.length}>
+            <Section title={t('bills.paid')} count={paid.length}>
               {paid.map((bill) => (
                 <BillRow
                   key={bill.id}
                   bill={bill}
                   paid
+                  markPaidLabel={t('bills.markPaid')}
+                  undoLabel={t('bills.undo')}
                   onPress={() => {
                     setCreating(false)
                     setEditing(bill)
@@ -164,12 +167,14 @@ export default function BillsScreen() {
           ) : null}
 
           {paused.length > 0 ? (
-            <Section title="Paused" count={paused.length}>
+            <Section title={t('bills.paused')} count={paused.length}>
               {paused.map((bill) => (
                 <BillRow
                   key={bill.id}
                   bill={bill}
                   paid={isPaidThisMonth(bill, month)}
+                  markPaidLabel={t('bills.markPaid')}
+                  undoLabel={t('bills.undo')}
                   onPress={() => {
                     setCreating(false)
                     setEditing(bill)
@@ -244,11 +249,15 @@ function BillRow({
   paid,
   onPress,
   onPaid,
+  markPaidLabel,
+  undoLabel,
 }: {
   bill: Bill
   paid: boolean
   onPress: () => void
   onPaid?: () => void
+  markPaidLabel: string
+  undoLabel: string
 }) {
   const due = nextDueDate(bill)
   const pay = bill.payHowTo?.trim()
@@ -288,7 +297,7 @@ function BillRow({
       </Pressable>
       {onPaid ? (
         <Pressable style={styles.payBtn} onPress={onPaid}>
-          <Text style={styles.payBtnText}>{paid ? 'Undo' : 'Mark paid'}</Text>
+          <Text style={styles.payBtnText}>{paid ? undoLabel : markPaidLabel}</Text>
         </Pressable>
       ) : null}
     </View>

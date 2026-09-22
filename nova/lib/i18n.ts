@@ -1,5 +1,7 @@
 /** Lightweight UI i18n — 10 languages, no heavy deps. */
 
+import { pagesFor } from './i18nPages'
+
 export const APP_LANGUAGES = [
   { code: 'en', native: 'English', english: 'English' },
   { code: 'zh', native: '中文', english: 'Chinese' },
@@ -132,7 +134,7 @@ const en: Dict = {
   'settings.yourName': 'Your name',
   'settings.saveName': 'Save name',
   'settings.language': 'Language',
-  'settings.languageSub': 'App interface — Home, tabs, and Settings.',
+  'settings.languageSub': 'App interface — all screens and tabs.',
   'settings.google': 'Google',
   'settings.signOut': 'Sign out',
 }
@@ -245,7 +247,7 @@ const ru: Dict = {
   'settings.yourName': 'Ваше имя',
   'settings.saveName': 'Сохранить имя',
   'settings.language': 'Язык',
-  'settings.languageSub': 'Интерфейс — Главная, вкладки и Настройки.',
+  'settings.languageSub': 'Интерфейс — все экраны и вкладки.',
   'settings.google': 'Google',
   'settings.signOut': 'Выйти',
 }
@@ -356,7 +358,7 @@ const uk: Dict = {
   'settings.yourName': "Ваше ім'я",
   'settings.saveName': "Зберегти ім'я",
   'settings.language': 'Мова',
-  'settings.languageSub': 'Інтерфейс — Головна, вкладки та Налаштування.',
+  'settings.languageSub': 'Інтерфейс — усі екрани і вкладки.',
   'settings.google': 'Google',
   'settings.signOut': 'Вийти',
 }
@@ -1024,9 +1026,26 @@ const catalogs: Record<AppLanguage, Dict> = {
   de,
 }
 
+function withPages(lang: AppLanguage, base: Dict): Dict {
+  return { ...base, ...pagesFor(lang) }
+}
+
+const catalogsWithPages: Record<AppLanguage, Dict> = {
+  en: withPages('en', catalogs.en),
+  zh: withPages('zh', catalogs.zh),
+  hi: withPages('hi', catalogs.hi),
+  es: withPages('es', catalogs.es),
+  fr: withPages('fr', catalogs.fr),
+  ar: withPages('ar', catalogs.ar),
+  pt: withPages('pt', catalogs.pt),
+  ru: withPages('ru', catalogs.ru),
+  uk: withPages('uk', catalogs.uk),
+  de: withPages('de', catalogs.de),
+}
+
 export function t(lang: AppLanguage | string | undefined | null, key: string): string {
   const code = isAppLanguage(lang) ? lang : 'en'
-  return catalogs[code][key] || catalogs.en[key] || key
+  return catalogsWithPages[code][key] || catalogsWithPages.en[key] || key
 }
 
 /** Simple `{n}` / `{name}` interpolation. */

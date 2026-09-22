@@ -341,21 +341,19 @@ export default function SettingsScreen() {
 
           <View style={styles.card}>
             <Text style={styles.rowTitle}>{tr('settings.google')}</Text>
-            <Text style={styles.rowSub}>
-              One Allow connects Gmail (read + send/draft) and Calendar (read + create events).
-              Morning inbox, Inbox asks, Promises, Plan day → Calendar, and Send replies on Home.
-              If you connected earlier, Connect again to grant send and calendar write.
-            </Text>
+            <Text style={styles.rowSub}>{tr('settings.googleHint')}</Text>
 
             {gmailConnected ? (
               <>
-                <Text style={styles.connected}>Connected · {gmailEmail || 'Gmail'}</Text>
+                <Text style={styles.connected}>
+                  {tr.tf('settings.connectedAs', { email: gmailEmail || 'Gmail' })}
+                </Text>
                 <Pressable
                   style={[styles.btn, styles.btnGhost, gmailBusy && { opacity: 0.5 }]}
                   onPress={onDisconnectGmail}
                   disabled={gmailBusy}
                 >
-                  <Text style={styles.btnGhostText}>Disconnect</Text>
+                  <Text style={styles.btnGhostText}>{tr('settings.disconnect')}</Text>
                 </Pressable>
               </>
             ) : (
@@ -366,12 +364,12 @@ export default function SettingsScreen() {
                   disabled={gmailBusy}
                 >
                   <Text style={styles.googleBtnText}>
-                    {gmailBusy ? 'Opening Google…' : 'Connect with Google'}
+                    {gmailBusy ? tr('settings.connecting') : tr('home.connectGoogle')}
                   </Text>
                 </Pressable>
                 <Text style={styles.hint}>
                   {oauthReady
-                    ? 'Opens Google. Tap Allow — no password to copy.'
+                    ? tr('settings.googleHint')
                     : 'Product setup: add GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET on the AI server once. Then every user only taps Allow.'}
                 </Text>
               </>
@@ -444,7 +442,7 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Morning brief</Text>
+                <Text style={styles.rowTitle}>{tr('settings.morningBrief')}</Text>
                 <Text style={styles.rowSub}>
                   On open: today&apos;s tasks + weather, and a Plan day shortcut. Reminder at the
                   time below.
@@ -498,14 +496,14 @@ export default function SettingsScreen() {
                 router.push('/home')
               }}
             >
-              <Text style={styles.openRitualText}>Show Morning brief now</Text>
+              <Text style={styles.openRitualText}>{tr('settings.showNow')}</Text>
             </Pressable>
           </View>
 
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Evening Clear</Text>
+                <Text style={styles.rowTitle}>{tr('settings.eveningClear')}</Text>
                 <Text style={styles.rowSub}>
                   In-app ritual: close today, shape tomorrow. Reminder at the time below.
                 </Text>
@@ -539,14 +537,14 @@ export default function SettingsScreen() {
               ))}
             </View>
             <Pressable style={styles.openRitual} onPress={() => router.push('/evening')}>
-              <Text style={styles.openRitualText}>Open Evening Clear</Text>
+              <Text style={styles.openRitualText}>{tr('settings.openEvening')}</Text>
             </Pressable>
           </View>
 
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Weekly brief</Text>
+                <Text style={styles.rowTitle}>{tr('settings.weeklyBrief')}</Text>
                 <Text style={styles.rowSub}>
                   Monday morning overview: open tasks, bills due this week, and three focuses.
                 </Text>
@@ -565,14 +563,14 @@ export default function SettingsScreen() {
                 router.push('/home')
               }}
             >
-              <Text style={styles.openRitualText}>Show Weekly brief now</Text>
+              <Text style={styles.openRitualText}>{tr('settings.showNow')}</Text>
             </Pressable>
           </View>
 
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Bill reminders</Text>
+                <Text style={styles.rowTitle}>{tr('settings.billReminders')}</Text>
                 <Text style={styles.rowSub}>
                   Default: first ping 3 days before due, then every day until you mark paid. Pick
                   your own lead and cadence below. Per-bill Off is in the bill editor.
@@ -647,7 +645,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.rowTitle}>Workday</Text>
+            <Text style={styles.rowTitle}>{tr('settings.workday')}</Text>
             <Text style={styles.rowSub}>
               Hours Plan day uses when you tap Arrange into free slots
             </Text>
@@ -698,7 +696,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.rowTitle}>Typical week</Text>
+            <Text style={styles.rowTitle}>{tr('settings.typicalWeek')}</Text>
             <Text style={styles.rowSub}>
               Which days are work days, light weekend hours, and recurring anchors Plan day will
               protect.
@@ -804,7 +802,7 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>AI preferences</Text>
+            <Text style={styles.label}>{tr('settings.aiTone')}</Text>
             {(['friendly', 'concise', 'coach'] as const).map((tone) => (
               <Pressable
                 key={tone}
@@ -821,11 +819,11 @@ export default function SettingsScreen() {
           </Pressable>
 
           <Pressable onPress={() => router.push('/privacy')} style={styles.privacyLink}>
-            <Text style={styles.privacyText}>Privacy Policy</Text>
+            <Text style={styles.privacyText}>{tr('settings.privacy')}</Text>
           </Pressable>
 
           <Text style={styles.mode}>
-            {isSupabaseConfigured ? 'Supabase connected' : 'Demo mode (local AsyncStorage)'}
+            {isSupabaseConfigured ? 'Supabase connected' : tr('settings.demoMode')}
             {oauthReady ? ' · Google OAuth ready' : ' · Google OAuth keys pending'}
           </Text>
         </ScrollView>

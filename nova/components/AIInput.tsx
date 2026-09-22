@@ -17,6 +17,7 @@ import {
   stopVoiceRecording,
   transcribeVoice,
 } from '../lib/voice'
+import { useT } from '../lib/useT'
 
 type Props = {
   placeholder?: string
@@ -35,6 +36,7 @@ export function AIInput({
   loading,
   onSend,
 }: Props) {
+  const t = useT()
   const [text, setText] = useState('')
   const [recording, setRecording] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
@@ -156,9 +158,9 @@ export function AIInput({
   }
 
   const status = transcribing
-    ? 'Transcribing… tap ✕ to cancel'
+    ? t('ai.transcribing')
     : recording
-      ? 'Listening… tap Stop when done'
+      ? t('ai.listening')
       : null
 
   return (
@@ -182,15 +184,15 @@ export function AIInput({
           disabled={loading}
           accessibilityRole="button"
           accessibilityLabel={
-            transcribing ? 'Cancel transcription' : recording ? 'Stop recording' : 'Start voice input'
+            transcribing ? t('ai.stop') : recording ? t('ai.stop') : t('ai.mic')
           }
         >
           {transcribing ? (
             <Text style={styles.micText}>✕</Text>
           ) : recording ? (
-            <Text style={styles.micText}>Stop</Text>
+            <Text style={styles.micText}>{t('ai.stop')}</Text>
           ) : (
-            <Text style={styles.micText}>Mic</Text>
+            <Text style={styles.micText}>{t('ai.mic')}</Text>
           )}
         </Pressable>
         <Pressable
@@ -204,7 +206,7 @@ export function AIInput({
           {loading ? (
             <ActivityIndicator color={colors.textOnAccent} />
           ) : (
-            <Text style={styles.sendText}>Ask</Text>
+            <Text style={styles.sendText}>{t('ai.ask')}</Text>
           )}
         </Pressable>
       </View>

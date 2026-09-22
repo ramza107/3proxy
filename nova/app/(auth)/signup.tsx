@@ -14,8 +14,10 @@ import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
+import { useT } from '../../lib/useT'
 
 export default function SignupScreen() {
+  const t = useT()
   const router = useRouter()
   const setDemoSession = useNovaStore((s) => s.setDemoSession)
   const updateSettings = useNovaStore((s) => s.updateSettings)
@@ -74,19 +76,19 @@ export default function SignupScreen() {
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Text style={styles.title}>Create account</Text>
-      <Text style={styles.sub}>Wahrly will help you organize your everyday life.</Text>
+      <Text style={styles.title}>{t('auth.createAccount')}</Text>
+      <Text style={styles.sub}>{t('auth.tagline')}</Text>
 
       <View style={styles.card}>
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>{t('auth.name')}</Text>
         <TextInput
           value={name}
           onChangeText={setName}
-          placeholder="Alex"
+          placeholder={t('auth.namePlaceholder')}
           placeholderTextColor={colors.textDim}
           style={styles.input}
         />
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t('auth.email')}</Text>
         <TextInput
           autoCapitalize="none"
           keyboardType="email-address"
@@ -96,7 +98,7 @@ export default function SignupScreen() {
           placeholderTextColor={colors.textDim}
           style={styles.input}
         />
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>{t('auth.password')}</Text>
         <TextInput
           secureTextEntry
           value={password}
@@ -112,12 +114,16 @@ export default function SignupScreen() {
           onPress={onSignup}
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color={colors.textOnAccent} /> : <Text style={styles.btnText}>Sign up</Text>}
+          {loading ? (
+            <ActivityIndicator color={colors.textOnAccent} />
+          ) : (
+            <Text style={styles.btnText}>{t('auth.signUp')}</Text>
+          )}
         </Pressable>
       </View>
 
       <Link href="/login" style={styles.link}>
-        Already have an account? Sign in
+        {t('auth.haveAccount')}
       </Link>
     </KeyboardAvoidingView>
     </Screen>
