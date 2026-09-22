@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.md,
-    paddingBottom: 48,
+    paddingBottom: 140,
   },
   dayEmpty: {
     color: colors.textDim,
