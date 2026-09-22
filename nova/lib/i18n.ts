@@ -452,7 +452,7 @@ const es: Dict = {
   'settings.yourName': 'Tu nombre',
   'settings.saveName': 'Guardar nombre',
   'settings.language': 'Idioma',
-  'settings.languageSub': 'Interfaz — Inicio, pestañas y Ajustes.',
+  'settings.languageSub': 'Interfaz — todas las pantallas y pestañas.',
   'settings.google': 'Google',
   'settings.signOut': 'Cerrar sesión',
 }
@@ -546,7 +546,7 @@ const fr: Dict = {
   'settings.yourName': 'Votre nom',
   'settings.saveName': 'Enregistrer le nom',
   'settings.language': 'Langue',
-  'settings.languageSub': 'Interface — Accueil, onglets et Réglages.',
+  'settings.languageSub': 'Interface — tous les écrans et onglets.',
   'settings.google': 'Google',
   'settings.signOut': 'Se déconnecter',
 }
@@ -640,7 +640,7 @@ const de: Dict = {
   'settings.yourName': 'Dein Name',
   'settings.saveName': 'Name speichern',
   'settings.language': 'Sprache',
-  'settings.languageSub': 'Oberfläche — Start, Tabs und Einstellungen.',
+  'settings.languageSub': 'Oberfläche — alle Bildschirme und Tabs.',
   'settings.google': 'Google',
   'settings.signOut': 'Abmelden',
 }
@@ -734,7 +734,7 @@ const pt: Dict = {
   'settings.yourName': 'Seu nome',
   'settings.saveName': 'Salvar nome',
   'settings.language': 'Idioma',
-  'settings.languageSub': 'Interface — Início, abas e Ajustes.',
+  'settings.languageSub': 'Interface — todas as telas e abas.',
   'settings.google': 'Google',
   'settings.signOut': 'Sair',
 }
@@ -822,7 +822,7 @@ const zh: Dict = {
   'settings.yourName': '你的名字',
   'settings.saveName': '保存名字',
   'settings.language': '语言',
-  'settings.languageSub': '界面 — 首页、标签和设置。',
+  'settings.languageSub': '界面 — 所有页面和标签。',
   'settings.google': 'Google',
   'settings.signOut': '退出登录',
 }
@@ -915,7 +915,7 @@ const hi: Dict = {
   'settings.yourName': 'आपका नाम',
   'settings.saveName': 'नाम सहेजें',
   'settings.language': 'भाषा',
-  'settings.languageSub': 'इंटरफ़ेस — होम, टैब और सेटिंग्स।',
+  'settings.languageSub': 'इंटरफ़ेस — सभी स्क्रीन और टैब।',
   'settings.google': 'Google',
   'settings.signOut': 'साइन आउट',
 }
@@ -1008,7 +1008,7 @@ const ar: Dict = {
   'settings.yourName': 'اسمك',
   'settings.saveName': 'حفظ الاسم',
   'settings.language': 'اللغة',
-  'settings.languageSub': 'الواجهة — الرئيسية والتبويبات والإعدادات.',
+  'settings.languageSub': 'الواجهة — كل الشاشات وعلامات التبويب.',
   'settings.google': 'Google',
   'settings.signOut': 'تسجيل الخروج',
 }
