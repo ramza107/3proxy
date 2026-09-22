@@ -679,4 +679,4 @@ export function matchTaskByTitle(tasks: Task[], hint: string) {
   return tasks.find((t) => !t.completed && t.title.toLowerCase().includes(q))
 }
 
-export type { Priority }
+export type { Priority } from '../types'

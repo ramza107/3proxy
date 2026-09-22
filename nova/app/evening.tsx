@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../components/Screen'
 import { colors, fonts, radii, spacing } from '../constants/theme'
+import { dateLocale } from '../lib/dateLocale'
 import { sortTasks, todayISO, useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../services/ai'
@@ -41,6 +42,7 @@ export default function EveningClearScreen() {
 
   const today = todayISO()
   const tomorrow = tomorrowISO()
+  const locale = dateLocale(t.language)
 
   const todayOpen = useMemo(
     () =>
@@ -181,7 +183,7 @@ export default function EveningClearScreen() {
             <>
               <Text style={styles.brand}>{t('common.tomorrow')}</Text>
               <Text style={styles.lead}>
-                {format(addDays(new Date(), 1), 'EEEE, MMM d')} — {t('evening.sub')}
+                {format(addDays(new Date(), 1), 'EEEE, MMM d', { locale })} — {t('evening.sub')}
               </Text>
 
               <View style={styles.addRow}>

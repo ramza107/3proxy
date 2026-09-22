@@ -1,6 +1,7 @@
 /** Next occurrence helpers for recurring tasks. */
 
 import { addDays, format, parseISO } from 'date-fns'
+import type { Locale } from 'date-fns'
 import type { Dow, TaskRecurrence } from '../types'
 
 /** First date on/after fromISO that matches the recurrence (for new recurring tasks). */
@@ -43,12 +44,21 @@ export function nextOccurrenceDate(fromISO: string, rec: TaskRecurrence): string
   return format(addDays(from, 7), 'yyyy-MM-dd')
 }
 
-export function recurrenceLabel(rec: TaskRecurrence | null | undefined): string | null {
+export function recurrenceLabel(
+  rec: TaskRecurrence | null | undefined,
+  opts?: { locale?: Locale; daily?: string; weekly?: string },
+): string | null {
   if (!rec) return null
-  if (rec.freq === 'daily') return 'Daily'
-  const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const daily = opts?.daily || 'Daily'
+  const weekly = opts?.weekly || 'Weekly'
+  if (rec.freq === 'daily') return daily
   const days = (rec.days || []).slice().sort()
-  if (!days.length) return 'Weekly'
-  if (days.length === 7) return 'Daily'
-  return `Weekly · ${days.map((d) => names[d]).join(' ')}`
+  if (!days.length) return weekly
+  if (days.length === 7) return daily
+  const names = days.map((dow) => {
+    // Anchor on a known Sunday so getDay() === Dow index
+    const d = new Date(2024, 0, 7 + dow, 12)
+    return format(d, 'EEE', opts?.locale ? { locale: opts.locale } : undefined)
+  })
+  return `${weekly} · ${names.join(' ')}`
 }

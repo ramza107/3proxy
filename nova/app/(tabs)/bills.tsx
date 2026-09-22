@@ -15,6 +15,7 @@ import {
   sampleBills,
   sortBills,
 } from '../../lib/bills'
+import { dateLocale } from '../../lib/dateLocale'
 import { uid, useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import type { Bill } from '../../types'
@@ -39,7 +40,7 @@ export default function BillsScreen() {
   }, [billId, bills])
 
   const month = currentMonthKey()
-  const monthLabel = format(new Date(), 'MMMM yyyy')
+  const monthLabel = format(new Date(), 'MMMM yyyy', { locale: dateLocale(t.language) })
 
   const sorted = useMemo(() => sortBills(bills.filter((b) => b.active !== false)), [bills])
   const due = sorted.filter((b) => !isPaidThisMonth(b, month))
@@ -259,10 +260,12 @@ function BillRow({
   markPaidLabel: string
   undoLabel: string
 }) {
+  const t = useT()
   const due = nextDueDate(bill)
   const pay = bill.payHowTo?.trim()
   const isUrl = pay ? /^https?:\/\//i.test(pay) : false
   const histCount = bill.paidHistory?.length || 0
+  const dueLabel = format(due, 'MMM d', { locale: dateLocale(t.language) })
 
   return (
     <View style={[styles.row, paid && styles.rowPaid]}>
@@ -271,8 +274,8 @@ function BillRow({
         <View style={{ flex: 1 }}>
           <Text style={styles.rowTitle}>{bill.title}</Text>
           <Text style={styles.rowMeta}>
-            {bill.category} · day {bill.dayOfMonth} · next {format(due, 'MMM d')}
-            {histCount ? ` · ${histCount} paid` : ''}
+            {bill.category} · {t.tf('bills.dayNext', { day: bill.dayOfMonth, next: dueLabel })}
+            {histCount ? ` · ${t.tf('bills.paidCount', { n: histCount })}` : ''}
           </Text>
           {pay ? (
             <Pressable
