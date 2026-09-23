@@ -21,8 +21,8 @@
     "submit:ios": "npx eas-cli submit --platform ios --latest --profile production"
   },
   "dependencies": {
-    "@expo-google-fonts/dm-sans": "^0.4.2",
-    "@expo-google-fonts/fraunces": "^0.4.1",
+    "@expo-google-fonts/source-sans-3": "^0.4.1",
+    "@expo-google-fonts/source-serif-4": "^0.4.1",
     "@expo/metro-runtime": "~57.0.15",
     "@expo/ui": "~57.0.19",
     "@react-native-async-storage/async-storage": "2.2.0",

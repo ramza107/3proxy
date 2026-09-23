@@ -46,11 +46,11 @@ export const radii = {
 }
 
 export const fonts = {
-  brand: 'Fraunces_600SemiBold',
-  brandItalic: 'Fraunces_600SemiBold_Italic',
-  body: 'DMSans_400Regular',
-  bodyMedium: 'DMSans_500Medium',
-  bodyBold: 'DMSans_700Bold',
+  brand: 'SourceSerif4_600SemiBold',
+  brandItalic: 'SourceSerif4_600SemiBold_Italic',
+  body: 'SourceSans3_400Regular',
+  bodyMedium: 'SourceSans3_500Medium',
+  bodyBold: 'SourceSans3_700Bold',
 }
 
 export const brand = {
