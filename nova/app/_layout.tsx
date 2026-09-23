@@ -1,14 +1,14 @@
 import {
-  Fraunces_600SemiBold,
-  Fraunces_600SemiBold_Italic,
-  useFonts as useFraunces,
-} from '@expo-google-fonts/fraunces'
+  SourceSerif4_600SemiBold,
+  SourceSerif4_600SemiBold_Italic,
+  useFonts as useSourceSerif,
+} from '@expo-google-fonts/source-serif-4'
 import {
-  DMSans_400Regular,
-  DMSans_500Medium,
-  DMSans_700Bold,
-  useFonts as useDmSans,
-} from '@expo-google-fonts/dm-sans'
+  SourceSans3_400Regular,
+  SourceSans3_500Medium,
+  SourceSans3_700Bold,
+  useFonts as useSourceSans,
+} from '@expo-google-fonts/source-sans-3'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
@@ -28,16 +28,16 @@ const RootView =
     : require('react-native-gesture-handler').GestureHandlerRootView
 
 export default function RootLayout() {
-  const [frauncesLoaded] = useFraunces({
-    Fraunces_600SemiBold,
-    Fraunces_600SemiBold_Italic,
+  const [serifLoaded] = useSourceSerif({
+    SourceSerif4_600SemiBold,
+    SourceSerif4_600SemiBold_Italic,
   })
-  const [dmLoaded] = useDmSans({
-    DMSans_400Regular,
-    DMSans_500Medium,
-    DMSans_700Bold,
+  const [sansLoaded] = useSourceSans({
+    SourceSans3_400Regular,
+    SourceSans3_500Medium,
+    SourceSans3_700Bold,
   })
-  const fontsReady = frauncesLoaded && dmLoaded
+  const fontsReady = serifLoaded && sansLoaded
 
   const router = useRouter()
   const segments = useSegments()

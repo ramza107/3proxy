@@ -35,7 +35,7 @@ type Props = {
 }
 
 /**
- * Soft rising sheet — Structured-inspired: misted backdrop, Fraunces title,
+ * Soft rising sheet — misted backdrop, Source Serif title,
  * slide + fade, sticky footer. Keeps Modal mounted through the exit animation.
  */
 export function BottomSheet({
