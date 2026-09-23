@@ -39,6 +39,7 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
   const dismissMeeting = useNovaStore((s) => s.dismissMeeting)
   const markMeetingNotified = useNovaStore((s) => s.markMeetingNotified)
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
+  const upsertTask = useNovaStore((s) => s.upsertTask)
   const sessionUserId = useNovaStore((s) => s.sessionUserId)
   const tasks = useNovaStore((s) => s.tasks)
   const notificationsEnabled = useNovaStore((s) => s.settings.notificationsEnabled)
@@ -263,6 +264,17 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     }
   }
 
+  const completeLinkedTasks = (sourceId: string) => {
+    const now = new Date().toISOString()
+    let n = 0
+    for (const task of useNovaStore.getState().tasks) {
+      if (task.completed || task.sourceId !== sourceId) continue
+      upsertTask({ ...task, completed: true, updated_at: now })
+      n += 1
+    }
+    return n
+  }
+
   const onSendPromise = (p: EmailPromise) => {
     if (!userId || !p.toEmail) {
       Alert.alert('Send', 'Connect Google in Settings to send from Wahrly.')
@@ -271,13 +283,18 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     confirmSendReply({
       to: p.toEmail,
       onConfirm: () => {
-        void sendGmailOnly({
-          userId,
-          to: p.toEmail,
-          subject: p.subject,
-          body: draftForPromise(p),
-          threadId: p.messageId,
-        })
+        void (async () => {
+          const result = await sendGmailOnly({
+            userId,
+            to: p.toEmail,
+            subject: p.subject,
+            body: draftForPromise(p),
+            threadId: p.messageId,
+          })
+          if (result !== 'sent') return
+          completeLinkedTasks(p.id)
+          dismissPromise(p.id)
+        })()
       },
     })
   }
@@ -290,15 +307,40 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     confirmSendReply({
       to: m.fromEmail,
       onConfirm: () => {
-        void sendGmailOnly({
-          userId,
-          to: m.fromEmail,
-          subject: m.subject,
-          body: draftForMeeting(m),
-          threadId: m.messageId,
-        })
+        void (async () => {
+          const result = await sendGmailOnly({
+            userId,
+            to: m.fromEmail,
+            subject: m.subject,
+            body: draftForMeeting(m),
+            threadId: m.messageId,
+          })
+          if (result !== 'sent') return
+          completeLinkedTasks(m.id)
+          dismissMeeting(`dismiss:${m.id}`)
+        })()
       },
     })
+  }
+
+  const onSendTaskLoop = (task: Task) => {
+    if (task.sourceKind === 'promise') {
+      const p = (promises?.promises || []).find((x) => x.id === task.sourceId)
+      if (p) {
+        onSendPromise(p)
+        return
+      }
+    }
+    if (task.sourceKind === 'meeting') {
+      const m = (meetings?.meetings || []).find((x) => x.id === task.sourceId)
+      if (m) {
+        onSendMeeting(m)
+        return
+      }
+    }
+    // No digest row left — just mark the loop done.
+    upsertTask({ ...task, completed: true, updated_at: new Date().toISOString() })
+    Alert.alert(t('home.loopClosed'), t('home.loopClosedBody'))
   }
 
   return (
@@ -343,7 +385,13 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
             <View style={styles.block}>
               <Text style={styles.blockLabel}>{t('home.iOwe')}</Text>
               {oweFromTasks.map((task) => (
-                <TaskLoopRow key={task.id} task={task} hint={t('home.inTasks')} />
+                <TaskLoopRow
+                  key={task.id}
+                  task={task}
+                  hint={t('home.inTasks')}
+                  sendLabel={t('home.sendReply')}
+                  onSend={() => onSendTaskLoop(task)}
+                />
               ))}
               {oweFromMail.map((p) => (
                 <View key={p.id} style={styles.item}>
@@ -382,7 +430,13 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
             <View style={styles.block}>
               <Text style={styles.blockLabel}>{t('home.waiting')}</Text>
               {waitingFromTasks.map((task) => (
-                <TaskLoopRow key={task.id} task={task} hint={t('home.inTasks')} />
+                <TaskLoopRow
+                  key={task.id}
+                  task={task}
+                  hint={t('home.inTasks')}
+                  sendLabel={t('home.sendReply')}
+                  onSend={() => onSendTaskLoop(task)}
+                />
               ))}
               {waitingFromMail.map((m) => (
                 <View key={m.id} style={styles.item}>
@@ -432,7 +486,17 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
   )
 }
 
-function TaskLoopRow({ task, hint }: { task: Task; hint: string }) {
+function TaskLoopRow({
+  task,
+  hint,
+  sendLabel,
+  onSend,
+}: {
+  task: Task
+  hint: string
+  sendLabel: string
+  onSend: () => void
+}) {
   return (
     <View style={styles.item}>
       <Text style={styles.title} numberOfLines={2}>
@@ -443,6 +507,11 @@ function TaskLoopRow({ task, hint }: { task: Task; hint: string }) {
         {task.date ? ` · ${task.date}` : ''}
         {task.time ? ` · ${task.time}` : ''}
       </Text>
+      <View style={styles.actions}>
+        <Pressable style={styles.sendBtn} onPress={onSend}>
+          <Text style={styles.sendBtnText}>{sendLabel}</Text>
+        </Pressable>
+      </View>
     </View>
   )
 }
