@@ -23,6 +23,8 @@ import {
   parseHm,
 } from '../../lib/notifications'
 import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
+import { dateLocale } from '../../lib/dateLocale'
+import { format } from 'date-fns'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
@@ -38,10 +40,10 @@ const BILL_LEAD_PRESETS = [0, 1, 3, 5, 7]
 const BILL_TIME_PRESETS = ['08:00', '09:00', '10:00', '12:00', '18:00']
 const WORK_START_PRESETS = ['08:00', '09:00', '10:00']
 const WORK_END_PRESETS = ['17:00', '18:00', '19:00', '20:00']
-const ANCHOR_PRESETS = [
-  { title: 'Deep work', time: '09:30', durationMin: 90 },
-  { title: 'Sport', time: '19:00', durationMin: 60 },
-  { title: 'Family', time: '18:30', durationMin: 90 },
+const ANCHOR_PRESET_KEYS = [
+  { titleKey: 'settings.anchorDeepWork' as const, time: '09:30', durationMin: 90 },
+  { titleKey: 'settings.anchorSport' as const, time: '19:00', durationMin: 60 },
+  { titleKey: 'settings.anchorFamily' as const, time: '18:30', durationMin: 90 },
 ]
 
 export default function SettingsScreen() {
@@ -105,6 +107,11 @@ export default function SettingsScreen() {
   ])
 
   const typicalWeek = normalizeTypicalWeek(settings.typicalWeek)
+  const locale = dateLocale(tr.language)
+  const dowLabels = DOW_LABELS.map(({ key }) => ({
+    key,
+    short: format(new Date(2024, 0, 7 + key, 12), 'EEE', { locale }),
+  }))
 
   const patchTypicalWeek = (patch: Partial<typeof typicalWeek>) => {
     updateSettings({
@@ -118,11 +125,11 @@ export default function SettingsScreen() {
     patchTypicalWeek({ workDays: next })
   }
 
-  const addAnchor = (preset: (typeof ANCHOR_PRESETS)[0]) => {
+  const addAnchor = (preset: (typeof ANCHOR_PRESET_KEYS)[0]) => {
     const id = `a_${Math.random().toString(36).slice(2, 8)}`
     const anchor: WeekAnchor = {
       id,
-      title: preset.title,
+      title: tr(preset.titleKey),
       time: preset.time,
       durationMin: preset.durationMin,
       days: typicalWeek.workDays[2] ? [2, 4] : [1, 3], // Tue/Thu or Mon/Wed
@@ -154,35 +161,32 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (params.gmail === 'connected') {
       Alert.alert(
-        'Gmail connected',
-        'Morning inbox + Sent promises are ready. Turn on “Auto-add promises” to create tasks automatically.',
+        tr('home.connectGoogle'),
+        tr('settings.autoAddPromisesSub'),
       )
       refreshGmail().catch(() => undefined)
       router.replace('/settings')
     } else if (params.gmail === 'error') {
-      Alert.alert('Gmail', 'Could not connect. Try Connect with Google again.')
+      Alert.alert(tr('settings.google'), tr('settings.oauthSetupHint'))
       router.replace('/settings')
     }
-  }, [params.gmail, refreshGmail, router])
+  }, [params.gmail, refreshGmail, router, tr])
 
   const saveName = () => {
     updateSettings({ name: name.trim() || settings.name })
-    Alert.alert('Saved', 'Your name was updated.')
+    Alert.alert(tr('settings.alertSaved'), tr('settings.alertNameUpdated'))
   }
 
   const toggleNotifications = async (value: boolean) => {
     if (value) {
       const granted = await ensureNotificationPermissions()
       if (!granted && Platform.OS !== 'web') {
-        Alert.alert('Permissions', 'Notifications are disabled on this device.')
+        Alert.alert(tr('settings.alertPermissions'), tr('settings.alertNotifDisabled'))
         updateSettings({ notificationsEnabled: false })
         return
       }
       if (Platform.OS === 'web') {
-        Alert.alert(
-          'Saved for mobile',
-          'Times are saved. Push reminders for Morning brief & Evening Clear work on iPhone/Android.',
-        )
+        Alert.alert(tr('settings.alertSavedMobile'), tr('settings.alertSavedMobileBody'))
       }
     }
     updateSettings({ notificationsEnabled: value })
@@ -190,7 +194,7 @@ export default function SettingsScreen() {
 
   const applyMorningTime = (value: string) => {
     if (!parseHm(value)) {
-      Alert.alert('Time', 'Use HH:MM, for example 08:00')
+      Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '08:00' }))
       return
     }
     setMorningTime(value)
@@ -199,7 +203,7 @@ export default function SettingsScreen() {
 
   const applyEveningTime = (value: string) => {
     if (!parseHm(value)) {
-      Alert.alert('Time', 'Use HH:MM, for example 21:30')
+      Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '21:30' }))
       return
     }
     setEveningTime(value)
@@ -208,7 +212,7 @@ export default function SettingsScreen() {
 
   const applyBillRemindTime = (value: string) => {
     if (!parseHm(value)) {
-      Alert.alert('Time', 'Use HH:MM, for example 09:00')
+      Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
       return
     }
     setBillRemindTime(value)
@@ -217,7 +221,7 @@ export default function SettingsScreen() {
 
   const applyWorkStart = (value: string) => {
     if (!parseHm(value)) {
-      Alert.alert('Time', 'Use HH:MM, for example 09:00')
+      Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
       return
     }
     setWorkStart(value)
@@ -226,7 +230,7 @@ export default function SettingsScreen() {
 
   const applyWorkEnd = (value: string) => {
     if (!parseHm(value)) {
-      Alert.alert('Time', 'Use HH:MM, for example 18:00')
+      Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '18:00' }))
       return
     }
     setWorkEnd(value)
@@ -370,15 +374,15 @@ export default function SettingsScreen() {
                 <Text style={styles.hint}>
                   {oauthReady
                     ? tr('settings.googleHint')
-                    : 'Product setup: add GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET on the AI server once. Then every user only taps Allow.'}
+                    : tr('settings.oauthSetupHint')}
                 </Text>
               </>
             )}
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Show on Home</Text>
-                <Text style={styles.rowSub}>Morning inbox card</Text>
+                <Text style={styles.rowTitle}>{tr('settings.showOnHome')}</Text>
+                <Text style={styles.rowSub}>{tr('settings.showOnHomeSub')}</Text>
               </View>
               <Switch
                 value={settings.emailDigestEnabled !== false}
@@ -389,10 +393,8 @@ export default function SettingsScreen() {
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Auto-add promises</Text>
-                <Text style={styles.rowSub}>
-                  Scan Sent for “I’ll…” commitments and create Tasks when you open Home
-                </Text>
+                <Text style={styles.rowTitle}>{tr('settings.autoAddPromises')}</Text>
+                <Text style={styles.rowSub}>{tr('settings.autoAddPromisesSub')}</Text>
               </View>
               <Switch
                 value={settings.emailPromisesAutoEnabled === true}
@@ -403,11 +405,8 @@ export default function SettingsScreen() {
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Meeting email alerts</Text>
-                <Text style={styles.rowSub}>
-                  Watch Primary inbox for meet / call / report asks and push: “Name wrote — wants
-                  to meet…”
-                </Text>
+                <Text style={styles.rowTitle}>{tr('settings.meetingAlerts')}</Text>
+                <Text style={styles.rowSub}>{tr('settings.meetingAlertsSub')}</Text>
               </View>
               <Switch
                 value={settings.meetingEmailAlertsEnabled !== false}
@@ -428,8 +427,8 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>Notifications</Text>
-                <Text style={styles.rowSub}>Task reminders + daily rituals</Text>
+                <Text style={styles.rowTitle}>{tr('settings.notifications')}</Text>
+                <Text style={styles.rowSub}>{tr('settings.notificationsSub')}</Text>
               </View>
               <Switch
                 value={settings.notificationsEnabled}
@@ -443,10 +442,7 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.morningBrief')}</Text>
-                <Text style={styles.rowSub}>
-                  On open: today&apos;s tasks + weather, and a Plan day shortcut. Reminder at the
-                  time below.
-                </Text>
+                <Text style={styles.rowSub}>{tr('settings.morningBriefSub')}</Text>
               </View>
               <Switch
                 value={settings.morningBriefEnabled}
@@ -454,7 +450,7 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
-            <Text style={styles.label}>Time</Text>
+            <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={morningTime}
               onChangeText={setMorningTime}
@@ -476,7 +472,7 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.label}>Weather city</Text>
+            <Text style={styles.label}>{tr('settings.weatherCity')}</Text>
             <TextInput
               value={settings.weatherCity || ''}
               onChangeText={(v) => updateSettings({ weatherCity: v })}
@@ -485,9 +481,7 @@ export default function SettingsScreen() {
               style={styles.input}
               autoCapitalize="words"
             />
-            <Text style={styles.rowSub}>
-              Open-Meteo forecast for morning brief. Leave blank to try device location on web.
-            </Text>
+            <Text style={styles.rowSub}>{tr('settings.weatherCityHint')}</Text>
             <Pressable
               style={styles.openRitual}
               onPress={() => {
@@ -504,9 +498,7 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.eveningClear')}</Text>
-                <Text style={styles.rowSub}>
-                  In-app ritual: close today, shape tomorrow. Reminder at the time below.
-                </Text>
+                <Text style={styles.rowSub}>{tr('settings.eveningClearSub')}</Text>
               </View>
               <Switch
                 value={settings.eveningClearEnabled}
@@ -514,7 +506,7 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
-            <Text style={styles.label}>Time</Text>
+            <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={eveningTime}
               onChangeText={setEveningTime}
@@ -545,9 +537,7 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.weeklyBrief')}</Text>
-                <Text style={styles.rowSub}>
-                  Monday morning overview: open tasks, bills due this week, and three focuses.
-                </Text>
+                <Text style={styles.rowSub}>{tr('settings.weeklyBriefSub')}</Text>
               </View>
               <Switch
                 value={settings.weeklyBriefEnabled !== false}
@@ -571,10 +561,7 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.billReminders')}</Text>
-                <Text style={styles.rowSub}>
-                  Default: first ping 3 days before due, then every day until you mark paid. Pick
-                  your own lead and cadence below. Per-bill Off is in the bill editor.
-                </Text>
+                <Text style={styles.rowSub}>{tr('settings.billRemindersSub')}</Text>
               </View>
               <Switch
                 value={settings.billRemindersEnabled !== false}
@@ -582,11 +569,16 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
-            <Text style={styles.label}>First remind</Text>
+            <Text style={styles.label}>{tr('settings.firstRemind')}</Text>
             <View style={styles.presets}>
               {BILL_LEAD_PRESETS.map((d) => {
                 const on = (settings.billRemindLeadDays ?? 3) === d
-                const label = d === 0 ? 'Due day' : d === 1 ? '1 day before' : `${d} days before`
+                const label =
+                  d === 0
+                    ? tr('settings.dueDay')
+                    : d === 1
+                      ? tr('settings.dayBefore')
+                      : tr.tf('settings.daysBefore', { n: d })
                 return (
                   <Pressable
                     key={d}
@@ -598,12 +590,12 @@ export default function SettingsScreen() {
                 )
               })}
             </View>
-            <Text style={styles.label}>Then</Text>
+            <Text style={styles.label}>{tr('settings.then')}</Text>
             <View style={styles.presets}>
               {(
                 [
-                  { id: 'daily' as const, label: 'Every day until paid' },
-                  { id: 'once' as const, label: 'Only once' },
+                  { id: 'daily' as const, labelKey: 'settings.everyDayUntilPaid' as const },
+                  { id: 'once' as const, labelKey: 'settings.onlyOnce' as const },
                 ] as const
               ).map((opt) => {
                 const on = (settings.billRemindCadence || 'daily') === opt.id
@@ -613,12 +605,12 @@ export default function SettingsScreen() {
                     style={[styles.chip, on && styles.chipOn]}
                     onPress={() => updateSettings({ billRemindCadence: opt.id })}
                   >
-                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{opt.label}</Text>
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{tr(opt.labelKey)}</Text>
                   </Pressable>
                 )
               })}
             </View>
-            <Text style={styles.label}>Time</Text>
+            <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={billRemindTime}
               onChangeText={setBillRemindTime}
@@ -646,10 +638,8 @@ export default function SettingsScreen() {
 
           <View style={styles.card}>
             <Text style={styles.rowTitle}>{tr('settings.workday')}</Text>
-            <Text style={styles.rowSub}>
-              Hours Plan day uses when you tap Arrange into free slots
-            </Text>
-            <Text style={styles.label}>Start</Text>
+            <Text style={styles.rowSub}>{tr('settings.workdaySub')}</Text>
+            <Text style={styles.label}>{tr('settings.start')}</Text>
             <TextInput
               value={workStart}
               onChangeText={setWorkStart}
@@ -671,7 +661,7 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.label}>End</Text>
+            <Text style={styles.label}>{tr('settings.end')}</Text>
             <TextInput
               value={workEnd}
               onChangeText={setWorkEnd}
@@ -697,13 +687,10 @@ export default function SettingsScreen() {
 
           <View style={styles.card}>
             <Text style={styles.rowTitle}>{tr('settings.typicalWeek')}</Text>
-            <Text style={styles.rowSub}>
-              Which days are work days, light weekend hours, and recurring anchors Plan day will
-              protect.
-            </Text>
-            <Text style={styles.label}>Work days</Text>
+            <Text style={styles.rowSub}>{tr('settings.typicalWeekSub')}</Text>
+            <Text style={styles.label}>{tr('settings.workDays')}</Text>
             <View style={styles.presets}>
-              {DOW_LABELS.map(({ key, short }) => (
+              {dowLabels.map(({ key, short }) => (
                 <Pressable
                   key={key}
                   style={[styles.chip, typicalWeek.workDays[key] && styles.chipOn]}
@@ -717,7 +704,7 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.label}>Light days (hours)</Text>
+            <Text style={styles.label}>{tr('settings.lightDays')}</Text>
             <View style={styles.presets}>
               {['10:00', '11:00'].map((t) => (
                 <Pressable
@@ -729,7 +716,7 @@ export default function SettingsScreen() {
                   }}
                 >
                   <Text style={[styles.chipText, weekendStart === t && styles.chipTextOn]}>
-                    {t} start
+                    {tr.tf('settings.hourStart', { t })}
                   </Text>
                 </Pressable>
               ))}
@@ -743,16 +730,16 @@ export default function SettingsScreen() {
                   }}
                 >
                   <Text style={[styles.chipText, weekendEnd === t && styles.chipTextOn]}>
-                    {t} end
+                    {tr.tf('settings.hourEnd', { t })}
                   </Text>
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.label}>Anchors</Text>
+            <Text style={styles.label}>{tr('settings.anchors')}</Text>
             <View style={styles.presets}>
-              {ANCHOR_PRESETS.map((p) => (
-                <Pressable key={p.title} style={styles.chip} onPress={() => addAnchor(p)}>
-                  <Text style={styles.chipText}>+ {p.title}</Text>
+              {ANCHOR_PRESET_KEYS.map((p) => (
+                <Pressable key={p.titleKey} style={styles.chip} onPress={() => addAnchor(p)}>
+                  <Text style={styles.chipText}>+ {tr(p.titleKey)}</Text>
                 </Pressable>
               ))}
             </View>
@@ -763,11 +750,11 @@ export default function SettingsScreen() {
                     {a.title} · {a.time} · {a.durationMin}m
                   </Text>
                   <Pressable onPress={() => removeAnchor(a.id)} hitSlop={8}>
-                    <Text style={styles.dismiss}>Remove</Text>
+                    <Text style={styles.dismiss}>{tr('settings.remove')}</Text>
                   </Pressable>
                 </View>
                 <View style={styles.presets}>
-                  {DOW_LABELS.map(({ key, short }) => (
+                  {dowLabels.map(({ key, short }) => (
                     <Pressable
                       key={`${a.id}-${key}`}
                       style={[styles.chip, a.days.includes(key) && styles.chipOn]}
@@ -783,12 +770,12 @@ export default function SettingsScreen() {
                 </View>
               </View>
             ))}
-            <Text style={styles.label}>Note (optional)</Text>
+            <Text style={styles.label}>{tr('settings.noteOptional')}</Text>
             <TextInput
               value={weekBlurb}
               onChangeText={setWeekBlurb}
               onEndEditing={() => patchTypicalWeek({ blurb: weekBlurb.trim() })}
-              placeholder="e.g. Gym Tue/Thu evenings, Friday light"
+              placeholder={tr('settings.notePlaceholder')}
               placeholderTextColor={colors.textDim}
               style={[styles.input, { minHeight: 64 }]}
               multiline
@@ -797,19 +784,25 @@ export default function SettingsScreen() {
               onPress={() => patchTypicalWeek(defaultTypicalWeek())}
               style={{ alignSelf: 'flex-start', paddingVertical: 4 }}
             >
-              <Text style={styles.dismiss}>Reset typical week</Text>
+              <Text style={styles.dismiss}>{tr('settings.resetTypicalWeek')}</Text>
             </Pressable>
           </View>
 
           <View style={styles.card}>
             <Text style={styles.label}>{tr('settings.aiTone')}</Text>
-            {(['friendly', 'concise', 'coach'] as const).map((tone) => (
+            {(
+              [
+                { id: 'friendly' as const, key: 'settings.toneFriendly' as const },
+                { id: 'concise' as const, key: 'settings.toneConcise' as const },
+                { id: 'coach' as const, key: 'settings.toneCoach' as const },
+              ] as const
+            ).map((tone) => (
               <Pressable
-                key={tone}
-                style={[styles.tone, settings.aiTone === tone && styles.toneOn]}
-                onPress={() => updateSettings({ aiTone: tone })}
+                key={tone.id}
+                style={[styles.tone, settings.aiTone === tone.id && styles.toneOn]}
+                onPress={() => updateSettings({ aiTone: tone.id })}
               >
-                <Text style={styles.toneText}>{tone}</Text>
+                <Text style={styles.toneText}>{tr(tone.key)}</Text>
               </Pressable>
             ))}
           </View>
@@ -823,7 +816,7 @@ export default function SettingsScreen() {
           </Pressable>
 
           <Text style={styles.mode}>
-            {isSupabaseConfigured ? 'Supabase connected' : tr('settings.demoMode')}
+            {isSupabaseConfigured ? tr('settings.supabaseConnected') : tr('settings.demoMode')}
             {oauthReady ? ' · Google OAuth ready' : ' · Google OAuth keys pending'}
           </Text>
         </ScrollView>
