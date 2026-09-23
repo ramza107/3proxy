@@ -1,4 +1,5 @@
 import { Platform } from 'react-native'
+import { findNextBill, formatBillDueLabel, formatMoney } from './bills'
 import {
   findNearestTask,
   formatNearestTaskTime,
@@ -25,24 +26,34 @@ export type WidgetSnapshot = {
   nextBill?: string
 }
 
+function nextBillLine(): string {
+  const bill = findNextBill(useNovaStore.getState().bills)
+  if (!bill) return ''
+  const when = formatBillDueLabel(bill)
+  const whenLabel =
+    when === 'today' ? 'today' : when === 'tomorrow' ? 'tomorrow' : when === 'overdue' ? 'overdue' : when
+  return `${bill.title} · ${formatMoney(bill.amount, bill.currency)} · ${whenLabel}`
+}
+
 function buildSnapshot(): WidgetSnapshot {
   const store = useNovaStore.getState()
   const today = localISODate()
   const openToday = tasksForDay(store.tasks, today)
   const nearest = findNearestTask(store.tasks)
   const moreToday = Math.max(0, openToday.length - (nearest?.date === today ? 1 : 0))
+  const nextBill = nextBillLine()
 
   if (!nearest) {
     return {
       label: 'WAHRLY',
       time: '',
-      title: 'No upcoming tasks',
-      subtitle: 'Ask Wahrly to add one',
+      title: nextBill ? nextBill.split(' · ')[0] : 'No upcoming tasks',
+      subtitle: nextBill || 'Ask Wahrly to add one',
       updatedAt: new Date().toISOString(),
       greeting: 'Wahrly',
       todayCount: 0,
       nextTask: 'No upcoming tasks',
-      nextBill: '',
+      nextBill,
     }
   }
 
@@ -53,8 +64,8 @@ function buildSnapshot(): WidgetSnapshot {
       ? moreToday > 0
         ? `${moreToday} more today`
         : openToday.length <= 1
-          ? 'Today'
-          : ''
+          ? nextBill || 'Today'
+          : nextBill || ''
       : nearest.date
         ? nearest.date
         : 'No date'
@@ -63,13 +74,23 @@ function buildSnapshot(): WidgetSnapshot {
     label,
     time,
     title: nearest.title,
-    subtitle,
+    subtitle: nextBill && !subtitle.includes(billTitleHint(nextBill)) ? joinSub(subtitle, nextBill) : subtitle,
     updatedAt: new Date().toISOString(),
     greeting: label,
     todayCount: openToday.length,
     nextTask: time ? `${time} · ${nearest.title}` : nearest.title,
-    nextBill: subtitle,
+    nextBill,
   }
+}
+
+function billTitleHint(line: string) {
+  return line.split(' · ')[0] || ''
+}
+
+function joinSub(a: string, b: string) {
+  if (!a) return b
+  if (!b) return a
+  return `${a} · ${b}`
 }
 
 /** Push nearest task into the iOS home/lock widget (no-op on web/Android). */
