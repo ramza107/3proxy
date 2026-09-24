@@ -25,6 +25,8 @@ const PREPARE_MS = 10_000
 /** Keep under Render idle wake + Whisper; fail loudly instead of infinite “Transcribing…”. */
 const TRANSCRIBE_MS = 35_000
 const WAKE_MS = 12_000
+/** Hard cap — matches server voiceGuard (~60s of speech). */
+export const MAX_VOICE_RECORD_MS = 60_000
 
 let nativeRecording: NativeRecorder | null = null
 let webMediaRecorder: MediaRecorder | null = null
@@ -32,6 +34,35 @@ let webChunks: Blob[] = []
 let webStream: MediaStream | null = null
 let transcribeAbort: AbortController | null = null
 let activeUploadTask: UploadTaskLike | null = null
+let recordStartedAt = 0
+let maxRecordTimer: ReturnType<typeof setTimeout> | null = null
+let onMaxDurationReached: (() => void) | null = null
+
+function clearMaxRecordTimer() {
+  if (maxRecordTimer) {
+    clearTimeout(maxRecordTimer)
+    maxRecordTimer = null
+  }
+}
+
+function armMaxRecordTimer() {
+  clearMaxRecordTimer()
+  recordStartedAt = Date.now()
+  maxRecordTimer = setTimeout(() => {
+    maxRecordTimer = null
+    onMaxDurationReached?.()
+  }, MAX_VOICE_RECORD_MS)
+}
+
+/** Optional callback when auto-stop fires (AIInput stops + uploads). */
+export function setVoiceMaxDurationHandler(handler: (() => void) | null) {
+  onMaxDurationReached = handler
+}
+
+export function voiceRecordingElapsedMs(): number {
+  if (!recordStartedAt) return 0
+  return Date.now() - recordStartedAt
+}
 
 function formatTranscribeError(body: string, status: number): string {
   const raw = (body || '').trim()
@@ -165,6 +196,7 @@ export async function startVoiceRecording(): Promise<void> {
       if (e.data?.size) webChunks.push(e.data)
     }
     webMediaRecorder.start(250)
+    armMaxRecordTimer()
     return
   }
 
@@ -183,6 +215,7 @@ export async function startVoiceRecording(): Promise<void> {
   try {
     await withTimeout(recorder.prepareToRecordAsync(), PREPARE_MS, 'Prepare recorder')
     recorder.record()
+    armMaxRecordTimer()
   } catch (error) {
     nativeRecording = null
     releaseNativeRecorder(recorder)
@@ -192,6 +225,9 @@ export async function startVoiceRecording(): Promise<void> {
 }
 
 export async function stopVoiceRecording(): Promise<VoiceRecording> {
+  clearMaxRecordTimer()
+  recordStartedAt = 0
+
   if (Platform.OS === 'web') {
     const recorder = webMediaRecorder
     if (!recorder) throw new Error('Not recording')
@@ -249,6 +285,8 @@ export async function stopVoiceRecording(): Promise<VoiceRecording> {
 
 /** Always safe to call — tears down web/native recorders and releases the mic. */
 export async function cancelVoiceRecording(): Promise<void> {
+  clearMaxRecordTimer()
+  recordStartedAt = 0
   try {
     transcribeAbort?.abort()
   } catch {
@@ -282,7 +320,7 @@ export async function cancelVoiceRecording(): Promise<void> {
  */
 export async function transcribeVoice(
   recording: VoiceRecording,
-  opts?: { language?: string; signal?: AbortSignal },
+  opts?: { language?: string; signal?: AbortSignal; userId?: string | null },
 ): Promise<{ text: string; raw: string; provider: string }> {
   const url = `${apiUrl}/api/ai/transcribe`
   const localAbort = new AbortController()
@@ -308,6 +346,10 @@ export async function transcribeVoice(
     localAbort.signal.addEventListener('abort', () => clearTimeout(timer))
   })
 
+  const extraParams: Record<string, string> = {}
+  if (opts?.language) extraParams.language = opts.language
+  if (opts?.userId) extraParams.user_id = opts.userId
+
   try {
     await wakeTranscribeServer(localAbort.signal)
     if (localAbort.signal.aborted) {
@@ -318,8 +360,11 @@ export async function transcribeVoice(
       const form = new FormData()
       const blob = await fetch(recording.uri).then((r) => r.blob())
       if (!blob.size) throw new Error('Empty recording — hold Mic a second longer')
+      if (blob.size > 2 * 1024 * 1024) {
+        throw new Error('Recording too long — keep under ~60 seconds')
+      }
       form.append('audio', blob, recording.filename)
-      if (opts?.language) form.append('language', opts.language)
+      for (const [k, v] of Object.entries(extraParams)) form.append(k, v)
 
       const res = await Promise.race([
         fetch(url, { method: 'POST', body: form, signal: localAbort.signal }),
@@ -338,8 +383,13 @@ export async function transcribeVoice(
       if (!info.exists || ('size' in info && !info.size)) {
         throw new Error('Empty recording — hold Mic a second longer')
       }
+      if ('size' in info && typeof info.size === 'number' && info.size > 2 * 1024 * 1024) {
+        throw new Error('Recording too long — keep under ~60 seconds')
+      }
     } catch (e) {
-      if (e instanceof Error && e.message.startsWith('Empty')) throw e
+      if (e instanceof Error && (e.message.startsWith('Empty') || e.message.startsWith('Recording'))) {
+        throw e
+      }
       // getInfoAsync optional
     }
 
@@ -348,7 +398,7 @@ export async function transcribeVoice(
       uploadType: FileSystem.FileSystemUploadType.MULTIPART,
       fieldName: 'audio',
       mimeType: recording.mimeType,
-      parameters: opts?.language ? { language: opts.language } : {},
+      parameters: extraParams,
     }) as UploadTaskLike
     activeUploadTask = task
 

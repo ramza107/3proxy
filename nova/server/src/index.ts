@@ -43,6 +43,11 @@ import { sanitizeAIActions } from './aiActions.js'
 import { SYSTEM_PROMPT } from './prompt.js'
 import { toneInstructions } from './tone.js'
 import { transcribeAudio } from './transcribe.js'
+import {
+  assertVoicePayloadSize,
+  checkVoiceRateLimit,
+  voiceUploadLimits,
+} from './voiceGuard.js'
 
 dotenv.config({ path: new URL('../../.env', import.meta.url).pathname })
 dotenv.config()
@@ -54,6 +59,11 @@ app.use(express.json({ limit: '1mb' }))
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 12 * 1024 * 1024 },
+})
+
+const uploadVoice = multer({
+  storage: multer.memoryStorage(),
+  limits: voiceUploadLimits(),
 })
 
 const Port = Number(process.env.PORT || 8787)
@@ -618,14 +628,46 @@ app.post('/api/push/register', async (req, res) => {
 })
 
 /** Speech → text via Groq/OpenAI Whisper (+ optional LLM polish). */
-app.post('/api/ai/transcribe', upload.single('audio'), async (req, res) => {
+app.post('/api/ai/transcribe', (req, res, next) => {
+  uploadVoice.single('audio')(req, res, (err) => {
+    if (err) {
+      const msg =
+        err instanceof Error && /File too large|LIMIT_FILE_SIZE/i.test(err.message)
+          ? 'Audio too long — keep under ~60 seconds'
+          : err instanceof Error
+            ? err.message
+            : 'Upload failed'
+      return res.status(413).json({ error: msg })
+    }
+    next()
+  })
+}, async (req, res) => {
   try {
     const file = req.file
     if (!file?.buffer?.length) {
       return res.status(400).json({ error: 'audio file required (field: audio)' })
     }
+    try {
+      assertVoicePayloadSize(file.buffer.length)
+    } catch (e) {
+      return res.status(413).json({
+        error: e instanceof Error ? e.message : 'Audio rejected',
+      })
+    }
+
+    const userId = String(req.body?.user_id || '') || null
+    const ip =
+      (typeof req.headers['x-forwarded-for'] === 'string'
+        ? req.headers['x-forwarded-for'].split(',')[0]?.trim()
+        : null) ||
+      req.socket.remoteAddress ||
+      null
+    const limited = checkVoiceRateLimit({ userId, ip })
+    if (limited) {
+      return res.status(429).json({ error: limited })
+    }
+
     const language = String(req.body?.language || req.query.language || '') || null
-    const provider = resolveProvider()
     const result = await transcribeAudio({
       buffer: file.buffer,
       filename: file.originalname || 'voice.m4a',

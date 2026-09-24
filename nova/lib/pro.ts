@@ -5,6 +5,12 @@ import { useNovaStore } from './store'
 
 /** Free voice transcripts per calendar day. */
 export const FREE_VOICE_PER_DAY = 5
+/** Pro fair-use ceiling (not true unlimited — abuse protection). */
+export const PRO_VOICE_PER_DAY = 200
+/** Max recording length before auto-stop (seconds). */
+export const MAX_VOICE_SECONDS = 60
+/** Min gap between voice submits on the client (ms). */
+export const VOICE_COOLDOWN_MS = 8_000
 
 export function isPro(): boolean {
   return useNovaStore.getState().settings.isPro === true
@@ -24,21 +30,24 @@ export function canUseWeeklyBrief(): boolean {
   return isPro()
 }
 
+export function voiceDailyLimit(): number {
+  return isPro() ? PRO_VOICE_PER_DAY : FREE_VOICE_PER_DAY
+}
+
 export function voiceRemainingToday(): number {
-  if (isPro()) return Infinity
   const s = useNovaStore.getState().settings
   const today = localISODate()
-  if (s.voiceUsedDate !== today) return FREE_VOICE_PER_DAY
-  return Math.max(0, FREE_VOICE_PER_DAY - (s.voiceUsedCount || 0))
+  const limit = voiceDailyLimit()
+  if (s.voiceUsedDate !== today) return limit
+  return Math.max(0, limit - (s.voiceUsedCount || 0))
 }
 
 export function canUseVoice(): boolean {
   return voiceRemainingToday() > 0
 }
 
-/** Call after a successful voice transcript on Free. */
+/** Call after a successful voice transcript (Free and Pro). */
 export function consumeVoiceCredit() {
-  if (isPro()) return
   const store = useNovaStore.getState()
   const today = localISODate()
   const sameDay = store.settings.voiceUsedDate === today
