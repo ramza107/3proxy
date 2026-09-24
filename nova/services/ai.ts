@@ -130,10 +130,12 @@ export async function applyActions(
         await supabase?.from('tasks').update({ completed: true }).eq('id', action.task_id)
       }
       if (local) {
+        const now = new Date().toISOString()
         store.upsertTask({
           ...local,
           completed: true,
-          updated_at: new Date().toISOString(),
+          completedAt: now,
+          updated_at: now,
         })
         if (local.recurrence) {
           const base = local.date || todayISO()
@@ -479,7 +481,17 @@ export async function organizeMyDay(opts?: {
   })
 
   if (planned.actions.length) {
+    const snapshots = planned.actions
+      .map((a) => {
+        const t = store.tasks.find((x) => x.id === a.task_id)
+        if (!t) return null
+        return { id: t.id, date: t.date, time: t.time }
+      })
+      .filter((x): x is { id: string; date: string | null; time: string | null } => !!x)
+    store.setLastPlanDayUndo(snapshots.length ? snapshots : null)
     await applyActions(planned.actions, userId, store.settings.notificationsEnabled)
+  } else {
+    store.setLastPlanDayUndo(null)
   }
 
   const calendarCandidates = candidatesFromPlanActions(planned.actions)
@@ -617,13 +629,31 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
   return { ...response, actions: [...safe, ...appliedDestructive] }
 }
 
+export async function undoLastPlanDay(): Promise<number> {
+  const store = useNovaStore.getState()
+  const snaps = store.lastPlanDayUndo
+  if (!snaps?.length) return 0
+  let n = 0
+  for (const snap of snaps) {
+    const task = store.tasks.find((t) => t.id === snap.id)
+    if (!task) continue
+    await updateTaskFields(task, { date: snap.date, time: snap.time })
+    n += 1
+  }
+  store.setLastPlanDayUndo(null)
+  await refreshWidgetSnapshot().catch(() => undefined)
+  return n
+}
+
 export async function toggleTaskCompleted(task: Task) {
   const store = useNovaStore.getState()
   const completing = !task.completed
+  const now = new Date().toISOString()
   const next = {
     ...task,
     completed: completing,
-    updated_at: new Date().toISOString(),
+    completedAt: completing ? now : null,
+    updated_at: now,
   }
   if (isSupabaseConfigured && !store.demoMode) {
     const supabase = getSupabase()

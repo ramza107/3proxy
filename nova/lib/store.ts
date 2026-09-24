@@ -28,6 +28,12 @@ function todayISO() {
   return localISODate()
 }
 
+type PlanDayUndoEntry = {
+  id: string
+  date: string | null
+  time: string | null
+}
+
 type NovaState = {
   hydrated: boolean
   demoMode: boolean
@@ -40,6 +46,10 @@ type NovaState = {
   messages: ChatMessage[]
   dismissedPromiseIds: string[]
   notifiedMeetingIds: string[]
+  /** loopId → ISO snoozedUntil (promises + meetings) */
+  snoozedLoops: Record<string, string>
+  /** Last Plan day arrange snapshot for undo (session only) */
+  lastPlanDayUndo: PlanDayUndoEntry[] | null
   /** Settings → Show Morning brief now (ignores time-of-day gate) */
   forceMorningBrief: boolean
   forceWeeklyBrief: boolean
@@ -57,6 +67,10 @@ type NovaState = {
   removeBill: (id: string) => void
   markBillPaid: (id: string, month?: string) => void
   dismissPromise: (id: string) => void
+  snoozeLoop: (id: string, untilISO: string) => void
+  clearSnooze: (id: string) => void
+  isLoopSnoozed: (id: string) => boolean
+  setLastPlanDayUndo: (entries: PlanDayUndoEntry[] | null) => void
   markMeetingNotified: (id: string) => void
   dismissMeeting: (id: string) => void
   addReminder: (reminder: Reminder) => void
@@ -107,9 +121,13 @@ const defaultSettings: UserSettings = {
   billRemindLeadDays: 3,
   billRemindCadence: 'daily',
   billRemindTime: '09:00',
+  promiseRemindDayBefore: true,
   workdayStart: '09:00',
   workdayEnd: '18:00',
   typicalWeek: defaultTypicalWeek(),
+  isPro: false,
+  voiceUsedDate: null,
+  voiceUsedCount: 0,
 }
 
 export const useNovaStore = create<NovaState>()(
@@ -126,6 +144,8 @@ export const useNovaStore = create<NovaState>()(
       messages: [],
       dismissedPromiseIds: [],
       notifiedMeetingIds: [],
+      snoozedLoops: {},
+      lastPlanDayUndo: null,
       forceMorningBrief: false,
       forceWeeklyBrief: false,
       setHydrated: (v) => set({ hydrated: v }),
@@ -149,6 +169,8 @@ export const useNovaStore = create<NovaState>()(
           messages: [],
           dismissedPromiseIds: [],
           notifiedMeetingIds: [],
+          snoozedLoops: {},
+          lastPlanDayUndo: null,
           forceMorningBrief: false,
           forceWeeklyBrief: false,
           settings: defaultSettings,
@@ -203,6 +225,21 @@ export const useNovaStore = create<NovaState>()(
         set({
           dismissedPromiseIds: [...new Set([...get().dismissedPromiseIds, id])].slice(-80),
         }),
+      snoozeLoop: (id, untilISO) =>
+        set({
+          snoozedLoops: { ...get().snoozedLoops, [id]: untilISO },
+        }),
+      clearSnooze: (id) => {
+        const next = { ...get().snoozedLoops }
+        delete next[id]
+        set({ snoozedLoops: next })
+      },
+      isLoopSnoozed: (id) => {
+        const until = get().snoozedLoops[id]
+        if (!until) return false
+        return new Date(until).getTime() > Date.now()
+      },
+      setLastPlanDayUndo: (entries) => set({ lastPlanDayUndo: entries }),
       markMeetingNotified: (id) =>
         set({
           notifiedMeetingIds: [...new Set([...get().notifiedMeetingIds, id])].slice(-120),
@@ -245,6 +282,7 @@ export const useNovaStore = create<NovaState>()(
           time,
           priority,
           completed: false,
+          completedAt: null,
           recurrence: recurrence || null,
           sourceKind: sourceKind || null,
           sourceId: sourceId || null,
@@ -301,6 +339,7 @@ export const useNovaStore = create<NovaState>()(
         messages: s.messages,
         dismissedPromiseIds: s.dismissedPromiseIds,
         notifiedMeetingIds: s.notifiedMeetingIds,
+        snoozedLoops: s.snoozedLoops,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -326,6 +365,11 @@ export const useNovaStore = create<NovaState>()(
           state.notifiedMeetingIds = Array.isArray(state.notifiedMeetingIds)
             ? state.notifiedMeetingIds
             : []
+          state.snoozedLoops =
+            state.snoozedLoops && typeof state.snoozedLoops === 'object'
+              ? state.snoozedLoops
+              : {}
+          state.lastPlanDayUndo = null
           state.setHydrated(true)
         }
       },

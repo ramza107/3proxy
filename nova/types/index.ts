@@ -16,6 +16,8 @@ export type Task = {
   time: string | null
   priority: Priority
   completed: boolean
+  /** ISO timestamp when marked complete (for evening digest) */
+  completedAt?: string | null
   /** When set, completing spawns the next occurrence */
   recurrence?: TaskRecurrence | null
   /** Link back to a Gmail loop (promise / inbox ask) */
@@ -168,6 +170,7 @@ export type UserSettings = {
   /**
    * When on: scan Sent for “I’ll…” promises and auto-add them as Tasks.
    * When off: Home still can show the Promises card for manual Add.
+   * Pro feature — Free users stay on manual Add.
    */
   emailPromisesAutoEnabled: boolean
   /**
@@ -186,12 +189,23 @@ export type UserSettings = {
   billRemindCadence: BillRemindCadence
   /** HH:MM — when bill reminders fire */
   billRemindTime: string
+  /** Day-before local push for dated promise tasks */
+  promiseRemindDayBefore: boolean
   /** HH:MM — smart day packer window start (weekdays) */
   workdayStart: string
   /** HH:MM — smart day packer window end (weekdays) */
   workdayEnd: string
   /** Typical week: which days are work, weekend hours, recurring anchors */
   typicalWeek: TypicalWeek
+  /**
+   * Wahrly Pro (demo toggle until StoreKit / RevenueCat).
+   * Unlocks auto-promises, weekly brief, unlimited voice.
+   */
+  isPro: boolean
+  /** YYYY-MM-DD — day voice credits were last consumed (Free) */
+  voiceUsedDate: string | null
+  /** Voice transcripts used on voiceUsedDate (Free) */
+  voiceUsedCount: number
 }
 
 /** JS Date#getDay(): 0=Sun … 6=Sat */

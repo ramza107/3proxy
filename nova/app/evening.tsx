@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../components/Screen'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { dateLocale } from '../lib/dateLocale'
+import { formatMoney, currentMonthKey, isPaidThisMonth } from '../lib/bills'
 import { sortTasks, todayISO, useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../services/ai'
@@ -32,6 +33,7 @@ export default function EveningClearScreen() {
   const t = useT()
   const router = useRouter()
   const tasks = useNovaStore((s) => s.tasks)
+  const bills = useNovaStore((s) => s.bills)
   const userId = useNovaStore((s) => s.sessionUserId)
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const updateSettings = useNovaStore((s) => s.updateSettings)
@@ -58,6 +60,29 @@ export default function EveningClearScreen() {
     () => sortTasks(tasks.filter((t) => !t.completed && t.date === tomorrow)),
     [tasks, tomorrow],
   )
+
+  const doneToday = useMemo(() => {
+    return sortTasks(
+      tasks.filter((task) => {
+        if (!task.completed) return false
+        const stamp = task.completedAt || task.updated_at
+        return typeof stamp === 'string' && stamp.startsWith(today)
+      }),
+    )
+  }, [tasks, today])
+
+  const loopsDone = useMemo(
+    () => doneToday.filter((task) => task.sourceKind === 'promise' || task.sourceKind === 'meeting'),
+    [doneToday],
+  )
+
+  const billsPaidToday = useMemo(() => {
+    const month = currentMonthKey()
+    return bills.filter((b) => {
+      if (!isPaidThisMonth(b, month)) return false
+      return typeof b.updated_at === 'string' && b.updated_at.startsWith(today)
+    })
+  }, [bills, today])
 
   const finish = () => {
     updateSettings({ lastEveningClearDate: today })
@@ -257,14 +282,36 @@ export default function EveningClearScreen() {
             <>
               <Text style={styles.brand}>{t('evening.clearTitle')}</Text>
               <Text style={styles.lead}>
-                {doneCount || movedCount
+                {doneCount || movedCount || doneToday.length
                   ? t.tf('evening.summary', {
-                      done: doneCount,
+                      done: Math.max(doneCount, doneToday.length),
                       moved: movedCount,
                       tomorrow: tomorrowOpen.length,
                     })
                   : t('evening.clearSub')}
               </Text>
+
+              {doneToday.length || loopsDone.length || billsPaidToday.length ? (
+                <View style={styles.digest}>
+                  <Text style={styles.digestTitle}>{t('evening.digestTitle')}</Text>
+                  {doneToday.slice(0, 8).map((task) => (
+                    <Text key={task.id} style={styles.digestLine} numberOfLines={1}>
+                      ✓ {task.title}
+                      {task.sourceKind === 'promise'
+                        ? ` · ${t('home.iOwe')}`
+                        : task.sourceKind === 'meeting'
+                          ? ` · ${t('home.waiting')}`
+                          : ''}
+                    </Text>
+                  ))}
+                  {billsPaidToday.map((bill) => (
+                    <Text key={bill.id} style={styles.digestLine} numberOfLines={1}>
+                      ✓ {bill.title} · {formatMoney(bill.amount, bill.currency)}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+
               <Pressable style={styles.primary} onPress={() => router.replace('/tasks')}>
                 <Text style={styles.primaryText}>{t('evening.back')}</Text>
               </Pressable>
@@ -311,6 +358,26 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginTop: -6,
     marginBottom: 8,
+  },
+  digest: {
+    gap: 6,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  digestTitle: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  digestLine: {
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
   },
   list: { gap: 10 },
   row: {
