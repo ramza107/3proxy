@@ -22,7 +22,7 @@ export default function NameScreen() {
       const supabase = getSupabase()
       await supabase?.from('users').update({ name: value }).eq('id', sessionUserId)
     }
-    router.push('/ready')
+    router.push('/week')
   }
 
   return (
