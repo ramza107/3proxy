@@ -35,14 +35,46 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
   const router = useRouter()
   const dismissed = useNovaStore((s) => s.dismissedPromiseIds)
   const notified = useNovaStore((s) => s.notifiedMeetingIds)
+  const snoozedLoops = useNovaStore((s) => s.snoozedLoops)
   const dismissPromise = useNovaStore((s) => s.dismissPromise)
   const dismissMeeting = useNovaStore((s) => s.dismissMeeting)
+  const snoozeLoop = useNovaStore((s) => s.snoozeLoop)
   const markMeetingNotified = useNovaStore((s) => s.markMeetingNotified)
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const upsertTask = useNovaStore((s) => s.upsertTask)
   const sessionUserId = useNovaStore((s) => s.sessionUserId)
   const tasks = useNovaStore((s) => s.tasks)
   const notificationsEnabled = useNovaStore((s) => s.settings.notificationsEnabled)
+
+  const isSnoozed = (id: string) => {
+    const until = snoozedLoops[id]
+    return !!until && new Date(until).getTime() > Date.now()
+  }
+
+  const snoozeUntilDays = (days: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + days)
+    d.setHours(9, 0, 0, 0)
+    return d.toISOString()
+  }
+
+  const onSnooze = (id: string) => {
+    Alert.alert(t('home.snoozeTitle'), t('home.snoozeBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('home.snooze1d'),
+        onPress: () => snoozeLoop(id, snoozeUntilDays(1)),
+      },
+      {
+        text: t('home.snooze3d'),
+        onPress: () => snoozeLoop(id, snoozeUntilDays(3)),
+      },
+      {
+        text: t('home.snoozeWeek'),
+        onPress: () => snoozeLoop(id, snoozeUntilDays(7)),
+      },
+    ])
+  }
 
   const [promises, setPromises] = useState<PromisesDigest | null>(null)
   const [meetings, setMeetings] = useState<MeetingsDigest | null>(null)
@@ -143,10 +175,11 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     const list = promises?.promises || []
     return list.filter((p) => {
       if (dismissed.includes(p.id)) return false
+      if (isSnoozed(p.id)) return false
       const spawned = openTasks.some((task) => task.sourceKind === 'promise' && task.sourceId === p.id)
       return !spawned
     })
-  }, [promises?.promises, dismissed, openTasks])
+  }, [promises?.promises, dismissed, openTasks, snoozedLoops])
 
   const oweFromTasks = useMemo(
     () => openTasks.filter((task) => task.sourceKind === 'promise'),
@@ -157,10 +190,11 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     const list = meetings?.meetings || []
     return list.filter((m) => {
       if (notified.includes(`dismiss:${m.id}`)) return false
+      if (isSnoozed(m.id)) return false
       const spawned = openTasks.some((task) => task.sourceKind === 'meeting' && task.sourceId === m.id)
       return !spawned
     })
-  }, [meetings?.meetings, notified, openTasks])
+  }, [meetings?.meetings, notified, openTasks, snoozedLoops])
 
   const waitingFromTasks = useMemo(
     () => openTasks.filter((task) => task.sourceKind === 'meeting'),
@@ -182,6 +216,7 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     )
     for (const p of promises.promises) {
       if (already.has(p.id)) continue
+      if (state.isLoopSnoozed(p.id)) continue
       if (state.tasks.some((x) => !x.completed && x.sourceId === p.id)) {
         dismissPromise(p.id)
         continue
@@ -414,6 +449,9 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                       <Pressable style={styles.sendBtn} onPress={() => onSendPromise(p)}>
                         <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
                       </Pressable>
+                      <Pressable onPress={() => onSnooze(p.id)} hitSlop={8}>
+                        <Text style={styles.dismiss}>{t('home.snooze')}</Text>
+                      </Pressable>
                       <Pressable onPress={() => dismissPromise(p.id)} hitSlop={8}>
                         <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
                       </Pressable>
@@ -465,6 +503,9 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                     </Pressable>
                     <Pressable style={styles.sendBtn} onPress={() => onSendMeeting(m)}>
                       <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => onSnooze(m.id)} hitSlop={8}>
+                      <Text style={styles.dismiss}>{t('home.snooze')}</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => {

@@ -17,7 +17,9 @@ import {
   stopVoiceRecording,
   transcribeVoice,
 } from '../lib/voice'
+import { canUseVoice, consumeVoiceCredit, FREE_VOICE_PER_DAY } from '../lib/pro'
 import { useT } from '../lib/useT'
+import { useRouter } from 'expo-router'
 
 type Props = {
   placeholder?: string
@@ -37,6 +39,7 @@ export function AIInput({
   onSend,
 }: Props) {
   const t = useT()
+  const router = useRouter()
   const [text, setText] = useState('')
   const [recording, setRecording] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
@@ -116,6 +119,7 @@ export function AIInput({
           return
         }
 
+        consumeVoiceCredit()
         // Clear voice UI before chat send — onSend can be slow and must not
         // leave the mic button disabled forever on "Transcribing…".
         setText(heard)
@@ -132,6 +136,18 @@ export function AIInput({
         if (abortRef.current === abort) abortRef.current = null
         resetVoiceUi()
       }
+      return
+    }
+
+    if (!canUseVoice()) {
+      Alert.alert(
+        t('pro.voiceLimitTitle'),
+        t.tf('pro.voiceLimitBody', { n: FREE_VOICE_PER_DAY }),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('pro.upgrade'), onPress: () => router.push('/settings') },
+        ],
+      )
       return
     }
 

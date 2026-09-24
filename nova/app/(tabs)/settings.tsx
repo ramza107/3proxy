@@ -28,6 +28,7 @@ import { format } from 'date-fns'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
+import { useIsPro } from '../../lib/pro'
 import { defaultTypicalWeek, type Dow, type WeekAnchor } from '../../types'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -49,6 +50,7 @@ const ANCHOR_PRESET_KEYS = [
 export default function SettingsScreen() {
   const router = useRouter()
   const tr = useT()
+  const isPro = useIsPro()
   const params = useLocalSearchParams<{ gmail?: string }>()
   const settings = useNovaStore((s) => s.settings)
   const email = useNovaStore((s) => s.sessionEmail)
@@ -310,6 +312,23 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{tr('pro.title')}</Text>
+                <Text style={styles.rowSub}>{tr('pro.sub')}</Text>
+              </View>
+              <Switch
+                value={settings.isPro === true}
+                onValueChange={(v) => updateSettings({ isPro: v })}
+                trackColor={{ true: colors.accent, false: colors.bgSoft }}
+              />
+            </View>
+            {!isPro ? (
+              <Text style={styles.rowSub}>{tr('pro.freeLimits')}</Text>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
             <Text style={styles.label}>{tr('settings.yourName')}</Text>
             <TextInput
               value={name}
@@ -394,11 +413,19 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.autoAddPromises')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.autoAddPromisesSub')}</Text>
+                <Text style={styles.rowSub}>
+                  {isPro ? tr('settings.autoAddPromisesSub') : tr('pro.featureLocked')}
+                </Text>
               </View>
               <Switch
-                value={settings.emailPromisesAutoEnabled === true}
-                onValueChange={(v) => updateSettings({ emailPromisesAutoEnabled: v })}
+                value={isPro && settings.emailPromisesAutoEnabled === true}
+                onValueChange={(v) => {
+                  if (!isPro) {
+                    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                    return
+                  }
+                  updateSettings({ emailPromisesAutoEnabled: v })
+                }}
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
@@ -537,11 +564,19 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.weeklyBrief')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.weeklyBriefSub')}</Text>
+                <Text style={styles.rowSub}>
+                  {isPro ? tr('settings.weeklyBriefSub') : tr('pro.featureLocked')}
+                </Text>
               </View>
               <Switch
-                value={settings.weeklyBriefEnabled !== false}
-                onValueChange={(v) => updateSettings({ weeklyBriefEnabled: v })}
+                value={isPro && settings.weeklyBriefEnabled !== false}
+                onValueChange={(v) => {
+                  if (!isPro) {
+                    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                    return
+                  }
+                  updateSettings({ weeklyBriefEnabled: v })
+                }}
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>

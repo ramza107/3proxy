@@ -34,6 +34,7 @@ import {
   refreshTasks,
   sendNovaMessage,
   toggleTaskCompleted,
+  undoLastPlanDay,
   updateTaskFields,
 } from '../../services/ai'
 import type { Task } from '../../types'
@@ -91,7 +92,7 @@ export default function HomeScreen() {
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const emailPromisesAutoEnabled = useNovaStore(
-    (s) => s.settings.emailPromisesAutoEnabled === true,
+    (s) => s.settings.isPro === true && s.settings.emailPromisesAutoEnabled === true,
   )
   const meetingEmailAlertsEnabled = useNovaStore(
     (s) => s.settings.meetingEmailAlertsEnabled !== false,
@@ -124,6 +125,7 @@ export default function HomeScreen() {
 
   const showWeeklyBrief =
     !showMorningBrief &&
+    settings.isPro === true &&
     (forceWeeklyBrief ||
       (settings.weeklyBriefEnabled !== false &&
         isMonday(day) &&
@@ -169,7 +171,17 @@ export default function HomeScreen() {
       const res = await organizeMyDay({ includeUndated: true, skipTaskIds })
       if (showMorningBrief) dismissMorningBrief()
       setPlanOpen(false)
-      Alert.alert('Smart day', res.reply)
+      Alert.alert('Smart day', res.reply, [
+        { text: 'OK', style: 'cancel' },
+        {
+          text: t('home.undoPlan'),
+          onPress: () => {
+            void undoLastPlanDay().then((n) => {
+              if (n > 0) Alert.alert(t('home.undoPlan'), t.tf('home.undoPlanDone', { n }))
+            })
+          },
+        },
+      ])
       if (res.calendarCandidates?.length) {
         confirmAddToGoogleCalendar(res.calendarCandidates)
       }

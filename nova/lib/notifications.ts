@@ -330,6 +330,100 @@ export async function syncBillReminders(
   return { scheduled }
 }
 
+const PROMISE_PREFIX = 'wahrly-promise-'
+
+/**
+ * Day-before local push for open promise tasks that have a date.
+ * Bills already have lead-day scheduling via syncBillReminders.
+ */
+export async function syncPromiseDueReminders(
+  tasks: Task[],
+  settings: UserSettings,
+): Promise<{ scheduled: number }> {
+  if (Platform.OS === 'web') return { scheduled: 0 }
+
+  const NotificationsMod = await getNotifications()
+  if (!NotificationsMod) return { scheduled: 0 }
+
+  try {
+    const all = await NotificationsMod.getAllScheduledNotificationsAsync()
+    await Promise.all(
+      all
+        .filter(
+          (n) =>
+            String(n.content.data?.kind || '') === 'promise_due' ||
+            String(n.identifier || '').startsWith(PROMISE_PREFIX),
+        )
+        .map((n) => NotificationsMod.cancelScheduledNotificationAsync(n.identifier)),
+    )
+  } catch {
+    // ignore
+  }
+
+  if (
+    !settings.notificationsEnabled ||
+    settings.promiseRemindDayBefore === false
+  ) {
+    return { scheduled: 0 }
+  }
+
+  const granted = await ensureNotificationPermissions()
+  if (!granted) return { scheduled: 0 }
+
+  const hm = parseHm(settings.billRemindTime || '09:00')
+  if (!hm) return { scheduled: 0 }
+
+  const now = Date.now()
+  let scheduled = 0
+
+  for (const task of tasks) {
+    if (task.completed) continue
+    if (task.sourceKind !== 'promise') continue
+    if (!task.date) continue
+
+    const [y, m, d] = task.date.split('-').map(Number)
+    if (!y || !m || !d) continue
+    const dueStart = new Date(y, m - 1, d, 0, 0, 0, 0)
+    const remindDay = addLocalDays(dueStart, -1)
+    const when = new Date(
+      remindDay.getFullYear(),
+      remindDay.getMonth(),
+      remindDay.getDate(),
+      hm.hour,
+      hm.minute,
+      0,
+      0,
+    )
+    if (when.getTime() <= now + 5000) continue
+
+    const id = `${PROMISE_PREFIX}${task.id}`
+    try {
+      await NotificationsMod.scheduleNotificationAsync({
+        content: {
+          title: 'Wahrly · Promise',
+          body: `Due tomorrow: ${task.title}`,
+          data: {
+            kind: 'promise_due',
+            taskId: task.id,
+            ritualId: id,
+            route: '/tasks',
+          },
+        },
+        trigger: {
+          type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
+          date: when,
+        },
+        identifier: id,
+      })
+      scheduled += 1
+    } catch {
+      // skip
+    }
+  }
+
+  return { scheduled }
+}
+
 /** Immediate local notification for an inbox meeting / report ask. */
 export async function notifyMeetingEmail(params: {
   title?: string

@@ -18,6 +18,7 @@ import {
   getNotifications,
   syncBillReminders,
   syncDailyRitualNotifications,
+  syncPromiseDueReminders,
 } from '../lib/notifications'
 import { isSupabaseConfigured, getSupabase } from '../lib/supabase'
 import { useNovaStore } from '../lib/store'
@@ -115,6 +116,7 @@ export default function RootLayout() {
     if (!hydrated || !sessionUserId || !onboardingComplete) return
     syncDailyRitualNotifications(settings, tasks).catch(() => undefined)
     syncBillReminders(bills, settings).catch(() => undefined)
+    syncPromiseDueReminders(tasks, settings).catch(() => undefined)
     import('../lib/widgetSync')
       .then((m) => m.refreshWidgetSnapshot())
       .catch(() => undefined)
@@ -134,6 +136,7 @@ export default function RootLayout() {
     settings.billRemindLeadDays,
     settings.billRemindCadence,
     settings.billRemindTime,
+    settings.promiseRemindDayBefore,
   ])
 
   // Evening Clear / Morning brief / Bills notification → open ritual or bills
