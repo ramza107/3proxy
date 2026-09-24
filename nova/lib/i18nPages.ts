@@ -237,13 +237,17 @@ export const enPages: Dict = {
   'home.snoozeWeek': '1 week',
   'evening.digestTitle': 'Closed today',
   'pro.title': 'Wahrly Pro',
-  'pro.sub': 'Auto-promises, weekly brief, unlimited voice (demo toggle)',
-  'pro.freeLimits': 'Free: morning brief + 5 voice/day. Auto-promises & weekly brief need Pro.',
+  'pro.sub': 'Auto-promises, weekly brief, higher voice fair-use (demo toggle)',
+  'pro.freeLimits': 'Free: morning brief + 5 voice/day. Pro: auto-promises, weekly brief, 200 voice/day.',
   'pro.featureLocked': 'Pro feature — turn on Wahrly Pro above',
   'pro.upgrade': 'Open Settings',
   'pro.upgradeBody': 'Turn on Wahrly Pro in Settings to unlock this.',
   'pro.voiceLimitTitle': 'Voice limit',
-  'pro.voiceLimitBody': 'Free includes {n} voice notes today. Upgrade to Pro for unlimited.',
+  'pro.voiceLimitBody': 'Daily limit is {n} voice notes. Try again tomorrow or stay under the fair-use cap.',
+  'pro.voiceMaxTitle': 'Recording limit',
+  'pro.voiceMaxBody': 'Stopped at {n}s — keep clips short.',
+  'pro.voiceCooldownTitle': 'Slow down',
+  'pro.voiceCooldownBody': 'Wait {n}s before another voice note.',
 }
 
 export const ruPages: Dict = {
@@ -465,13 +469,17 @@ export const ruPages: Dict = {
   'home.snoozeWeek': 'Неделя',
   'evening.digestTitle': 'Закрыто сегодня',
   'pro.title': 'Wahrly Pro',
-  'pro.sub': 'Авто-обещания, недельный обзор, голос без лимита (демо-переключатель)',
-  'pro.freeLimits': 'Free: утренний бриф + 5 голос/день. Авто-обещания и неделя — Pro.',
+  'pro.sub': 'Авто-обещания, недельный обзор, больший лимит голоса (демо)',
+  'pro.freeLimits': 'Free: утро + 5 голос/день. Pro: авто-обещания, неделя, 200 голос/день.',
   'pro.featureLocked': 'Функция Pro — включите Wahrly Pro выше',
   'pro.upgrade': 'В настройки',
   'pro.upgradeBody': 'Включите Wahrly Pro в Настройках.',
   'pro.voiceLimitTitle': 'Лимит голоса',
-  'pro.voiceLimitBody': 'На Free сегодня {n} голосовых. Pro — без лимита.',
+  'pro.voiceLimitBody': 'Дневной лимит — {n} голосовых. Завтра снова или держитесь fair use.',
+  'pro.voiceMaxTitle': 'Лимит записи',
+  'pro.voiceMaxBody': 'Остановили на {n}с — короче лучше.',
+  'pro.voiceCooldownTitle': 'Подождите',
+  'pro.voiceCooldownBody': 'Ещё {n}с до следующей голосовой.',
 }
 
 export const ukPages: Dict = {
