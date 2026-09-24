@@ -1,12 +1,21 @@
 /** Gmail send — API only. Never opens the iOS Share sheet. */
 
-import { Alert } from 'react-native'
 import { sendEmailReply } from './emailApi'
 import { copyText } from './clipboard'
+import { confirmChoices, confirmUser, notifyUser } from './notify'
 
 export async function copyDraftOnly(text: string) {
   await copyText(text)
-  Alert.alert('Copied', 'Paste into Gmail when you reply.')
+  notifyUser('Copied', 'Paste into Gmail when you reply.')
+}
+
+/** Demo / disconnected: copy draft instead of calling Gmail. */
+export async function copyDraftAsDemo(text: string) {
+  await copyText(text)
+  notifyUser(
+    'Draft copied',
+    'Demo mode — paste into Gmail yourself. Connect Google in Settings to send from Wahrly.',
+  )
 }
 
 /** Send via Gmail API. On failure offer clipboard copy (no Share sheet). */
@@ -28,33 +37,27 @@ export async function sendGmailOnly(params: {
       body: params.body,
       threadId: params.threadId,
     })
-    Alert.alert('Sent', `Reply emailed to ${params.to}.`)
+    notifyUser('Sent', `Reply emailed to ${params.to}.`)
     return 'sent'
   } catch (sendErr) {
     const message =
       sendErr instanceof Error ? sendErr.message : 'Could not send from Wahrly.'
-    return await new Promise((resolve) => {
-      Alert.alert('Couldn’t send', `${message}\n\nCopy the reply text instead?`, [
-        { text: 'Cancel', style: 'cancel', onPress: () => resolve('cancelled') },
-        {
-          text: 'Copy',
-          onPress: () => {
-            void copyDraftOnly(params.body)
-              .then(() => resolve('copied'))
-              .catch(() => resolve('cancelled'))
-          },
-        },
-      ])
-    })
+    const choice = await confirmChoices('Couldn’t send', `${message}\n\nCopy the reply text instead?`, [
+      { label: 'Cancel', style: 'cancel' },
+      { label: 'Copy', style: 'default' },
+    ])
+    if (choice !== 'Copy') return 'cancelled'
+    try {
+      await copyDraftOnly(params.body)
+      return 'copied'
+    } catch {
+      return 'cancelled'
+    }
   }
 }
 
-export function confirmSendReply(params: {
+export async function confirmSendReply(params: {
   to: string
-  onConfirm: () => void
-}) {
-  Alert.alert('Send with Gmail?', `Email ${params.to} from your connected Google account?`, [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Send', style: 'default', onPress: params.onConfirm },
-  ])
+}): Promise<boolean> {
+  return confirmUser('Send with Gmail?', `Email ${params.to} from your connected Google account?`)
 }
