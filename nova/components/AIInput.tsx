@@ -9,17 +9,25 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { useRouter } from 'expo-router'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import {
   cancelVoiceRecording,
   requestMicPermission,
+  setVoiceMaxDurationHandler,
   startVoiceRecording,
   stopVoiceRecording,
   transcribeVoice,
 } from '../lib/voice'
-import { canUseVoice, consumeVoiceCredit, FREE_VOICE_PER_DAY } from '../lib/pro'
+import {
+  canUseVoice,
+  consumeVoiceCredit,
+  voiceDailyLimit,
+  VOICE_COOLDOWN_MS,
+  MAX_VOICE_SECONDS,
+} from '../lib/pro'
+import { useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
-import { useRouter } from 'expo-router'
 
 type Props = {
   placeholder?: string
@@ -40,14 +48,19 @@ export function AIInput({
 }: Props) {
   const t = useT()
   const router = useRouter()
+  const userId = useNovaStore((s) => s.sessionUserId)
   const [text, setText] = useState('')
   const [recording, setRecording] = useState(false)
   const [transcribing, setTranscribing] = useState(false)
   const busy = useRef(false)
   const abortRef = useRef<AbortController | null>(null)
+  const lastVoiceAt = useRef(0)
+  const recordingRef = useRef(false)
+  const finishRef = useRef<(fromAutoStop?: boolean) => Promise<void>>(async () => undefined)
 
   const resetVoiceUi = () => {
     setRecording(false)
+    recordingRef.current = false
     setTranscribing(false)
     busy.current = false
   }
@@ -68,6 +81,64 @@ export function AIInput({
     return () => clearTimeout(timer)
   }, [transcribing])
 
+  const finishRecordingAndSend = async (fromAutoStop = false) => {
+    if (busy.current && !fromAutoStop) return
+    busy.current = true
+    setRecording(false)
+    recordingRef.current = false
+    setTranscribing(true)
+    const abort = new AbortController()
+    abortRef.current = abort
+    try {
+      const file = await stopVoiceRecording()
+      if (abort.signal.aborted) return
+
+      const lang =
+        typeof Intl !== 'undefined' &&
+        Intl.DateTimeFormat().resolvedOptions().locale?.toLowerCase().startsWith('ru')
+          ? 'ru'
+          : undefined
+      const { text: heard } = await transcribeVoice(file, {
+        language: lang,
+        signal: abort.signal,
+        userId,
+      })
+      if (abort.signal.aborted) return
+
+      if (!heard.trim()) {
+        Alert.alert('Voice', 'Could not hear anything — try again.')
+        return
+      }
+
+      consumeVoiceCredit()
+      lastVoiceAt.current = Date.now()
+      setText(heard)
+      resetVoiceUi()
+      abortRef.current = null
+      await onSend(heard.trim())
+    } catch (e) {
+      if (abort.signal.aborted) return
+      await cancelVoiceRecording().catch(() => undefined)
+      const message =
+        e instanceof Error ? e.message : 'Transcription failed. Check the AI server / API key.'
+      Alert.alert('Voice', message)
+    } finally {
+      if (abortRef.current === abort) abortRef.current = null
+      resetVoiceUi()
+    }
+  }
+
+  finishRef.current = finishRecordingAndSend
+
+  useEffect(() => {
+    setVoiceMaxDurationHandler(() => {
+      if (!recordingRef.current) return
+      Alert.alert(t('pro.voiceMaxTitle'), t.tf('pro.voiceMaxBody', { n: MAX_VOICE_SECONDS }))
+      void finishRef.current(true)
+    })
+    return () => setVoiceMaxDurationHandler(null)
+  }, [t])
+
   const submit = async (value?: string) => {
     const next = (value ?? text).trim()
     if (!next || loading || transcribing) return
@@ -85,7 +156,6 @@ export function AIInput({
   const onMic = async () => {
     if (loading) return
 
-    // Tap again while stuck on "Transcribing…" cancels instead of no-op.
     if (transcribing) {
       await cancelActiveVoice()
       return
@@ -94,59 +164,24 @@ export function AIInput({
     if (busy.current) return
 
     if (recording) {
-      busy.current = true
-      setRecording(false)
-      setTranscribing(true)
-      const abort = new AbortController()
-      abortRef.current = abort
-      try {
-        const file = await stopVoiceRecording()
-        if (abort.signal.aborted) return
-
-        const lang =
-          typeof Intl !== 'undefined' &&
-          Intl.DateTimeFormat().resolvedOptions().locale?.toLowerCase().startsWith('ru')
-            ? 'ru'
-            : undefined
-        const { text: heard } = await transcribeVoice(file, {
-          language: lang,
-          signal: abort.signal,
-        })
-        if (abort.signal.aborted) return
-
-        if (!heard.trim()) {
-          Alert.alert('Voice', 'Could not hear anything — try again.')
-          return
-        }
-
-        consumeVoiceCredit()
-        // Clear voice UI before chat send — onSend can be slow and must not
-        // leave the mic button disabled forever on "Transcribing…".
-        setText(heard)
-        resetVoiceUi()
-        abortRef.current = null
-        await onSend(heard.trim())
-      } catch (e) {
-        if (abort.signal.aborted) return
-        await cancelVoiceRecording().catch(() => undefined)
-        const message =
-          e instanceof Error ? e.message : 'Transcription failed. Check the AI server / API key.'
-        Alert.alert('Voice', message)
-      } finally {
-        if (abortRef.current === abort) abortRef.current = null
-        resetVoiceUi()
-      }
+      await finishRecordingAndSend(false)
       return
     }
 
     if (!canUseVoice()) {
+      const n = voiceDailyLimit()
+      Alert.alert(t('pro.voiceLimitTitle'), t.tf('pro.voiceLimitBody', { n }), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('pro.upgrade'), onPress: () => router.push('/settings') },
+      ])
+      return
+    }
+
+    const since = Date.now() - lastVoiceAt.current
+    if (lastVoiceAt.current && since < VOICE_COOLDOWN_MS) {
       Alert.alert(
-        t('pro.voiceLimitTitle'),
-        t.tf('pro.voiceLimitBody', { n: FREE_VOICE_PER_DAY }),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('pro.upgrade'), onPress: () => router.push('/settings') },
-        ],
+        t('pro.voiceCooldownTitle'),
+        t.tf('pro.voiceCooldownBody', { n: Math.ceil((VOICE_COOLDOWN_MS - since) / 1000) }),
       )
       return
     }
@@ -164,6 +199,7 @@ export function AIInput({
         return
       }
       await startVoiceRecording()
+      recordingRef.current = true
       setRecording(true)
     } catch (e) {
       await cancelVoiceRecording().catch(() => undefined)
