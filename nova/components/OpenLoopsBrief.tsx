@@ -13,7 +13,8 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
 import { draftForMeeting, draftForPromise } from '../lib/draftReply'
-import { confirmSendReply, copyDraftOnly, sendGmailOnly } from '../lib/sendReply'
+import { confirmSendReply, copyDraftAsDemo, copyDraftOnly, sendGmailOnly } from '../lib/sendReply'
+import { notifyUser } from '../lib/notify'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
@@ -285,17 +286,27 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
 
   const onCopyPromise = async (p: EmailPromise) => {
     try {
-      await copyDraftOnly(draftForPromise(p))
+      const body = draftForPromise(p)
+      if (demo || !connected) {
+        await copyDraftAsDemo(body)
+      } else {
+        await copyDraftOnly(body)
+      }
     } catch (e) {
-      Alert.alert('Copy', e instanceof Error ? e.message : 'Could not copy')
+      notifyUser('Copy', e instanceof Error ? e.message : 'Could not copy')
     }
   }
 
   const onCopyMeeting = async (m: MeetingAlert) => {
     try {
-      await copyDraftOnly(draftForMeeting(m))
+      const body = draftForMeeting(m)
+      if (demo || !connected) {
+        await copyDraftAsDemo(body)
+      } else {
+        await copyDraftOnly(body)
+      }
     } catch (e) {
-      Alert.alert('Copy', e instanceof Error ? e.message : 'Could not copy')
+      notifyUser('Copy', e instanceof Error ? e.message : 'Could not copy')
     }
   }
 
@@ -311,51 +322,51 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
   }
 
   const onSendPromise = (p: EmailPromise) => {
-    if (!userId || !p.toEmail) {
-      Alert.alert('Send', 'Connect Google in Settings to send from Wahrly.')
+    const body = draftForPromise(p)
+    if (demo || !connected || !userId || !p.toEmail) {
+      void copyDraftAsDemo(body).catch((e) => {
+        notifyUser('Send', e instanceof Error ? e.message : 'Could not copy draft')
+      })
       return
     }
-    confirmSendReply({
-      to: p.toEmail,
-      onConfirm: () => {
-        void (async () => {
-          const result = await sendGmailOnly({
-            userId,
-            to: p.toEmail,
-            subject: p.subject,
-            body: draftForPromise(p),
-            threadId: p.messageId,
-          })
-          if (result !== 'sent') return
-          completeLinkedTasks(p.id)
-          dismissPromise(p.id)
-        })()
-      },
-    })
+    void (async () => {
+      const ok = await confirmSendReply({ to: p.toEmail })
+      if (!ok) return
+      const result = await sendGmailOnly({
+        userId,
+        to: p.toEmail,
+        subject: p.subject,
+        body,
+        threadId: p.messageId,
+      })
+      if (result !== 'sent') return
+      completeLinkedTasks(p.id)
+      dismissPromise(p.id)
+    })()
   }
 
   const onSendMeeting = (m: MeetingAlert) => {
-    if (!userId || !m.fromEmail) {
-      Alert.alert('Send', 'Connect Google in Settings to send from Wahrly.')
+    const body = draftForMeeting(m)
+    if (demo || !connected || !userId || !m.fromEmail) {
+      void copyDraftAsDemo(body).catch((e) => {
+        notifyUser('Send', e instanceof Error ? e.message : 'Could not copy draft')
+      })
       return
     }
-    confirmSendReply({
-      to: m.fromEmail,
-      onConfirm: () => {
-        void (async () => {
-          const result = await sendGmailOnly({
-            userId,
-            to: m.fromEmail,
-            subject: m.subject,
-            body: draftForMeeting(m),
-            threadId: m.messageId,
-          })
-          if (result !== 'sent') return
-          completeLinkedTasks(m.id)
-          dismissMeeting(`dismiss:${m.id}`)
-        })()
-      },
-    })
+    void (async () => {
+      const ok = await confirmSendReply({ to: m.fromEmail })
+      if (!ok) return
+      const result = await sendGmailOnly({
+        userId,
+        to: m.fromEmail,
+        subject: m.subject,
+        body,
+        threadId: m.messageId,
+      })
+      if (result !== 'sent') return
+      completeLinkedTasks(m.id)
+      dismissMeeting(`dismiss:${m.id}`)
+    })()
   }
 
   const onSendTaskLoop = (task: Task) => {
