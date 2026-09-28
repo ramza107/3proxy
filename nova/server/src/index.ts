@@ -48,6 +48,7 @@ import {
   checkVoiceRateLimit,
   voiceUploadLimits,
 } from './voiceGuard.js'
+import { buildYesterdayNews, NEWS_INTERESTS } from './news/yesterday.js'
 
 dotenv.config({ path: new URL('../../.env', import.meta.url).pathname })
 dotenv.config()
@@ -235,6 +236,34 @@ app.get('/health', (_req, res) => {
     openai: Boolean(openaiKey && !openaiKey.includes('your-openai')),
     gmail: gmailConfigured(),
   })
+})
+
+/** Yesterday’s headlines for selected interest filters (RSS, no API key). */
+app.get('/api/news/yesterday', async (req, res) => {
+  try {
+    const interestsRaw = String(req.query.interests || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const digest = await buildYesterdayNews({
+      interests: interestsRaw,
+      timeZone: String(req.query.timezone || req.query.tz || 'UTC'),
+      language: String(req.query.lang || req.query.language || 'en'),
+      demo: String(req.query.demo || '') === '1' || String(req.query.demo || '') === 'true',
+      refresh: String(req.query.refresh || '') === '1',
+    })
+    return res.json(digest)
+  } catch (error) {
+    console.error('news/yesterday', error)
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'news failed',
+      interests: NEWS_INTERESTS,
+    })
+  }
+})
+
+app.get('/api/news/interests', (_req, res) => {
+  res.json({ interests: NEWS_INTERESTS })
 })
 
 app.get('/api/email/status', async (req, res) => {

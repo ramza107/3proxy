@@ -3,7 +3,7 @@ import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { Bill, ChatMessage, Priority, Reminder, Task, TaskRecurrence, UserSettings } from '../types'
-import { defaultTypicalWeek } from '../types'
+import { defaultNewsInterests, defaultTypicalWeek, normalizeNewsInterests } from '../types'
 import { deviceLanguageFallback, isAppLanguage } from './i18n'
 import { localISODate, localISOMonth } from './localDate'
 
@@ -125,6 +125,7 @@ const defaultSettings: UserSettings = {
   workdayStart: '09:00',
   workdayEnd: '18:00',
   typicalWeek: defaultTypicalWeek(),
+  newsInterests: defaultNewsInterests(),
   isPro: false,
   voiceUsedDate: null,
   voiceUsedCount: 0,
@@ -358,6 +359,7 @@ export const useNovaStore = create<NovaState>()(
               ? state.settings.typicalWeek.anchors
               : [],
           }
+          state.settings.newsInterests = normalizeNewsInterests(state.settings.newsInterests)
           state.bills = Array.isArray(state.bills) ? state.bills : []
           state.dismissedPromiseIds = Array.isArray(state.dismissedPromiseIds)
             ? state.dismissedPromiseIds

@@ -67,6 +67,13 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="news"
+          options={{
+            title: t(language, 'tabs.news'),
+            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
           name="bills"
           options={{
             title: t(language, 'tabs.bills'),
