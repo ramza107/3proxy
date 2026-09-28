@@ -3,6 +3,8 @@ import { defaultNewsInterests, normalizeNewsInterests } from '../types'
 import { apiUrl } from './api'
 import { deviceTimeZone } from './localDate'
 
+const PER_SECTION = 8
+
 export async function fetchYesterdayNews(params: {
   interests: NewsInterest[]
   language?: string
@@ -27,9 +29,9 @@ export async function fetchYesterdayNews(params: {
       ...data,
       interests: normalizeNewsInterests(data.interests),
       items: Array.isArray(data.items) ? data.items : [],
+      perSection: data.perSection || PER_SECTION,
     }
   } catch {
-    // Offline / server down — local demo so the tab still works.
     return localDemoNews(interests, params.language || 'en', params.timeZone || deviceTimeZone())
   }
 }
@@ -75,28 +77,92 @@ function localDemoNews(
     // keep iso
   }
 
-  const samples: Record<NewsInterest, string[]> = {
-    world: ['Overnight talks reshape the week’s diplomatic calendar'],
-    tech: ['AI tools ship quieter updates after a busy launch cycle'],
-    business: ['Markets digest mixed signals from overnight futures'],
-    science: ['Researchers share a clearer picture of weekend storm paths'],
-    sports: ['Late scores flip the table before today’s fixtures'],
-    culture: ['Festival premieres draw early reviews overnight'],
-    health: ['Clinics report steadier appointment demand after the weekend'],
+  const samples: Record<NewsInterest, { title: string; source: string }[]> = {
+    world: [
+      { title: 'UN Security Council debates overnight ceasefire proposal', source: 'Reuters' },
+      { title: 'Pacific storm forces evacuations across island capitals', source: 'AP' },
+      { title: 'European leaders convene emergency energy summit', source: 'BBC' },
+      { title: 'Border talks resume after week of diplomatic silence', source: 'The Guardian' },
+      { title: 'Aid agencies report rising needs after weekend flooding', source: 'Al Jazeera' },
+      { title: 'Global flight delays ease after overnight ATC outage', source: 'CNN' },
+      { title: 'Election observers arrive ahead of regional runoff', source: 'NPR' },
+      { title: 'Maritime corridor reopens under new escort rules', source: 'Reuters' },
+    ],
+    tech: [
+      { title: 'Chipmakers unveil next AI accelerator roadmaps', source: 'Reuters' },
+      { title: 'Major cloud outage traced to cascading DNS failure', source: 'AP' },
+      { title: 'Regulators open inquiry into app-store billing rules', source: 'BBC' },
+      { title: 'Open-source model release redraws enterprise AI race', source: 'The Guardian' },
+      { title: 'Smartphone makers cut midrange prices after weak quarter', source: 'Bloomberg' },
+      { title: 'Cyber agencies warn of new ransomware campaign', source: 'NPR' },
+      { title: 'Satellite broadband expands to remote research stations', source: 'NYT' },
+      { title: 'Browser makers tighten third-party cookie defaults', source: 'CNN' },
+    ],
+    business: [
+      { title: 'Global markets mixed as oil slips and yields steady', source: 'Reuters' },
+      { title: 'Central banks signal patience on further rate cuts', source: 'FT' },
+      { title: 'Retail sales beat forecasts in overnight data dump', source: 'Bloomberg' },
+      { title: 'Shipping rates climb after Red Sea route disruptions', source: 'AP' },
+      { title: 'Auto makers revise EV timelines amid softer demand', source: 'BBC' },
+      { title: 'Bank stress tests show stronger capital buffers', source: 'WSJ' },
+      { title: 'IPO window reopens with two mid-cap tech listings', source: 'NYT' },
+      { title: 'Currency markets watch dollar after jobs revision', source: 'Reuters' },
+    ],
+    science: [
+      { title: 'Researchers map deep-ocean currents with new float array', source: 'Nature' },
+      { title: 'Mars rover finds mineral clues of ancient groundwater', source: 'BBC' },
+      { title: 'Climate study revises wildfire smoke health estimates', source: 'AP' },
+      { title: 'Gene therapy trial reports durable rare-disease gains', source: 'NYT' },
+      { title: 'Astronomers spot brightest early-universe galaxy yet', source: 'The Guardian' },
+      { title: 'Lab-grown meat clears another regulatory milestone', source: 'Reuters' },
+      { title: 'Earthquake early-warning network expands coverage', source: 'NPR' },
+      { title: 'Scientists sequence ancient DNA from alpine ice core', source: 'Science' },
+    ],
+    sports: [
+      { title: 'Underdogs force replay after late equalizer', source: 'BBC Sport' },
+      { title: 'Grand slam final set after overnight semifinal thrillers', source: 'AP' },
+      { title: 'Transfer window closes with record midfield deal', source: 'Reuters' },
+      { title: 'Olympic qualifiers reshuffled after weather delay', source: 'The Guardian' },
+      { title: 'NBA preseason opener draws arena attendance record', source: 'ESPN' },
+      { title: 'Formula 1 stewards clear contested overnight penalty', source: 'BBC' },
+      { title: 'World Cup warm-up cancelled due to travel chaos', source: 'AP' },
+      { title: 'Marathon course record falls in cool morning conditions', source: 'Reuters' },
+    ],
+    culture: [
+      { title: 'Venice lineup highlights new wave of debut directors', source: 'The Guardian' },
+      { title: 'Streaming drama posts record first-week global audience', source: 'BBC' },
+      { title: 'Museum recovers looted bronze after decades abroad', source: 'NYT' },
+      { title: 'Booker longlist mixes debut novelists and veterans', source: 'AP' },
+      { title: 'Broadway revival opens to standing ovations', source: 'Reuters' },
+      { title: 'Jazz festival expands free outdoor stages', source: 'NPR' },
+      { title: 'Photo archive of the 1970s goes on public display', source: 'The Guardian' },
+      { title: 'Classical orchestra announces world premiere season', source: 'BBC' },
+    ],
+    health: [
+      { title: 'WHO updates guidance on seasonal respiratory vaccines', source: 'Reuters' },
+      { title: 'Study links desk work to sleep disruption patterns', source: 'AP' },
+      { title: 'Hospitals report steadier ER demand after holiday spike', source: 'BBC' },
+      { title: 'New oral antiviral clears mid-stage trial goals', source: 'NYT' },
+      { title: 'Public clinics expand same-week primary care slots', source: 'NPR' },
+      { title: 'Nutrition agencies revise ultraprocessed food advice', source: 'The Guardian' },
+      { title: 'Mental health hotlines add overnight multilingual lines', source: 'AP' },
+      { title: 'Wearable makers publish heart-rhythm accuracy study', source: 'Reuters' },
+    ],
   }
 
   const list = interests.length ? interests : defaultNewsInterests()
-  const items = list.flatMap((interest, i) =>
-    (samples[interest] || []).map((title, j) => ({
+  const items = list.flatMap((interest) =>
+    (samples[interest] || []).slice(0, PER_SECTION).map((row, j) => ({
       id: `local_${interest}_${j}`,
-      title,
-      url: `https://news.google.com/search?q=${encodeURIComponent(title)}`,
-      source: 'Demo',
+      title: row.title,
+      url: `https://news.google.com/search?q=${encodeURIComponent(row.title)}`,
+      source: row.source,
       interest,
-      publishedAt: `${day}T1${i}:30:00.000Z`,
+      publishedAt: `${day}T${String(10 + (j % 8)).padStart(2, '0')}:15:00.000Z`,
     })),
   )
 
+  const parts = list.map((k) => `${k} ${items.filter((i) => i.interest === k).length}`)
   return {
     demo: true,
     day,
@@ -104,7 +170,8 @@ function localDemoNews(
     timeZone,
     interests: list,
     items,
-    summary: `${items.length} demo headlines · ${dayLabel}`,
+    perSection: PER_SECTION,
+    summary: `${items.length} top stories · ${dayLabel} · ${parts.join(' · ')}`,
     generatedAt: new Date().toISOString(),
   }
 }
