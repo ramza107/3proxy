@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
 } from 'react-native'
 import { useFocusEffect } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { HomeSection } from '../../components/HomeSection'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { fetchYesterdayNews } from '../../lib/newsApi'
@@ -31,6 +33,14 @@ const INTEREST_KEYS: Record<NewsInterest, string> = {
   sports: 'news.interestSports',
   culture: 'news.interestCulture',
   health: 'news.interestHealth',
+}
+
+function openExternal(url: string) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer')
+    return
+  }
+  Linking.openURL(url).catch(() => undefined)
 }
 
 export default function NewsScreen() {
@@ -63,7 +73,7 @@ export default function NewsScreen() {
         setLoading(false)
       }
     },
-    // t() identity changes every render — depend on language + stable keys only
+    // t() identity changes every render — depend on language only
     [interests, t.language],
   )
 
@@ -96,92 +106,85 @@ export default function NewsScreen() {
     updateSettings({ newsInterests: normalizeNewsInterests(next) })
   }
 
-  const openItem = (url: string) => {
-    Linking.openURL(url).catch(() => undefined)
-  }
-
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{t('news.kicker')}</Text>
-          <Text style={styles.title}>{t('news.title')}</Text>
-          <Text style={styles.sub}>{t('news.sub')}</Text>
-        </View>
-
-        <Text style={styles.label}>{t('news.interests')}</Text>
-        <View style={styles.chips}>
-          {NEWS_INTERESTS.map((key) => {
-            const on = interests.includes(key)
-            return (
-              <Pressable
-                key={key}
-                accessibilityRole="button"
-                style={[styles.chip, on && styles.chipOn]}
-                onPress={() => toggleInterest(key)}
-              >
-                <Text style={[styles.chipText, on && styles.chipTextOn]}>
-                  {t(INTEREST_KEYS[key])}
-                </Text>
-              </Pressable>
-            )
-          })}
-        </View>
-
-        <View style={styles.metaRow}>
-          <Text style={styles.meta} numberOfLines={2}>
-            {digest
-              ? digest.summary
-              : loading
-                ? t('news.loading')
-                : t('news.pickInterests')}
-          </Text>
-          <Pressable accessibilityRole="button" onPress={() => load(true)} hitSlop={8}>
-            <Text style={styles.refresh}>{loading ? '…' : t('home.refresh')}</Text>
-          </Pressable>
-        </View>
-
         <ScrollView
-          contentContainerStyle={styles.list}
+          contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.header}>
+            <Text style={styles.kicker}>{t('news.kicker')}</Text>
+            <Text style={styles.title}>{t('news.title')}</Text>
+            <Text style={styles.sub}>{t('news.sub')}</Text>
+          </View>
+
+          <HomeSection
+            title={t('news.interests')}
+            meta={t('news.interestsMeta')}
+            action={
+              <Pressable accessibilityRole="button" onPress={() => load(true)} hitSlop={8}>
+                <Text style={styles.refresh}>{loading ? '…' : t('home.refresh')}</Text>
+              </Pressable>
+            }
+          >
+            <View style={styles.chips}>
+              {NEWS_INTERESTS.map((key) => {
+                const on = interests.includes(key)
+                return (
+                  <Pressable
+                    key={key}
+                    accessibilityRole="button"
+                    style={[styles.chip, on && styles.chipOn]}
+                    onPress={() => toggleInterest(key)}
+                  >
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>
+                      {t(INTEREST_KEYS[key])}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </HomeSection>
+
           {loading && !digest ? (
-            <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} />
+            <ActivityIndicator color={colors.accent} style={{ marginTop: 12 }} />
           ) : error ? (
             <Text style={styles.error}>{error}</Text>
           ) : !sections.length ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{t('news.emptyTitle')}</Text>
+            <HomeSection title={t('news.emptyTitle')}>
               <Text style={styles.emptyText}>{t('news.emptyText')}</Text>
-            </View>
+            </HomeSection>
           ) : (
             sections.map((section) => (
-              <View key={section.interest} style={styles.section}>
-                <View style={styles.sectionHead}>
-                  <Text style={styles.sectionTitle}>{t(INTEREST_KEYS[section.interest])}</Text>
-                  <Text style={styles.sectionCount}>
-                    {t.tf('news.sectionCount', { n: section.items.length })}
-                  </Text>
-                </View>
+              <HomeSection
+                key={section.interest}
+                title={t(INTEREST_KEYS[section.interest])}
+                meta={t.tf('news.sectionCount', { n: section.items.length })}
+              >
                 {section.items.map((item, index) => (
                   <Pressable
                     key={`${item.id}_${index}`}
                     accessibilityRole="link"
-                    style={styles.item}
-                    onPress={() => openItem(item.url)}
+                    style={[styles.row, index === 0 && styles.rowFirst]}
+                    onPress={() => openExternal(item.url)}
                   >
-                    <View style={styles.itemTop}>
-                      <Text style={styles.itemIndex}>{index + 1}</Text>
-                      <Text style={styles.itemSource} numberOfLines={1}>
+                    <View style={styles.rowText}>
+                      <Text style={styles.rowSource} numberOfLines={1}>
                         {item.source}
                       </Text>
+                      <Text style={styles.rowTitle} numberOfLines={3}>
+                        {item.title}
+                      </Text>
                     </View>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    <Text style={styles.rowOpen}>{t('news.open')}</Text>
                   </Pressable>
                 ))}
-              </View>
+              </HomeSection>
             ))
           )}
+
           {digest?.demo ? <Text style={styles.demoNote}>{t('news.demoNote')}</Text> : null}
         </ScrollView>
       </SafeAreaView>
@@ -190,13 +193,16 @@ export default function NewsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-    gap: 6,
+  safe: { flex: 1, backgroundColor: 'transparent' },
+  content: {
+    padding: spacing.lg,
+    gap: spacing.md,
+    paddingBottom: 140,
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 520 : undefined,
+    alignSelf: 'center',
   },
+  header: { gap: 6, marginBottom: 4 },
   kicker: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
@@ -217,27 +223,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  label: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 0.8,
-    paddingHorizontal: spacing.lg,
-    marginBottom: 8,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     backgroundColor: colors.bgSoft,
     borderRadius: radii.full,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
   chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
@@ -247,62 +239,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
   },
   meta: { flex: 1, color: colors.textDim, fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
   refresh: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
-  list: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: 120,
-    gap: spacing.lg,
-  },
-  section: { gap: 8 },
-  sectionHead: {
+  row: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     gap: 12,
-    marginBottom: 2,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
   },
-  sectionTitle: {
-    color: colors.text,
-    fontFamily: fonts.brand,
-    fontSize: 22,
-    letterSpacing: -0.3,
+  rowFirst: {
+    borderTopWidth: 0,
+    paddingTop: 2,
   },
-  sectionCount: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  item: {
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 6,
-  },
-  itemTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  itemIndex: {
-    color: colors.accentStrong,
+  rowText: { flex: 1, gap: 3 },
+  rowSource: {
+    color: colors.textDim,
     fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    minWidth: 16,
+    fontSize: 11,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  itemSource: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, flexShrink: 1 },
-  itemTitle: {
+  rowTitle: {
     color: colors.text,
     fontFamily: fonts.bodyMedium,
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 21,
   },
-  empty: { paddingVertical: spacing.xl, gap: 8 },
-  emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 17 },
+  rowOpen: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    marginTop: 2,
+  },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  error: { color: colors.danger, fontFamily: fonts.body, marginTop: 12 },
+  error: { color: colors.danger, fontFamily: fonts.body, marginTop: 4 },
   demoNote: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 12,
+    textAlign: 'center',
     marginTop: 4,
-    marginBottom: 16,
   },
 })
