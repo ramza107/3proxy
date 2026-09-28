@@ -459,8 +459,9 @@ export async function listRecentInboxMessages(
   const hours = Math.min(168, Math.max(6, opts?.hours ?? 48))
   const max = Math.min(20, Math.max(5, opts?.max ?? 12))
   const afterSec = Math.floor((Date.now() - hours * 60 * 60 * 1000) / 1000)
+  // Primary-ish only: drop promo/social/updates/forums noise that floods "important asks".
   const q = encodeURIComponent(
-    `in:inbox after:${afterSec} -category:promotions -category:social`,
+    `in:inbox after:${afterSec} -category:promotions -category:social -category:updates -category:forums`,
   )
   const listRes = await gmailFetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, conn.accessToken)
   const list = (await listRes.json()) as { messages?: { id: string }[] }
