@@ -197,6 +197,8 @@ export type UserSettings = {
   workdayEnd: string
   /** Typical week: which days are work, weekend hours, recurring anchors */
   typicalWeek: TypicalWeek
+  /** Interest filters for the News tab (yesterday digest) */
+  newsInterests: NewsInterest[]
   /**
    * Wahrly Pro (demo toggle until StoreKit / RevenueCat).
    * Unlocks auto-promises, weekly brief, unlimited voice.
@@ -239,6 +241,48 @@ export function defaultTypicalWeek(): TypicalWeek {
     anchors: [],
     blurb: '',
   }
+}
+
+export const NEWS_INTERESTS = [
+  'world',
+  'tech',
+  'business',
+  'science',
+  'sports',
+  'culture',
+  'health',
+] as const
+
+export type NewsInterest = (typeof NEWS_INTERESTS)[number]
+
+export function defaultNewsInterests(): NewsInterest[] {
+  return ['world', 'tech', 'business']
+}
+
+export function normalizeNewsInterests(raw?: string[] | null): NewsInterest[] {
+  const allowed = new Set<string>(NEWS_INTERESTS)
+  const picked = (raw || []).filter((x): x is NewsInterest => allowed.has(x))
+  return picked.length ? [...new Set(picked)] : defaultNewsInterests()
+}
+
+export type NewsItem = {
+  id: string
+  title: string
+  url: string
+  source: string
+  interest: NewsInterest
+  publishedAt: string
+}
+
+export type YesterdayNewsDigest = {
+  demo: boolean
+  day: string
+  dayLabel: string
+  timeZone: string
+  interests: NewsInterest[]
+  items: NewsItem[]
+  summary: string
+  generatedAt: string
 }
 
 export type EmailDigestSender = {
