@@ -105,7 +105,78 @@ function guessDateTime(
   return { date, time }
 }
 
-/** Local heuristic — EN + RU meeting / report / call requests. */
+/** Strip quoted reply / signature noise so footer keywords don't trigger. */
+export function actionableText(msg: Pick<InboxMessagePreview, 'subject' | 'snippet' | 'bodyText'>) {
+  let body = msg.bodyText || ''
+  body = body.split(
+    /\n(?:On .+ wrote:|From:\s|Sent:\s|-----Original Message-----|________________________________|Begin forwarded message)/i,
+  )[0]
+  body = body
+    .split('\n')
+    .filter((line) => !/^\s*>/.test(line))
+    .join('\n')
+  // Prefer subject + snippet + short top of body (asks live up front).
+  return clean(`${msg.subject}\n${msg.snippet}\n${body.slice(0, 900)}`, 1400)
+}
+
+/** Automated / newsletter / bot senders — never "important asks". */
+export function isNoiseSender(fromEmail: string, fromName: string, subject: string) {
+  const email = (fromEmail || '').toLowerCase()
+  const name = (fromName || '').toLowerCase()
+  const sub = (subject || '').toLowerCase()
+  const local = email.split('@')[0] || ''
+  const domain = email.split('@')[1] || ''
+
+  if (
+    /noreply|no-reply|no_reply|donotreply|do-not-reply|notifications?|notify|newsletter|mailer-daemon|bounce|automated|updates?|digest|calendar-notification|invitations?@|docs\.google|drive-shares|comments-noreply|github\.com|gitlab\.com|bitbucket|sentry\.io|stripe\.com|paypal\.com|amazon\.|apple\.com|googlealerts|linkedin\.com|facebookmail|twitter\.com|x\.com|medium\.com|substack\.com|beehiiv|mailchimp|sendgrid|intercom|zendesk|jira|atlassian|notion\.so|slack\.com|discord|figma\.com|dropbox|hubspot|salesforce|mandrill|postmark|sparkpost/.test(
+      email,
+    )
+  ) {
+    return true
+  }
+  if (/^(noreply|no-reply|notifications?|newsletter|mailer|digest|updates?|news)/.test(local)) {
+    return true
+  }
+  if (/newsletter|unsubscribe|weekly digest|daily digest|your receipt|order confirmation|shipping update|password reset|verify your|security alert|new login|sign-in attempt/.test(sub)) {
+    return true
+  }
+  if (/newsletter|digest|notifications?/.test(name)) return true
+  // Calendar auto-invites without a personal ask (still shown on Calendar tab).
+  if (/invitation:|updated invitation:|canceled event:|accepted:|declined:/.test(sub)) return true
+  if (domain.endsWith('.google.com') && /calendar|docs|drive/.test(local)) return true
+  return false
+}
+
+/**
+ * Strong ask patterns only — bare "call"/"due"/"teams"/"see you" are NOT enough.
+ * EN + RU. Matched against front-of-message text.
+ */
+const MEET_ASK =
+  /\b(?:(?:can|could|shall)\s+we\s+(?:meet|catch\s+up)|(?:let'?s|lets)\s+(?:meet|catch\s+up|get\s+together)|(?:want|wanna|would\s+love)\s+to\s+meet|meet\s+(?:up|with\s+me|me)|schedule\s+a\s+(?:meeting|call|catch-?up)|book\s+a\s+(?:meeting|call)|free\s+(?:for|to)\s+(?:a\s+)?(?:meeting|call|coffee|lunch|chat)|(?:coffee|lunch|dinner)\s+(?:sometime|this\s+week|tomorrow|today|next)|hop\s+on\s+(?:a\s+)?(?:call|zoom)|jump\s+on\s+(?:a\s+)?(?:call|zoom)|sync\s+(?:up|this\s+week)|put\s+(?:something|time)\s+on\s+(?:the\s+)?calendar)\b|давай\s+(?:встретимся|созвонимся|увидимся)|хочу\s+(?:встретиться|увидеть)|можем\s+(?:встретиться|созвониться)|давайте\s+(?:встретимся|созвонимся)|назнач(?:ить|им)?\s+встреч|когда\s+(?:можешь|удобно)\s+(?:встретиться|созвониться)/i
+
+const REPORT_ASK =
+  /\b(?:(?:please|pls|can\s+you|could\s+you)\s+send\s+(?:me\s+)?(?:the\s+)?(?:report|deck|file|doc|document|numbers|update|summary)|(?:need|needs|want|wants)\s+(?:the\s+|your\s+)?(?:report|deck|numbers|update|summary|deliverable)(?:\s+by)?|(?:send|share)\s+(?:me\s+)?(?:the\s+)?(?:report|deck|file|numbers|update)\s+by|where\s+is\s+(?:the\s+)?(?:report|deck|update)|report\s+(?:by|before|due)|deliverable\s+by)\b|пришли(?:те)?\s+(?:мне\s+)?(?:отчет|отчёт|файл|док|презентац|цифр)|нужен\s+(?:отчет|отчёт|файл|док)|скинь(?:те)?\s+(?:отчет|отчёт|файл|презентац)|где\s+(?:отчет|отчёт)|к\s+завтра\s+(?:нужен|пришли)|дедлайн\s+(?:по\s+)?(?:отчету|отчёту|файлу)/i
+
+const CALL_ASK =
+  /\b(?:(?:can|could)\s+you\s+(?:call|ring)|(?:please|pls)\s+call(?:\s+me)?|(?:give|give\s+me)\s+a\s+(?:call|ring)|(?:let'?s|lets)\s+(?:hop\s+on\s+)?(?:a\s+)?call|call\s+me(?:\s+(?:back|today|tomorrow|tonight|later))?|ring\s+me|phone\s+me|hop\s+on\s+a\s+call)\b|перезвон(?:и|ите)|позвони(?:те)?(?:\s+мне)?|давай\s+созвонимся|можем\s+созвониться|созвонимся\s+(?:сегодня|завтра|вечером|утром)/i
+
+/** Soft noise phrases that look like asks but aren't personal. */
+const SOFT_NOISE =
+  /\b(?:unsubscribe|view\s+in\s+browser|email\s+preferences|privacy\s+policy|terms\s+of\s+service|customer\s+support|call\s+(?:center|us\s+at|our)|toll-?free|phone\s+number|support@|help@|no\s+reply)\b|отписаться|поддержка|горячая\s+линия/i
+
+function classifyIntent(text: string): MeetingAlert['intent'] | null {
+  if (SOFT_NOISE.test(text)) return null
+  const isMeet = MEET_ASK.test(text)
+  const isReport = REPORT_ASK.test(text)
+  const isCall = CALL_ASK.test(text)
+  if (!isMeet && !isReport && !isCall) return null
+  // Prefer the strongest personal ask; meet > report > call.
+  if (isMeet) return 'meet'
+  if (isReport) return 'report'
+  return 'call'
+}
+
+/** Local heuristic — EN + RU. Precision over recall. */
 export function extractMeetingsLocal(
   messages: InboxMessagePreview[],
   today: string,
@@ -113,26 +184,12 @@ export function extractMeetingsLocal(
   const out: MeetingAlert[] = []
   const seen = new Set<string>()
 
-  const meetRe =
-    /\b(?:meet|meeting|catch up|see you|get together|coffee|lunch|dinner|call me|let'?s talk|zoom|teams|facetime|hangouts)\b|увид|встреч|созвон|давай\s+(?:созвоним|встретимся)|хочу\s+увидеть|wanna\s+meet|want to meet|i wanna meet/i
-  const reportRe =
-    /\b(?:report|send me|need the|by tomorrow|due|deadline|please send|can you send)\b|отчет|отчёт|пришли|нужен\s+отчет|к\s+завтра/i
-  const callRe = /\b(?:call|phone|ring)\b|перезвон|позвони|созвон/i
-
   for (const msg of messages) {
-    const blob = `${msg.subject}\n${msg.snippet}\n${msg.bodyText}`.slice(0, 4000)
-    const isMeet = meetRe.test(blob)
-    const isReport = reportRe.test(blob)
-    const isCall = callRe.test(blob)
-    if (!isMeet && !isReport && !isCall) continue
+    if (isNoiseSender(msg.from, msg.fromName, msg.subject)) continue
+    const blob = actionableText(msg)
+    const intent = classifyIntent(blob)
+    if (!intent) continue
 
-    const intent: MeetingAlert['intent'] = isMeet
-      ? 'meet'
-      : isReport
-        ? 'report'
-        : isCall
-          ? 'call'
-          : 'other'
     const who = firstName(msg.from, msg.fromName)
     const { date, time } = guessDateTime(blob, today)
     const whenBits = [date, time].filter(Boolean).join(' ')
@@ -149,12 +206,11 @@ export function extractMeetingsLocal(
       notifyBody = `${who} wrote — wants to talk${whenBits ? ` ${whenBits}` : ''}`
     }
 
-    const id = hashId([msg.id, intent, summary])
     if (seen.has(msg.id)) continue
     seen.add(msg.id)
 
     out.push({
-      id,
+      id: hashId([msg.id, intent, summary]),
       messageId: msg.id,
       fromName: msg.fromName || who,
       fromEmail: msg.from,
@@ -172,7 +228,7 @@ export function extractMeetingsLocal(
             : `Hi ${who},\n\nHappy to talk${whenBits ? ` · ${whenBits}` : ''}.\n\nBest`,
       receivedAt: msg.date,
     })
-    if (out.length >= 8) break
+    if (out.length >= 5) break
   }
   return out
 }
@@ -182,13 +238,14 @@ export async function extractMeetingsWithAI(
   provider: { client: OpenAI; model: string } | null,
   today: string,
 ): Promise<MeetingAlert[]> {
-  const local = extractMeetingsLocal(messages, today)
-  if (!provider || messages.length === 0) return local
+  const filtered = messages.filter((m) => !isNoiseSender(m.from, m.fromName, m.subject))
+  const local = extractMeetingsLocal(filtered, today)
+  if (!provider || filtered.length === 0) return local
 
-  const lines = messages
+  const lines = filtered
     .slice(0, 15)
     .map((m, i) => {
-      const body = (m.bodyText || m.snippet || '').replace(/\s+/g, ' ').slice(0, 450)
+      const body = actionableText(m).replace(/\s+/g, ' ').slice(0, 500)
       return `[${i}] id=${m.id} from=${m.fromName} <${m.from}> subject=${m.subject} at=${m.date}\n${body}`
     })
     .join('\n\n')
@@ -196,15 +253,29 @@ export async function extractMeetingsWithAI(
   try {
     const completion = await provider.client.chat.completions.create({
       model: provider.model,
-      temperature: 0.1,
+      temperature: 0,
       response_format: { type: 'json_object' },
       messages: [
         {
           role: 'system',
-          content: `You scan INCOMING email for actionable asks: meet / call / send a report or deliverable by a time.
-Ignore newsletters, receipts, GitHub bots, marketing.
-Return JSON: { "meetings": [ { "messageId": "...", "intent": "meet"|"report"|"call"|"other", "fromName": "...", "summary": "short", "notifyBody": "push text like: Alex wrote — wants to meet tomorrow 6pm", "suggestedDate": "YYYY-MM-DD or null", "suggestedTime": "HH:MM or null" } ] }
-Max 5. Today is ${today}. EN and RU.`,
+          content: `You find ONLY clear personal ACTIONABLE asks in INCOMING email.
+
+INCLUDE only if the sender personally asks the recipient to:
+- meet / catch up / schedule a meeting (intent=meet)
+- send a report, deck, numbers, or similar deliverable by a time (intent=report)
+- call them back / hop on a call (intent=call)
+
+EXCLUDE aggressively (return empty meetings array if unsure):
+- newsletters, digests, receipts, shipping, invoices, password resets
+- GitHub/Slack/Notion/Jira/Calendar automated mail, product updates
+- FYI threads, "thanks", polite closings ("see you", "call us at 1-800…")
+- mere mention of Zoom/Teams/phone/deadline without a direct ask
+- marketing, job alerts, social notifications
+
+Be PRECISE. Prefer 0 over false positives. Max 4.
+Return JSON: { "meetings": [ { "messageId": "...", "intent": "meet"|"report"|"call", "fromName": "...", "summary": "short", "notifyBody": "Alex wrote — wants to meet tomorrow 6pm", "suggestedDate": "YYYY-MM-DD or null", "suggestedTime": "HH:MM or null", "confidence": "high"|"medium" } ] }
+Only include confidence "high" or "medium". Drop low confidence.
+Today is ${today}. EN and RU.`,
         },
         { role: 'user', content: lines },
       ],
@@ -219,19 +290,22 @@ Max 5. Today is ${today}. EN and RU.`,
         notifyBody?: string
         suggestedDate?: string | null
         suggestedTime?: string | null
+        confidence?: string
       }[]
     }
+    // Successful AI response (even empty) wins — do NOT fall back to noisy local.
     const list = Array.isArray(parsed.meetings) ? parsed.meetings : []
-    if (!list.length) return local
-
-    const byId = new Map(messages.map((m) => [m.id, m]))
+    const byId = new Map(filtered.map((m) => [m.id, m]))
     const aiOut: MeetingAlert[] = []
-    for (const row of list.slice(0, 5)) {
+    for (const row of list.slice(0, 4)) {
+      const conf = String(row.confidence || 'medium').toLowerCase()
+      if (conf === 'low') continue
       const msg = byId.get(String(row.messageId || ''))
       if (!msg || !row.summary || !row.notifyBody) continue
-      const intent = (['meet', 'report', 'call', 'other'].includes(String(row.intent))
-        ? row.intent
-        : 'other') as MeetingAlert['intent']
+      if (isNoiseSender(msg.from, msg.fromName, msg.subject)) continue
+      const intentRaw = String(row.intent || '')
+      if (!['meet', 'report', 'call'].includes(intentRaw)) continue
+      const intent = intentRaw as MeetingAlert['intent']
       const who = row.fromName || firstName(msg.from, msg.fromName)
       aiOut.push({
         id: hashId([msg.id, intent, row.summary]),
@@ -247,7 +321,7 @@ Max 5. Today is ${today}. EN and RU.`,
         receivedAt: msg.date,
       })
     }
-    return aiOut.length ? aiOut : local
+    return aiOut
   } catch {
     return local
   }
