@@ -1,5 +1,7 @@
 /** Yesterday news digest from public RSS (no API key). */
 
+import { createHash } from 'crypto'
+
 export const NEWS_INTERESTS = [
   'world',
   'tech',
@@ -275,7 +277,7 @@ async function loadInterest(
         const ts = Date.parse(raw.pubDate)
         const idSeed = `${interest}|${raw.link}|${raw.title}`
         collected.push({
-          id: `${interest}_${Buffer.from(idSeed).toString('base64url').slice(0, 22)}`,
+          id: `${interest}_${createHash('sha1').update(idSeed).digest('hex').slice(0, 12)}`,
           title: raw.title,
           url: raw.link,
           source: raw.source || sourceFromUrl(raw.link, url.includes('bbc') ? 'BBC' : 'News'),
