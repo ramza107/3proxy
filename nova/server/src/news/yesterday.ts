@@ -1,4 +1,4 @@
-/** Yesterday / overnight top news by interest — public RSS, no API key. */
+/** Top-outlet RSS digest — direct article links only (no Google redirects). */
 
 import { createHash } from 'crypto'
 
@@ -30,125 +30,58 @@ export type YesterdayNewsDigest = {
   timeZone: string
   interests: NewsInterest[]
   items: NewsItem[]
-  /** Target stories per interest section */
   perSection: number
   summary: string
   generatedAt: string
 }
 
-type LocalePack = { hl: string; gl: string; ceid: string }
-
-const LOCALE_BY_LANG: Record<string, LocalePack> = {
-  en: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
-  ru: { hl: 'ru', gl: 'RU', ceid: 'RU:ru' },
-  uk: { hl: 'uk', gl: 'UA', ceid: 'UA:uk' },
-  de: { hl: 'de', gl: 'DE', ceid: 'DE:de' },
-  es: { hl: 'es', gl: 'ES', ceid: 'ES:es' },
-  fr: { hl: 'fr', gl: 'FR', ceid: 'FR:fr' },
-  pt: { hl: 'pt-BR', gl: 'BR', ceid: 'BR:pt-419' },
-  zh: { hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans' },
-  hi: { hl: 'hi', gl: 'IN', ceid: 'IN:hi' },
-  ar: { hl: 'ar', gl: 'AE', ceid: 'AE:ar' },
-}
-
-const GOOGLE_TOPIC: Record<NewsInterest, string> = {
-  world: 'WORLD',
-  tech: 'TECHNOLOGY',
-  business: 'BUSINESS',
-  science: 'SCIENCE',
-  sports: 'SPORTS',
-  culture: 'ENTERTAINMENT',
-  health: 'HEALTH',
-}
-
-/** Premium / wire outlets preferred when ranking. */
-const TOP_SOURCES = [
-  'reuters',
-  'associated press',
-  'ap news',
-  'bbc',
-  'the guardian',
-  'nytimes',
-  'new york times',
-  'washington post',
-  'al jazeera',
-  'cnn',
-  'npr',
-  'bloomberg',
-  'financial times',
-  'ft.com',
-  'the economist',
-  'wsj',
-  'wall street journal',
-  'abc news',
-  'cbs news',
-  'nbc news',
-  'politico',
-  'axios',
-  'time',
-  'nature',
-  'science',
-  'espn',
-  'sky news',
-  'dw',
-  'france 24',
-  'rbc',
-  'lenta',
-  'meduza',
-  'interfax',
-  'kommersant',
-  'tass',
-]
-
-/** Top-tier RSS per interest (fetched in parallel with Google News topic). */
-const PREMIUM_FEEDS: Record<NewsInterest, string[]> = {
+/** Direct article feeds from major outlets — no Google News redirect URLs. */
+const PREMIUM_FEEDS: Record<NewsInterest, { url: string; source: string }[]> = {
   world: [
-    'https://feeds.bbci.co.uk/news/world/rss.xml',
-    'https://www.theguardian.com/world/rss',
-    'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
-    'https://www.aljazeera.com/xml/rss/all.xml',
-    'https://feeds.npr.org/1004/rss.xml',
-    'http://rss.cnn.com/rss/edition_world.rss',
+    { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', source: 'BBC' },
+    { url: 'https://www.theguardian.com/world/rss', source: 'The Guardian' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', source: 'NYT' },
+    { url: 'https://feeds.npr.org/1004/rss.xml', source: 'NPR' },
+    { url: 'https://www.aljazeera.com/xml/rss/all.xml', source: 'Al Jazeera' },
+    { url: 'https://rss.dw.com/rdf/rss-en-world', source: 'DW' },
+    { url: 'https://www.france24.com/en/rss', source: 'France 24' },
+    { url: 'https://feeds.skynews.com/feeds/rss/world.xml', source: 'Sky News' },
   ],
   tech: [
-    'https://feeds.bbci.co.uk/news/technology/rss.xml',
-    'https://www.theguardian.com/technology/rss',
-    'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml',
-    'https://feeds.npr.org/1019/rss.xml',
-    'http://rss.cnn.com/rss/edition_technology.rss',
+    { url: 'https://feeds.bbci.co.uk/news/technology/rss.xml', source: 'BBC' },
+    { url: 'https://www.theguardian.com/technology/rss', source: 'The Guardian' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml', source: 'NYT' },
+    { url: 'https://feeds.npr.org/1019/rss.xml', source: 'NPR' },
   ],
   business: [
-    'https://feeds.bbci.co.uk/news/business/rss.xml',
-    'https://www.theguardian.com/business/rss',
-    'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml',
-    'https://feeds.npr.org/1006/rss.xml',
-    'http://rss.cnn.com/rss/money_news_international.rss',
+    { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', source: 'BBC' },
+    { url: 'https://www.theguardian.com/business/rss', source: 'The Guardian' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml', source: 'NYT' },
+    { url: 'https://feeds.npr.org/1006/rss.xml', source: 'NPR' },
   ],
   science: [
-    'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',
-    'https://www.theguardian.com/science/rss',
-    'https://rss.nytimes.com/services/xml/rss/nyt/Science.xml',
-    'https://feeds.npr.org/1007/rss.xml',
+    { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml', source: 'BBC' },
+    { url: 'https://www.theguardian.com/science/rss', source: 'The Guardian' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Science.xml', source: 'NYT' },
+    { url: 'https://feeds.npr.org/1007/rss.xml', source: 'NPR' },
   ],
   sports: [
-    'https://feeds.bbci.co.uk/sport/rss.xml',
-    'https://www.theguardian.com/sport/rss',
-    'https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml',
-    'https://feeds.npr.org/1055/rss.xml',
-    'http://rss.cnn.com/rss/edition_sport.rss',
+    { url: 'https://feeds.bbci.co.uk/sport/rss.xml', source: 'BBC' },
+    { url: 'https://www.theguardian.com/sport/rss', source: 'The Guardian' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml', source: 'NYT' },
+    { url: 'https://feeds.skynews.com/feeds/rss/sports.xml', source: 'Sky News' },
   ],
   culture: [
-    'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml',
-    'https://www.theguardian.com/culture/rss',
-    'https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml',
-    'https://feeds.npr.org/1008/rss.xml',
-    'http://rss.cnn.com/rss/edition_entertainment.rss',
+    { url: 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml', source: 'BBC' },
+    { url: 'https://www.theguardian.com/culture/rss', source: 'The Guardian' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml', source: 'NYT' },
+    { url: 'https://feeds.npr.org/1008/rss.xml', source: 'NPR' },
   ],
   health: [
-    'https://feeds.bbci.co.uk/news/health/rss.xml',
-    'https://www.theguardian.com/society/health/rss',
-    'https://rss.nytimes.com/services/xml/rss/nyt/Health.xml',
-    'https://feeds.npr.org/1128/rss.xml',
+    { url: 'https://feeds.bbci.co.uk/news/health/rss.xml', source: 'BBC' },
+    { url: 'https://www.theguardian.com/society/health/rss', source: 'The Guardian' },
+    { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Health.xml', source: 'NYT' },
+    { url: 'https://feeds.npr.org/1128/rss.xml', source: 'NPR' },
   ],
 }
 
@@ -168,31 +101,6 @@ export function normalizeInterests(raw: string[] | undefined): NewsInterest[] {
   return picked.length ? [...new Set(picked)] : ['world', 'tech', 'business']
 }
 
-function localeFor(lang: string): LocalePack {
-  return LOCALE_BY_LANG[lang] || LOCALE_BY_LANG.en
-}
-
-function googleTopicFeed(interest: NewsInterest, lang: string): string {
-  const { hl, gl, ceid } = localeFor(lang)
-  const topic = GOOGLE_TOPIC[interest]
-  return `https://news.google.com/rss/headlines/section/topic/${topic}?hl=${encodeURIComponent(hl)}&gl=${encodeURIComponent(gl)}&ceid=${encodeURIComponent(ceid)}`
-}
-
-/** Google “top stories” + topic query for the last day. */
-function googleTopQueryFeed(interest: NewsInterest, lang: string): string {
-  const { hl, gl, ceid } = localeFor(lang)
-  const q: Record<NewsInterest, string> = {
-    world: 'world news when:1d',
-    tech: 'technology OR AI when:1d',
-    business: 'business markets when:1d',
-    science: 'science research when:1d',
-    sports: 'sports when:1d',
-    culture: 'arts culture entertainment when:1d',
-    health: 'health medicine when:1d',
-  }
-  return `https://news.google.com/rss/search?q=${encodeURIComponent(q[interest])}&hl=${encodeURIComponent(hl)}&gl=${encodeURIComponent(gl)}&ceid=${encodeURIComponent(ceid)}`
-}
-
 function stripTags(s: string) {
   return s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
@@ -206,7 +114,7 @@ function stripTags(s: string) {
     .trim()
 }
 
-type RawItem = { title: string; link: string; pubDate: string; source?: string }
+type RawItem = { title: string; link: string; pubDate: string }
 
 function parseRssItems(xml: string): RawItem[] {
   const items: RawItem[] = []
@@ -221,20 +129,65 @@ function parseRssItems(xml: string): RawItem[] {
       block.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ||
       block.match(/<updated[^>]*>([\s\S]*?)<\/updated>/i)?.[1] ||
       ''
-    const source = block.match(/<source[^>]*>([\s\S]*?)<\/source>/i)?.[1] || ''
     const cleanTitle = stripTags(title)
     const cleanLink = stripTags(link)
     if (!cleanTitle || !cleanLink) continue
-    // Drop Google News chrome titles
     if (/^Google News$/i.test(cleanTitle)) continue
     items.push({
       title: cleanTitle.slice(0, 200),
       link: cleanLink,
       pubDate: stripTags(pubDate),
-      source: source ? stripTags(source).slice(0, 48) : undefined,
     })
   }
   return items
+}
+
+/** Strip tracking junk; keep a clean publisher URL. */
+export function cleanArticleUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    for (const key of [...u.searchParams.keys()]) {
+      if (/^(utm_|at_|maca|traffic_source|oc$|CMP|ns_)/i.test(key)) {
+        u.searchParams.delete(key)
+      }
+    }
+    u.hash = ''
+    let out = u.toString()
+    if (out.endsWith('?')) out = out.slice(0, -1)
+    return out
+  } catch {
+    return url
+  }
+}
+
+/** Reject section homepages / Google redirects / non-article URLs. */
+export function isArticleUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    if (u.hostname.includes('news.google.')) return false
+    const parts = u.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
+    if (parts.length < 2) return false
+    const last = parts[parts.length - 1].toLowerCase()
+    const sectionRoots = new Set([
+      'world',
+      'technology',
+      'business',
+      'sport',
+      'sports',
+      'health',
+      'science',
+      'culture',
+      'arts',
+      'news',
+      'index.html',
+      'index',
+      'english',
+    ])
+    if (parts.length <= 2 && sectionRoots.has(last)) return false
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function zonedISODate(date: Date, timeZone: string): string {
@@ -283,7 +236,7 @@ async function fetchFeed(url: string): Promise<string> {
   const res = await fetch(url, {
     headers: {
       'User-Agent':
-        'Mozilla/5.0 (compatible; WahrlyNews/1.1; +https://wahrly.app) AppleWebKit/537.36',
+        'Mozilla/5.0 (compatible; WahrlyNews/1.2; +https://wahrly.app) AppleWebKit/537.36',
       Accept: 'application/rss+xml, application/xml, text/xml, */*',
     },
     signal: AbortSignal.timeout(9000),
@@ -292,113 +245,322 @@ async function fetchFeed(url: string): Promise<string> {
   return res.text()
 }
 
-function sourceFromUrl(url: string, fallback: string) {
-  try {
-    const host = new URL(url).hostname.replace(/^www\./, '')
-    if (host.includes('google.')) return fallback
-    if (host.includes('bbc.')) return 'BBC'
-    if (host.includes('nytimes')) return 'NYT'
-    if (host.includes('theguardian')) return 'The Guardian'
-    if (host.includes('aljazeera')) return 'Al Jazeera'
-    if (host.includes('npr.org')) return 'NPR'
-    if (host.includes('cnn.com')) return 'CNN'
-    return host.split('.').slice(-2).join('.')
-  } catch {
-    return fallback
+function cleanTitle(title: string, source: string): string {
+  let out = title.trim()
+  const suffixes = [
+    source,
+    'BBC News',
+    'BBC Sport',
+    'The Guardian',
+    'NPR',
+    'NYT',
+    'Al Jazeera',
+    'Sky News',
+    'France 24',
+    'DW',
+  ]
+  for (const s of suffixes) {
+    const escaped = s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    out = out.replace(new RegExp(`\\s*[-–—|]\\s*${escaped}\\s*$`, 'i'), '')
   }
-}
-
-function isTopSource(source: string) {
-  const s = source.toLowerCase()
-  return TOP_SOURCES.some((t) => s.includes(t))
-}
-
-function rankScore(item: NewsItem, day: string, timeZone: string): number {
-  let score = 0
-  if (isTopSource(item.source)) score += 40
-  const pDay = zonedISODate(new Date(item.publishedAt), timeZone)
-  if (pDay === day) score += 30
-  else {
-    const ageH = (Date.now() - Date.parse(item.publishedAt)) / 3600000
-    if (ageH <= 36) score += 18
-    else if (ageH <= 72) score += 8
-  }
-  // Prefer shorter wire-style headlines slightly
-  if (item.title.length >= 40 && item.title.length <= 120) score += 4
-  return score
+  return out.slice(0, 200)
 }
 
 function demoItems(interests: NewsInterest[], day: string): NewsItem[] {
-  const catalog: Record<NewsInterest, { title: string; source: string }[]> = {
+  const catalog: Record<NewsInterest, { title: string; source: string; path: string }[]> = {
     world: [
-      { title: 'UN Security Council debates overnight ceasefire proposal', source: 'Reuters' },
-      { title: 'Pacific storm forces evacuations across island capitals', source: 'AP' },
-      { title: 'European leaders convene emergency energy summit', source: 'BBC' },
-      { title: 'Border talks resume after week of diplomatic silence', source: 'The Guardian' },
-      { title: 'Aid agencies report rising needs after weekend flooding', source: 'Al Jazeera' },
-      { title: 'Global flight delays ease after overnight ATC outage', source: 'CNN' },
-      { title: 'Election observers arrive ahead of regional runoff', source: 'NPR' },
-      { title: 'Maritime corridor reopens under new escort rules', source: 'Reuters' },
+      {
+        title: 'Leaders meet on ceasefire talks after overnight developments',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1example',
+      },
+      {
+        title: 'Storms disrupt travel across several regions',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/world/2026/sep/27/storms-travel',
+      },
+      {
+        title: 'European capitals weigh energy security options',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/world/europe/energy.html',
+      },
+      {
+        title: 'Aid corridors open after weekend flooding',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-aid-corridors',
+      },
+      {
+        title: 'Diplomatic talks resume on contested border',
+        source: 'Al Jazeera',
+        path: 'https://www.aljazeera.com/news/2026/9/27/border-talks',
+      },
+      {
+        title: 'Election observers deploy ahead of runoff',
+        source: 'DW',
+        path: 'https://www.dw.com/en/election-observers-runoff/a-79450001',
+      },
+      {
+        title: 'Flight disruptions ease after ATC outage',
+        source: 'France 24',
+        path: 'https://www.france24.com/en/20260927-flight-disruptions',
+      },
+      {
+        title: 'Maritime corridor reopens under escort rules',
+        source: 'Sky News',
+        path: 'https://news.sky.com/story/maritime-corridor-reopens-13592001',
+      },
     ],
     tech: [
-      { title: 'Chipmakers unveil next AI accelerator roadmaps', source: 'Reuters' },
-      { title: 'Major cloud outage traced to cascading DNS failure', source: 'AP' },
-      { title: 'Regulators open inquiry into app-store billing rules', source: 'BBC' },
-      { title: 'Open-source model release redraws enterprise AI race', source: 'The Guardian' },
-      { title: 'Smartphone makers cut midrange prices after weak quarter', source: 'Bloomberg' },
-      { title: 'Cyber agencies warn of new ransomware campaign', source: 'NPR' },
-      { title: 'Satellite broadband expands to remote research stations', source: 'NYT' },
-      { title: 'Browser makers tighten third-party cookie defaults', source: 'CNN' },
+      {
+        title: 'Chipmakers outline next-gen AI accelerator plans',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1tech1',
+      },
+      {
+        title: 'Cloud outage traced to cascading DNS failure',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/technology/2026/sep/27/cloud-outage',
+      },
+      {
+        title: 'Regulators examine app-store billing rules',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/technology/app-store.html',
+      },
+      {
+        title: 'Open-source model release reshapes enterprise AI race',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-opensource-ai',
+      },
+      {
+        title: 'Browser makers tighten third-party cookie defaults',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1tech2',
+      },
+      {
+        title: 'Cyber agencies warn of new ransomware campaign',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/technology/2026/sep/27/ransomware',
+      },
+      {
+        title: 'Satellite broadband expands to remote stations',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/technology/satellite.html',
+      },
+      {
+        title: 'Phone makers cut midrange prices after soft quarter',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-phones',
+      },
     ],
     business: [
-      { title: 'Global markets mixed as oil slips and yields steady', source: 'Reuters' },
-      { title: 'Central banks signal patience on further rate cuts', source: 'FT' },
-      { title: 'Retail sales beat forecasts in overnight data dump', source: 'Bloomberg' },
-      { title: 'Shipping rates climb after Red Sea route disruptions', source: 'AP' },
-      { title: 'Auto makers revise EV timelines amid softer demand', source: 'BBC' },
-      { title: 'Bank stress tests show stronger capital buffers', source: 'WSJ' },
-      { title: 'IPO window reopens with two mid-cap tech listings', source: 'NYT' },
-      { title: 'Currency markets watch dollar after jobs revision', source: 'Reuters' },
+      {
+        title: 'Markets close mixed as energy prices ease',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1biz1',
+      },
+      {
+        title: 'Central banks signal patience on further cuts',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/business/2026/sep/27/central-banks',
+      },
+      {
+        title: 'Retail sales beat forecasts in overnight data',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/business/retail.html',
+      },
+      {
+        title: 'Shipping rates climb after route disruptions',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-shipping',
+      },
+      {
+        title: 'Auto makers revise EV timelines amid softer demand',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1biz2',
+      },
+      {
+        title: 'Bank stress tests show stronger capital buffers',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/business/2026/sep/27/banks',
+      },
+      {
+        title: 'IPO window reopens with two mid-cap listings',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/business/ipo.html',
+      },
+      {
+        title: 'Currency markets watch the dollar after jobs data',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-dollar',
+      },
     ],
     science: [
-      { title: 'Researchers map deep-ocean currents with new float array', source: 'Nature' },
-      { title: 'Mars rover finds mineral clues of ancient groundwater', source: 'BBC' },
-      { title: 'Climate study revises wildfire smoke health estimates', source: 'AP' },
-      { title: 'Gene therapy trial reports durable rare-disease gains', source: 'NYT' },
-      { title: 'Astronomers spot brightest early-universe galaxy yet', source: 'The Guardian' },
-      { title: 'Lab-grown meat clears another regulatory milestone', source: 'Reuters' },
-      { title: 'Earthquake early-warning network expands coverage', source: 'NPR' },
-      { title: 'Scientists sequence ancient DNA from alpine ice core', source: 'Science' },
+      {
+        title: 'Researchers map deep-ocean currents with new floats',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1sci1',
+      },
+      {
+        title: 'Mars rover finds clues of ancient groundwater',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/science/2026/sep/27/mars',
+      },
+      {
+        title: 'Climate study revises wildfire smoke estimates',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/science/wildfire.html',
+      },
+      {
+        title: 'Gene therapy trial reports durable gains',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-gene',
+      },
+      {
+        title: 'Astronomers spot bright early-universe galaxy',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1sci2',
+      },
+      {
+        title: 'Lab-grown meat clears another regulatory step',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/science/2026/sep/27/lab-meat',
+      },
+      {
+        title: 'Earthquake early-warning network expands',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/science/earthquake.html',
+      },
+      {
+        title: 'Ancient DNA sequenced from alpine ice core',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-dna',
+      },
     ],
     sports: [
-      { title: 'Underdogs force replay after late equalizer', source: 'BBC Sport' },
-      { title: 'Grand slam final set after overnight semifinal thrillers', source: 'AP' },
-      { title: 'Transfer window closes with record midfield deal', source: 'Reuters' },
-      { title: 'Olympic qualifiers reshuffled after weather delay', source: 'The Guardian' },
-      { title: 'NBA preseason opener draws arena attendance record', source: 'ESPN' },
-      { title: 'Formula 1 stewards clear contested overnight penalty', source: 'BBC' },
-      { title: 'World Cup warm-up cancelled due to travel chaos', source: 'AP' },
-      { title: 'Marathon course record falls in cool morning conditions', source: 'Reuters' },
+      {
+        title: 'Underdogs force replay after late equalizer',
+        source: 'BBC',
+        path: 'https://www.bbc.com/sport/articles/cge2k1sp1',
+      },
+      {
+        title: 'Grand slam final set after overnight semis',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/sport/2026/sep/27/final',
+      },
+      {
+        title: 'Transfer window closes with record midfield deal',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/sports/transfer.html',
+      },
+      {
+        title: 'Olympic qualifiers reshuffled after weather delay',
+        source: 'Sky News',
+        path: 'https://news.sky.com/story/olympic-qualifiers-13592002',
+      },
+      {
+        title: 'Season opener draws attendance record',
+        source: 'BBC',
+        path: 'https://www.bbc.com/sport/articles/cge2k1sp2',
+      },
+      {
+        title: 'Stewards clear contested overnight penalty',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/sport/2026/sep/27/stewards',
+      },
+      {
+        title: 'Warm-up cancelled due to travel chaos',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/sports/warmup.html',
+      },
+      {
+        title: 'Marathon course record falls in cool conditions',
+        source: 'Sky News',
+        path: 'https://news.sky.com/story/marathon-record-13592003',
+      },
     ],
     culture: [
-      { title: 'Venice lineup highlights new wave of debut directors', source: 'The Guardian' },
-      { title: 'Streaming drama posts record first-week global audience', source: 'BBC' },
-      { title: 'Museum recovers looted bronze after decades abroad', source: 'NYT' },
-      { title: 'Booker longlist mixes debut novelists and veterans', source: 'AP' },
-      { title: 'Broadway revival opens to standing ovations', source: 'Reuters' },
-      { title: 'Jazz festival expands free outdoor stages', source: 'NPR' },
-      { title: 'Photo archive of the 1970s goes on public display', source: 'The Guardian' },
-      { title: 'Classical orchestra announces world premiere season', source: 'BBC' },
+      {
+        title: 'Festival lineup highlights emerging directors',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1cul1',
+      },
+      {
+        title: 'Streaming drama draws record first-week viewers',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/culture/2026/sep/27/streaming',
+      },
+      {
+        title: 'Museum recovers looted bronze after decades',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/arts/museum.html',
+      },
+      {
+        title: 'Prize longlist mixes debut novelists and veterans',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-prize',
+      },
+      {
+        title: 'Revival opens to standing ovations',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1cul2',
+      },
+      {
+        title: 'Festival expands free outdoor stages',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/culture/2026/sep/27/festival',
+      },
+      {
+        title: 'Photo archive of the 1970s goes on display',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/arts/photos.html',
+      },
+      {
+        title: 'Orchestra announces world premiere season',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-orchestra',
+      },
     ],
     health: [
-      { title: 'WHO updates guidance on seasonal respiratory vaccines', source: 'Reuters' },
-      { title: 'Study links desk work to sleep disruption patterns', source: 'AP' },
-      { title: 'Hospitals report steadier ER demand after holiday spike', source: 'BBC' },
-      { title: 'New oral antiviral clears mid-stage trial goals', source: 'NYT' },
-      { title: 'Public clinics expand same-week primary care slots', source: 'NPR' },
-      { title: 'Nutrition agencies revise ultraprocessed food advice', source: 'The Guardian' },
-      { title: 'Mental health hotlines add overnight multilingual lines', source: 'AP' },
-      { title: 'Wearable makers publish heart-rhythm accuracy study', source: 'Reuters' },
+      {
+        title: 'WHO updates guidance on seasonal vaccines',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1hlt1',
+      },
+      {
+        title: 'Study links desk work to sleep disruption',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/society/2026/sep/27/sleep',
+      },
+      {
+        title: 'Hospitals report steadier ER demand',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/health/er.html',
+      },
+      {
+        title: 'New oral antiviral clears mid-stage trial goals',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-antiviral',
+      },
+      {
+        title: 'Clinics expand same-week primary care slots',
+        source: 'BBC',
+        path: 'https://www.bbc.com/news/articles/cge2k1hlt2',
+      },
+      {
+        title: 'Agencies revise ultraprocessed food advice',
+        source: 'The Guardian',
+        path: 'https://www.theguardian.com/society/2026/sep/27/food',
+      },
+      {
+        title: 'Hotlines add overnight multilingual lines',
+        source: 'NYT',
+        path: 'https://www.nytimes.com/2026/09/27/health/hotlines.html',
+      },
+      {
+        title: 'Wearables publish heart-rhythm accuracy study',
+        source: 'NPR',
+        path: 'https://www.npr.org/2026/09/27/nx-s1-wearables',
+      },
     ],
   }
 
@@ -409,7 +571,7 @@ function demoItems(interests: NewsInterest[], day: string): NewsItem[] {
       out.push({
         id: `demo_${interest}_${j}`,
         title: row.title,
-        url: `https://news.google.com/search?q=${encodeURIComponent(row.title)}`,
+        url: row.path,
         source: row.source,
         interest,
         publishedAt: `${day}T${String(10 + (j % 8)).padStart(2, '0')}:15:00.000Z`,
@@ -419,39 +581,50 @@ function demoItems(interests: NewsInterest[], day: string): NewsItem[] {
   return out
 }
 
-function summarize(items: NewsItem[], dayLabel: string, demo: boolean, interests: NewsInterest[]): string {
+function summarize(
+  items: NewsItem[],
+  dayLabel: string,
+  demo: boolean,
+  interests: NewsInterest[],
+): string {
   if (!items.length) {
     return demo
       ? `Quiet preview for ${dayLabel} — pick interests and refresh.`
       : `No clear headlines for ${dayLabel} in your interests yet.`
   }
-  const parts = interests.map((k) => {
-    const n = items.filter((i) => i.interest === k).length
-    return n ? `${k} ${n}` : null
-  }).filter(Boolean)
+  const parts = interests
+    .map((k) => {
+      const n = items.filter((i) => i.interest === k).length
+      return n ? `${k} ${n}` : null
+    })
+    .filter(Boolean)
   return `${items.length} top stories · ${dayLabel} · ${parts.join(' · ')}`
 }
 
 async function fetchUrlItems(
-  url: string,
+  feed: { url: string; source: string },
   interest: NewsInterest,
   day: string,
-  sourceHint: string,
 ): Promise<NewsItem[]> {
   try {
-    const xml = await fetchFeed(url)
-    return parseRssItems(xml).map((raw) => {
-      const ts = Date.parse(raw.pubDate)
-      const idSeed = `${interest}|${raw.link}|${raw.title}`
-      return {
-        id: `${interest}_${createHash('sha1').update(idSeed).digest('hex').slice(0, 12)}`,
-        title: raw.title,
-        url: raw.link,
-        source: raw.source || sourceFromUrl(raw.link, sourceHint),
-        interest,
-        publishedAt: Number.isFinite(ts) ? new Date(ts).toISOString() : `${day}T12:00:00.000Z`,
-      }
-    })
+    const xml = await fetchFeed(feed.url)
+    return parseRssItems(xml)
+      .map((raw) => {
+        const cleaned = cleanArticleUrl(raw.link)
+        if (!isArticleUrl(cleaned)) return null
+        const ts = Date.parse(raw.pubDate)
+        const title = cleanTitle(raw.title, feed.source)
+        const idSeed = `${interest}|${cleaned}|${title}`
+        return {
+          id: `${interest}_${createHash('sha1').update(idSeed).digest('hex').slice(0, 12)}`,
+          title,
+          url: cleaned,
+          source: feed.source,
+          interest,
+          publishedAt: Number.isFinite(ts) ? new Date(ts).toISOString() : `${day}T12:00:00.000Z`,
+        } satisfies NewsItem
+      })
+      .filter((x): x is NewsItem => Boolean(x))
   } catch {
     return []
   }
@@ -459,72 +632,43 @@ async function fetchUrlItems(
 
 async function loadInterestSection(
   interest: NewsInterest,
-  lang: string,
+  _lang: string,
   timeZone: string,
   day: string,
 ): Promise<NewsItem[]> {
-  const urls: { url: string; hint: string }[] = [
-    { url: googleTopicFeed(interest, lang), hint: 'Google News' },
-    { url: googleTopQueryFeed(interest, lang), hint: 'Google News' },
-    ...PREMIUM_FEEDS[interest].map((url) => ({ url, hint: sourceFromUrl(url, 'News') })),
-  ]
+  const feeds = PREMIUM_FEEDS[interest]
+  const batches = await Promise.all(feeds.map((f) => fetchUrlItems(f, interest, day)))
 
-  const batches = await Promise.all(urls.map((u) => fetchUrlItems(u.url, interest, day, u.hint)))
-
-  // Split premium wire feeds vs Google aggregator noise.
-  const premiumHosts = [
-    'bbc.',
-    'nytimes',
-    'theguardian',
-    'aljazeera',
-    'npr.org',
-    'cnn.com',
-    'reuters',
-    'apnews',
-    'bloomberg',
-    'wsj',
-    'ft.com',
-    'politico',
-    'axios',
-    'france24',
-    'dw.com',
-  ]
-  const fromPremium: NewsItem[] = []
-  const fromGoogle: NewsItem[] = []
+  const merged: NewsItem[] = []
   const seen = new Set<string>()
-
-  for (let bi = 0; bi < batches.length; bi++) {
-    const batch = batches[bi]
-    const isGoogle = urls[bi].url.includes('news.google.com')
-    for (const item of batch) {
-      const key = item.title.toLowerCase().replace(/\s+/g, ' ').slice(0, 90)
-      if (seen.has(key)) continue
-      seen.add(key)
-      if (isGoogle) fromGoogle.push(item)
-      else fromPremium.push(item)
+  // Round-robin across outlets so one source doesn't dominate
+  const queues = batches.map((b) => [...b])
+  let guard = 0
+  while (merged.length < PER_SECTION_MAX * 2 && guard < 200) {
+    guard++
+    let added = false
+    for (const q of queues) {
+      while (q.length) {
+        const item = q.shift()!
+        const key = item.title.toLowerCase().replace(/\s+/g, ' ').slice(0, 90)
+        if (seen.has(key)) continue
+        seen.add(key)
+        merged.push(item)
+        added = true
+        break
+      }
     }
+    if (!added) break
   }
 
-  const score = (item: NewsItem) => rankScore(item, day, timeZone)
-  fromPremium.sort((a, b) => score(b) - score(a))
-  fromGoogle.sort((a, b) => {
-    const ta = premiumHosts.some((h) => a.source.toLowerCase().includes(h.replace('.', '')) || a.url.includes(h))
-    const tb = premiumHosts.some((h) => b.source.toLowerCase().includes(h.replace('.', '')) || b.url.includes(h))
-    if (ta !== tb) return ta ? -1 : 1
-    return score(b) - score(a)
-  })
+  const yesterday = merged.filter((i) => zonedISODate(new Date(i.publishedAt), timeZone) === day)
+  const recent = merged.filter((i) => zonedISODate(new Date(i.publishedAt), timeZone) !== day)
+  const ordered = [
+    ...yesterday.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)),
+    ...recent.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)),
+  ]
 
-  const pool = [...fromPremium, ...fromGoogle]
-  const yesterday = pool.filter((i) => zonedISODate(new Date(i.publishedAt), timeZone) === day)
-  const recent = pool.filter((i) => zonedISODate(new Date(i.publishedAt), timeZone) !== day)
-
-  const picked: NewsItem[] = []
-  for (const item of [...yesterday, ...recent]) {
-    if (picked.length >= PER_SECTION_TARGET) break
-    picked.push(item)
-  }
-
-  return picked.slice(0, PER_SECTION_MAX)
+  return ordered.slice(0, PER_SECTION_TARGET)
 }
 
 export async function buildYesterdayNews(params: {
@@ -539,7 +683,7 @@ export async function buildYesterdayNews(params: {
   const language = (params.language || 'en').slice(0, 8)
   const day = yesterdayISO(timeZone)
   const dayLabel = dayLabelFor(day, timeZone, language)
-  const cacheKey = `v2|${day}|${timeZone}|${language}|${interests.join(',')}`
+  const cacheKey = `v3|${day}|${timeZone}|${language}|${interests.join(',')}`
 
   if (!params.refresh && !params.demo) {
     const hit = cache.get(cacheKey)
@@ -568,7 +712,6 @@ export async function buildYesterdayNews(params: {
   let items = sections.flat()
   let demo = false
 
-  // If a section is thin, top up from demo for that interest only.
   if (items.length === 0) {
     items = demoItems(interests, day)
     demo = true
