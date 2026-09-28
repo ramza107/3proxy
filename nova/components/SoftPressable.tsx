@@ -12,10 +12,19 @@ type Props = {
   disabled?: boolean
   style?: StyleProp<ViewStyle>
   hitSlop?: number
+  /** Stretch children full width (lists / editorial rows). Default centers for buttons. */
+  stretch?: boolean
 }
 
 /** Soft scale on press — presence without bounce noise. */
-export function SoftPressable({ children, onPress, disabled, style, hitSlop }: Props) {
+export function SoftPressable({
+  children,
+  onPress,
+  disabled,
+  style,
+  hitSlop,
+  stretch,
+}: Props) {
   const scale = useSharedValue(1)
   const anim = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -28,13 +37,20 @@ export function SoftPressable({ children, onPress, disabled, style, hitSlop }: P
       disabled={disabled}
       hitSlop={hitSlop}
       onPressIn={() => {
-        if (!disabled) scale.value = withSpring(0.96, { damping: 18, stiffness: 320 })
+        if (!disabled) scale.value = withSpring(0.98, { damping: 20, stiffness: 340 })
       }}
       onPressOut={() => {
-        scale.value = withSpring(1, { damping: 14, stiffness: 240 })
+        scale.value = withSpring(1, { damping: 16, stiffness: 260 })
       }}
     >
-      <Animated.View style={[{ alignItems: 'center', justifyContent: 'center', flex: 1 }, anim]}>
+      <Animated.View
+        style={[
+          stretch
+            ? { alignSelf: 'stretch', width: '100%' }
+            : { alignItems: 'center', justifyContent: 'center', flex: 1 },
+          anim,
+        ]}
+      >
         {children}
       </Animated.View>
     </Pressable>
