@@ -142,9 +142,9 @@ export default function NewsScreen() {
               <Text style={styles.emptyText}>{t('news.emptyText')}</Text>
             </View>
           ) : (
-            digest.items.map((item) => (
+            digest.items.map((item, index) => (
               <Pressable
-                key={item.id}
+                key={`${item.id}_${index}`}
                 accessibilityRole="link"
                 style={styles.item}
                 onPress={() => openItem(item.url)}
