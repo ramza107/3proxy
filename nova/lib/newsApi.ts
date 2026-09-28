@@ -155,7 +155,7 @@ function localDemoNews(
     (samples[interest] || []).slice(0, PER_SECTION).map((row, j) => ({
       id: `local_${interest}_${j}`,
       title: row.title,
-      url: `https://news.google.com/search?q=${encodeURIComponent(row.title)}`,
+      url: `https://www.bbc.com/news`,
       source: row.source,
       interest,
       publishedAt: `${day}T${String(10 + (j % 8)).padStart(2, '0')}:15:00.000Z`,
