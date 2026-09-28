@@ -281,6 +281,8 @@ export type YesterdayNewsDigest = {
   timeZone: string
   interests: NewsInterest[]
   items: NewsItem[]
+  /** Target stories per interest section (server hint) */
+  perSection?: number
   summary: string
   generatedAt: string
 }

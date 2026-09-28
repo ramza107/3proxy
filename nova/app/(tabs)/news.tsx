@@ -19,6 +19,7 @@ import {
   NEWS_INTERESTS,
   normalizeNewsInterests,
   type NewsInterest,
+  type NewsItem,
   type YesterdayNewsDigest,
 } from '../../types'
 
@@ -71,12 +72,23 @@ export default function NewsScreen() {
     }, [load]),
   )
 
+  const sections = useMemo(() => {
+    if (!digest?.items.length) return [] as { interest: NewsInterest; items: NewsItem[] }[]
+    const order = digest.interests.length ? digest.interests : interests
+    return order
+      .map((interest) => ({
+        interest,
+        items: digest.items.filter((i) => i.interest === interest),
+      }))
+      .filter((s) => s.items.length > 0)
+  }, [digest, interests])
+
   const toggleInterest = (key: NewsInterest) => {
     const has = interests.includes(key)
     let next: NewsInterest[]
     if (has) {
       next = interests.filter((x) => x !== key)
-      if (next.length === 0) next = [key] // keep at least one
+      if (next.length === 0) next = [key]
     } else {
       next = [...interests, key]
     }
@@ -136,27 +148,37 @@ export default function NewsScreen() {
             <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} />
           ) : error ? (
             <Text style={styles.error}>{error}</Text>
-          ) : !digest?.items.length ? (
+          ) : !sections.length ? (
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{t('news.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('news.emptyText')}</Text>
             </View>
           ) : (
-            digest.items.map((item, index) => (
-              <Pressable
-                key={`${item.id}_${index}`}
-                accessibilityRole="link"
-                style={styles.item}
-                onPress={() => openItem(item.url)}
-              >
-                <View style={styles.itemTop}>
-                  <Text style={styles.itemInterest}>{t(INTEREST_KEYS[item.interest])}</Text>
-                  <Text style={styles.itemSource} numberOfLines={1}>
-                    {item.source}
+            sections.map((section) => (
+              <View key={section.interest} style={styles.section}>
+                <View style={styles.sectionHead}>
+                  <Text style={styles.sectionTitle}>{t(INTEREST_KEYS[section.interest])}</Text>
+                  <Text style={styles.sectionCount}>
+                    {t.tf('news.sectionCount', { n: section.items.length })}
                   </Text>
                 </View>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-              </Pressable>
+                {section.items.map((item, index) => (
+                  <Pressable
+                    key={`${item.id}_${index}`}
+                    accessibilityRole="link"
+                    style={styles.item}
+                    onPress={() => openItem(item.url)}
+                  >
+                    <View style={styles.itemTop}>
+                      <Text style={styles.itemIndex}>{index + 1}</Text>
+                      <Text style={styles.itemSource} numberOfLines={1}>
+                        {item.source}
+                      </Text>
+                    </View>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                  </Pressable>
+                ))}
+              </View>
             ))
           )}
           {digest?.demo ? <Text style={styles.demoNote}>{t('news.demoNote')}</Text> : null}
@@ -232,8 +254,23 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: spacing.lg,
     paddingBottom: 120,
-    gap: 10,
+    gap: spacing.lg,
   },
+  section: { gap: 8 },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 2,
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontFamily: fonts.brand,
+    fontSize: 22,
+    letterSpacing: -0.3,
+  },
+  sectionCount: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   item: {
     backgroundColor: colors.bgCardSolid,
     borderRadius: radii.md,
@@ -242,13 +279,12 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 6,
   },
-  itemTop: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  itemInterest: {
+  itemTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  itemIndex: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+    fontSize: 12,
+    minWidth: 16,
   },
   itemSource: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, flexShrink: 1 },
   itemTitle: {
@@ -265,7 +301,7 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 12,
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 16,
   },
 })
