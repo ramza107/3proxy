@@ -63,7 +63,8 @@ export default function NewsScreen() {
         setLoading(false)
       }
     },
-    [interests, t],
+    // t() identity changes every render — depend on language + stable keys only
+    [interests, t.language],
   )
 
   useFocusEffect(
