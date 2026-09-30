@@ -23,6 +23,7 @@ import {
   enqueueGmailUser,
   friendlyGmailError,
   gmailCacheKey,
+  GMAIL_PUSH_POLL_TTL_MS,
   isGmailQuotaError,
   withGmailCache,
 } from './email/gmailGuard.js'
@@ -31,12 +32,14 @@ import { buildPromisesDigest, demoPromises } from './email/promises.js'
 import {
   getPushToken,
   hydratePushTokensFromSupabase,
-  listPushUsers,
+  listActivePushUsers,
   markAlertPushed,
   savePushToken,
   sendExpoPush,
+  touchPushActivity,
   wasAlertPushed,
 } from './email/pushStore.js'
+import { checkChatRateLimit } from './chatGuard.js'
 import { deleteConnection, getConnection, saveConnection } from './email/store.js'
 import { localAI } from './localAI.js'
 import { sanitizeAIActions } from './aiActions.js'
@@ -116,6 +119,8 @@ const bodySchema = z.object({
   timezone: z.string().optional(),
   weekday: z.string().optional(),
   ai_tone: z.enum(['friendly', 'concise', 'coach']).optional(),
+  /** Advisory until StoreKit receipts are verified server-side. */
+  is_pro: z.boolean().optional(),
   tasks: z
     .array(
       z.object({
@@ -507,6 +512,8 @@ app.get('/api/email/meetings', async (req, res) => {
         { force },
       ),
     )
+    // Keep push-poll eligibility alive while the app is actually used.
+    touchPushActivity(userId)
     return res.json(digest)
   } catch (error) {
     console.error('meetings', error)
@@ -728,6 +735,21 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     const input = parsed.data
+    const ip =
+      (typeof req.headers['x-forwarded-for'] === 'string'
+        ? req.headers['x-forwarded-for'].split(',')[0]?.trim()
+        : null) ||
+      req.socket?.remoteAddress ||
+      null
+    const chatLimit = checkChatRateLimit({
+      userId: input.user_id,
+      ip,
+      isPro: input.is_pro === true,
+    })
+    if (chatLimit) {
+      return res.status(429).json({ error: chatLimit, code: 'chat_limit' })
+    }
+
     const context = buildContext(input)
     const today = input.current_date || new Date().toISOString().slice(0, 10)
     const provider = resolveProvider()
@@ -795,22 +817,23 @@ app.listen(Port, '0.0.0.0', () => {
 
   hydratePushTokensFromSupabase().catch(() => undefined)
 
-  // Poll connected users who registered a push token (~every 10 min).
-  // Free Render may sleep — alerts also fire when the app opens Home.
-  const POLL_MS = 10 * 60 * 1000
+  // Background meeting push — sparse on purpose (unit econ).
+  // Full AI scan runs when the app opens Home; here we use local heuristics only
+  // and skip dormant installs. Free Render may still sleep between cycles.
+  const POLL_MS = 90 * 60 * 1000
   setInterval(() => {
     pollMeetingPushes().catch((e) => console.warn('meeting poll', e))
   }, POLL_MS)
   setTimeout(() => {
     pollMeetingPushes().catch(() => undefined)
-  }, 45_000)
+  }, 120_000)
 })
 
 async function pollMeetingPushes() {
-  const users = listPushUsers()
+  const users = listActivePushUsers(14)
   if (!users.length) return
-  const provider = resolveProvider()
-  for (const userId of users) {
+  for (let i = 0; i < users.length; i++) {
+    const userId = users[i]
     const token = getPushToken(userId)
     if (!token) continue
     const conn = await getConnection(userId)
@@ -818,15 +841,20 @@ async function pollMeetingPushes() {
     try {
       const cacheKey = gmailCacheKey(userId, 'meetings', '48')
       const digest = await enqueueGmailUser(userId, () =>
-        withGmailCache(cacheKey, async () => {
-          const messages = await listRecentInboxMessages(userId, { hours: 48, max: 12 })
-          return buildMeetingsDigest({
-            messages,
-            email: conn.email,
-            hours: 48,
-            provider: provider ? { client: provider.client, model: provider.model } : null,
-          })
-        }),
+        withGmailCache(
+          cacheKey,
+          async () => {
+            const messages = await listRecentInboxMessages(userId, { hours: 48, max: 10 })
+            // No AI on background sweep — local precision filters are enough for push.
+            return buildMeetingsDigest({
+              messages,
+              email: conn.email,
+              hours: 48,
+              provider: null,
+            })
+          },
+          { ttlMs: GMAIL_PUSH_POLL_TTL_MS },
+        ),
       )
       for (const m of digest.meetings) {
         if (wasAlertPushed(userId, m.id)) continue
@@ -846,5 +874,7 @@ async function pollMeetingPushes() {
     } catch (e) {
       console.warn('meeting poll user', userId, e)
     }
+    // Mild pacing across users in one sweep.
+    if (i < users.length - 1) await new Promise((r) => setTimeout(r, 120))
   }
 }

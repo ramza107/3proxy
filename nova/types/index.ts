@@ -201,13 +201,17 @@ export type UserSettings = {
   newsInterests: NewsInterest[]
   /**
    * Wahrly Pro (demo toggle until StoreKit / RevenueCat).
-   * Unlocks auto-promises, weekly brief, unlimited voice.
+   * Unlocks auto-promises, weekly brief, higher voice/chat fair-use.
    */
   isPro: boolean
-  /** YYYY-MM-DD — day voice credits were last consumed (Free) */
+  /** YYYY-MM-DD — day voice credits were last consumed */
   voiceUsedDate: string | null
-  /** Voice transcripts used on voiceUsedDate (Free) */
+  /** Voice transcripts used on voiceUsedDate */
   voiceUsedCount: number
+  /** YYYY-MM-DD — day AI chat credits were last consumed */
+  chatUsedDate: string | null
+  /** AI chat turns used on chatUsedDate */
+  chatUsedCount: number
 }
 
 /** JS Date#getDay(): 0=Sun … 6=Sat */
