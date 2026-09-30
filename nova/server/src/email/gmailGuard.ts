@@ -1,12 +1,20 @@
-/** Per-user Gmail queue + short TTL cache — Home used to fire digest+promises+meetings
- * in parallel and blow Google’s ~250 units/min/user budget. */
+/** Per-user Gmail queue + TTL cache — Home used to fire digest+promises+meetings
+ * in parallel and blow Google’s ~250 units/min/user budget.
+ *
+ * Longer TTLs are intentional unit-econ: cold Home is expensive (Gmail + AI);
+ * warm cache should absorb soft polls and push sweeps. */
 
 type CacheEntry = { at: number; payload: unknown }
 
 const cache = new Map<string, CacheEntry>()
 const tails = new Map<string, Promise<unknown>>()
 
-const DEFAULT_TTL_MS = 8 * 60 * 1000
+/** Default for digest / promises / meetings API responses. */
+export const GMAIL_CACHE_TTL_MS = 45 * 60 * 1000
+/** Background push poll — even stickier; app-open path still refreshes on demand. */
+export const GMAIL_PUSH_POLL_TTL_MS = 90 * 60 * 1000
+
+const DEFAULT_TTL_MS = GMAIL_CACHE_TTL_MS
 
 export function gmailCacheKey(userId: string, kind: string, extra = '') {
   return `${userId}::${kind}::${extra}`

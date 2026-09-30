@@ -7,6 +7,10 @@ import { useNovaStore } from './store'
 export const FREE_VOICE_PER_DAY = 5
 /** Pro fair-use ceiling (not true unlimited — abuse protection). */
 export const PRO_VOICE_PER_DAY = 200
+/** Free AI chat messages per calendar day. */
+export const FREE_CHAT_PER_DAY = 40
+/** Pro chat fair-use ceiling. */
+export const PRO_CHAT_PER_DAY = 400
 /** Max recording length before auto-stop (seconds). */
 export const MAX_VOICE_SECONDS = 60
 /** Min gap between voice submits on the client (ms). */
@@ -54,5 +58,32 @@ export function consumeVoiceCredit() {
   store.updateSettings({
     voiceUsedDate: today,
     voiceUsedCount: sameDay ? (store.settings.voiceUsedCount || 0) + 1 : 1,
+  })
+}
+
+export function chatDailyLimit(): number {
+  return isPro() ? PRO_CHAT_PER_DAY : FREE_CHAT_PER_DAY
+}
+
+export function chatRemainingToday(): number {
+  const s = useNovaStore.getState().settings
+  const today = localISODate()
+  const limit = chatDailyLimit()
+  if (s.chatUsedDate !== today) return limit
+  return Math.max(0, limit - (s.chatUsedCount || 0))
+}
+
+export function canUseChat(): boolean {
+  return chatRemainingToday() > 0
+}
+
+/** Call after a successful paid AI chat turn (not local/email shortcuts). */
+export function consumeChatCredit() {
+  const store = useNovaStore.getState()
+  const today = localISODate()
+  const sameDay = store.settings.chatUsedDate === today
+  store.updateSettings({
+    chatUsedDate: today,
+    chatUsedCount: sameDay ? (store.settings.chatUsedCount || 0) + 1 : 1,
   })
 }

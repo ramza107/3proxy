@@ -1,6 +1,7 @@
 import { Alert } from 'react-native'
 import { chatWithNova } from '../lib/api'
 import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
+import { canUseChat, chatDailyLimit, consumeChatCredit, isPro } from '../lib/pro'
 import { currentMonthKey } from '../lib/bills'
 import { createCalendarEvent, fetchCalendarEvents } from '../lib/emailApi'
 import { scheduleTaskNotification, cancelNotification, syncBillReminders } from '../lib/notifications'
@@ -571,6 +572,15 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
     return planned
   }
 
+  if (!canUseChat()) {
+    const n = chatDailyLimit()
+    const reply = store.settings.language === 'ru'
+      ? `Дневной лимит чата — ${n} сообщений. Завтра снова или включи Wahrly Pro.`
+      : `Daily chat limit is ${n} messages. Try again tomorrow or turn on Wahrly Pro.`
+    store.addMessage({ role: 'assistant', content: reply })
+    return { reply, actions: [] }
+  }
+
   const history = store.messages.slice(-8).map((m) => ({ role: m.role, content: m.content }))
   let accessToken: string | null = null
   if (isSupabaseConfigured && !store.demoMode) {
@@ -589,8 +599,19 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
       history,
       accessToken,
       aiTone: store.settings.aiTone,
+      isPro: isPro(),
     })
-  } catch {
+    consumeChatCredit()
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
+    if (/chat_limit|chat limit|Daily chat/i.test(msg)) {
+      const n = chatDailyLimit()
+      const reply = store.settings.language === 'ru'
+        ? `Дневной лимит чата — ${n} сообщений. Завтра снова или включи Wahrly Pro.`
+        : `Daily chat limit is ${n} messages. Try again tomorrow or turn on Wahrly Pro.`
+      store.addMessage({ role: 'assistant', content: reply })
+      return { reply, actions: [] }
+    }
     response = clientLocalAI(message, store.tasks, store.bills)
   }
 

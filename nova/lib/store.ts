@@ -129,6 +129,8 @@ const defaultSettings: UserSettings = {
   isPro: false,
   voiceUsedDate: null,
   voiceUsedCount: 0,
+  chatUsedDate: null,
+  chatUsedCount: 0,
 }
 
 export const useNovaStore = create<NovaState>()(

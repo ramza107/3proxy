@@ -15,7 +15,8 @@ type Props = {
   alertsEnabled: boolean
 }
 
-const POLL_MS = 5 * 60 * 1000
+/** Soft poll while Home is open — server cache is ~45m, so this rarely hits Gmail. */
+const POLL_MS = 30 * 60 * 1000
 
 /**
  * Recent Primary inbox → meet / call / report asks.

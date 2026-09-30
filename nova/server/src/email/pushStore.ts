@@ -79,6 +79,28 @@ export function listPushUsers(): string[] {
   return [...tokensByUser.keys()]
 }
 
+/** Touch activity so background polls skip dormant installs. */
+export function touchPushActivity(userId: string) {
+  const prev = tokensByUser.get(userId)
+  if (!prev) return
+  tokensByUser.set(userId, { ...prev, updatedAt: new Date().toISOString() })
+  schedulePersist()
+}
+
+/**
+ * Only poll users who registered/opened recently — dormant tokens are free
+ * to keep but must not burn Gmail/AI every cycle.
+ */
+export function listActivePushUsers(maxAgeDays = 14): string[] {
+  const cutoff = Date.now() - Math.max(1, maxAgeDays) * 24 * 60 * 60 * 1000
+  const out: string[] = []
+  for (const [userId, entry] of tokensByUser) {
+    const t = Date.parse(entry.updatedAt || '')
+    if (Number.isFinite(t) && t >= cutoff) out.push(userId)
+  }
+  return out
+}
+
 export function wasAlertPushed(userId: string, alertId: string) {
   return pushedAlertIds.get(userId)?.has(alertId) === true
 }

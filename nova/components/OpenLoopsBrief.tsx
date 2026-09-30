@@ -137,7 +137,7 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
           .then((m) => setMeetings(m))
           .catch(() => undefined)
       }
-    }, 10 * 60 * 1000)
+    }, 30 * 60 * 1000)
     return () => clearInterval(id)
   }, [userId, meetingAlertsEnabled])
 
