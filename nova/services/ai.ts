@@ -1,7 +1,13 @@
 import { Alert } from 'react-native'
 import { chatWithNova } from '../lib/api'
 import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
-import { canUseChat, chatDailyLimit, consumeChatCredit, isPro } from '../lib/pro'
+import {
+  canUseCloudChat,
+  canUseGmailAI,
+  chatDailyLimit,
+  consumeChatCredit,
+  isPro,
+} from '../lib/pro'
 import { currentMonthKey } from '../lib/bills'
 import { createCalendarEvent, fetchCalendarEvents } from '../lib/emailApi'
 import { scheduleTaskNotification, cancelNotification, syncBillReminders } from '../lib/notifications'
@@ -555,14 +561,22 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
   let response: AIChatResponse | OrganizeMyDayResult
 
-  // Real Gmail check — don't fall through to the Tasks canned reply
+  // Real Gmail check — Pro only (costs Gmail + AI).
   if (isCheckEmailIntent(message)) {
+    if (!canUseGmailAI()) {
+      const reply =
+        store.settings.language === 'ru'
+          ? 'Проверка Gmail — функция Wahrly Pro. Включи Pro в Настройках.'
+          : 'Checking Gmail is a Wahrly Pro feature. Turn on Pro in Settings.'
+      store.addMessage({ role: 'assistant', content: reply })
+      return { reply, actions: [] }
+    }
     response = await replyFromEmailCheck(userId, message)
     store.addMessage({ role: 'assistant', content: response.reply })
     return response
   }
 
-  // Smart day packer — Motion-style slot filling for today's tasks
+  // Smart day packer — local, free for everyone
   if (isOrganizeDayIntent(message)) {
     const planned = await organizeMyDay()
     store.addMessage({ role: 'assistant', content: planned.reply })
@@ -572,47 +586,53 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
     return planned
   }
 
-  if (!canUseChat()) {
-    const n = chatDailyLimit()
-    const reply = store.settings.language === 'ru'
-      ? `Дневной лимит чата — ${n} сообщений. Завтра снова или включи Wahrly Pro.`
-      : `Daily chat limit is ${n} messages. Try again tomorrow or turn on Wahrly Pro.`
-    store.addMessage({ role: 'assistant', content: reply })
-    return { reply, actions: [] }
-  }
-
-  const history = store.messages.slice(-8).map((m) => ({ role: m.role, content: m.content }))
-  let accessToken: string | null = null
-  if (isSupabaseConfigured && !store.demoMode) {
-    const supabase = getSupabase()
-    const { data } = await supabase!.auth.getSession()
-    accessToken = data.session?.access_token ?? null
-  }
-
-  try {
-    response = await chatWithNova({
-      message,
-      userId,
-      userName: store.settings.name,
-      tasks: store.tasks,
-      bills: store.bills,
-      history,
-      accessToken,
-      aiTone: store.settings.aiTone,
-      isPro: isPro(),
-    })
-    consumeChatCredit()
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : ''
-    if (/chat_limit|chat limit|Daily chat/i.test(msg)) {
+  // Free: on-device local AI only — $0 cloud. Pro: cloud LLM with fair-use.
+  if (!canUseCloudChat()) {
+    if (isPro()) {
       const n = chatDailyLimit()
-      const reply = store.settings.language === 'ru'
-        ? `Дневной лимит чата — ${n} сообщений. Завтра снова или включи Wahrly Pro.`
-        : `Daily chat limit is ${n} messages. Try again tomorrow or turn on Wahrly Pro.`
+      const reply =
+        store.settings.language === 'ru'
+          ? `Дневной лимит Pro-чата — ${n}. Завтра снова.`
+          : `Pro daily chat fair-use is ${n}. Try again tomorrow.`
       store.addMessage({ role: 'assistant', content: reply })
       return { reply, actions: [] }
     }
     response = clientLocalAI(message, store.tasks, store.bills)
+  } else {
+    const history = store.messages.slice(-8).map((m) => ({ role: m.role, content: m.content }))
+    let accessToken: string | null = null
+    if (isSupabaseConfigured && !store.demoMode) {
+      const supabase = getSupabase()
+      const { data } = await supabase!.auth.getSession()
+      accessToken = data.session?.access_token ?? null
+    }
+
+    try {
+      response = await chatWithNova({
+        message,
+        userId,
+        userName: store.settings.name,
+        tasks: store.tasks,
+        bills: store.bills,
+        history,
+        accessToken,
+        aiTone: store.settings.aiTone,
+        isPro: true,
+      })
+      consumeChatCredit()
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : ''
+      if (/chat_limit|chat limit|Pro daily|Wahrly Pro/i.test(msg)) {
+        const n = chatDailyLimit()
+        const reply =
+          store.settings.language === 'ru'
+            ? `Дневной лимит Pro-чата — ${n}. Завтра снова.`
+            : `Pro daily chat fair-use is ${n}. Try again tomorrow.`
+        store.addMessage({ role: 'assistant', content: reply })
+        return { reply, actions: [] }
+      }
+      response = clientLocalAI(message, store.tasks, store.bills)
+    }
   }
 
   const actions = sanitizeAIActions(response.actions || [], store.tasks, store.bills)

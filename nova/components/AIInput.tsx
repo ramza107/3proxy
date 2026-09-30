@@ -170,10 +170,14 @@ export function AIInput({
 
     if (!canUseVoice()) {
       const n = voiceDailyLimit()
-      Alert.alert(t('pro.voiceLimitTitle'), t.tf('pro.voiceLimitBody', { n }), [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('pro.upgrade'), onPress: () => router.push('/settings') },
-      ])
+      Alert.alert(
+        t('pro.voiceLimitTitle'),
+        n > 0 ? t.tf('pro.voiceLimitBody', { n }) : t('pro.voiceProOnly'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('pro.upgrade'), onPress: () => router.push('/settings') },
+        ],
+      )
       return
     }
 

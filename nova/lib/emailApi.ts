@@ -49,11 +49,12 @@ export async function fetchEmailStatus(userId: string): Promise<{
 
 export async function fetchEmailDigest(
   userId: string,
-  opts?: { demo?: boolean; timeZone?: string; refresh?: boolean },
+  opts?: { demo?: boolean; timeZone?: string; refresh?: boolean; isPro?: boolean },
 ): Promise<EmailDigest> {
   const q = new URLSearchParams({ user_id: userId })
   if (opts?.demo) q.set('demo', '1')
   if (opts?.refresh) q.set('refresh', '1')
+  if (opts?.isPro) q.set('is_pro', '1')
   const tz =
     opts?.timeZone ||
     (typeof Intl !== 'undefined'
@@ -82,12 +83,13 @@ export async function disconnectEmail(userId: string): Promise<void> {
 
 export async function fetchEmailPromises(
   userId: string,
-  opts?: { demo?: boolean; days?: number; refresh?: boolean },
+  opts?: { demo?: boolean; days?: number; refresh?: boolean; isPro?: boolean },
 ): Promise<import('../types').PromisesDigest> {
   const q = new URLSearchParams({ user_id: userId })
   if (opts?.demo) q.set('demo', '1')
   if (opts?.days) q.set('days', String(opts.days))
   if (opts?.refresh) q.set('refresh', '1')
+  if (opts?.isPro) q.set('is_pro', '1')
   const res = await fetch(`${apiUrl}/api/email/promises?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()
@@ -98,12 +100,13 @@ export async function fetchEmailPromises(
 
 export async function fetchEmailMeetings(
   userId: string,
-  opts?: { demo?: boolean; hours?: number; refresh?: boolean },
+  opts?: { demo?: boolean; hours?: number; refresh?: boolean; isPro?: boolean },
 ): Promise<import('../types').MeetingsDigest> {
   const q = new URLSearchParams({ user_id: userId })
   if (opts?.demo) q.set('demo', '1')
   if (opts?.hours) q.set('hours', String(opts.hours))
   if (opts?.refresh) q.set('refresh', '1')
+  if (opts?.isPro) q.set('is_pro', '1')
   const res = await fetch(`${apiUrl}/api/email/meetings?${q.toString()}`)
   if (!res.ok) {
     const text = await res.text()
@@ -202,11 +205,19 @@ export async function createEmailDraft(
   }
 }
 
-export async function registerPushToken(userId: string, token: string): Promise<void> {
+export async function registerPushToken(
+  userId: string,
+  token: string,
+  opts?: { isPro?: boolean },
+): Promise<void> {
   await fetch(`${apiUrl}/api/push/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, token }),
+    body: JSON.stringify({
+      user_id: userId,
+      token,
+      is_pro: opts?.isPro === true,
+    }),
   })
 }
 

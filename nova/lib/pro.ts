@@ -1,14 +1,14 @@
-/** Wahrly Pro gates — Free vs Pro feature access (demo toggle until StoreKit). */
+/** Wahrly Pro gates — Free is near-zero COGS; cloud AI / Gmail / voice are Pro-only. */
 
 import { localISODate } from './localDate'
 import { useNovaStore } from './store'
 
-/** Free voice transcripts per calendar day. */
-export const FREE_VOICE_PER_DAY = 5
-/** Pro fair-use ceiling (not true unlimited — abuse protection). */
+/** Free cloud voice — none (Whisper costs money). */
+export const FREE_VOICE_PER_DAY = 0
+/** Pro fair-use ceiling. */
 export const PRO_VOICE_PER_DAY = 200
-/** Free AI chat messages per calendar day. */
-export const FREE_CHAT_PER_DAY = 40
+/** Free cloud chat — none (Groq/OpenAI costs money). Free uses on-device local AI. */
+export const FREE_CHAT_PER_DAY = 0
 /** Pro chat fair-use ceiling. */
 export const PRO_CHAT_PER_DAY = 400
 /** Max recording length before auto-stop (seconds). */
@@ -29,8 +29,18 @@ export function canUseAutoPromises(): boolean {
   return isPro()
 }
 
-/** Weekly brief — Pro only (morning brief stays free). */
+/** Weekly brief — Pro only. */
 export function canUseWeeklyBrief(): boolean {
+  return isPro()
+}
+
+/** Gmail digest / meetings / promises AI scans — Pro only. */
+export function canUseGmailAI(): boolean {
+  return isPro()
+}
+
+/** Server meeting push registration — Pro only. */
+export function canUseMeetingPush(): boolean {
   return isPro()
 }
 
@@ -42,16 +52,18 @@ export function voiceRemainingToday(): number {
   const s = useNovaStore.getState().settings
   const today = localISODate()
   const limit = voiceDailyLimit()
+  if (limit <= 0) return 0
   if (s.voiceUsedDate !== today) return limit
   return Math.max(0, limit - (s.voiceUsedCount || 0))
 }
 
 export function canUseVoice(): boolean {
-  return voiceRemainingToday() > 0
+  return isPro() && voiceRemainingToday() > 0
 }
 
-/** Call after a successful voice transcript (Free and Pro). */
+/** Call after a successful voice transcript. */
 export function consumeVoiceCredit() {
+  if (!isPro()) return
   const store = useNovaStore.getState()
   const today = localISODate()
   const sameDay = store.settings.voiceUsedDate === today
@@ -69,16 +81,19 @@ export function chatRemainingToday(): number {
   const s = useNovaStore.getState().settings
   const today = localISODate()
   const limit = chatDailyLimit()
+  if (limit <= 0) return 0
   if (s.chatUsedDate !== today) return limit
   return Math.max(0, limit - (s.chatUsedCount || 0))
 }
 
-export function canUseChat(): boolean {
-  return chatRemainingToday() > 0
+/** Cloud LLM chat — Pro only. Free uses local AI with no meter. */
+export function canUseCloudChat(): boolean {
+  return isPro() && chatRemainingToday() > 0
 }
 
-/** Call after a successful paid AI chat turn (not local/email shortcuts). */
+/** Call after a successful cloud AI chat turn. */
 export function consumeChatCredit() {
+  if (!isPro()) return
   const store = useNovaStore.getState()
   const today = localISODate()
   const sameDay = store.settings.chatUsedDate === today

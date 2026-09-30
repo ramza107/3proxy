@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailDigest, fetchEmailStatus } from '../lib/emailApi'
+import { canUseGmailAI } from '../lib/pro'
 import type { EmailDigest } from '../types'
 import { HomeSection } from './HomeSection'
 import { useT } from '../lib/useT'
@@ -30,7 +31,7 @@ export function InboxBrief({ userId, enabled }: Props) {
   const [error, setError] = useState('')
 
   const load = async (refresh = false) => {
-    if (!userId || !enabled) return
+    if (!userId || !enabled || !canUseGmailAI()) return
     setLoading(true)
     setError('')
     try {
@@ -44,6 +45,7 @@ export function InboxBrief({ userId, enabled }: Props) {
         demo: false,
         timeZone: deviceTimeZone(),
         refresh,
+        isPro: true,
       })
       setDigest(data)
     } catch (e) {

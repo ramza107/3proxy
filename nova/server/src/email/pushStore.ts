@@ -6,6 +6,8 @@ import path from 'path'
 type PushEntry = {
   token: string
   updatedAt: string
+  /** Only Pro tokens are background-polled (Gmail cost). */
+  isPro?: boolean
 }
 
 type PushFile = {
@@ -64,9 +66,17 @@ function schedulePersist() {
 
 loadFromDisk()
 
-export function savePushToken(userId: string, token: string) {
+export function savePushToken(
+  userId: string,
+  token: string,
+  opts?: { isPro?: boolean },
+) {
   if (!userId || !token || !token.startsWith('ExponentPushToken')) return
-  tokensByUser.set(userId, { token, updatedAt: new Date().toISOString() })
+  tokensByUser.set(userId, {
+    token,
+    updatedAt: new Date().toISOString(),
+    isPro: opts?.isPro !== false,
+  })
   schedulePersist()
   void saveTokenToSupabase(userId, token).catch(() => undefined)
 }
@@ -95,6 +105,7 @@ export function listActivePushUsers(maxAgeDays = 14): string[] {
   const cutoff = Date.now() - Math.max(1, maxAgeDays) * 24 * 60 * 60 * 1000
   const out: string[] = []
   for (const [userId, entry] of tokensByUser) {
+    if (entry.isPro === false) continue
     const t = Date.parse(entry.updatedAt || '')
     if (Number.isFinite(t) && t >= cutoff) out.push(userId)
   }

@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
+import { canUseGmailAI } from '../lib/pro'
 import { useNovaStore } from '../lib/store'
 import type { EmailPromise, PromisesDigest } from '../types'
 import { HomeSection } from './HomeSection'
@@ -34,7 +35,7 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
   const autoRanFor = useRef<string | null>(null)
 
   const load = async (allowDemo = false) => {
-    if (!userId) return
+    if (!userId || !canUseGmailAI()) return
     setLoading(true)
     setError('')
     try {
@@ -42,13 +43,13 @@ export function PromisesBrief({ userId, autoCreate }: Props) {
       setConnected(status.connected)
       if (!status.connected) {
         if (allowDemo) {
-          setData(await fetchEmailPromises(userId, { demo: true }))
+          setData(await fetchEmailPromises(userId, { demo: true, isPro: true }))
         } else {
           setData(null)
         }
         return
       }
-      setData(await fetchEmailPromises(userId, { days: 7 }))
+      setData(await fetchEmailPromises(userId, { days: 7, isPro: true }))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not scan sent mail')
     } finally {
