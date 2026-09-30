@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native'
 import { Screen } from '../../components/Screen'
+import { SocialAuthButtons } from '../../components/SocialAuthButtons'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
@@ -80,6 +81,20 @@ export default function SignupScreen() {
       <Text style={styles.sub}>{t('auth.tagline')}</Text>
 
       <View style={styles.card}>
+        <SocialAuthButtons
+          onSuccess={() => {
+            updateSettings({ onboardingComplete: false })
+            router.replace('/welcome')
+          }}
+          onError={setError}
+        />
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>{t('auth.orEmail')}</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
         <Text style={styles.label}>{t('auth.name')}</Text>
         <TextInput
           value={name}
@@ -147,6 +162,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: 10,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong },
+  dividerText: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
   },
   label: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.bodyMedium },
   input: {

@@ -27,6 +27,7 @@ module.exports = ({ config }) => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
+      usesAppleSignIn: true,
       infoPlist: {
         CFBundleURLTypes: [{ CFBundleURLSchemes: ['wahrly'] }],
         NSMicrophoneUsageDescription:
@@ -60,6 +61,7 @@ module.exports = ({ config }) => {
       'expo-secure-store',
       'expo-notifications',
       'expo-web-browser',
+      'expo-apple-authentication',
       [
         'expo-audio',
         {
@@ -96,6 +98,10 @@ module.exports = ({ config }) => {
       apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://threeproxy-x9bi.onrender.com',
       publicAppUrl:
         process.env.EXPO_PUBLIC_APP_URL || 'https://ramza107.github.io/3proxy/nova/',
+      /** Google OAuth Web client ID (also used for Android/iOS via Supabase). */
+      googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+      supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
       eas: {
         projectId:
           process.env.EAS_PROJECT_ID || 'cd1e9e17-cb36-4664-8395-c9599ae532f9',

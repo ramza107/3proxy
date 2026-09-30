@@ -92,9 +92,11 @@ export default function RootLayout() {
     const inAuth = root === '(auth)'
     const inOnboarding = root === '(onboarding)'
     const isPublic = root === 'privacy'
+    // OAuth return (Google / Apple) before session is written to the store.
+    const inAuthCallback = root === 'auth'
 
     // Privacy Policy must be reachable without login (Google OAuth verification).
-    if (isPublic) return
+    if (isPublic || inAuthCallback) return
 
     if (!sessionUserId) {
       if (!inAuth) router.replace('/login')
