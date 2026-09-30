@@ -48,15 +48,15 @@ async function applySessionUser(user: {
 
   const supabase = getSupabase()
   if (supabase && user.email) {
-    await supabase
-      .from('users')
-      .upsert({
+    try {
+      await supabase.from('users').upsert({
         id: user.id,
         email: user.email,
         name,
       })
-      .then(() => undefined)
-      .catch(() => undefined)
+    } catch {
+      // table optional / offline
+    }
   }
 }
 
