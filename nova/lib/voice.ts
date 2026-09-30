@@ -349,6 +349,8 @@ export async function transcribeVoice(
   const extraParams: Record<string, string> = {}
   if (opts?.language) extraParams.language = opts.language
   if (opts?.userId) extraParams.user_id = opts.userId
+  // Voice/Whisper is Pro-only on the server.
+  extraParams.is_pro = '1'
 
   try {
     await wakeTranscribeServer(localAbort.signal)

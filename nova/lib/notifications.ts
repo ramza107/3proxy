@@ -470,7 +470,10 @@ export async function registerDevicePushToken(userId: string): Promise<string | 
     const token = tokenRes.data
     if (!token) return null
     const { registerPushToken } = await import('./emailApi')
-    await registerPushToken(userId, token)
+    const { isPro } = await import('./pro')
+    // Background Gmail poll is Pro-only — Free tokens must not enter the set.
+    if (!isPro()) return null
+    await registerPushToken(userId, token, { isPro: true })
     return token
   } catch {
     return null

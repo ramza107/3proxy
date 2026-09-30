@@ -366,6 +366,11 @@ app.post('/api/email/disconnect', async (req, res) => {
   }
 })
 
+function queryIsPro(req: { query: Record<string, unknown> }) {
+  const v = String(req.query.is_pro || req.query.pro || '')
+  return v === '1' || v === 'true'
+}
+
 app.get('/api/email/digest', async (req, res) => {
   try {
     const userId = String(req.query.user_id || '')
@@ -373,6 +378,12 @@ app.get('/api/email/digest', async (req, res) => {
     const allowDemo = String(req.query.demo || '') === '1'
     const force = String(req.query.refresh || '') === '1'
     if (!userId) return res.status(400).json({ error: 'user_id required' })
+    if (!queryIsPro(req) && !allowDemo) {
+      return res.status(402).json({
+        error: 'Gmail digest is Wahrly Pro',
+        code: 'pro_required',
+      })
+    }
 
     const conn = await getConnection(userId)
     if (!conn) {
@@ -423,6 +434,12 @@ app.get('/api/email/promises', async (req, res) => {
     const days = Number(req.query.days || 7)
     const force = String(req.query.refresh || '') === '1'
     if (!userId) return res.status(400).json({ error: 'user_id required' })
+    if (!queryIsPro(req) && !allowDemo) {
+      return res.status(402).json({
+        error: 'Gmail open loops are Wahrly Pro',
+        code: 'pro_required',
+      })
+    }
 
     const conn = await getConnection(userId)
     if (!conn) {
@@ -475,6 +492,12 @@ app.get('/api/email/meetings', async (req, res) => {
     const hours = Number(req.query.hours || 48)
     const force = String(req.query.refresh || '') === '1'
     if (!userId) return res.status(400).json({ error: 'user_id required' })
+    if (!queryIsPro(req) && !allowDemo) {
+      return res.status(402).json({
+        error: 'Inbox ask alerts are Wahrly Pro',
+        code: 'pro_required',
+      })
+    }
 
     const conn = await getConnection(userId)
     if (!conn) {
@@ -653,8 +676,16 @@ app.post('/api/push/register', async (req, res) => {
   try {
     const userId = String(req.body?.user_id || '')
     const token = String(req.body?.token || '')
+    const isPro =
+      req.body?.is_pro === true ||
+      req.body?.is_pro === 1 ||
+      String(req.body?.is_pro || '') === '1'
     if (!userId || !token) return res.status(400).json({ error: 'user_id and token required' })
-    savePushToken(userId, token)
+    // Free users must not enter the background Gmail poll set.
+    if (!isPro) {
+      return res.json({ ok: true, skipped: true, reason: 'pro_required' })
+    }
+    savePushToken(userId, token, { isPro: true })
     return res.json({ ok: true })
   } catch (error) {
     return res.status(500).json({
@@ -692,6 +723,17 @@ app.post('/api/ai/transcribe', (req, res, next) => {
     }
 
     const userId = String(req.body?.user_id || '') || null
+    const isPro =
+      req.body?.is_pro === true ||
+      req.body?.is_pro === 1 ||
+      String(req.body?.is_pro || '') === '1' ||
+      String(req.query.is_pro || '') === '1'
+    if (!isPro) {
+      return res.status(402).json({
+        error: 'Voice is Wahrly Pro — turn on Pro in Settings',
+        code: 'pro_required',
+      })
+    }
     const ip =
       (typeof req.headers['x-forwarded-for'] === 'string'
         ? req.headers['x-forwarded-for'].split(',')[0]?.trim()

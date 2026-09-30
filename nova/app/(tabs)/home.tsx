@@ -91,6 +91,7 @@ export default function HomeScreen() {
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const userId = useNovaStore((s) => s.sessionUserId)
   const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
+  const isProUser = useNovaStore((s) => s.settings.isPro === true)
   const emailPromisesAutoEnabled = useNovaStore(
     (s) => s.settings.isPro === true && s.settings.emailPromisesAutoEnabled === true,
   )
@@ -255,15 +256,28 @@ export default function HomeScreen() {
             userId={userId}
             onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
           />
-          <InboxBrief userId={userId} enabled={emailDigestEnabled} />
-          <OpenLoopsBrief
-            userId={userId}
-            autoPromises={emailPromisesAutoEnabled}
-            meetingAlertsEnabled={meetingEmailAlertsEnabled}
-          />
+          {isProUser ? (
+            <>
+              <InboxBrief userId={userId} enabled={emailDigestEnabled} />
+              <OpenLoopsBrief
+                userId={userId}
+                autoPromises={emailPromisesAutoEnabled}
+                meetingAlertsEnabled={meetingEmailAlertsEnabled}
+              />
+            </>
+          ) : (
+            <HomeSection title={t('pro.gmailTitle')} meta={t('pro.title')}>
+              <Text style={styles.prompt}>{t('pro.gmailLocked')}</Text>
+              <Pressable style={styles.ask} onPress={() => router.push('/settings')}>
+                <Text style={styles.askText}>{t('pro.upgrade')}</Text>
+              </Pressable>
+            </HomeSection>
+          )}
 
           <HomeSection title={t('home.askWahrly')} emphasize>
-            <Text style={styles.prompt}>{t('home.askPrompt')}</Text>
+            <Text style={styles.prompt}>
+              {isProUser ? t('home.askPrompt') : t('pro.freeChatHint')}
+            </Text>
             <AIInput loading={loading} onSend={onSend} />
             <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
               <Text style={styles.askText}>{t('home.openChat')}</Text>

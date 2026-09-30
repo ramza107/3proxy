@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, AppState, Platform, Pressable, StyleSheet, Te
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailStatus } from '../lib/emailApi'
+import { canUseGmailAI } from '../lib/pro'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
 import type { MeetingAlert, MeetingsDigest } from '../types'
@@ -39,7 +40,7 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
   const notifying = useRef(false)
 
   const load = async (allowDemo = false) => {
-    if (!userId) return
+    if (!userId || !canUseGmailAI()) return
     setLoading(true)
     setError('')
     try {
@@ -47,13 +48,13 @@ export function MeetingAlerts({ userId, alertsEnabled }: Props) {
       setConnected(status.connected)
       if (!status.connected) {
         if (allowDemo) {
-          setData(await fetchEmailMeetings(userId, { demo: true }))
+          setData(await fetchEmailMeetings(userId, { demo: true, isPro: true }))
         } else {
           setData(null)
         }
         return
       }
-      setData(await fetchEmailMeetings(userId, { hours: 48 }))
+      setData(await fetchEmailMeetings(userId, { hours: 48, isPro: true }))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not scan inbox')
     } finally {

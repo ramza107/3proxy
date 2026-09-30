@@ -12,6 +12,7 @@ import {
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
+import { canUseGmailAI } from '../lib/pro'
 import { draftForMeeting, draftForPromise } from '../lib/draftReply'
 import { confirmSendReply, copyDraftAsDemo, copyDraftOnly, sendGmailOnly } from '../lib/sendReply'
 import { notifyUser } from '../lib/notify'
@@ -89,6 +90,12 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
 
   const load = async (allowDemo = false, refresh = false) => {
     if (!userId) return
+    if (!canUseGmailAI()) {
+      setPromises(null)
+      setMeetings(null)
+      setConnected(false)
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -96,8 +103,8 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
       setConnected(status.connected)
       if (!status.connected) {
         if (allowDemo) {
-          setPromises(await fetchEmailPromises(userId, { demo: true }))
-          setMeetings(await fetchEmailMeetings(userId, { demo: true }))
+          setPromises(await fetchEmailPromises(userId, { demo: true, isPro: true }))
+          setMeetings(await fetchEmailMeetings(userId, { demo: true, isPro: true }))
         } else {
           setPromises(null)
           setMeetings(null)
@@ -105,9 +112,9 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
         return
       }
       // Sequential — parallel promises+meetings + Yesterday digest blew Gmail quota.
-      const p = await fetchEmailPromises(userId, { days: 7, refresh })
+      const p = await fetchEmailPromises(userId, { days: 7, refresh, isPro: true })
       setPromises(p)
-      const m = await fetchEmailMeetings(userId, { hours: 48, refresh })
+      const m = await fetchEmailMeetings(userId, { hours: 48, refresh, isPro: true })
       setMeetings(m)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not scan mail')
@@ -133,7 +140,7 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     const id = setInterval(() => {
       // Meetings-only soft refresh (server cache absorbs most calls).
       if (AppState.currentState === 'active') {
-        fetchEmailMeetings(userId, { hours: 48 })
+        fetchEmailMeetings(userId, { hours: 48, isPro: true })
           .then((m) => setMeetings(m))
           .catch(() => undefined)
       }

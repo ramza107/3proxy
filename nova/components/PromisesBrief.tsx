@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
+import { canUseGmailAI } from '../lib/pro'
 import { useNovaStore } from '../lib/store'
 import type { EmailPromise, PromisesDigest } from '../types'
 import { HomeSection } from './HomeSection'

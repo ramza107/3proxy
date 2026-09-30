@@ -1,9 +1,10 @@
-/** In-memory chat fair-use for /api/ai/chat — keeps Free from blowing AI spend. */
+/** In-memory chat fair-use — Free has 0 cloud chats; Pro is capped. */
 
 const MIN_GAP_MS = 800
-/** Absolute ceiling per user/IP regardless of Pro claim. */
+/** Absolute ceiling per user/IP. */
 const HARD_MAX_PER_DAY = 500
-const FREE_MAX_PER_DAY = 40
+/** Free cloud chat — disabled (local AI on client only). */
+const FREE_MAX_PER_DAY = 0
 const PRO_MAX_PER_DAY = 400
 
 type Bucket = {
@@ -31,7 +32,7 @@ export function chatDailyCap(isPro: boolean) {
 
 /**
  * Returns null if OK, otherwise an error message.
- * Client `is_pro` is advisory until StoreKit receipts are verified server-side.
+ * `is_pro` is advisory until StoreKit receipts are verified server-side.
  */
 export function checkChatRateLimit(params: {
   userId?: string | null
@@ -41,7 +42,13 @@ export function checkChatRateLimit(params: {
   const now = Date.now()
   prune(now)
   const day = todayUTC()
-  const softCap = chatDailyCap(params.isPro === true)
+  const isPro = params.isPro === true
+  const softCap = chatDailyCap(isPro)
+
+  if (!isPro || softCap <= 0) {
+    return 'Cloud chat is Wahrly Pro — turn on Pro in Settings'
+  }
+
   const keys = [
     params.userId ? `u:${params.userId}` : null,
     params.ip ? `ip:${params.ip}` : null,
@@ -55,13 +62,8 @@ export function checkChatRateLimit(params: {
       return 'Too many chat requests — wait a moment'
     }
     const count = prev.day === day ? prev.count : 0
-    if (count >= HARD_MAX_PER_DAY) {
-      return 'Daily chat limit reached — try again tomorrow'
-    }
-    if (count >= softCap) {
-      return params.isPro
-        ? 'Pro daily chat fair-use reached — try again tomorrow'
-        : 'Free daily chat limit reached — upgrade to Pro or try tomorrow'
+    if (count >= HARD_MAX_PER_DAY || count >= softCap) {
+      return 'Pro daily chat fair-use reached — try again tomorrow'
     }
   }
 

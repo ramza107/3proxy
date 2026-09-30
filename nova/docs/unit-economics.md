@@ -1,119 +1,65 @@
 # Wahrly unit economics
 
-How Free vs Pro keeps the product from running at a loss at ~100k users.
+Free is designed for **~$0–0.02 COGS / MAU**. All expensive usage is Pro-only.
 
-## Pricing target (until StoreKit)
+## Plans
 
-| Plan | Price | Included fair-use |
-|------|------:|-------------------|
-| Free | $0 | Morning brief, News, 40 AI chat/day, 5 voice/day, manual open-loops |
-| Pro | **$6.99 / month** (target) | Auto-promises, weekly brief, 400 chat/day, 200 voice/day |
+| Plan | Price | What you get |
+|------|------:|--------------|
+| **Free** | $0 | Tasks, calendar (readonly), news RSS, morning/evening local rituals, **on-device local chat** |
+| **Pro** | **$6.99 / mo** (target) | Cloud AI chat (400/day), voice (200/day), Gmail digest, open loops, meeting push, auto-promises, weekly brief |
 
-Store take ~15–30%. Model **net Pro revenue ≈ $5.00 / Pro / month**.
+Net after store cut ≈ **$5.00 / Pro / month**.
 
-## Cost stack (what we actually pay)
+## Free cost model (~1–2¢)
 
-| Driver | Notes |
-|--------|--------|
-| AI chat (Groq primary) | 1 completion / chat turn |
-| AI email (Home open) | Up to 3 calls: digest + promises + meetings (then cache) |
-| Whisper | Voice only; Free hard-capped at 5/day |
-| Gmail API | Quota, not $ — still expensive if over-polled |
-| Supabase | Auth + rows |
-| Hosting | Render/equivalent — not free at scale |
-| Background meeting push | **Local heuristics only**, every **90 min**, active installs (**14 days**) |
+| Item | Free? | Why cheap |
+|------|:-----:|-----------|
+| Cloud LLM chat | ❌ | Local AI only on device |
+| Whisper voice | ❌ | Pro only |
+| Gmail digest / meetings / promises | ❌ | Pro only (+ server 402) |
+| Background meeting push poll | ❌ | Tokens not registered for Free |
+| News RSS | ✅ | Shared cache, no AI |
+| Calendar list | ✅ | Google quota, ~$0 |
+| Supabase row | ✅ | Tiny per idle user |
+| Hosting share | ✅ | Free barely hits AI server |
 
-## Guardrails shipped in code
+**Target Free COGS: $0.01–0.02 / MAU / month** (DB + crumbs of hosting).
 
-1. **Chat fair-use** — Free 40/day, Pro 400/day (client + server `chatGuard`).
-2. **Voice fair-use** — Free 5/day, Pro 200/day (client + server `voiceGuard`).
-3. **Gmail cache** — **45 min** default (was 8).
-4. **Home soft poll** — **30 min** (was 5–10).
-5. **Server push poll** — **90 min**, skip dormant tokens, **no AI** on sweep.
-6. **Precise meeting/report classifier** — fewer false “important” scans/pushes.
+## Pro COGS (order of magnitude)
 
-## Unit cost assumptions (order of magnitude)
+| Driver | $/Pro / month |
+|--------|-------------:|
+| Cloud chat + email AI | $0.25–0.80 |
+| Whisper | $0.05–0.30 |
+| Gmail polls (active) | ~$0 (quota) |
+| Infra share | $0.03–0.08 |
+| **Total** | **~$0.35–1.20** |
 
-Using Groq-class pricing (~cheap chat) + Whisper:
+Contribution ≈ **$3.80–4.65 / Pro / month**.
 
-| Per active Free user / month | Low | High |
-|------------------------------|----:|-----:|
-| Chat (avg 15 msgs × 30d, many under cap) | $0.04 | $0.12 |
-| Email AI (1–2 Home opens/day, warm cache) | $0.03 | $0.10 |
-| Voice (≤5/day, most use ≪5) | $0.01 | $0.05 |
-| Infra share (host + DB) | $0.02 | $0.06 |
-| **COGS / Free MAU** | **~$0.10** | **~$0.33** |
+## Daily-use at 100k registered
 
-| Per active Pro user / month | Low | High |
-|-----------------------------|----:|-----:|
-| Chat + email + voice (heavier) | $0.25 | $0.90 |
-| Infra share | $0.03 | $0.08 |
-| **COGS / Pro MAU** | **~$0.28** | **~$0.98** |
+Assume **80k daily Free** + **4% Pro of MAU**. If MAU≈80k → Pro ≈ **3.2k**.
 
-Contribution on Pro at $5 net: **~$4.00–4.70 / Pro / month**.
+| | |
+|--|--:|
+| Free COGS @ $0.02 | **$1.6k** |
+| Pro COGS @ $0.70 | **$2.2k** |
+| **Total COGS** | **~$3.8k** |
+| Pro revenue @ $5 net | **~$16k** |
+| **Gross margin** | **~$12k / month** |
 
-## 100k registered — scenario math
+Even at heavy daily use, Free no longer sinks the business.
 
-Assume:
+## Code guards
 
-- **MAU** = 35% of registered → **35 000**
-- **DAU** = 20% of MAU → **7 000**
-- **Gmail connected** = 40% of MAU → **14 000**
-- **Pro conversion** = 4% of MAU → **1 400** paying
+- Client: Free → `clientLocalAI` only; no Gmail UI scans; no mic Whisper; no push register
+- Server: `/api/ai/chat` requires `is_pro`; `/api/ai/transcribe` 402 without Pro; Gmail digest/promises/meetings 402 without Pro; push register skipped for Free
+- Background poll: Pro + active 14d only, local heuristics, 90 min
 
-### Revenue
+## Rule of thumb
 
-`1 400 × $5 net ≈ **$7 000 / month**`
+> **Free should be almost free to run. Pro pays for AI.**
 
-### COGS (with guards)
-
-| Segment | Users | COGS/user | Total |
-|---------|------:|----------:|------:|
-| Free MAU | 33 600 | $0.20 | $6 720 |
-| Pro MAU | 1 400 | $0.60 | $840 |
-| **Total COGS** | | | **~$7 500** |
-
-Near break-even at 4% conversion and mid COGS. To run **clearly profitable**:
-
-- Pro at **$7.99** net ~$5.60, or
-- Conversion **6–8%**, or
-- Keep Free chat closer to avg **8–12 msgs/day** (product copy + UX), or
-- Hosting reserved instances only when DAU demands it.
-
-### What would put us in the red (avoided)
-
-Old shape without guards:
-
-- Push poll every **10 min** × all tokens × **AI** each miss  
-- Unlimited Free chat  
-- 8‑min cache + 5‑min client poll  
-
-That path is **tens of thousands $/month** in AI alone at 100k — not viable.
-
-## Break-even shortcuts
-
-| Lever | Effect |
-|-------|--------|
-| Pro price $6.99→$7.99 | +~$1k/mo at 1.4k Pro |
-| Conversion 4%→6% | +~$3.5k net/mo |
-| Free chat 40→30 | Cuts Free AI tail |
-| Gmail Pub/Sub later | Removes remaining push Gmail burn |
-
-## Contribution formula
-
-```
-Monthly profit ≈
-  (Pro_MAU × net_price)
-  − (Free_MAU × cogs_free)
-  − (Pro_MAU × cogs_pro)
-  − fixed_hosting
-```
-
-With shipped caps, **fixed hosting** should stay in the low hundreds–low thousands $, not the AI bill.
-
-## Product rule of thumb
-
-> One Pro subscriber should fund **~15–25 Free MAU**.
-
-At $5 net and ~$0.20 Free COGS → **~25 Free MAU per Pro**.  
-Target conversion **≥4%** of MAU (or higher ARPU) to stay green as usage grows.
+1 Pro @ $5 net covers **~250 Free MAU** at $0.02 — or the whole Free base is noise next to Pro COGS.
