@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { BrandMark } from '../../components/BrandMark'
 import { Screen } from '../../components/Screen'
-import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { useT } from '../../lib/useT'
 
 export default function WelcomeScreen() {
@@ -11,7 +12,7 @@ export default function WelcomeScreen() {
   return (
     <Screen>
       <View style={styles.screen}>
-        <Text style={styles.brand}>{brand.name}</Text>
+        <BrandMark size={64} showName />
         <Text style={styles.title}>{t('onboarding.welcomeTitle')}</Text>
         <Text style={styles.body}>{t('onboarding.welcomeSub')}</Text>
         <Pressable
@@ -32,13 +33,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     justifyContent: 'center',
     gap: spacing.md,
-  },
-  brand: {
-    color: colors.accentStrong,
-    fontSize: 22,
-    fontFamily: fonts.brand,
-    letterSpacing: -0.3,
-    marginBottom: 8,
   },
   title: {
     color: colors.text,

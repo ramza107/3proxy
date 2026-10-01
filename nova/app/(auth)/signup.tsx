@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { BrandMark } from '../../components/BrandMark'
 import { Screen } from '../../components/Screen'
 import { SocialAuthButtons } from '../../components/SocialAuthButtons'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
@@ -77,6 +78,7 @@ export default function SignupScreen() {
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <BrandMark size={56} showName />
       <Text style={styles.title}>{t('auth.createAccount')}</Text>
       <Text style={styles.sub}>{t('auth.tagline')}</Text>
 
