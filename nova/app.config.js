@@ -27,7 +27,9 @@ module.exports = ({ config }) => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
-      usesAppleSignIn: true,
+      // Temporarily off: provisioning profile lacks Sign In with Apple.
+      // Re-enable after regenerating profiles with Apple Developer login.
+      usesAppleSignIn: false,
       infoPlist: {
         CFBundleURLTypes: [{ CFBundleURLSchemes: ['wahrly'] }],
         NSMicrophoneUsageDescription:
@@ -61,7 +63,11 @@ module.exports = ({ config }) => {
       'expo-secure-store',
       'expo-notifications',
       'expo-web-browser',
-      'expo-apple-authentication',
+      // Removed temporarily: package auto-plugin adds Sign In with Apple
+      // entitlement the current App Store profile does not include.
+      // 'expo-apple-authentication',
+      // Last: strip entitlement if Expo auto-plugin still injects it.
+      './plugins/withStripAppleSignInEntitlement',
       [
         'expo-audio',
         {

@@ -1,10 +1,15 @@
 /**
  * Google + Apple sign-in via Supabase.
  * - Google: OAuth (Android / iOS / web) — primary path on Android
- * - Apple: native Sign in with Apple on iOS; OAuth fallback on web
+ * - Apple: native Sign in with Apple on iOS when entitlement is enabled;
+ *   otherwise OAuth / hidden until App Store profile includes Sign In with Apple
  */
-import * as AppleAuthentication from 'expo-apple-authentication'
 import Constants from 'expo-constants'
+
+/** Native Apple Sign In only when ios.usesAppleSignIn is true in Expo config. */
+export function nativeAppleSignInEnabled() {
+  return Constants.expoConfig?.ios?.usesAppleSignIn === true
+}
 import * as Linking from 'expo-linking'
 import * as QueryParams from 'expo-auth-session/build/QueryParams'
 import { makeRedirectUri } from 'expo-auth-session'
@@ -146,9 +151,12 @@ export async function signInWithGoogle() {
   return signInWithOAuthProvider('google')
 }
 
-/** Apple — native sheet on iOS; OAuth on web. Hidden on Android (use Google). */
+/** Apple — native sheet on iOS when enabled; OAuth on web. Hidden on Android. */
 export async function signInWithApple() {
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === 'ios' && nativeAppleSignInEnabled()) {
+    // Dynamic import so the app still bundles when the native module is excluded
+    // from iOS autolinking (until Sign In with Apple is on the provisioning profile).
+    const AppleAuthentication = await import('expo-apple-authentication')
     const available = await AppleAuthentication.isAvailableAsync()
     if (!available) {
       return signInWithOAuthProvider('apple')
@@ -201,11 +209,14 @@ export async function signInWithApple() {
     throw new Error('On Android use Google Sign-In')
   }
 
+  // iOS without native entitlement, or web: browser OAuth
   return signInWithOAuthProvider('apple')
 }
 
 export function appleSignInAvailable() {
-  return Platform.OS === 'ios' || Platform.OS === 'web'
+  if (Platform.OS === 'web') return true
+  if (Platform.OS === 'ios') return true
+  return false
 }
 
 export function googleSignInAvailable() {

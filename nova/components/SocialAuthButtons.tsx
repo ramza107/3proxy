@@ -7,15 +7,34 @@ import {
   Text,
   View,
 } from 'react-native'
-import * as AppleAuthentication from 'expo-apple-authentication'
 import { colors, fonts, radii } from '../constants/theme'
 import {
   appleSignInAvailable,
+  nativeAppleSignInEnabled,
   signInWithApple,
   signInWithGoogle,
 } from '../lib/socialAuth'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { useT } from '../lib/useT'
+
+function AppleNativeButton({
+  onPress,
+}: {
+  onPress: () => void
+}) {
+  // Lazy require keeps Metro happy when the native module is excluded on iOS.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const AppleAuthentication = require('expo-apple-authentication')
+  return (
+    <AppleAuthentication.AppleAuthenticationButton
+      buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+      cornerRadius={radii.md}
+      style={styles.appleNative}
+      onPress={onPress}
+    />
+  )
+}
 
 type Props = {
   onSuccess: () => void
@@ -66,17 +85,13 @@ export function SocialAuthButtons({ onSuccess, onError }: Props) {
         <Text style={styles.androidHint}>{t('auth.androidGoogleHint')}</Text>
       ) : null}
 
-      {Platform.OS === 'ios' ? (
-        <AppleAuthentication.AppleAuthenticationButton
-          buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-          cornerRadius={radii.md}
-          style={styles.appleNative}
-          onPress={() => run('apple')}
-        />
+      {Platform.OS === 'ios' && nativeAppleSignInEnabled() ? (
+        <AppleNativeButton onPress={() => run('apple')} />
       ) : null}
 
-      {appleSignInAvailable() && Platform.OS === 'web' ? (
+      {appleSignInAvailable() &&
+      (Platform.OS === 'web' ||
+        (Platform.OS === 'ios' && !nativeAppleSignInEnabled())) ? (
         <Pressable
           accessibilityRole="button"
           style={[styles.btn, styles.apple]}
