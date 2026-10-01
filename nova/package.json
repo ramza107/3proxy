@@ -18,7 +18,8 @@
     "build:android:prod": "npm run preflight:eas && npx eas-cli build --platform android --profile production",
     "build:ios:prod": "npm run preflight:eas && npx eas-cli build --platform ios --profile production",
     "build:ios:testflight": "npm run preflight:eas && npx eas-cli build --platform ios --profile production --auto-submit",
-    "submit:ios": "npx eas-cli submit --platform ios --latest --profile production"
+    "submit:ios": "npx eas-cli submit --platform ios --latest --profile production",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@expo-google-fonts/source-sans-3": "^0.4.1",
@@ -47,7 +48,7 @@
     "expo-speech": "~57.0.3",
     "expo-status-bar": "~57.0.1",
     "expo-web-browser": "~57.0.3",
-    "expo-widgets": "~57.0.20",
+    "expo-widgets": "^57.0.20",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -63,6 +64,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "babel-preset-expo": "^57.0.12",
+    "patch-package": "^8.0.1",
     "typescript": "~5.9.2"
   },
   "expo": {
