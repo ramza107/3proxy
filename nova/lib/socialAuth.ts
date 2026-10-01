@@ -4,6 +4,7 @@
  * - Apple: native Sign in with Apple on iOS; OAuth fallback on web
  */
 import * as AppleAuthentication from 'expo-apple-authentication'
+import Constants from 'expo-constants'
 import * as Linking from 'expo-linking'
 import * as QueryParams from 'expo-auth-session/build/QueryParams'
 import { makeRedirectUri } from 'expo-auth-session'
@@ -17,7 +18,24 @@ WebBrowser.maybeCompleteAuthSession()
 export type SocialProvider = 'google' | 'apple'
 
 function authRedirectTo() {
-  // Native: wahrly:// ; web: current origin (+ Pages base path when hosted).
+  // Web must never fall back to localhost on a phone (Supabase Site URL trap).
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const configured = String(
+      Constants.expoConfig?.extra?.publicAppUrl ||
+        process.env.EXPO_PUBLIC_APP_URL ||
+        '',
+    ).replace(/\/$/, '')
+    if (configured && !/localhost|127\.0\.0\.1/i.test(configured)) {
+      return `${configured}/auth/callback`
+    }
+    const parts = window.location.pathname.split('/').filter(Boolean)
+    // GitHub Pages: /3proxy/nova/...
+    const basePath =
+      parts[0] === '3proxy' && parts[1] === 'nova' ? '/3proxy/nova' : ''
+    return `${window.location.origin}${basePath}/auth/callback`
+  }
+
+  // Native: wahrly://auth/callback
   return makeRedirectUri({
     scheme: 'wahrly',
     path: 'auth/callback',
