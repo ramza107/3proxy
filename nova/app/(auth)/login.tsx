@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native'
 import { Screen } from '../../components/Screen'
+import { SocialAuthButtons } from '../../components/SocialAuthButtons'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
@@ -69,6 +70,17 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.card}>
+          <SocialAuthButtons
+            onSuccess={() => router.replace('/tasks')}
+            onError={setError}
+          />
+
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t('auth.orEmail')}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
           <Text style={styles.label}>{t('auth.email')}</Text>
           <TextInput
             autoCapitalize="none"
@@ -156,6 +168,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: 10,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginVertical: 4,
+  },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.borderStrong },
+  dividerText: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
   },
   label: {
     color: colors.textMuted,
