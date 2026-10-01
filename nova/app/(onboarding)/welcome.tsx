@@ -12,7 +12,7 @@ export default function WelcomeScreen() {
   return (
     <Screen>
       <View style={styles.screen}>
-        <BrandMark size={64} />
+        <BrandMark size={64} showName />
         <Text style={styles.title}>{t('onboarding.welcomeTitle')}</Text>
         <Text style={styles.body}>{t('onboarding.welcomeSub')}</Text>
         <Pressable

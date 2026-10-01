@@ -78,7 +78,7 @@ export default function SignupScreen() {
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <BrandMark size={56} />
+      <BrandMark size={56} showName />
       <Text style={styles.title}>{t('auth.createAccount')}</Text>
       <Text style={styles.sub}>{t('auth.tagline')}</Text>
 

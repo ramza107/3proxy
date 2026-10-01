@@ -35,7 +35,7 @@ export default function PrivacyScreen() {
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
 
-          <BrandMark size={48} />
+          <BrandMark size={48} showName />
           <Text style={styles.title}>Privacy Policy</Text>
           <Text style={styles.meta}>Effective date: {EFFECTIVE}</Text>
 

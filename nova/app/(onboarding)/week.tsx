@@ -310,7 +310,7 @@ export default function WeekScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInDown.duration(560).springify().damping(16)}>
-          <BrandMark size={48} />
+          <BrandMark size={48} showName />
           <Text style={styles.title}>{t('onboarding.weekTitle')}</Text>
           <Text style={styles.sub}>{t('onboarding.weekSub')}</Text>
         </Animated.View>

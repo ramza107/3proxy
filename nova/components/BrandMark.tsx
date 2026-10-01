@@ -1,16 +1,44 @@
-import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native'
 import { brand, colors, fonts, spacing } from '../constants/theme'
 
 type Props = {
-  /** Show wordmark next to / under the icon. Default true. */
-  showName?: boolean
-  /** Icon edge length. Default 56. */
   size?: number
+  /**
+   * When set, render the white W glyph tinted to this color
+   * (for compact chrome on colored surfaces). Otherwise the full
+   * teal app icon asset.
+   */
+  color?: string
+  /** Show wordmark under the mark. Default false for compact chrome. */
+  showName?: boolean
   style?: StyleProp<ViewStyle>
 }
 
-/** Canonical Wahrly mark — same teal W asset as the home-screen icon. */
-export function BrandMark({ showName = true, size = 56, style }: Props) {
+/**
+ * Canonical Wahrly mark — same teal W as the home-screen icon.
+ * Pass `color` for a monochrome W (Chat FAB, header accents).
+ */
+export function BrandMark({ size = 36, color, showName = false, style }: Props) {
+  if (color) {
+    return (
+      <View style={[{ width: size, height: size }, style]}>
+        <Image
+          accessibilityIgnoresInvertColors
+          source={require('../assets/android-icon-foreground.png')}
+          style={{ width: size, height: size, tintColor: color }}
+          resizeMode="contain"
+        />
+      </View>
+    )
+  }
+
   return (
     <View style={[styles.wrap, style]}>
       <Image

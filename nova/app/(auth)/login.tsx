@@ -65,7 +65,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.hero}>
-          <BrandMark size={64} />
+          <BrandMark size={64} showName />
           <Text style={styles.tagline}>{t('auth.tagline')}</Text>
           <Text style={styles.sub}>{t('onboarding.welcomeSub')}</Text>
         </View>
