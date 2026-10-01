@@ -302,8 +302,6 @@ export default function WeekScreen() {
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
-      <View style={styles.orbA} pointerEvents="none" />
-      <View style={styles.orbB} pointerEvents="none" />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -465,24 +463,6 @@ export default function WeekScreen() {
 const styles = StyleSheet.create({
   screenRoot: {
     backgroundColor: '#E8EEF1',
-  },
-  orbA: {
-    position: 'absolute',
-    top: -80,
-    right: -60,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(15,110,102,0.12)',
-  },
-  orbB: {
-    position: 'absolute',
-    top: 220,
-    left: -90,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(15,42,50,0.05)',
   },
   scroll: {
     flexGrow: 1,
