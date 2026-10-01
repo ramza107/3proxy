@@ -122,7 +122,10 @@ export async function refreshWidgetSnapshot(): Promise<void> {
   if (Platform.OS !== 'ios') return
   try {
     const { default: WahrlyToday } = await import('../widgets/WahrlyToday')
-    WahrlyToday.updateSnapshot(buildSnapshot())
+    const snapshot = buildSnapshot()
+    WahrlyToday.updateSnapshot(snapshot)
+    // Force WidgetKit to re-read App Group timeline after writing.
+    WahrlyToday.reload()
   } catch {
     // Widget native module only exists in a customized EAS binary
   }

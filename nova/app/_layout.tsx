@@ -12,7 +12,7 @@ import {
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
-import { ActivityIndicator, Platform, View } from 'react-native'
+import { ActivityIndicator, AppState, Platform, View } from 'react-native'
 import { colors } from '../constants/theme'
 import {
   getNotifications,
@@ -141,6 +141,19 @@ export default function RootLayout() {
     settings.promiseRemindDayBefore,
     settings.language,
   ])
+
+  // Re-push widget snapshot whenever the app returns to foreground.
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return
+    if (!hydrated || !sessionUserId || !onboardingComplete) return
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return
+      import('../lib/widgetSync')
+        .then((m) => m.refreshWidgetSnapshot())
+        .catch(() => undefined)
+    })
+    return () => sub.remove()
+  }, [hydrated, sessionUserId, onboardingComplete])
 
   // Evening Clear / Morning brief / Bills notification → open ritual or bills
   useEffect(() => {
