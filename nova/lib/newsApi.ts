@@ -5,40 +5,40 @@ import { deviceTimeZone } from './localDate'
 
 const PER_SECTION = 8
 
-/** Direct publisher RSS — same set the server uses. */
+/** Direct publisher RSS — same outlets the server uses. */
 const FEEDS: Record<NewsInterest, { url: string; source: string }[]> = {
   world: [
-    { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', source: 'BBC' },
     { url: 'https://www.theguardian.com/world/rss', source: 'The Guardian' },
+    { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', source: 'BBC' },
     { url: 'https://feeds.npr.org/1004/rss.xml', source: 'NPR' },
   ],
   tech: [
-    { url: 'https://feeds.bbci.co.uk/news/technology/rss.xml', source: 'BBC' },
     { url: 'https://www.theguardian.com/technology/rss', source: 'The Guardian' },
+    { url: 'https://feeds.bbci.co.uk/news/technology/rss.xml', source: 'BBC' },
     { url: 'https://feeds.npr.org/1019/rss.xml', source: 'NPR' },
   ],
   business: [
-    { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', source: 'BBC' },
     { url: 'https://www.theguardian.com/business/rss', source: 'The Guardian' },
+    { url: 'https://feeds.bbci.co.uk/news/business/rss.xml', source: 'BBC' },
     { url: 'https://feeds.npr.org/1006/rss.xml', source: 'NPR' },
   ],
   science: [
-    { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml', source: 'BBC' },
     { url: 'https://www.theguardian.com/science/rss', source: 'The Guardian' },
+    { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml', source: 'BBC' },
     { url: 'https://feeds.npr.org/1007/rss.xml', source: 'NPR' },
   ],
   sports: [
-    { url: 'https://feeds.bbci.co.uk/sport/rss.xml', source: 'BBC' },
     { url: 'https://www.theguardian.com/sport/rss', source: 'The Guardian' },
+    { url: 'https://feeds.bbci.co.uk/sport/rss.xml', source: 'BBC' },
   ],
   culture: [
-    { url: 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml', source: 'BBC' },
     { url: 'https://www.theguardian.com/culture/rss', source: 'The Guardian' },
+    { url: 'https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml', source: 'BBC' },
     { url: 'https://feeds.npr.org/1008/rss.xml', source: 'NPR' },
   ],
   health: [
-    { url: 'https://feeds.bbci.co.uk/news/health/rss.xml', source: 'BBC' },
     { url: 'https://www.theguardian.com/society/health/rss', source: 'The Guardian' },
+    { url: 'https://feeds.bbci.co.uk/news/health/rss.xml', source: 'BBC' },
     { url: 'https://feeds.npr.org/1128/rss.xml', source: 'NPR' },
   ],
 }
@@ -66,7 +66,7 @@ export async function fetchYesterdayNews(params: {
       if (res.ok) {
         const data = (await res.json()) as YesterdayNewsDigest
         const items = (Array.isArray(data.items) ? data.items : [])
-          .map(normalizeItem)
+          .map((item) => normalizeItem(item))
           .filter((x): x is NewsItem => Boolean(x))
         if (items.length) {
           return {
@@ -78,7 +78,7 @@ export async function fetchYesterdayNews(params: {
         }
       }
     } catch {
-      // fall through to live RSS
+      // fall through — Render may not have /api/news yet
     }
   }
 
@@ -122,7 +122,8 @@ function isArticleUrl(url: string): boolean {
   try {
     const u = new URL(url)
     if (u.hostname.includes('news.google.')) return false
-    if (u.hostname.includes('google.') && u.pathname.includes('/search')) return false
+    if (/google\./i.test(u.hostname) && /\/search/i.test(u.pathname)) return false
+    if (/\/search/i.test(u.pathname)) return false
     const parts = u.pathname.replace(/\/+$/, '').split('/').filter(Boolean)
     if (parts.length < 2) return false
     const last = parts[parts.length - 1].toLowerCase()
@@ -141,6 +142,7 @@ function isArticleUrl(url: string): boolean {
       'index',
       'english',
       'search',
+      'rss',
     ])
     if (parts.length <= 2 && sectionRoots.has(last)) return false
     return true
@@ -192,58 +194,98 @@ function dayLabelFor(iso: string, timeZone: string, language: string): string {
   }
 }
 
-type Rss2JsonItem = {
-  title?: string
-  link?: string
-  pubDate?: string
-  guid?: string
-}
-
 async function fetchFeedItems(
   feed: { url: string; source: string },
   interest: NewsInterest,
 ): Promise<NewsItem[]> {
-  const endpoints = [
-    `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=12`,
+  // Prefer jina reader — works from browsers without CORS pain, returns article URLs.
+  const proxies = [
+    `https://r.jina.ai/http://${feed.url.replace(/^https?:\/\//, '')}`,
+    `https://r.jina.ai/${feed.url}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(feed.url)}`,
   ]
 
-  for (const endpoint of endpoints) {
+  for (const endpoint of proxies) {
     try {
-      const res = await fetch(endpoint)
+      const res = await fetch(endpoint, {
+        headers: { Accept: 'text/plain, text/html, application/xml, */*' },
+      })
       if (!res.ok) continue
-      const contentType = res.headers.get('content-type') || ''
-      if (contentType.includes('json') || endpoint.includes('rss2json')) {
-        const data = (await res.json()) as {
-          status?: string
-          items?: Rss2JsonItem[]
-          contents?: string
-        }
-        if (Array.isArray(data.items) && data.items.length) {
-          return data.items
-            .map((raw) =>
-              normalizeItem({
-                title: raw.title,
-                url: raw.link || raw.guid,
-                source: feed.source,
-                interest,
-                publishedAt: raw.pubDate ? new Date(raw.pubDate).toISOString() : undefined,
-              }),
-            )
-            .filter((x): x is NewsItem => Boolean(x))
-        }
-        if (typeof data.contents === 'string') {
-          return parseRssXml(data.contents, feed.source, interest)
-        }
-      } else {
-        const xml = await res.text()
-        return parseRssXml(xml, feed.source, interest)
+      const text = await res.text()
+      if (!text || text.length < 40) continue
+      if (text.includes('Markdown Content:') || text.startsWith('Title:')) {
+        const fromMd = parseJinaMarkdown(text, feed.source, interest)
+        if (fromMd.length) return fromMd
       }
+      const fromXml = parseRssXml(text, feed.source, interest)
+      if (fromXml.length) return fromXml
     } catch {
-      // try next endpoint
+      // try next
     }
   }
   return []
+}
+
+/** Parse jina.ai markdown conversion of an RSS feed into articles. */
+function parseJinaMarkdown(md: string, source: string, interest: NewsInterest): NewsItem[] {
+  const body = md.includes('Markdown Content:')
+    ? md.slice(md.indexOf('Markdown Content:') + 'Markdown Content:'.length)
+    : md
+  const chunks = body.split(/\n###\s+/).slice(1)
+  const out: NewsItem[] = []
+
+  for (const chunk of chunks) {
+    const headed = chunk.match(/^\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/)
+    const emptyHead = chunk.match(/^\[\]\((https?:\/\/[^)\s]+)\)/)
+    const anyLink = chunk.match(/\((https?:\/\/[^)\s]+)\)/)
+    const title = (headed?.[1] || '').trim()
+    const url = cleanArticleUrl(headed?.[2] || emptyHead?.[1] || anyLink?.[1] || '')
+    if (!isArticleUrl(url)) continue
+
+    const dateLine = chunk.match(
+      /\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s+\d{1,2}\s+\w+\s+\d{4}\s+\d{2}:\d{2}:\d{2}\s+GMT\b/i,
+    )?.[0]
+    let publishedAt = new Date().toISOString()
+    if (dateLine) {
+      const ts = Date.parse(dateLine)
+      if (Number.isFinite(ts)) publishedAt = new Date(ts).toISOString()
+    }
+
+    const resolvedTitle =
+      title ||
+      titleFromUrl(url) ||
+      chunk
+        .split('\n')
+        .map((l) => l.trim())
+        .find((l) => l && !l.startsWith('[') && !l.startsWith('http') && l.length > 28) ||
+      ''
+
+    const item = normalizeItem({
+      title: resolvedTitle,
+      url,
+      source,
+      interest,
+      publishedAt,
+    })
+    if (item) out.push(item)
+  }
+  return out
+}
+
+function titleFromUrl(url: string): string {
+  try {
+    const parts = new URL(url).pathname.split('/').filter(Boolean)
+    const slug = parts[parts.length - 1] || ''
+    if (/^c[a-z0-9]+$/i.test(slug)) return ''
+    return slug
+      .replace(/\.[a-z]+$/i, '')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim()
+      .slice(0, 200)
+  } catch {
+    return ''
+  }
 }
 
 function parseRssXml(xml: string, source: string, interest: NewsInterest): NewsItem[] {
@@ -305,7 +347,7 @@ async function fetchLiveRssDigest(
       const seen = new Set<string>()
       const queues = batches.map((b) => [...b])
       let guard = 0
-      while (merged.length < PER_SECTION && guard < 80) {
+      while (merged.length < PER_SECTION && guard < 100) {
         guard++
         let added = false
         for (const q of queues) {
