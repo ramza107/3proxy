@@ -65,15 +65,15 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
     const nextAmount = Number(String(amount).replace(',', '.'))
     const nextDay = Number(day)
     if (!nextTitle) {
-      setError('Name is required')
+      setError(t('editor.nameRequired'))
       return
     }
     if (!Number.isFinite(nextAmount) || nextAmount < 0) {
-      setError('Enter a valid amount')
+      setError(t('editor.amountInvalid'))
       return
     }
     if (!Number.isFinite(nextDay) || nextDay < 1 || nextDay > 28) {
-      setError('Day must be 1–28')
+      setError(t('editor.dayRange'))
       return
     }
     onSave({
@@ -103,7 +103,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         value={title}
         onChangeText={setTitle}
         style={styles.input}
-        placeholder="Rent, Netflix…"
+        placeholder={t('editor.billTitlePh')}
         placeholderTextColor={colors.textDim}
       />
 
@@ -120,7 +120,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
           />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Currency</Text>
+          <Text style={styles.label}>{t('editor.currency')}</Text>
           <TextInput
             value={currency}
             onChangeText={setCurrency}
@@ -153,7 +153,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         keyboardType="number-pad"
       />
 
-      <Text style={styles.label}>Category</Text>
+      <Text style={styles.label}>{t('editor.category')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {BILL_CATEGORIES.map((c) => (
           <Pressable
@@ -166,12 +166,12 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         ))}
       </ScrollView>
 
-      <Text style={styles.label}>Notes</Text>
+      <Text style={styles.label}>{t('editor.notes')}</Text>
       <TextInput
         value={notes}
         onChangeText={setNotes}
         style={[styles.input, { minHeight: 64 }]}
-        placeholder="Optional"
+        placeholder={t('editor.notesPh')}
         placeholderTextColor={colors.textDim}
         multiline
       />
@@ -181,14 +181,14 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
         value={payHowTo}
         onChangeText={setPayHowTo}
         style={styles.input}
-        placeholder="Link or short note — Privat24, IBAN…"
+        placeholder={t('editor.payHowPh')}
         placeholderTextColor={colors.textDim}
         autoCapitalize="none"
       />
 
       {!creating && history.length > 0 ? (
         <>
-          <Text style={styles.label}>Paid history</Text>
+          <Text style={styles.label}>{t('editor.paidHistory')}</Text>
           <View style={styles.chips}>
             {history.map((m) => (
               <View key={m} style={styles.histChip}>
@@ -201,15 +201,15 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
 
       <Pressable style={styles.toggleRow} onPress={() => setActive((v) => !v)}>
         <Text style={styles.toggleLabel}>{t('editor.activeMonth')}</Text>
-        <Text style={styles.toggleValue}>{active ? 'On' : t('bills.paused')}</Text>
+        <Text style={styles.toggleValue}>{active ? t('common.on') : t('bills.paused')}</Text>
       </Pressable>
 
       <Pressable style={styles.toggleRow} onPress={() => setRemindEnabled((v) => !v)}>
         <View style={{ flex: 1, paddingRight: 12 }}>
-          <Text style={styles.toggleLabel}>Reminders</Text>
-          <Text style={styles.toggleHint}>Uses the cadence from Settings</Text>
+          <Text style={styles.toggleLabel}>{t('editor.reminders')}</Text>
+          <Text style={styles.toggleHint}>{t('editor.remindersHint')}</Text>
         </View>
-        <Text style={styles.toggleValue}>{remindEnabled ? 'On' : 'Off'}</Text>
+        <Text style={styles.toggleValue}>{remindEnabled ? t('common.on') : t('common.off')}</Text>
       </Pressable>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -231,7 +231,7 @@ export function BillEditor({ bill, visible, creating, onClose, onSave, onDelete 
       ) : null}
 
       <Pressable onPress={onClose} style={styles.cancel}>
-        <Text style={styles.cancelText}>Close</Text>
+        <Text style={styles.cancelText}>{t('common.close')}</Text>
       </Pressable>
     </BottomSheet>
   )

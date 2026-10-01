@@ -139,6 +139,7 @@ export default function RootLayout() {
     settings.billRemindCadence,
     settings.billRemindTime,
     settings.promiseRemindDayBefore,
+    settings.language,
   ])
 
   // Evening Clear / Morning brief / Bills notification → open ritual or bills
@@ -146,6 +147,7 @@ export default function RootLayout() {
     if (!hydrated || !fontsReady || !sessionUserId || !onboardingComplete) return
     if (Platform.OS === 'web') return
     let sub: { remove: () => void } | undefined
+    const setForceMorningBrief = useNovaStore.getState().setForceMorningBrief
     ;(async () => {
       const NotificationsMod = await getNotifications()
       if (!NotificationsMod) return
@@ -169,7 +171,10 @@ export default function RootLayout() {
           router.push('/home')
           return
         }
-        if (data.kind === 'morning') {
+        if (data.kind === 'morning' || data.openMorning === true) {
+          // Force the sheet even if the clock window / once-per-day gate already passed.
+          useNovaStore.getState().updateSettings({ lastMorningBriefDate: null })
+          setForceMorningBrief(true)
           router.push('/home')
         }
       }

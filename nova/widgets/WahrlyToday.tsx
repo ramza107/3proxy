@@ -7,6 +7,7 @@ import {
   lineLimit,
   padding,
   symbolEffect,
+  widgetURL,
 } from '@expo/ui/swift-ui/modifiers'
 import { createWidget, type WidgetEnvironment } from 'expo-widgets'
 
@@ -20,6 +21,10 @@ export type WahrlyTodayProps = {
   title: string
   subtitle: string
   updatedAt: string
+  deepLink?: string
+  taskId?: string
+  openInWahrly?: string
+  emptyHeadline?: string
   // Legacy fields (ignored if present from older app builds)
   greeting?: string
   todayCount?: number
@@ -37,16 +42,23 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
   'widget'
   const label = (props.label || props.greeting || 'WAHRLY').toUpperCase()
   const time = props.time || ''
+  const emptyTitle = props.emptyHeadline || 'Clear'
+  const openLabel = props.openInWahrly || 'Open in Wahrly'
   const title =
     props.title ||
     (props.nextTask && !props.nextTask.includes('·')
       ? props.nextTask
       : props.nextTask?.split(' · ').slice(1).join(' · ')) ||
-    'No upcoming tasks'
+    emptyTitle
   const subtitle = props.subtitle || ''
-  const empty = !time && (title === 'No upcoming tasks' || !props.title)
+  const empty = !time && !props.taskId && (!props.title || props.title === emptyTitle)
   const family = env.widgetFamily
   const compact = family === 'systemSmall' || family?.startsWith('accessory')
+  const link =
+    props.deepLink ||
+    (props.taskId
+      ? `wahrly://tasks?taskId=${encodeURIComponent(props.taskId)}`
+      : 'wahrly://tasks')
 
   const timeSize = compact ? 30 : 36
   const titleSize = compact ? 14 : 16
@@ -57,7 +69,11 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
       alignment="leading"
       modifiers={[
         padding({ all: compact ? 12 : 14 }),
-        frame({ maxWidth: Number.POSITIVE_INFINITY, maxHeight: Number.POSITIVE_INFINITY, alignment: 'topLeading' }),
+        frame({
+          maxWidth: Number.POSITIVE_INFINITY,
+          maxHeight: Number.POSITIVE_INFINITY,
+          alignment: 'topLeading',
+        }),
         containerBackground(
           {
             type: 'linearGradient',
@@ -67,6 +83,7 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
           },
           'widget',
         ),
+        widgetURL(link),
       ]}
     >
       <HStack spacing={6} alignment="center">
@@ -116,7 +133,7 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
             foregroundStyle(INK),
           ]}
         >
-          {empty ? 'Clear' : 'Soon'}
+          {empty ? emptyTitle : props.emptyHeadline || 'Soon'}
         </Text>
       )}
 
@@ -131,9 +148,7 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
       </Text>
 
       {subtitle ? (
-        <Text
-          modifiers={[font({ size: 12 }), foregroundStyle(MUTED), lineLimit(2)]}
-        >
+        <Text modifiers={[font({ size: 12 }), foregroundStyle(MUTED), lineLimit(2)]}>
           {subtitle}
         </Text>
       ) : null}
@@ -152,7 +167,7 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
             ]}
           />
           <Text modifiers={[font({ size: 11, weight: 'medium' }), foregroundStyle(TEAL)]}>
-            Open in Wahrly
+            {openLabel}
           </Text>
         </HStack>
       ) : null}
