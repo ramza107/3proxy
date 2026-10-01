@@ -11,8 +11,10 @@ import { createWidget, type WidgetEnvironment } from 'expo-widgets'
 
 /**
  * Minimal home-screen widget (nearest task).
- * Deliberately Text-only — no Image/HStack/Spacer/symbolEffect — so a single
- * failing native view type cannot blank the whole card in release builds.
+ *
+ * IMPORTANT: the layout function is extracted and re-evaluated inside the
+ * widget extension's bare JSC. It must not close over module-level consts
+ * (those become ReferenceError → red/black card). Inline every literal.
  */
 export type WahrlyTodayProps = {
   label?: string
@@ -29,11 +31,6 @@ export type WahrlyTodayProps = {
   nextTask?: string
   nextBill?: string
 }
-
-const INK = '#12252C'
-const TEAL = '#0F6E66'
-const MUTED = '#5A717A'
-const BG = '#D8EBE6'
 
 function WahrlyTodayWidget(props: WahrlyTodayProps, _env: WidgetEnvironment) {
   'widget'
@@ -54,17 +51,22 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, _env: WidgetEnvironment) {
       alignment="leading"
       modifiers={[
         padding({ all: 14 }),
-        containerBackground(BG, 'widget'),
+        containerBackground('#D8EBE6', 'widget'),
         widgetURL(link),
       ]}
     >
-      <Text modifiers={[font({ size: 11, weight: 'semibold' }), foregroundStyle(TEAL)]}>
+      <Text
+        modifiers={[
+          font({ size: 11, weight: 'semibold' }),
+          foregroundStyle('#0F6E66'),
+        ]}
+      >
         {label}
       </Text>
       <Text
         modifiers={[
           font({ size: time ? 28 : 18, weight: 'bold', design: 'rounded' }),
-          foregroundStyle(INK),
+          foregroundStyle('#12252C'),
           lineLimit(2),
         ]}
       >
@@ -74,7 +76,7 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, _env: WidgetEnvironment) {
         <Text
           modifiers={[
             font({ size: 14, weight: 'medium' }),
-            foregroundStyle(INK),
+            foregroundStyle('#12252C'),
             lineLimit(3),
           ]}
         >
@@ -82,7 +84,13 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, _env: WidgetEnvironment) {
         </Text>
       ) : null}
       {subtitle ? (
-        <Text modifiers={[font({ size: 12 }), foregroundStyle(MUTED), lineLimit(2)]}>
+        <Text
+          modifiers={[
+            font({ size: 12 }),
+            foregroundStyle('#5A717A'),
+            lineLimit(2),
+          ]}
+        >
           {subtitle}
         </Text>
       ) : null}
