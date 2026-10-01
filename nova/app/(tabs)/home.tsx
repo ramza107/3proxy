@@ -252,16 +252,6 @@ export default function HomeScreen() {
 
           <BillsBrief />
 
-          <HomeSection title={t('home.askWahrly')} emphasize>
-            <Text style={styles.prompt}>
-              {isProUser ? t('home.askPrompt') : t('pro.freeChatHint')}
-            </Text>
-            <AIInput loading={loading} onSend={onSend} />
-            <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
-              <Text style={styles.askText}>{t('home.openChat')}</Text>
-            </Pressable>
-          </HomeSection>
-
           <Pressable
             style={styles.googleToggle}
             onPress={() => setGoogleOpen((v) => !v)}
@@ -304,6 +294,16 @@ export default function HomeScreen() {
               </HomeSection>
             )}
           </View>
+
+          <HomeSection title={t('home.askWahrly')} emphasize>
+            <Text style={styles.prompt}>
+              {isProUser ? t('home.askPrompt') : t('pro.freeChatHint')}
+            </Text>
+            <AIInput loading={loading} onSend={onSend} />
+            <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
+              <Text style={styles.askText}>{t('home.openChat')}</Text>
+            </Pressable>
+          </HomeSection>
         </ScrollView>
 
         <SoftPressable style={styles.fab} onPress={() => setQuickOpen(true)}>
