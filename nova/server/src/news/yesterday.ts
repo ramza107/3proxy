@@ -118,21 +118,28 @@ type RawItem = { title: string; link: string; pubDate: string }
 
 function parseRssItems(xml: string): RawItem[] {
   const items: RawItem[] = []
-  const blocks = xml.match(/<item[\s\S]*?<\/item>/gi) || []
+  const blocks =
+    xml.match(/<item[\s\S]*?<\/item>/gi) ||
+    xml.match(/<entry[\s\S]*?<\/entry>/gi) ||
+    []
   for (const block of blocks) {
     const title = block.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || ''
-    const link =
+    const linkRaw =
+      block.match(/<link[^>]*href=["']([^"']+)["'][^>]*\/?>/i)?.[1] ||
       block.match(/<link[^>]*>([\s\S]*?)<\/link>/i)?.[1] ||
-      block.match(/<link[^>]*href=["']([^"']+)["']/i)?.[1] ||
+      block.match(/<guid[^>]*isPermaLink=["']?true["']?[^>]*>([\s\S]*?)<\/guid>/i)?.[1] ||
+      block.match(/<id[^>]*>([\s\S]*?)<\/id>/i)?.[1] ||
       ''
     const pubDate =
       block.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i)?.[1] ||
       block.match(/<updated[^>]*>([\s\S]*?)<\/updated>/i)?.[1] ||
+      block.match(/<published[^>]*>([\s\S]*?)<\/published>/i)?.[1] ||
       ''
     const cleanTitle = stripTags(title)
-    const cleanLink = stripTags(link)
+    const cleanLink = stripTags(linkRaw)
     if (!cleanTitle || !cleanLink) continue
     if (/^Google News$/i.test(cleanTitle)) continue
+    if (!/^https?:\/\//i.test(cleanLink)) continue
     items.push({
       title: cleanTitle.slice(0, 200),
       link: cleanLink,

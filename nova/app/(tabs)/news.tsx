@@ -39,11 +39,13 @@ const INTEREST_KEYS: Record<NewsInterest, string> = {
 }
 
 function openExternal(url: string) {
+  const target = (url || '').trim()
+  if (!target || !/^https?:\/\//i.test(target)) return
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    window.open(url, '_blank', 'noopener,noreferrer')
+    window.open(target, '_blank', 'noopener,noreferrer')
     return
   }
-  Linking.openURL(url).catch(() => undefined)
+  Linking.openURL(target).catch(() => undefined)
 }
 
 function formatStoryTime(iso: string, language: string) {

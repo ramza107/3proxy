@@ -25,15 +25,57 @@ export async function fetchYesterdayNews(params: {
     const res = await fetch(`${apiUrl}/api/news/yesterday?${q.toString()}`)
     if (!res.ok) throw new Error(`news ${res.status}`)
     const data = (await res.json()) as YesterdayNewsDigest
+    const items = (Array.isArray(data.items) ? data.items : []).map((item, idx) => ({
+      ...item,
+      url: uniqueStoryUrl(item.url, item.title, item.source, item.id || String(idx)),
+    }))
     return {
       ...data,
       interests: normalizeNewsInterests(data.interests),
-      items: Array.isArray(data.items) ? data.items : [],
+      items,
       perSection: data.perSection || PER_SECTION,
     }
   } catch {
     return localDemoNews(interests, params.language || 'en', params.timeZone || deviceTimeZone())
   }
+}
+
+/** Avoid section homepages / blank links so every row opens a distinct destination. */
+function uniqueStoryUrl(url: string, title: string, source: string, id: string): string {
+  const cleaned = (url || '').trim()
+  if (cleaned && !isSectionHome(cleaned)) return cleaned
+  return searchUrlForStory(title, source, id)
+}
+
+function isSectionHome(url: string): boolean {
+  try {
+    const u = new URL(url)
+    const path = u.pathname.replace(/\/+$/, '') || '/'
+    if (path === '/' || path === '/news' || path === '/news/world') return true
+    const parts = path.split('/').filter(Boolean)
+    if (parts.length <= 1) return true
+    if (parts.length === 2 && ['news', 'world', 'sport', 'sports', 'business', 'technology'].includes(parts[1])) {
+      return true
+    }
+    return false
+  } catch {
+    return true
+  }
+}
+
+function searchUrlForStory(title: string, source: string, id: string): string {
+  const q = `${title} ${source}`.trim() || id
+  const enc = encodeURIComponent(q)
+  const host = (source || '').toLowerCase()
+  if (host.includes('guardian')) return `https://www.theguardian.com/search?q=${enc}`
+  if (host.includes('nyt') || host.includes('new york')) {
+    return `https://www.nytimes.com/search?query=${enc}`
+  }
+  if (host.includes('npr')) return `https://www.npr.org/search?query=${enc}`
+  if (host.includes('reuters')) return `https://www.reuters.com/site-search/?query=${enc}`
+  if (host.includes('al jazeera')) return `https://www.aljazeera.com/search/${enc}`
+  if (host.includes('bbc')) return `https://www.bbc.com/search?q=${enc}`
+  return `https://news.google.com/search?q=${enc}&hl=en`
 }
 
 function localDemoNews(
@@ -152,14 +194,17 @@ function localDemoNews(
 
   const list = interests.length ? interests : defaultNewsInterests()
   const items = list.flatMap((interest) =>
-    (samples[interest] || []).slice(0, PER_SECTION).map((row, j) => ({
-      id: `local_${interest}_${j}`,
-      title: row.title,
-      url: `https://www.bbc.com/news`,
-      source: row.source,
-      interest,
-      publishedAt: `${day}T${String(10 + (j % 8)).padStart(2, '0')}:15:00.000Z`,
-    })),
+    (samples[interest] || []).slice(0, PER_SECTION).map((row, j) => {
+      const id = `local_${interest}_${j}`
+      return {
+        id,
+        title: row.title,
+        url: searchUrlForStory(row.title, row.source, id),
+        source: row.source,
+        interest,
+        publishedAt: `${day}T${String(10 + (j % 8)).padStart(2, '0')}:15:00.000Z`,
+      }
+    }),
   )
 
   const parts = list.map((k) => `${k} ${items.filter((i) => i.interest === k).length}`)
