@@ -14,21 +14,25 @@ import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { ActivityIndicator, AppState, Platform, View } from 'react-native'
 import { colors } from '../constants/theme'
+import { AnalyticsEvents, identify as analyticsIdentify, track } from '../lib/analytics'
 import {
   getNotifications,
   syncBillReminders,
   syncDailyRitualNotifications,
   syncPromiseDueReminders,
 } from '../lib/notifications'
+import { identifyUser, initMonitoring, wrapRoot } from '../lib/monitoring'
 import { isSupabaseConfigured, getSupabase } from '../lib/supabase'
 import { useNovaStore } from '../lib/store'
+
+initMonitoring()
 
 const RootView =
   Platform.OS === 'web'
     ? View
     : require('react-native-gesture-handler').GestureHandlerRootView
 
-export default function RootLayout() {
+function RootLayout() {
   const [serifLoaded] = useSourceSerif({
     SourceSerif4_600SemiBold,
     SourceSerif4_600SemiBold_Italic,
@@ -51,6 +55,27 @@ export default function RootLayout() {
   const setDemoSession = useNovaStore((s) => s.setDemoSession)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const clearSession = useNovaStore((s) => s.clearSession)
+  const sessionEmail = useNovaStore((s) => s.sessionEmail)
+
+  useEffect(() => {
+    if (!hydrated || !fontsReady) return
+    track(AnalyticsEvents.appOpen, {
+      onboarded: onboardingComplete,
+      signed_in: Boolean(sessionUserId),
+    })
+  }, [hydrated, fontsReady]) // once per cold start after ready
+
+  useEffect(() => {
+    if (!sessionUserId) {
+      identifyUser(null)
+      return
+    }
+    identifyUser(sessionUserId, sessionEmail)
+    analyticsIdentify(sessionUserId, {
+      email: sessionEmail,
+      language: settings.language,
+    })
+  }, [sessionUserId, sessionEmail, settings.language])
 
   useEffect(() => {
     if (!isSupabaseConfigured) return
@@ -215,3 +240,5 @@ export default function RootLayout() {
     </RootView>
   )
 }
+
+export default wrapRoot(RootLayout)

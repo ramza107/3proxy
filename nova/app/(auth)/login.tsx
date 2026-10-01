@@ -13,6 +13,7 @@ import {
 import { Screen } from '../../components/Screen'
 import { SocialAuthButtons } from '../../components/SocialAuthButtons'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { AnalyticsEvents, track } from '../../lib/analytics'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
@@ -49,6 +50,7 @@ export default function LoginScreen() {
       } else {
         setDemoSession(email.trim())
       }
+      void track(AnalyticsEvents.login)
       router.replace('/tasks')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Login failed')
@@ -71,7 +73,10 @@ export default function LoginScreen() {
 
         <View style={styles.card}>
           <SocialAuthButtons
-            onSuccess={() => router.replace('/tasks')}
+            onSuccess={() => {
+              void track(AnalyticsEvents.login, { method: 'social' })
+              router.replace('/tasks')
+            }}
             onError={setError}
           />
 
@@ -124,6 +129,7 @@ export default function LoginScreen() {
           style={styles.demoBtn}
           onPress={() => {
             setDemoSession('demo@wahrly.local', 'Friend')
+            void track(AnalyticsEvents.demo)
             router.replace('/welcome')
           }}
         >

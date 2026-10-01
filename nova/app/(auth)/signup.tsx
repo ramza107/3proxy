@@ -13,6 +13,7 @@ import {
 import { Screen } from '../../components/Screen'
 import { SocialAuthButtons } from '../../components/SocialAuthButtons'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { AnalyticsEvents, track } from '../../lib/analytics'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
@@ -63,6 +64,7 @@ export default function SignupScreen() {
         name: name.trim(),
         onboardingComplete: false,
       })
+      void track(AnalyticsEvents.signup)
       router.replace('/welcome')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Sign up failed')

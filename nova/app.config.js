@@ -108,6 +108,10 @@ module.exports = ({ config }) => {
       googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+      sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
+      posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY || '',
+      posthogHost: process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+      appEnv: process.env.EXPO_PUBLIC_APP_ENV || '',
       eas: {
         projectId:
           process.env.EAS_PROJECT_ID || 'cd1e9e17-cb36-4664-8395-c9599ae532f9',

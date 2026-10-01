@@ -20,6 +20,7 @@ import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { TaskEditor } from '../../components/TaskEditor'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { AnalyticsEvents, track } from '../../lib/analytics'
 import { t as translate } from '../../lib/i18n'
 import { dateLocale } from '../../lib/dateLocale'
 import { parseHm } from '../../lib/notifications'
@@ -171,6 +172,7 @@ export default function HomeScreen() {
     setPlanning(true)
     try {
       const res = await organizeMyDay({ includeUndated: true, skipTaskIds })
+      void track(AnalyticsEvents.planDay)
       if (showMorningBrief) dismissMorningBrief()
       setPlanOpen(false)
       Alert.alert('Smart day', res.reply, [
