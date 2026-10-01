@@ -42,6 +42,7 @@ export default function TabsLayout() {
           },
           tabBarActiveTintColor: colors.accentStrong,
           tabBarInactiveTintColor: colors.textDim,
+          tabBarLabelPosition: 'below-icon',
           tabBarLabelStyle: {
             fontSize: 11,
             fontFamily: fonts.bodyMedium,
