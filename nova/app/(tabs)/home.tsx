@@ -103,6 +103,7 @@ export default function HomeScreen() {
   const [planOpen, setPlanOpen] = useState(false)
   const [weekOpen, setWeekOpen] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
+  const [googleOpen, setGoogleOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
 
@@ -251,28 +252,48 @@ export default function HomeScreen() {
 
           <BillsBrief />
 
-          <Text style={styles.groupLabel}>{t('home.fromGoogle')}</Text>
-          <CalendarBrief
-            userId={userId}
-            onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
-          />
-          {isProUser ? (
-            <>
-              <InboxBrief userId={userId} enabled={emailDigestEnabled} />
-              <OpenLoopsBrief
-                userId={userId}
-                autoPromises={emailPromisesAutoEnabled}
-                meetingAlertsEnabled={meetingEmailAlertsEnabled}
-              />
-            </>
-          ) : (
-            <HomeSection title={t('pro.gmailTitle')} meta={t('pro.title')}>
-              <Text style={styles.prompt}>{t('pro.gmailLocked')}</Text>
-              <Pressable style={styles.ask} onPress={() => router.push('/settings')}>
-                <Text style={styles.askText}>{t('pro.upgrade')}</Text>
-              </Pressable>
-            </HomeSection>
-          )}
+          <Pressable
+            style={styles.googleToggle}
+            onPress={() => setGoogleOpen((v) => !v)}
+            accessibilityRole="button"
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.googleToggleTitle}>{t('home.googleToggle')}</Text>
+              <Text style={styles.googleToggleSub}>
+                {googleOpen ? t('home.googleHide') : t('home.googleCollapsed')}
+              </Text>
+            </View>
+            <Text style={styles.googleChevron}>{googleOpen ? '▴' : '▾'}</Text>
+          </Pressable>
+
+          <View
+            style={[styles.googleBlock, !googleOpen && styles.googleHidden]}
+            pointerEvents={googleOpen ? 'auto' : 'none'}
+            accessibilityElementsHidden={!googleOpen}
+            importantForAccessibility={googleOpen ? 'yes' : 'no-hide-descendants'}
+          >
+            <CalendarBrief
+              userId={userId}
+              onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
+            />
+            {isProUser ? (
+              <>
+                <InboxBrief userId={userId} enabled={emailDigestEnabled && googleOpen} />
+                <OpenLoopsBrief
+                  userId={userId}
+                  autoPromises={emailPromisesAutoEnabled}
+                  meetingAlertsEnabled={meetingEmailAlertsEnabled && googleOpen}
+                />
+              </>
+            ) : (
+              <HomeSection title={t('pro.gmailTitle')} meta={t('pro.title')}>
+                <Text style={styles.prompt}>{t('pro.gmailLocked')}</Text>
+                <Pressable style={styles.ask} onPress={() => router.push('/settings')}>
+                  <Text style={styles.askText}>{t('pro.upgrade')}</Text>
+                </Pressable>
+              </HomeSection>
+            )}
+          </View>
 
           <HomeSection title={t('home.askWahrly')} emphasize>
             <Text style={styles.prompt}>
@@ -293,7 +314,7 @@ export default function HomeScreen() {
       <BottomSheet
         visible={showMorningBrief}
         onClose={dismissMorningBrief}
-        title="Morning brief"
+        title={t('home.morningBriefTitle')}
       >
         <MorningBrief
           embedded
@@ -307,7 +328,7 @@ export default function HomeScreen() {
         />
       </BottomSheet>
 
-      <BottomSheet visible={weekOpen} onClose={dismissWeeklyBrief} title="Weekly brief">
+      <BottomSheet visible={weekOpen} onClose={dismissWeeklyBrief} title={t('home.weeklyBriefTitle')}>
         <WeeklyBrief
           onClose={dismissWeeklyBrief}
           onPlanDay={() => {
@@ -499,15 +520,40 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     paddingHorizontal: 4,
   },
-  groupLabel: {
+  googleToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+  },
+  googleToggleTitle: {
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+  },
+  googleToggleSub: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  googleChevron: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: -4,
-    marginTop: 4,
-    paddingHorizontal: 4,
+    fontSize: 16,
+  },
+  googleBlock: { gap: spacing.md },
+  googleHidden: {
+    height: 0,
+    overflow: 'hidden',
+    opacity: 0,
+    margin: 0,
+    padding: 0,
   },
   prompt: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.bodyMedium },
   ask: { alignSelf: 'flex-start', marginTop: 2 },

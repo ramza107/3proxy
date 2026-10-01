@@ -26,15 +26,6 @@ type Props = {
 }
 
 const PRIORITIES: Priority[] = ['high', 'medium', 'low']
-const DOW_SHORT: { key: Dow; label: string }[] = [
-  { key: 1, label: 'Mon' },
-  { key: 2, label: 'Tue' },
-  { key: 3, label: 'Wed' },
-  { key: 4, label: 'Thu' },
-  { key: 5, label: 'Fri' },
-  { key: 6, label: 'Sat' },
-  { key: 0, label: 'Sun' },
-]
 
 function today() {
   return format(new Date(), 'yyyy-MM-dd')
@@ -50,6 +41,15 @@ function plusDays(n: number) {
 
 export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelete }: Props) {
   const t = useT()
+  const DOW_SHORT: { key: Dow; label: string }[] = [
+    { key: 1, label: t('editor.dowMon') },
+    { key: 2, label: t('editor.dowTue') },
+    { key: 3, label: t('editor.dowWed') },
+    { key: 4, label: t('editor.dowThu') },
+    { key: 5, label: t('editor.dowFri') },
+    { key: 6, label: t('editor.dowSat') },
+    { key: 0, label: t('editor.dowSun') },
+  ]
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -98,15 +98,15 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
   const save = () => {
     const nextTitle = title.trim()
     if (!nextTitle) {
-      setError('Title cannot be empty')
+      setError(t('editor.titleEmpty'))
       return
     }
     if (time && !parseHm(time)) {
-      setError('Time must be HH:MM')
+      setError(t('editor.timeFormat'))
       return
     }
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      setError('Date must be YYYY-MM-DD')
+      setError(t('editor.dateFormat'))
       return
     }
     let recurrence: TaskRecurrence | null = null
@@ -138,19 +138,19 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
               value={title}
               onChangeText={setTitle}
               style={styles.input}
-              placeholder="Task title"
+              placeholder={t('editor.taskTitlePh')}
               placeholderTextColor={colors.textDim}
             />
 
-            <Text style={styles.label}>Date</Text>
+            <Text style={styles.label}>{t('editor.date')}</Text>
             <View style={styles.row}>
               {(
                 [
                   [t('common.today'), today()],
                   [t('common.tomorrow'), tomorrow()],
-                  ['+3 days', plusDays(3)],
-                  ['+1 week', plusDays(7)],
-                  ['Clear', ''],
+                  [t('editor.plus3Days'), plusDays(3)],
+                  [t('editor.plus1Week'), plusDays(7)],
+                  [t('common.clear'), ''],
                 ] as const
               ).map(([label, value]) => (
                 <Pressable
@@ -171,16 +171,16 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
               autoCapitalize="none"
             />
 
-            <Text style={styles.label}>Time</Text>
+            <Text style={styles.label}>{t('editor.time')}</Text>
             <View style={styles.row}>
-              {['09:00', '12:00', '15:00', '18:00', ''].map((t) => (
+              {(['09:00', '12:00', '15:00', '18:00', ''] as const).map((slot) => (
                 <Pressable
-                  key={t || 'none'}
-                  style={[styles.chip, time === t && styles.chipOn]}
-                  onPress={() => setTime(t)}
+                  key={slot || 'none'}
+                  style={[styles.chip, time === slot && styles.chipOn]}
+                  onPress={() => setTime(slot)}
                 >
-                  <Text style={[styles.chipText, time === t && styles.chipTextOn]}>
-                    {t || 'None'}
+                  <Text style={[styles.chipText, time === slot && styles.chipTextOn]}>
+                    {slot || t('common.none')}
                   </Text>
                 </Pressable>
               ))}
@@ -202,7 +202,9 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
                   style={[styles.chip, priority === p && styles.chipOn]}
                   onPress={() => setPriority(p)}
                 >
-                  <Text style={[styles.chipText, priority === p && styles.chipTextOn]}>{p}</Text>
+                  <Text style={[styles.chipText, priority === p && styles.chipTextOn]}>
+                    {t(`priority.${p}`)}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -246,10 +248,10 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
               </View>
             ) : null}
             {recFreq !== 'none' ? (
-              <Text style={styles.hint}>Completing spawns the next occurrence automatically.</Text>
+              <Text style={styles.hint}>{t('editor.recurrenceHint')}</Text>
             ) : null}
 
-            <Text style={styles.label}>Quick move</Text>
+            <Text style={styles.label}>{t('editor.quickMove')}</Text>
             <View style={styles.row}>
               <Pressable
                 style={styles.action}
@@ -277,7 +279,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
                   onClose()
                 }}
               >
-                <Text style={styles.actionText}>Postpone +1</Text>
+                <Text style={styles.actionText}>{t('editor.postpone1')}</Text>
               </Pressable>
             </View>
 
@@ -290,7 +292,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
             <View style={styles.footerRow}>
               <Pressable style={styles.secondary} onPress={onComplete}>
                 <Text style={styles.secondaryText}>
-                  {task.completed ? 'Mark active' : 'Complete'}
+                  {task.completed ? t('editor.markActive') : t('editor.complete')}
                 </Text>
               </Pressable>
               <Pressable

@@ -1,4 +1,5 @@
 import { addDays, format } from 'date-fns'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import {
@@ -9,8 +10,10 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../components/Screen'
+import { SoftPressable } from '../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { dateLocale } from '../lib/dateLocale'
 import { formatMoney, currentMonthKey, isPaidThisMonth } from '../lib/bills'
@@ -28,6 +31,8 @@ function tomorrowISO() {
 function taskMeta(task: Task) {
   return [task.time, task.priority].filter(Boolean).join(' · ')
 }
+
+const DUSK: [string, string, string] = ['#1A3A42', '#0F2A32', '#0A1F26']
 
 export default function EveningClearScreen() {
   const t = useT()
@@ -50,14 +55,14 @@ export default function EveningClearScreen() {
     () =>
       sortTasks(
         tasks.filter(
-          (t) => !t.completed && (t.date === today || !t.date),
+          (task) => !task.completed && (task.date === today || !task.date),
         ),
       ),
     [tasks, today],
   )
 
   const tomorrowOpen = useMemo(
-    () => sortTasks(tasks.filter((t) => !t.completed && t.date === tomorrow)),
+    () => sortTasks(tasks.filter((task) => !task.completed && task.date === tomorrow)),
     [tasks, tomorrow],
   )
 
@@ -70,11 +75,6 @@ export default function EveningClearScreen() {
       }),
     )
   }, [tasks, today])
-
-  const loopsDone = useMemo(
-    () => doneToday.filter((task) => task.sourceKind === 'promise' || task.sourceKind === 'meeting'),
-    [doneToday],
-  )
 
   const billsPaidToday = useMemo(() => {
     const month = currentMonthKey()
@@ -127,6 +127,8 @@ export default function EveningClearScreen() {
     setStep('tomorrow')
   }
 
+  const stepIndex = step === 'today' ? 0 : step === 'tomorrow' ? 1 : 2
+
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -134,11 +136,16 @@ export default function EveningClearScreen() {
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Text style={styles.back}>{t('common.close')}</Text>
           </Pressable>
+          <View style={styles.dots}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={[styles.dot, i <= stepIndex && styles.dotOn]} />
+            ))}
+          </View>
           <Text style={styles.stepHint}>
             {step === 'today'
-              ? `1 · ${t('common.today')}`
+              ? t('evening.stepToday')
               : step === 'tomorrow'
-                ? `2 · ${t('common.tomorrow')}`
+                ? t('evening.stepTomorrow')
                 : t('common.done')}
           </Text>
         </View>
@@ -148,11 +155,29 @@ export default function EveningClearScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {step === 'today' ? (
-            <>
-              <Text style={styles.brand}>{t('evening.title')}</Text>
-              <Text style={styles.lead}>{t('evening.sub')}</Text>
+          <Animated.View entering={FadeIn.duration(420)}>
+            <LinearGradient colors={DUSK} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+              <Text style={styles.heroKicker}>Wahrly</Text>
+              <Text style={styles.heroTitle}>
+                {step === 'done' ? t('evening.clearTitle') : t('evening.title')}
+              </Text>
+              <Text style={styles.heroSub}>
+                {step === 'tomorrow'
+                  ? format(addDays(new Date(), 1), 'EEEE, MMM d', { locale })
+                  : step === 'done'
+                    ? t('evening.clearSub')
+                    : t('evening.sub')}
+              </Text>
+              {step === 'today' ? (
+                <Text style={styles.heroMeta}>
+                  {todayOpen.length} {t('home.openShort')} · {format(new Date(), 'EEEE', { locale })}
+                </Text>
+              ) : null}
+            </LinearGradient>
+          </Animated.View>
 
+          {step === 'today' ? (
+            <Animated.View key="today" entering={FadeInDown.duration(380).springify().damping(18)} style={styles.block}>
               {todayOpen.length === 0 ? (
                 <View style={styles.empty}>
                   <Text style={styles.emptyTitle}>{t('evening.clearTitle')}</Text>
@@ -160,16 +185,20 @@ export default function EveningClearScreen() {
                 </View>
               ) : (
                 <>
-                  <Pressable style={styles.moveAll} onPress={moveAllTodayToTomorrow}>
+                  <SoftPressable style={styles.moveAll} onPress={moveAllTodayToTomorrow}>
                     <Text style={styles.moveAllTitle}>{t('evening.moveAll')}</Text>
                     <Text style={styles.moveAllSub}>
                       {todayOpen.length} · {t('common.continue')}
                     </Text>
-                  </Pressable>
+                  </SoftPressable>
 
                   <View style={styles.list}>
-                    {todayOpen.map((task) => (
-                      <View key={task.id} style={styles.row}>
+                    {todayOpen.map((task, i) => (
+                      <Animated.View
+                        key={task.id}
+                        entering={FadeInDown.delay(80 + i * 45).duration(320)}
+                        style={styles.row}
+                      >
                         <View style={styles.rowBody}>
                           <Text style={styles.rowTitle} numberOfLines={2}>
                             {task.title}
@@ -182,9 +211,9 @@ export default function EveningClearScreen() {
                           ) : null}
                         </View>
                         <View style={styles.actions}>
-                          <Pressable style={styles.actionDone} onPress={() => onDone(task)}>
+                          <SoftPressable style={styles.actionDone} onPress={() => onDone(task)}>
                             <Text style={styles.actionDoneText}>{t('evening.done')}</Text>
-                          </Pressable>
+                          </SoftPressable>
                           <Pressable style={styles.action} onPress={() => onTomorrow(task)}>
                             <Text style={styles.actionText}>{t('evening.tomorrow')}</Text>
                           </Pressable>
@@ -192,42 +221,37 @@ export default function EveningClearScreen() {
                             <Text style={styles.actionGhostText}>{t('evening.drop')}</Text>
                           </Pressable>
                         </View>
-                      </View>
+                      </Animated.View>
                     ))}
                   </View>
                 </>
               )}
 
-              <Pressable style={styles.primary} onPress={() => setStep('tomorrow')}>
+              <SoftPressable style={styles.primary} onPress={() => setStep('tomorrow')}>
                 <Text style={styles.primaryText}>{t('common.continue')}</Text>
-              </Pressable>
-            </>
+              </SoftPressable>
+            </Animated.View>
           ) : null}
 
           {step === 'tomorrow' ? (
-            <>
-              <Text style={styles.brand}>{t('common.tomorrow')}</Text>
-              <Text style={styles.lead}>
-                {format(addDays(new Date(), 1), 'EEEE, MMM d', { locale })} — {t('evening.sub')}
-              </Text>
-
+            <Animated.View key="tomorrow" entering={FadeInDown.duration(380).springify().damping(18)} style={styles.block}>
               <View style={styles.addRow}>
                 <TextInput
                   value={draft}
                   onChangeText={setDraft}
-                  placeholder={t('common.tomorrow')}
+                  placeholder={t('evening.addPh')}
                   placeholderTextColor={colors.textDim}
                   style={styles.input}
                   onSubmitEditing={addTomorrow}
                   returnKeyType="done"
                 />
-                <Pressable
+                <SoftPressable
                   style={[styles.addBtn, !draft.trim() && styles.addBtnOff]}
                   onPress={addTomorrow}
                   disabled={!draft.trim()}
                 >
-                  <Text style={styles.addBtnText}>Add</Text>
-                </Pressable>
+                  <Text style={styles.addBtnText}>{t('common.add')}</Text>
+                </SoftPressable>
               </View>
 
               {tomorrowOpen.length === 0 ? (
@@ -237,15 +261,19 @@ export default function EveningClearScreen() {
                 </View>
               ) : (
                 <View style={styles.list}>
-                  {tomorrowOpen.map((task) => (
-                    <View key={task.id} style={styles.tomorrowRow}>
+                  {tomorrowOpen.map((task, i) => (
+                    <Animated.View
+                      key={task.id}
+                      entering={FadeInDown.delay(60 + i * 40).duration(300)}
+                      style={styles.tomorrowRow}
+                    >
                       <Text style={styles.rowTitle} numberOfLines={2}>
                         {task.title}
                       </Text>
                       {taskMeta(task) ? (
                         <Text style={styles.rowMeta}>{taskMeta(task)}</Text>
                       ) : null}
-                    </View>
+                    </Animated.View>
                   ))}
                 </View>
               )}
@@ -269,18 +297,17 @@ export default function EveningClearScreen() {
                 </View>
               ) : null}
 
-              <Pressable style={styles.primary} onPress={finish}>
+              <SoftPressable style={styles.primary} onPress={finish}>
                 <Text style={styles.primaryText}>{t('evening.finish')}</Text>
-              </Pressable>
+              </SoftPressable>
               <Pressable style={styles.link} onPress={() => setStep('today')}>
                 <Text style={styles.linkText}>{t('common.today')}</Text>
               </Pressable>
-            </>
+            </Animated.View>
           ) : null}
 
           {step === 'done' ? (
-            <>
-              <Text style={styles.brand}>{t('evening.clearTitle')}</Text>
+            <Animated.View key="done" entering={FadeInDown.duration(400).springify().damping(17)} style={styles.block}>
               <Text style={styles.lead}>
                 {doneCount || movedCount || doneToday.length
                   ? t.tf('evening.summary', {
@@ -291,7 +318,7 @@ export default function EveningClearScreen() {
                   : t('evening.clearSub')}
               </Text>
 
-              {doneToday.length || loopsDone.length || billsPaidToday.length ? (
+              {doneToday.length || billsPaidToday.length ? (
                 <View style={styles.digest}>
                   <Text style={styles.digestTitle}>{t('evening.digestTitle')}</Text>
                   {doneToday.slice(0, 8).map((task) => (
@@ -312,10 +339,10 @@ export default function EveningClearScreen() {
                 </View>
               ) : null}
 
-              <Pressable style={styles.primary} onPress={() => router.replace('/tasks')}>
+              <SoftPressable style={styles.primary} onPress={() => router.replace('/tasks')}>
                 <Text style={styles.primaryText}>{t('evening.back')}</Text>
-              </Pressable>
-            </>
+              </SoftPressable>
+            </Animated.View>
           ) : null}
         </ScrollView>
       </SafeAreaView>
@@ -331,33 +358,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
+    gap: 10,
   },
   back: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  dots: { flexDirection: 'row', gap: 6, flex: 1, justifyContent: 'center' },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.borderStrong,
+  },
+  dotOn: { backgroundColor: colors.accent, width: 16 },
   stepHint: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    letterSpacing: 0.3,
+    fontSize: 12,
+    letterSpacing: 0.2,
   },
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: 48,
-    gap: 14,
+    gap: 16,
   },
-  brand: {
-    color: colors.text,
+  hero: {
+    borderRadius: radii.lg,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
+    gap: 4,
+    overflow: 'hidden',
+  },
+  heroKicker: {
+    color: 'rgba(247,251,250,0.55)',
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  heroTitle: {
+    color: colors.textOnAccent,
     fontFamily: fonts.brand,
-    fontSize: 34,
-    letterSpacing: -0.7,
+    fontSize: 32,
+    letterSpacing: -0.6,
   },
+  heroSub: {
+    color: 'rgba(247,251,250,0.78)',
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 4,
+  },
+  heroMeta: {
+    color: 'rgba(247,251,250,0.55)',
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+    marginTop: 8,
+  },
+  block: { gap: 14 },
   lead: {
     color: colors.textMuted,
     fontFamily: fonts.body,
     fontSize: 16,
     lineHeight: 24,
-    marginTop: -6,
-    marginBottom: 8,
   },
   digest: {
     gap: 6,
@@ -381,9 +443,9 @@ const styles = StyleSheet.create({
   },
   list: { gap: 10 },
   row: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: 14,
     gap: 12,
@@ -415,9 +477,9 @@ const styles = StyleSheet.create({
   },
   actionGhostText: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   empty: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.md,
     gap: 4,
@@ -425,7 +487,7 @@ const styles = StyleSheet.create({
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   primary: {
-    marginTop: 8,
+    marginTop: 4,
     backgroundColor: colors.accent,
     borderRadius: radii.full,
     height: 50,
@@ -465,15 +527,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13,
   },
-  secondary: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-  },
-  secondaryText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 14 },
   addRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   input: {
     flex: 1,
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.border,
@@ -494,9 +551,9 @@ const styles = StyleSheet.create({
   addBtnOff: { opacity: 0.4 },
   addBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
   tomorrowRow: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: 14,
     gap: 3,
@@ -505,7 +562,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     gap: 8,
     paddingTop: 8,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
   leftoverLabel: {

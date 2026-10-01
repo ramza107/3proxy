@@ -34,9 +34,16 @@ export function findNearestTask(tasks: Task[], now = new Date()): Task | null {
   return undated[0] || null
 }
 
+export function nearestTaskLabelKey(task: Task, today = localISODate()): 'widget.next' | 'widget.tomorrow' | 'widget.upcoming' {
+  if (!task.date || task.date === today) return 'widget.next'
+  if (task.date === addLocalDays(today, 1)) return 'widget.tomorrow'
+  return 'widget.upcoming'
+}
+
 export function nearestTaskLabel(task: Task, today = localISODate()): string {
-  if (!task.date || task.date === today) return 'NEXT'
-  if (task.date === addLocalDays(today, 1)) return 'TOMORROW'
+  const key = nearestTaskLabelKey(task, today)
+  if (key === 'widget.next') return 'NEXT'
+  if (key === 'widget.tomorrow') return 'TOMORROW'
   return 'UPCOMING'
 }
 

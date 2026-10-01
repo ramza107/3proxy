@@ -1,5 +1,6 @@
 import { format, parseISO } from 'date-fns'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { formatMoney } from '../lib/bills'
 import { dateLocale } from '../lib/dateLocale'
@@ -41,44 +42,55 @@ export function WeeklyBrief({ onClose, onPlanDay, onOpenBills, onOpenTasks }: Pr
   )}`
 
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.kicker}>This week</Text>
+    <Animated.View entering={FadeIn.duration(360)} style={styles.wrap}>
+      <Text style={styles.kicker}>{t('weekly.kicker')}</Text>
       <Text style={styles.range}>{rangeLabel}</Text>
 
-      <Text style={styles.section}>Focus</Text>
+      <Text style={styles.section}>{t('weekly.focus')}</Text>
       {focuses.length === 0 ? (
-        <Text style={styles.empty}>No open tasks yet — add what matters most.</Text>
+        <Text style={styles.empty}>{t('weekly.focusEmpty')}</Text>
       ) : (
         focuses.map((title, i) => (
-          <View key={`${title}-${i}`} style={styles.focusRow}>
+          <Animated.View
+            key={`${title}-${i}`}
+            entering={FadeInDown.delay(80 + i * 50).duration(320)}
+            style={styles.focusRow}
+          >
             <Text style={styles.focusNum}>{i + 1}</Text>
             <Text style={styles.focusTitle} numberOfLines={2}>
               {title}
             </Text>
-          </View>
+          </Animated.View>
         ))
       )}
 
-      <Text style={styles.section}>Still open · {open.length}</Text>
+      <Text style={styles.section}>{t.tf('weekly.stillOpen', { n: open.length })}</Text>
       {open.length === 0 ? (
-        <Text style={styles.empty}>Week looks clear.</Text>
+        <Text style={styles.empty}>{t('weekly.clear')}</Text>
       ) : (
-        open.slice(0, 6).map((task) => (
-          <Text key={task.id} style={styles.line} numberOfLines={1}>
+        open.slice(0, 6).map((task, i) => (
+          <Animated.Text
+            key={task.id}
+            entering={FadeInDown.delay(120 + i * 35).duration(280)}
+            style={styles.line}
+            numberOfLines={1}
+          >
             {task.date ? `${task.date.slice(5)} · ` : ''}
             {task.title}
-          </Text>
+          </Animated.Text>
         ))
       )}
-      {open.length > 6 ? <Text style={styles.more}>+{open.length - 6} more</Text> : null}
+      {open.length > 6 ? (
+        <Text style={styles.more}>{t.tf('weekly.more', { n: open.length - 6 })}</Text>
+      ) : null}
 
-      <Text style={styles.section}>Bills this week · {dueBills.length}</Text>
+      <Text style={styles.section}>{t.tf('weekly.bills', { n: dueBills.length })}</Text>
       {dueBills.length === 0 ? (
-        <Text style={styles.empty}>No unpaid bills due this week.</Text>
+        <Text style={styles.empty}>{t('weekly.billsEmpty')}</Text>
       ) : (
         dueBills.map((b) => (
           <Text key={b.id} style={styles.line} numberOfLines={1}>
-            {b.title} · {formatMoney(b.amount, b.currency)} · day {b.dayOfMonth}
+            {b.title} · {formatMoney(b.amount, b.currency)} · {t.tf('weekly.billDay', { n: b.dayOfMonth })}
           </Text>
         ))
       )}
@@ -86,26 +98,26 @@ export function WeeklyBrief({ onClose, onPlanDay, onOpenBills, onOpenTasks }: Pr
       <View style={styles.actions}>
         {onPlanDay ? (
           <SoftPressable style={styles.primary} onPress={onPlanDay}>
-            <Text style={styles.primaryText}>Plan today</Text>
+            <Text style={styles.primaryText}>{t('weekly.planToday')}</Text>
           </SoftPressable>
         ) : null}
         <View style={styles.row}>
           {onOpenTasks ? (
             <Pressable style={styles.secondary} onPress={onOpenTasks}>
-              <Text style={styles.secondaryText}>Tasks</Text>
+              <Text style={styles.secondaryText}>{t('tabs.tasks')}</Text>
             </Pressable>
           ) : null}
           {onOpenBills ? (
             <Pressable style={styles.secondary} onPress={onOpenBills}>
-              <Text style={styles.secondaryText}>Bills</Text>
+              <Text style={styles.secondaryText}>{t('tabs.bills')}</Text>
             </Pressable>
           ) : null}
         </View>
         <Pressable onPress={onClose} style={styles.dismiss}>
-          <Text style={styles.dismissText}>Got it</Text>
+          <Text style={styles.dismissText}>{t('common.gotIt')}</Text>
         </Pressable>
       </View>
-    </View>
+    </Animated.View>
   )
 }
 
@@ -153,7 +165,7 @@ const styles = StyleSheet.create({
   empty: { color: colors.textDim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   actions: { marginTop: spacing.md, gap: 8 },
   primary: {
-    backgroundColor: colors.bgDeep,
+    backgroundColor: colors.accent,
     borderRadius: radii.full,
     height: 48,
     alignItems: 'center',

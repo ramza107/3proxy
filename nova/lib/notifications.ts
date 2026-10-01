@@ -1,7 +1,8 @@
 import { Platform } from 'react-native'
 import type { Bill, Task, UserSettings } from '../types'
 import { isPaidThisMonth, nextDueDate } from './bills'
-import { tasksForDay, todayISO } from './store'
+import { t, tf } from './i18n'
+import { tasksForDay, todayISO, useNovaStore } from './store'
 
 let Notifications: typeof import('expo-notifications') | null = null
 
@@ -9,6 +10,9 @@ const MORNING_ID_KEY = 'wahrly-morning-brief'
 const EVENING_ID_KEY = 'wahrly-evening-clear'
 const BILL_PREFIX = 'wahrly-bill-'
 
+function langOf(settings: UserSettings) {
+  return settings.language || 'en'
+}
 async function getNotifications() {
   if (Platform.OS === 'web') return null
   if (!Notifications) {
@@ -70,6 +74,7 @@ export function formatHm(hour: number, minute: number) {
 export async function scheduleTaskNotification(
   task: Task,
   enabled: boolean,
+  language?: string | null,
 ): Promise<string | null> {
   if (Platform.OS === 'web' || !enabled || task.completed) return null
   const when = taskTriggerDate(task)
@@ -80,11 +85,13 @@ export async function scheduleTaskNotification(
 
   const NotificationsMod = await getNotifications()
   if (!NotificationsMod) return null
+  const lang =
+    language || useNovaStore.getState().settings.language || 'en'
 
   return NotificationsMod.scheduleNotificationAsync({
     content: {
-      title: 'Wahrly',
-      body: `Time to ${task.title.toLowerCase()}`,
+      title: t(lang, 'notif.taskTitle'),
+      body: tf(lang, 'notif.taskBody', { title: task.title }),
       data: { kind: 'task', taskId: task.id, route: '/tasks' },
     },
     trigger: {
@@ -121,31 +128,36 @@ async function cancelByIdentifier(identifier: string) {
   }
 }
 
-function morningBody(tasks: Task[], emailDigestEnabled?: boolean) {
+function morningBody(tasks: Task[], settings: UserSettings) {
+  const lang = langOf(settings)
   const today = tasksForDay(tasks, todayISO())
-  const inboxHint = emailDigestEnabled
-    ? '\nOpen Wahrly for weather + who wrote yesterday.'
-    : '\nOpen Wahrly for weather and today’s plan.'
+  const inboxHint =
+    '\n' +
+    (settings.emailDigestEnabled !== false
+      ? t(lang, 'notif.morningInboxWeather')
+      : t(lang, 'notif.morningInboxPlan'))
   if (!today.length) {
-    return `Good morning. Your day looks clear — open Wahrly for weather and to add something.${inboxHint}`
+    return `${t(lang, 'notif.morningClear')}${inboxHint}`
   }
   const preview = today
     .slice(0, 4)
-    .map((t, i) => `${i + 1}. ${t.title}${t.time ? ` (${t.time})` : ''}`)
+    .map((task, i) => `${i + 1}. ${task.title}${task.time ? ` (${task.time})` : ''}`)
     .join('\n')
-  const more = today.length > 4 ? `\n+${today.length - 4} more` : ''
-  return `Good morning — today's list:\n${preview}${more}${inboxHint}`
+  const more =
+    today.length > 4 ? `\n${tf(lang, 'notif.morningMore', { n: today.length - 4 })}` : ''
+  return `${t(lang, 'notif.morningList')}\n${preview}${more}${inboxHint}`
 }
 
 export async function syncDailyRitualNotifications(
   settings: UserSettings,
   tasks: Task[],
 ): Promise<{ morningOk: boolean; eveningOk: boolean; webNote?: string }> {
+  const lang = langOf(settings)
   if (Platform.OS === 'web') {
     return {
       morningOk: false,
       eveningOk: false,
-      webNote: 'Daily reminders work on iOS/Android. Web can save times for later.',
+      webNote: t(lang, 'notif.webRituals'),
     }
   }
 
@@ -170,9 +182,14 @@ export async function syncDailyRitualNotifications(
     if (hm) {
       await NotificationsMod.scheduleNotificationAsync({
         content: {
-          title: 'Wahrly · Morning brief',
-          body: morningBody(tasks, settings.emailDigestEnabled !== false),
-          data: { ritualId: MORNING_ID_KEY, kind: 'morning' },
+          title: t(lang, 'notif.morningTitle'),
+          body: morningBody(tasks, settings),
+          data: {
+            ritualId: MORNING_ID_KEY,
+            kind: 'morning',
+            route: '/home',
+            openMorning: true,
+          },
         },
         trigger: {
           type: NotificationsMod.SchedulableTriggerInputTypes.DAILY,
@@ -190,8 +207,8 @@ export async function syncDailyRitualNotifications(
     if (hm) {
       await NotificationsMod.scheduleNotificationAsync({
         content: {
-          title: 'Wahrly · Evening Clear',
-          body: 'Close today and shape tomorrow — open Evening Clear in Wahrly.',
+          title: t(lang, 'notif.eveningTitle'),
+          body: t(lang, 'notif.eveningBody'),
           data: { ritualId: EVENING_ID_KEY, kind: 'evening', route: '/evening' },
         },
         trigger: {
@@ -226,10 +243,11 @@ export async function syncBillReminders(
   bills: Bill[],
   settings: UserSettings,
 ): Promise<{ scheduled: number; webNote?: string }> {
+  const lang = langOf(settings)
   if (Platform.OS === 'web') {
     return {
       scheduled: 0,
-      webNote: 'Bill reminders work on iOS/Android.',
+      webNote: t(lang, 'notif.webBills'),
     }
   }
 
@@ -302,15 +320,15 @@ export async function syncBillReminders(
       const daysLeft = Math.round((dueStart.getTime() - startOfLocalDay(when).getTime()) / 86400000)
       const whenLabel =
         daysLeft <= 0
-          ? 'due today'
+          ? t(lang, 'notif.billsDueToday')
           : daysLeft === 1
-            ? 'due tomorrow'
-            : `due in ${daysLeft} days`
+            ? t(lang, 'notif.billsDueTomorrow')
+            : tf(lang, 'notif.billsDueIn', { n: daysLeft })
 
       try {
         await NotificationsMod.scheduleNotificationAsync({
           content: {
-            title: 'Wahrly · Bills',
+            title: t(lang, 'notif.billsTitle'),
             body: `${bill.title} ${whenLabel}`,
         data: { kind: 'bill', billId: bill.id, ritualId: id, route: '/bills' },
           },
@@ -373,6 +391,7 @@ export async function syncPromiseDueReminders(
   const hm = parseHm(settings.billRemindTime || '09:00')
   if (!hm) return { scheduled: 0 }
 
+  const lang = langOf(settings)
   const now = Date.now()
   let scheduled = 0
 
@@ -400,8 +419,8 @@ export async function syncPromiseDueReminders(
     try {
       await NotificationsMod.scheduleNotificationAsync({
         content: {
-          title: 'Wahrly · Promise',
-          body: `Due tomorrow: ${task.title}`,
+          title: t(lang, 'notif.promiseTitle'),
+          body: tf(lang, 'notif.promiseDue', { title: task.title }),
           data: {
             kind: 'promise_due',
             taskId: task.id,
@@ -436,10 +455,11 @@ export async function notifyMeetingEmail(params: {
   if (!granted) return false
   const NotificationsMod = await getNotifications()
   if (!NotificationsMod) return false
+  const lang = useNovaStore.getState().settings.language || 'en'
   try {
     await NotificationsMod.scheduleNotificationAsync({
       content: {
-        title: params.title || 'Wahrly · Inbox',
+        title: params.title || t(lang, 'notif.inboxTitle'),
         body: params.body,
         data: { kind: 'meeting', alertId: params.alertId, route: '/home' },
       },
