@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { AnalyticsEvents, track } from '../../lib/analytics'
 import { APP_LANGUAGES, type AppLanguage } from '../../lib/i18n'
 import { disconnectEmail, emailConnectUrl, fetchEmailStatus } from '../../lib/emailApi'
 import {
@@ -268,6 +269,7 @@ export default function SettingsScreen() {
             : null
         if (q === 'connected') {
           await refreshGmail()
+          void track(AnalyticsEvents.googleConnect)
           Alert.alert('Google connected', 'Wahrly can read Gmail + Calendar (readonly).')
           router.replace('/settings')
         } else if (q === 'error') {

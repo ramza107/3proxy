@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { AnalyticsEvents, track } from '../../lib/analytics'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 
@@ -24,6 +25,7 @@ export default function ReadyScreen() {
           style={styles.btn}
           onPress={() => {
             updateSettings({ onboardingComplete: true })
+            void track(AnalyticsEvents.onboardingComplete)
             router.replace('/tasks')
           }}
         >

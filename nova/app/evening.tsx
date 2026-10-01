@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../components/Screen'
 import { SoftPressable } from '../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../constants/theme'
+import { AnalyticsEvents, track } from '../lib/analytics'
 import { dateLocale } from '../lib/dateLocale'
 import { formatMoney, currentMonthKey, isPaidThisMonth } from '../lib/bills'
 import { sortTasks, todayISO, useNovaStore } from '../lib/store'
@@ -86,6 +87,7 @@ export default function EveningClearScreen() {
 
   const finish = () => {
     updateSettings({ lastEveningClearDate: today })
+    void track(AnalyticsEvents.eveningClearFinish)
     setStep('done')
   }
 

@@ -23,6 +23,7 @@ import {
   type WeatherBrief,
 } from '../lib/weather'
 import { SoftPressable } from './SoftPressable'
+import { AnalyticsEvents, track } from '../lib/analytics'
 
 type Props = {
   tasks: Task[]
@@ -213,6 +214,10 @@ export function MorningBrief({
 }: Props) {
   const [weather, setWeather] = useState<WeatherBrief | null>(null)
   const [weatherLoading, setWeatherLoading] = useState(true)
+
+  useEffect(() => {
+    void track(AnalyticsEvents.morningBriefShown)
+  }, [])
 
   useEffect(() => {
     let alive = true
