@@ -1,0 +1,73 @@
+diff --git a/node_modules/expo-widgets/ios/Widgets/DynamicView.swift b/node_modules/expo-widgets/ios/Widgets/DynamicView.swift
+index 17f6609..48156df 100644
+--- a/node_modules/expo-widgets/ios/Widgets/DynamicView.swift
++++ b/node_modules/expo-widgets/ios/Widgets/DynamicView.swift
+@@ -106,7 +106,8 @@ public struct WidgetsDynamicView: View, ExpoSwiftUI.AnyChild {
+       render(FragmentView.self, FragmentProps.self, updateProps: updateChildren)
+     case "LinkView":
+       render(LinkView.self, LinkViewProps.self, updateProps: updateChildren)
+-#if DEBUG
++    // Always render RedBox in release too. Previously #if DEBUG hid every
++    // layout/runtime failure behind EmptyView → solid black TestFlight widgets.
+     case "RedBoxView":
+       render(RedBoxView.self, RedBoxViewProps.self) { redBoxProps in
+         redBoxProps.source = name
+@@ -114,13 +115,12 @@ public struct WidgetsDynamicView: View, ExpoSwiftUI.AnyChild {
+       }
+     default:
+       ZStack {
+-        Color.red.opacity(0.5)
++        Color.red.opacity(0.85)
+         Text("Unable to get the view for: \(node["type"] as? String ?? "undefined")")
++          .foregroundStyle(.white)
++          .font(.caption)
++          .padding(8)
+       }
+-#else
+-    default:
+-      EmptyView()
+-#endif
+     }
+   }
+ 
+@@ -138,9 +138,25 @@ public struct WidgetsDynamicView: View, ExpoSwiftUI.AnyChild {
+           // TODO(@jakex7): Prevent unwanted transition when view is updated with new props - we want to have the same view instance recreated with new props instead of creating a new view instance and transitioning to it
+           return AnyView(UIBaseView<P, V>(props: props).transition(.identity))
+         }
+-        return AnyView(EmptyView())
++        return AnyView(
++          ZStack {
++            Color.orange
++            Text("Missing props for \(node["type"] as? String ?? "?")")
++              .foregroundStyle(.white)
++              .font(.caption2)
++              .padding(6)
++          }
++        )
+       } catch {
+-        return AnyView(EmptyView())
++        return AnyView(
++          ZStack {
++            Color.orange
++            Text(String(describing: error))
++              .foregroundStyle(.white)
++              .font(.caption2)
++              .padding(6)
++          }
++        )
+       }
+     }()
+   }
+diff --git a/node_modules/expo-widgets/metro.config.js b/node_modules/expo-widgets/metro.config.js
+index 93aed98..f0c4b3d 100644
+--- a/node_modules/expo-widgets/metro.config.js
++++ b/node_modules/expo-widgets/metro.config.js
+@@ -72,6 +72,8 @@ const buildConfig = {
+   },
+   serializer: {
+     ...config.serializer,
++    // Prevent Metro from injecting RN InitializeCore before the widget entry.
++    getModulesRunBeforeMainModule: () => [],
+     getPolyfills: () => [],
+   },
+ };

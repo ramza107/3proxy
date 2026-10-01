@@ -10,9 +10,10 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { BrandMark } from '../../components/BrandMark'
 import { Screen } from '../../components/Screen'
 import { SocialAuthButtons } from '../../components/SocialAuthButtons'
-import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
@@ -64,7 +65,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.hero}>
-          <Text style={styles.brand}>{brand.name}</Text>
+          <BrandMark size={64} />
           <Text style={styles.tagline}>{t('auth.tagline')}</Text>
           <Text style={styles.sub}>{t('onboarding.welcomeSub')}</Text>
         </View>
@@ -142,13 +143,6 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   hero: { gap: 10, marginBottom: 4 },
-  brand: {
-    color: colors.text,
-    fontSize: 56,
-    lineHeight: 60,
-    fontFamily: fonts.brand,
-    letterSpacing: -1,
-  },
   tagline: {
     color: colors.accentStrong,
     fontSize: 18,

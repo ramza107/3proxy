@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { BrandMark } from '../../components/BrandMark'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { useNovaStore } from '../../lib/store'
@@ -14,6 +15,7 @@ export default function ReadyScreen() {
   return (
     <Screen>
       <View style={styles.screen}>
+        <BrandMark size={48} />
         <Text style={styles.title}>{t.tf('onboarding.readyTitle', { name })}</Text>
         <Text style={styles.body}>{t('onboarding.trySaying')}</Text>
         <View style={styles.example}>

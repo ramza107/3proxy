@@ -1,8 +1,9 @@
 import { ScrollView, StyleSheet, Text, View, Pressable, Linking } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { BrandMark } from '../components/BrandMark'
 import { Screen } from '../components/Screen'
-import { brand, colors, fonts, radii, spacing } from '../constants/theme'
+import { colors, fonts, radii, spacing } from '../constants/theme'
 
 const EFFECTIVE = '18 September 2026'
 const CONTACT = 'rr.aliev96@gmail.com'
@@ -34,7 +35,7 @@ export default function PrivacyScreen() {
             <Text style={styles.backText}>← Back</Text>
           </Pressable>
 
-          <Text style={styles.brand}>{brand.name}</Text>
+          <BrandMark size={48} />
           <Text style={styles.title}>Privacy Policy</Text>
           <Text style={styles.meta}>Effective date: {EFFECTIVE}</Text>
 
@@ -223,11 +224,6 @@ const styles = StyleSheet.create({
   },
   back: { marginBottom: 8 },
   backText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 14 },
-  brand: {
-    color: colors.accentStrong,
-    fontFamily: fonts.brand,
-    fontSize: 18,
-  },
   title: {
     color: colors.text,
     fontFamily: fonts.brand,

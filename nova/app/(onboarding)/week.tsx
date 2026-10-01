@@ -18,8 +18,9 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated'
+import { BrandMark } from '../../components/BrandMark'
 import { Screen } from '../../components/Screen'
-import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { useNovaStore } from '../../lib/store'
@@ -309,7 +310,7 @@ export default function WeekScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInDown.duration(560).springify().damping(16)}>
-          <Text style={styles.brandMark}>{brand.name}</Text>
+          <BrandMark size={48} />
           <Text style={styles.title}>{t('onboarding.weekTitle')}</Text>
           <Text style={styles.sub}>{t('onboarding.weekSub')}</Text>
         </Animated.View>
@@ -470,13 +471,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
     gap: spacing.lg,
-  },
-  brandMark: {
-    color: colors.accentStrong,
-    fontFamily: fonts.brandItalic,
-    fontSize: 20,
-    letterSpacing: -0.3,
-    marginBottom: spacing.sm,
   },
   title: {
     color: colors.text,
