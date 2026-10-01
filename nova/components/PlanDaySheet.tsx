@@ -21,7 +21,12 @@ import Animated, {
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { poemForDay } from '../lib/poems'
 import { todayISO } from '../lib/store'
-import { fetchWeatherBrief, type WeatherBrief } from '../lib/weather'
+import {
+  fetchWeatherBrief,
+  weatherMood,
+  weatherPalette,
+  type WeatherBrief,
+} from '../lib/weather'
 import type { Task } from '../types'
 import { BottomSheet } from './BottomSheet'
 import { SoftPressable } from './SoftPressable'
@@ -54,28 +59,6 @@ const DAY_SLOTS: DaySlot[] = [
   { id: 'afternoon', label: 'Afternoon', time: '15:00', hint: 'Deep work' },
   { id: 'evening', label: 'Evening', time: '18:30', hint: 'Home' },
 ]
-
-function weatherPalette(code?: number): [string, string] {
-  if (code == null) return ['#D8E8E4', '#F5F8FA']
-  if (code === 0 || code === 1) return ['#C8E4F0', '#E8F4EE']
-  if (code === 2 || code === 3) return ['#D0DCE6', '#EEF2F5']
-  if (code >= 45 && code <= 48) return ['#D5D8DC', '#ECEEF0']
-  if (code >= 51 && code <= 67) return ['#B8CDD8', '#E2EEF2']
-  if (code >= 71 && code <= 77) return ['#D4E0EA', '#F2F6F9']
-  if (code >= 80 && code <= 82) return ['#AFC4D0', '#DEEAF0']
-  if (code >= 95) return ['#9BB0C0', '#D5E2EA']
-  return ['#D8E8E4', '#F5F8FA']
-}
-
-function weatherMood(code?: number) {
-  if (code == null) return 'Set the day'
-  if (code === 0 || code === 1) return 'Clear air — good for outdoors'
-  if (code === 2 || code === 3) return 'Soft light — steady indoor focus'
-  if (code >= 51 && code <= 67) return 'Wet streets — keep travel buffers'
-  if (code >= 71 && code <= 77) return 'Cold snap — warm layers'
-  if (code >= 95) return 'Storm risk — leave margin'
-  return 'Shape the day around the weather'
-}
 
 function nearestSlot(time: string | null): string | null {
   if (!time) return null
@@ -514,6 +497,9 @@ export function PlanDaySheet({
                     {weather.place}
                   </Text>
                   <Text style={styles.weatherLabel}>{weather.label}</Text>
+                  <Text style={styles.weatherHiLo}>
+                    H {weather.highC}° · L {weather.lowC}° · feels {weather.feelsC}°
+                  </Text>
                   <Text style={styles.weatherMood}>{weatherMood(weather.code)}</Text>
                 </View>
                 <Text style={styles.weatherTemp}>{weather.tempC}°</Text>
@@ -694,6 +680,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     letterSpacing: -0.4,
     marginTop: 2,
+  },
+  weatherHiLo: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: 3,
   },
   weatherTemp: {
     color: colors.text,
