@@ -16,8 +16,10 @@ function tabIcon(name: TabIconName) {
 export default function TabsLayout() {
   const language = useNovaStore((s) => s.settings.language)
   const insets = useSafeAreaInsets()
-  const bottomPad = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6)
-  const tabBarHeight = 52 + bottomPad
+  // Expo Router defaults the tab bar to 49px unless `height` is set — too short for
+  // real icons + labels. Height includes padding (RN box model).
+  const bottomPad = Math.max(insets.bottom, Platform.OS === 'web' ? 16 : 8)
+  const tabBarHeight = 64 + bottomPad
 
   return (
     <View style={{ flex: 1 }}>
@@ -31,7 +33,7 @@ export default function TabsLayout() {
             borderTopWidth: StyleSheet.hairlineWidth,
             height: tabBarHeight,
             paddingBottom: bottomPad,
-            paddingTop: 6,
+            paddingTop: 8,
             elevation: 8,
             shadowColor: '#0F2A32',
             shadowOpacity: 0.08,
@@ -45,9 +47,6 @@ export default function TabsLayout() {
             fontFamily: fonts.bodyMedium,
             fontWeight: '600',
             marginTop: 2,
-          },
-          tabBarItemStyle: {
-            paddingTop: 2,
           },
           animation: 'fade',
         }}

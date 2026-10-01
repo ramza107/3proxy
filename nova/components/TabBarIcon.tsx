@@ -49,7 +49,7 @@ export function TabBarIcon({ name, focused, color }: Props) {
 
   return (
     <View style={styles.slot}>
-      <Animated.View style={[styles.glow, glowStyle]} />
+      <Animated.View pointerEvents="none" style={[styles.glow, glowStyle]} />
       <Animated.View style={wrapStyle}>
         <Ionicons
           name={focused ? icons.active : icons.idle}
@@ -63,14 +63,17 @@ export function TabBarIcon({ name, focused, color }: Props) {
 
 const styles = StyleSheet.create({
   slot: {
-    width: 36,
-    height: 28,
+    width: 40,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   glow: {
-    ...StyleSheet.absoluteFill,
-    marginHorizontal: 2,
+    position: 'absolute',
+    top: -1,
+    bottom: -1,
+    left: 4,
+    right: 4,
     borderRadius: 10,
     backgroundColor: colors.accentSoft,
   },
