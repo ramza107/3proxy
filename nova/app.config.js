@@ -63,9 +63,11 @@ module.exports = ({ config }) => {
       'expo-secure-store',
       'expo-notifications',
       'expo-web-browser',
-      // Removed temporarily: plugin adds Sign In with Apple entitlement the
-      // current App Store provisioning profile does not include.
+      // Removed temporarily: package auto-plugin adds Sign In with Apple
+      // entitlement the current App Store profile does not include.
       // 'expo-apple-authentication',
+      // Last: strip entitlement if Expo auto-plugin still injects it.
+      './plugins/withStripAppleSignInEntitlement',
       [
         'expo-audio',
         {
