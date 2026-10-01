@@ -1,37 +1,23 @@
 import { Tabs } from 'expo-router'
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated'
-import { useEffect } from 'react'
-import { View } from 'react-native'
+import { type ColorValue, Platform, StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ChatFab } from '../../components/ChatFab'
-import { colors } from '../../constants/theme'
+import { TabBarIcon, type TabIconName } from '../../components/TabBarIcon'
+import { colors, fonts } from '../../constants/theme'
 import { t } from '../../lib/i18n'
 import { useNovaStore } from '../../lib/store'
 
-function SignalDot({ focused }: { focused: boolean }) {
-  const scale = useSharedValue(focused ? 1 : 0.75)
-
-  useEffect(() => {
-    scale.value = withSpring(focused ? 1 : 0.75, { damping: 16, stiffness: 220 })
-  }, [focused, scale])
-
-  const style = useAnimatedStyle(() => ({
-    width: 10,
-    height: 10,
-    borderRadius: 99,
-    backgroundColor: focused ? colors.signal : colors.signalMuted,
-    opacity: focused ? 1 : 0.55,
-    transform: [{ scale: scale.value }],
-  }))
-
-  return <Animated.View style={style} />
+function tabIcon(name: TabIconName) {
+  return ({ focused, color }: { focused: boolean; color: ColorValue; size: number }) => (
+    <TabBarIcon name={name} focused={focused} color={color} />
+  )
 }
 
 export default function TabsLayout() {
   const language = useNovaStore((s) => s.settings.language)
+  const insets = useSafeAreaInsets()
+  const bottomPad = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6)
+  const tabBarHeight = 52 + bottomPad
 
   return (
     <View style={{ flex: 1 }}>
@@ -42,13 +28,27 @@ export default function TabsLayout() {
           tabBarStyle: {
             backgroundColor: colors.bgElevated,
             borderTopColor: colors.border,
-            height: 64,
-            paddingBottom: 10,
-            paddingTop: 8,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            height: tabBarHeight,
+            paddingBottom: bottomPad,
+            paddingTop: 6,
+            elevation: 8,
+            shadowColor: '#0F2A32',
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: -4 },
           },
           tabBarActiveTintColor: colors.accentStrong,
           tabBarInactiveTintColor: colors.textDim,
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontFamily: fonts.bodyMedium,
+            fontWeight: '600',
+            marginTop: 2,
+          },
+          tabBarItemStyle: {
+            paddingTop: 2,
+          },
           animation: 'fade',
         }}
       >
@@ -56,35 +56,35 @@ export default function TabsLayout() {
           name="tasks"
           options={{
             title: t(language, 'tabs.tasks'),
-            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+            tabBarIcon: tabIcon('tasks'),
           }}
         />
         <Tabs.Screen
           name="home"
           options={{
             title: t(language, 'tabs.home'),
-            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+            tabBarIcon: tabIcon('home'),
           }}
         />
         <Tabs.Screen
           name="news"
           options={{
             title: t(language, 'tabs.news'),
-            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+            tabBarIcon: tabIcon('news'),
           }}
         />
         <Tabs.Screen
           name="bills"
           options={{
             title: t(language, 'tabs.bills'),
-            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+            tabBarIcon: tabIcon('bills'),
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
             title: t(language, 'tabs.settings'),
-            tabBarIcon: ({ focused }) => <SignalDot focused={focused} />,
+            tabBarIcon: tabIcon('settings'),
           }}
         />
         <Tabs.Screen
