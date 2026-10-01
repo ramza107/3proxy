@@ -27,7 +27,9 @@ module.exports = ({ config }) => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
-      usesAppleSignIn: true,
+      // Temporarily off: provisioning profile lacks Sign In with Apple.
+      // Re-enable after regenerating profiles with Apple Developer login.
+      usesAppleSignIn: false,
       infoPlist: {
         CFBundleURLTypes: [{ CFBundleURLSchemes: ['wahrly'] }],
         NSMicrophoneUsageDescription:
