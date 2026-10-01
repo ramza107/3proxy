@@ -41,6 +41,12 @@ const INTEREST_KEYS: Record<NewsInterest, string> = {
 function openExternal(url: string) {
   const target = (url || '').trim()
   if (!target || !/^https?:\/\//i.test(target)) return
+  try {
+    const u = new URL(target)
+    if (/\/search/i.test(u.pathname) || u.hostname.includes('news.google.')) return
+  } catch {
+    return
+  }
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     window.open(target, '_blank', 'noopener,noreferrer')
     return
