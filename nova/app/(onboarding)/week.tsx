@@ -7,7 +7,6 @@ import Animated, {
   Easing,
   FadeIn,
   FadeInDown,
-  FadeInRight,
   FadeInUp,
   FadeOut,
   Layout,
@@ -20,8 +19,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { Screen } from '../../components/Screen'
-import { SoftPressable } from '../../components/SoftPressable'
-import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { useNovaStore } from '../../lib/store'
@@ -37,6 +35,20 @@ const ANCHOR_PRESETS = [
 const REST_STARTS = ['10:00', '11:00'] as const
 const REST_ENDS = ['13:00', '14:00', '16:00'] as const
 
+/** Map clock labels onto a 08–18 visual track for the rest-hours window. */
+const TRACK_START_MIN = 8 * 60
+const TRACK_END_MIN = 18 * 60
+
+function hmToMin(hm: string) {
+  const [h, m] = hm.split(':').map(Number)
+  return h * 60 + (m || 0)
+}
+
+function trackFrac(hm: string) {
+  const v = (hmToMin(hm) - TRACK_START_MIN) / (TRACK_END_MIN - TRACK_START_MIN)
+  return Math.min(1, Math.max(0, v))
+}
+
 async function lightHaptic() {
   try {
     const Haptics = await import('expo-haptics')
@@ -46,13 +58,13 @@ async function lightHaptic() {
   }
 }
 
-function DayCell({
-  label,
+function DayPillar({
+  letter,
   on,
   index,
   onPress,
 }: {
-  label: string
+  letter: string
   on: boolean
   index: number
   onPress: () => void
@@ -62,35 +74,32 @@ function DayCell({
 
   useEffect(() => {
     enter.value = withDelay(
-      90 + index * 45,
-      withSpring(1, { damping: 15, stiffness: 180 }),
+      120 + index * 55,
+      withSpring(1, { damping: 14, stiffness: 160 }),
     )
   }, [enter, index])
 
   useEffect(() => {
-    progress.value = withSpring(on ? 1 : 0, { damping: 17, stiffness: 240 })
+    progress.value = withSpring(on ? 1 : 0, { damping: 16, stiffness: 200 })
   }, [on, progress])
 
-  const shell = useAnimatedStyle(() => ({
+  const wrap = useAnimatedStyle(() => ({
     opacity: enter.value,
-    transform: [
-      { translateY: interpolate(enter.value, [0, 1], [14, 0]) },
-      { scale: interpolate(enter.value, [0, 1], [0.86, 1]) * interpolate(progress.value, [0, 1], [1, 1.04]) },
-    ],
-    backgroundColor: interpolateColor(
-      progress.value,
-      [0, 1],
-      [colors.bgElevated, colors.accent],
-    ),
-    borderColor: interpolateColor(
-      progress.value,
-      [0, 1],
-      [colors.border, colors.accentStrong],
-    ),
+    transform: [{ translateY: interpolate(enter.value, [0, 1], [22, 0]) }],
   }))
 
-  const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], [colors.textMuted, colors.textOnAccent]),
+  const fill = useAnimatedStyle(() => ({
+    height: interpolate(progress.value, [0, 1], [12, 112]),
+    opacity: interpolate(progress.value, [0, 1], [0.4, 1]),
+  }))
+
+  const letterStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      progress.value,
+      [0, 1],
+      [colors.textDim, colors.accentStrong],
+    ),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [0.96, 1]) }],
   }))
 
   return (
@@ -101,16 +110,26 @@ function DayCell({
         lightHaptic().catch(() => undefined)
         onPress()
       }}
-      style={styles.dayPress}
+      style={styles.pillarPress}
     >
-      <Animated.View style={[styles.dayBtn, shell]}>
-        <Animated.Text style={[styles.dayText, labelStyle]}>{label}</Animated.Text>
+      <Animated.View style={[styles.pillar, wrap]}>
+        <View style={styles.pillarWell}>
+          <Animated.View style={[styles.pillarFill, fill]}>
+            <LinearGradient
+              colors={['#147F76', '#0A5751']}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
+        </View>
+        <Animated.Text style={[styles.pillarLetter, letterStyle]}>{letter}</Animated.Text>
       </Animated.View>
     </Pressable>
   )
 }
 
-function TimeChip({
+function HourPick({
   label,
   on,
   onPress,
@@ -121,23 +140,22 @@ function TimeChip({
 }) {
   const progress = useSharedValue(on ? 1 : 0)
   useEffect(() => {
-    progress.value = withSpring(on ? 1 : 0, { damping: 16, stiffness: 260 })
+    progress.value = withTiming(on ? 1 : 0, {
+      duration: 240,
+      easing: Easing.out(Easing.cubic),
+    })
   }, [on, progress])
 
-  const shell = useAnimatedStyle(() => ({
+  const style = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0.55, 1]),
+    transform: [{ scale: interpolate(progress.value, [0, 1], [1, 1.04]) }],
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [colors.bgElevated, 'rgba(15,110,102,0.14)'],
+      ['transparent', 'rgba(15,110,102,0.10)'],
     ),
-    borderColor: interpolateColor(
-      progress.value,
-      [0, 1],
-      [colors.border, colors.accent],
-    ),
-    transform: [{ scale: interpolate(progress.value, [0, 1], [1, 1.03]) }],
   }))
-  const labelStyle = useAnimatedStyle(() => ({
+  const textStyle = useAnimatedStyle(() => ({
     color: interpolateColor(progress.value, [0, 1], [colors.textMuted, colors.accentStrong]),
   }))
 
@@ -149,73 +167,57 @@ function TimeChip({
         lightHaptic().catch(() => undefined)
         onPress()
       }}
+      hitSlop={6}
     >
-      <Animated.View style={[styles.timeChip, shell]}>
-        <Animated.Text style={[styles.timeChipText, labelStyle]}>{label}</Animated.Text>
+      <Animated.View style={[styles.hourPick, style]}>
+        <Animated.Text style={[styles.hourPickText, on && styles.hourPickTextOn, textStyle]}>
+          {label}
+        </Animated.Text>
       </Animated.View>
     </Pressable>
   )
 }
 
-function RhythmBar({ workDays }: { workDays: boolean[] }) {
+function QuietWindow({ start, end }: { start: string; end: string }) {
+  const left = useSharedValue(trackFrac(start))
+  const right = useSharedValue(trackFrac(end))
+
+  useEffect(() => {
+    left.value = withSpring(trackFrac(start), { damping: 18, stiffness: 180 })
+    right.value = withSpring(trackFrac(end), { damping: 18, stiffness: 180 })
+  }, [start, end, left, right])
+
+  const windowStyle = useAnimatedStyle(() => {
+    const l = left.value * 100
+    const r = right.value * 100
+    return {
+      left: `${l}%`,
+      width: `${Math.max(4, r - l)}%`,
+    }
+  })
+
   return (
-    <View style={styles.rhythm}>
-      {workDays.map((on, i) => (
-        <RhythmSeg key={i} on={on} index={i} />
-      ))}
+    <View style={styles.timeline}>
+      <LinearGradient
+        colors={['rgba(15,42,50,0.06)', 'rgba(15,110,102,0.10)', 'rgba(15,42,50,0.06)']}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.timelineTrack}
+      />
+      <Animated.View style={[styles.timelineWindow, windowStyle]}>
+        <LinearGradient
+          colors={['rgba(20,127,118,0.35)', 'rgba(10,87,81,0.85)']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+      <View style={styles.timelineLabels}>
+        <Text style={styles.timelineEdge}>08</Text>
+        <Text style={styles.timelineEdge}>18</Text>
+      </View>
     </View>
   )
-}
-
-function RhythmSeg({ on, index }: { on: boolean; index: number }) {
-  const progress = useSharedValue(on ? 1 : 0)
-  useEffect(() => {
-    progress.value = withDelay(
-      index * 30,
-      withTiming(on ? 1 : 0, { duration: 280, easing: Easing.out(Easing.cubic) }),
-    )
-  }, [on, index, progress])
-  const style = useAnimatedStyle(() => ({
-    flex: 1,
-    height: interpolate(progress.value, [0, 1], [3, 6]),
-    borderRadius: 99,
-    backgroundColor: interpolateColor(
-      progress.value,
-      [0, 1],
-      ['rgba(15,42,50,0.12)', colors.accent],
-    ),
-    opacity: interpolate(progress.value, [0, 1], [0.55, 1]),
-  }))
-  return <Animated.View style={style} />
-}
-
-function ProgressRail({ step }: { step: number }) {
-  return (
-    <View style={styles.rail}>
-      {[0, 1, 2].map((i) => (
-        <RailSeg key={i} active={i <= step} delay={i * 80} />
-      ))}
-    </View>
-  )
-}
-
-function RailSeg({ active, delay }: { active: boolean; delay: number }) {
-  const progress = useSharedValue(0)
-  useEffect(() => {
-    progress.value = withDelay(
-      delay,
-      withTiming(active ? 1 : 0.28, { duration: 420, easing: Easing.out(Easing.cubic) }),
-    )
-  }, [active, delay, progress])
-  const style = useAnimatedStyle(() => ({
-    flex: 1,
-    height: 3,
-    borderRadius: 99,
-    backgroundColor: colors.accent,
-    opacity: progress.value,
-    transform: [{ scaleX: interpolate(progress.value, [0, 1], [0.4, 1]) }],
-  }))
-  return <Animated.View style={style} />
 }
 
 export default function WeekScreen() {
@@ -226,10 +228,14 @@ export default function WeekScreen() {
   const [week, setWeek] = useState(() => normalizeTypicalWeek(existing))
 
   const locale = dateLocale(t.language)
-  const dowLabels = DOW_LABELS.map(({ key }) => ({
-    key,
-    short: format(new Date(2024, 0, 7 + key, 12), 'EEE', { locale }),
-  }))
+  const dowLabels = DOW_LABELS.map(({ key }) => {
+    const d = new Date(2024, 0, 7 + key, 12)
+    return {
+      key,
+      letter: format(d, 'EEEEE', { locale }),
+      short: format(d, 'EEE', { locale }),
+    }
+  })
 
   const patch = (next: Partial<typeof week>) => {
     setWeek((prev) => normalizeTypicalWeek({ ...prev, ...next }))
@@ -286,73 +292,72 @@ export default function WeekScreen() {
             end: week.weekendEnd,
           })
 
-  const focusStep = week.anchors.length > 0 ? 2 : 1
-
   return (
-    <Screen>
+    <Screen style={styles.screenRoot}>
       <LinearGradient
-        colors={['rgba(15,110,102,0.14)', 'rgba(232,238,241,0)']}
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 0.8, y: 0.55 }}
-        style={styles.heroWash}
+        colors={['#D7E8E4', '#E8EEF1', '#E4EAF0']}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
+      <View style={styles.orbA} pointerEvents="none" />
+      <View style={styles.orbB} pointerEvents="none" />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeInDown.duration(520).springify().damping(17)}>
-          <ProgressRail step={focusStep} />
-          <Text style={styles.kicker}>{t('onboarding.weekKicker')}</Text>
+        <Animated.View entering={FadeInDown.duration(560).springify().damping(16)}>
+          <Text style={styles.brandMark}>{brand.name}</Text>
           <Text style={styles.title}>{t('onboarding.weekTitle')}</Text>
           <Text style={styles.sub}>{t('onboarding.weekSub')}</Text>
         </Animated.View>
 
         <Animated.View
-          entering={FadeInDown.delay(100).duration(480).springify().damping(17)}
-          style={styles.panel}
+          entering={FadeInDown.delay(90).duration(520).springify().damping(16)}
+          style={styles.block}
         >
-          <Text style={styles.stepNum}>{t('onboarding.weekStep1')}</Text>
-          <Text style={styles.sectionTitle}>{t('onboarding.weekWorkTitle')}</Text>
-          <Text style={styles.sectionHint}>{t('onboarding.weekWorkHint')}</Text>
-          <View style={styles.weekRow}>
-            {dowLabels.map(({ key, short }, index) => (
-              <DayCell
+          <Text style={styles.blockEyebrow}>{t('onboarding.weekStep1')}</Text>
+          <Text style={styles.blockTitle}>{t('onboarding.weekWorkTitle')}</Text>
+          <Text style={styles.blockHint}>{t('onboarding.weekWorkHint')}</Text>
+
+          <View style={styles.pillars}>
+            {dowLabels.map(({ key, letter }, index) => (
+              <DayPillar
                 key={key}
-                label={short}
+                letter={letter}
                 on={week.workDays[key]}
                 index={index}
                 onPress={() => toggleWorkDay(key)}
               />
             ))}
           </View>
-          <RhythmBar workDays={[...week.workDays]} />
-          <View style={styles.legend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, styles.legendDotOn]} />
-              <Text style={styles.legendText}>{t('onboarding.weekLegendWork')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={styles.legendDot} />
-              <Text style={styles.legendText}>{t('onboarding.weekLegendRest')}</Text>
-            </View>
+
+          <View style={styles.legendRow}>
+            <Text style={styles.legendText}>{t('onboarding.weekLegendWork')}</Text>
+            <Text style={styles.legendDot}>·</Text>
+            <Text style={styles.legendTextMuted}>{t('onboarding.weekLegendRest')}</Text>
           </View>
         </Animated.View>
 
         <Animated.View
-          entering={FadeInDown.delay(180).duration(480).springify().damping(17)}
-          style={styles.panel}
+          entering={FadeInDown.delay(170).duration(520).springify().damping(16)}
+          style={styles.block}
         >
-          <Text style={styles.stepNum}>{t('onboarding.weekStep2')}</Text>
-          <Text style={styles.sectionTitle}>{t('onboarding.weekRestTitle')}</Text>
-          <Text style={styles.sectionHint}>{t('onboarding.weekRestHint')}</Text>
+          <Text style={styles.blockEyebrow}>{t('onboarding.weekStep2')}</Text>
+          <Text style={styles.blockTitle}>{t('onboarding.weekRestTitle')}</Text>
+          <Text style={styles.blockHint}>{t('onboarding.weekRestHint')}</Text>
 
-          <View style={styles.timeBlock}>
-            <Text style={styles.timeLabel}>{t('onboarding.weekFrom')}</Text>
-            <View style={styles.presets}>
+          <QuietWindow start={week.weekendStart} end={week.weekendEnd} />
+
+          <View style={styles.hourRow}>
+            <Text style={styles.hourSide}>{t('onboarding.weekFrom')}</Text>
+            <View style={styles.hourPicks}>
               {REST_STARTS.map((hm) => (
-                <TimeChip
+                <HourPick
                   key={`ws-${hm}`}
                   label={hm}
                   on={week.weekendStart === hm}
@@ -361,22 +366,11 @@ export default function WeekScreen() {
               ))}
             </View>
           </View>
-
-          <View style={styles.rangeTrack}>
-            <View style={styles.rangeDot} />
-            <View style={styles.rangeLine} />
-            <Text style={styles.rangeText}>
-              {week.weekendStart} – {week.weekendEnd}
-            </Text>
-            <View style={styles.rangeLine} />
-            <View style={styles.rangeDot} />
-          </View>
-
-          <View style={styles.timeBlock}>
-            <Text style={styles.timeLabel}>{t('onboarding.weekUntil')}</Text>
-            <View style={styles.presets}>
+          <View style={styles.hourRow}>
+            <Text style={styles.hourSide}>{t('onboarding.weekUntil')}</Text>
+            <View style={styles.hourPicks}>
               {REST_ENDS.map((hm) => (
-                <TimeChip
+                <HourPick
                   key={`we-${hm}`}
                   label={hm}
                   on={week.weekendEnd === hm}
@@ -388,51 +382,47 @@ export default function WeekScreen() {
         </Animated.View>
 
         <Animated.View
-          entering={FadeInDown.delay(240).duration(480).springify().damping(17)}
-          layout={Layout.springify().damping(18)}
+          key={summary}
+          entering={FadeIn.duration(320)}
           style={styles.summary}
         >
-          <Text style={styles.summaryLabel}>{t('onboarding.weekSummaryLabel')}</Text>
-          <Animated.Text
-            key={summary}
-            entering={FadeIn.duration(280)}
-            exiting={FadeOut.duration(120)}
-            style={styles.summaryText}
-          >
-            {summary}
-          </Animated.Text>
+          <Text style={styles.summaryMark}>{t('onboarding.weekSummaryLabel')}</Text>
+          <Text style={styles.summaryText}>{summary}</Text>
         </Animated.View>
 
         <Animated.View
-          entering={FadeInDown.delay(300).duration(480).springify().damping(17)}
-          style={styles.panel}
+          entering={FadeInDown.delay(240).duration(520).springify().damping(16)}
+          style={styles.block}
         >
-          <Text style={styles.stepNum}>{t('onboarding.weekStep3')}</Text>
-          <Text style={styles.sectionTitle}>{t('onboarding.weekAnchorsTitle')}</Text>
-          <Text style={styles.sectionHint}>{t('onboarding.weekAnchorsHint')}</Text>
-          <View style={styles.presets}>
-            {ANCHOR_PRESETS.map((p, i) => (
-              <Animated.View
+          <Text style={styles.blockEyebrow}>{t('onboarding.weekStep3')}</Text>
+          <Text style={styles.blockTitle}>{t('onboarding.weekAnchorsTitle')}</Text>
+          <Text style={styles.blockHint}>{t('onboarding.weekAnchorsHint')}</Text>
+
+          <View style={styles.habitLinks}>
+            {ANCHOR_PRESETS.map((p) => (
+              <Pressable
                 key={p.titleKey}
-                entering={FadeInRight.delay(340 + i * 50).duration(320)}
+                accessibilityRole="button"
+                onPress={() => addAnchor(p)}
+                style={styles.habitLink}
               >
-                <SoftPressable style={styles.anchorChip} onPress={() => addAnchor(p)}>
-                  <Text style={styles.anchorChipText}>+ {t(p.titleKey)}</Text>
-                </SoftPressable>
-              </Animated.View>
+                <Text style={styles.habitLinkText}>+ {t(p.titleKey)}</Text>
+              </Pressable>
             ))}
           </View>
+
           {week.anchors.map((a) => (
             <Animated.View
               key={a.id}
-              entering={FadeInRight.delay(40).duration(280)}
-              exiting={FadeOut.duration(160)}
+              entering={FadeInUp.duration(280)}
+              exiting={FadeOut.duration(140)}
               layout={Layout.springify().damping(18)}
-              style={styles.anchorRow}
+              style={styles.habitRow}
             >
-              <View style={styles.anchorMeta}>
-                <Text style={styles.anchorTitle}>{a.title}</Text>
-                <Text style={styles.anchorSub}>
+              <View style={styles.habitSignal} />
+              <View style={styles.habitMeta}>
+                <Text style={styles.habitTitle}>{a.title}</Text>
+                <Text style={styles.habitSub}>
                   {a.time} · {a.durationMin}
                   {t('onboarding.weekMinutesShort')}
                 </Text>
@@ -444,10 +434,21 @@ export default function WeekScreen() {
           ))}
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(380).duration(420).springify().damping(16)}>
-          <SoftPressable style={styles.btn} onPress={() => goReady(week)}>
-            <Text style={styles.btnText}>{t('common.continue')}</Text>
-          </SoftPressable>
+        <Animated.View entering={FadeInUp.delay(300).duration(420).springify().damping(16)}>
+          <Pressable
+            accessibilityRole="button"
+            style={styles.cta}
+            onPress={() => goReady(week)}
+          >
+            <LinearGradient
+              colors={['#128177', '#0A5751']}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.ctaFill}
+            >
+              <Text style={styles.ctaText}>{t('common.continue')}</Text>
+            </LinearGradient>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             style={styles.skip}
@@ -462,238 +463,257 @@ export default function WeekScreen() {
 }
 
 const styles = StyleSheet.create({
-  heroWash: {
+  screenRoot: {
+    backgroundColor: '#E8EEF1',
+  },
+  orbA: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 280,
+    top: -80,
+    right: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(15,110,102,0.12)',
+  },
+  orbB: {
+    position: 'absolute',
+    top: 220,
+    left: -90,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(15,42,50,0.05)',
   },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
-    gap: spacing.md,
+    gap: spacing.lg,
   },
-  rail: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: spacing.md,
-  },
-  kicker: {
+  brandMark: {
     color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 6,
+    fontFamily: fonts.brandItalic,
+    fontSize: 20,
+    letterSpacing: -0.3,
+    marginBottom: spacing.sm,
   },
   title: {
     color: colors.text,
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 38,
+    lineHeight: 44,
     fontFamily: fonts.brand,
-    letterSpacing: -0.6,
+    letterSpacing: -0.9,
+    maxWidth: 340,
   },
   sub: {
     color: colors.textMuted,
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 25,
     fontFamily: fonts.body,
-    marginTop: 6,
-    maxWidth: 360,
+    marginTop: spacing.sm,
+    maxWidth: 340,
   },
-  panel: {
-    marginTop: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radii.xl,
-    backgroundColor: 'rgba(245,248,250,0.72)',
-    borderWidth: 1,
-    borderColor: 'rgba(15,42,50,0.06)',
+  block: {
     gap: 8,
   },
-  stepNum: {
+  blockEyebrow: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 0.6,
+    fontSize: 11,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
   },
-  sectionTitle: {
+  blockTitle: {
     color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 18,
-    letterSpacing: -0.2,
+    fontFamily: fonts.brand,
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.4,
   },
-  sectionHint: {
+  blockHint: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
+    lineHeight: 21,
+    marginBottom: 8,
+    maxWidth: 340,
   },
-  weekRow: {
+  pillars: {
     flexDirection: 'row',
-    gap: 6,
-    marginTop: 4,
+    alignItems: 'flex-end',
+    gap: 8,
+    height: 132,
+    marginTop: 8,
   },
-  dayPress: {
+  pillarPress: {
     flex: 1,
+    height: '100%',
   },
-  dayBtn: {
-    minHeight: 56,
-    borderRadius: radii.md,
-    borderWidth: 1,
+  pillar: {
+    flex: 1,
+    height: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
-  dayText: {
+  pillarWell: {
+    width: '100%',
+    height: 112,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(15,42,50,0.08)',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  pillarFill: {
+    width: '100%',
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+    overflow: 'hidden',
+  },
+  pillarLetter: {
     fontFamily: fonts.bodyBold,
     fontSize: 13,
+    letterSpacing: 0.4,
   },
-  rhythm: {
+  legendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
     marginTop: 10,
-    marginBottom: 2,
-    paddingHorizontal: 2,
-  },
-  legend: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 4,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.bgElevated,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  legendDotOn: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
   },
   legendText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
+  legendTextMuted: {
     color: colors.textDim,
     fontFamily: fonts.body,
-    fontSize: 12,
+    fontSize: 13,
   },
-  timeBlock: {
-    gap: 8,
+  legendDot: {
+    color: colors.textDim,
+    fontSize: 13,
+  },
+  timeline: {
+    marginTop: 8,
+    marginBottom: 14,
+  },
+  timelineTrack: {
+    height: 14,
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  timelineWindow: {
+    position: 'absolute',
+    top: 0,
+    height: 14,
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  timelineLabels: {
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  timelineEdge: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 11,
+    letterSpacing: 0.6,
+  },
+  hourRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     marginTop: 4,
   },
-  timeLabel: {
+  hourSide: {
+    width: 52,
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
   },
-  presets: {
+  hourPicks: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  timeChip: {
-    minWidth: 78,
-    height: 44,
-    paddingHorizontal: 14,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  hourPick: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.full,
   },
-  timeChipText: {
-    fontFamily: fonts.bodyBold,
+  hourPickText: {
+    fontFamily: fonts.bodyMedium,
     fontSize: 15,
-  },
-  rangeTrack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 6,
-    paddingHorizontal: 4,
-  },
-  rangeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.accent,
-  },
-  rangeLine: {
-    flex: 1,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: 'rgba(15,110,102,0.22)',
-  },
-  rangeText: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
     letterSpacing: 0.2,
   },
-  summary: {
-    marginTop: spacing.xs,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.xl,
-    backgroundColor: 'rgba(15,110,102,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(15,110,102,0.18)',
-    gap: 6,
-    overflow: 'hidden',
+  hourPickTextOn: {
+    fontFamily: fonts.bodyBold,
   },
-  summaryLabel: {
+  summary: {
+    marginTop: 4,
+    paddingVertical: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,42,50,0.12)',
+    gap: 6,
+  },
+  summaryMark: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
     fontSize: 11,
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   summaryText: {
     color: colors.text,
+    fontFamily: fonts.brandItalic,
+    fontSize: 20,
+    lineHeight: 28,
+    letterSpacing: -0.2,
+  },
+  habitLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  habitLink: {
+    paddingVertical: 4,
+  },
+  habitLinkText: {
+    color: colors.accentStrong,
     fontFamily: fonts.bodyMedium,
     fontSize: 15,
-    lineHeight: 22,
+    textDecorationLine: 'underline',
+    textDecorationColor: 'rgba(10,87,81,0.35)',
   },
-  anchorChip: {
-    height: 44,
-    paddingHorizontal: 14,
-    borderRadius: radii.md,
-    backgroundColor: colors.bgElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  anchorChipText: {
-    color: colors.text,
-    fontFamily: fonts.bodyMedium,
-    fontSize: 14,
-  },
-  anchorRow: {
+  habitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: 12,
     paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
-  anchorMeta: { flex: 1, gap: 2 },
-  anchorTitle: {
+  habitSignal: {
+    width: 3,
+    alignSelf: 'stretch',
+    borderRadius: 2,
+    backgroundColor: colors.accent,
+  },
+  habitMeta: { flex: 1, gap: 2 },
+  habitTitle: {
     color: colors.text,
     fontFamily: fonts.bodyBold,
     fontSize: 15,
   },
-  anchorSub: {
+  habitSub: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
@@ -703,22 +723,25 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
   },
-  btn: {
+  cta: {
     marginTop: spacing.sm,
-    backgroundColor: colors.accent,
     borderRadius: radii.full,
-    height: 54,
+    overflow: 'hidden',
+  },
+  ctaFill: {
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  btnText: {
+  ctaText: {
     color: colors.textOnAccent,
     fontFamily: fonts.bodyBold,
     fontSize: 17,
+    letterSpacing: 0.2,
   },
   skip: {
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   skipText: {
     color: colors.textMuted,
