@@ -198,14 +198,30 @@ async function fetchFeedItems(
   feed: { url: string; source: string },
   interest: NewsInterest,
 ): Promise<NewsItem[]> {
-  // Prefer jina reader — works from browsers without CORS pain, returns article URLs.
-  const proxies = [
-    `https://r.jina.ai/http://${feed.url.replace(/^https?:\/\//, '')}`,
-    `https://r.jina.ai/${feed.url}`,
+  // 1) Prefer raw XML proxies (keeps <title> — jina markdown often drops BBC titles)
+  const xmlProxies = [
     `https://api.allorigins.win/raw?url=${encodeURIComponent(feed.url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(feed.url)}`,
   ]
+  for (const endpoint of xmlProxies) {
+    try {
+      const res = await fetch(endpoint)
+      if (!res.ok) continue
+      const text = await res.text()
+      if (!text.includes('<item') && !text.includes('<entry')) continue
+      const fromXml = parseRssXml(text, feed.source, interest)
+      if (fromXml.length) return fromXml
+    } catch {
+      // try next
+    }
+  }
 
-  for (const endpoint of proxies) {
+  // 2) jina reader — good for Guardian/NPR; BBC often has empty ### [](url)
+  const jinaProxies = [
+    `https://r.jina.ai/${feed.url}`,
+    `https://r.jina.ai/http://${feed.url.replace(/^https?:\/\//, '')}`,
+  ]
+  for (const endpoint of jinaProxies) {
     try {
       const res = await fetch(endpoint, {
         headers: { Accept: 'text/plain, text/html, application/xml, */*' },
@@ -224,6 +240,11 @@ async function fetchFeedItems(
     }
   }
   return []
+}
+
+function isPubDateLine(line: string): boolean {
+  return /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s+\d{1,2}\s+\w+\s+\d{4}\b/i.test(line.trim()) ||
+    /\b\d{2}:\d{2}:\d{2}\s+GMT\b/i.test(line)
 }
 
 /** Parse jina.ai markdown conversion of an RSS feed into articles. */
@@ -251,14 +272,23 @@ function parseJinaMarkdown(md: string, source: string, interest: NewsInterest): 
       if (Number.isFinite(ts)) publishedAt = new Date(ts).toISOString()
     }
 
-    const resolvedTitle =
-      title ||
-      titleFromUrl(url) ||
+    // Never use pubDate / GMT lines as the headline (BBC empty-title bug).
+    const proseTitle =
       chunk
         .split('\n')
         .map((l) => l.trim())
-        .find((l) => l && !l.startsWith('[') && !l.startsWith('http') && l.length > 28) ||
-      ''
+        .find(
+          (l) =>
+            l &&
+            !l.startsWith('[') &&
+            !l.startsWith('http') &&
+            !l.startsWith('Continue reading') &&
+            !isPubDateLine(l) &&
+            l.length > 24,
+        ) || ''
+
+    const resolvedTitle = title || proseTitle || titleFromUrl(url)
+    if (!resolvedTitle || isPubDateLine(resolvedTitle)) continue
 
     const item = normalizeItem({
       title: resolvedTitle,
