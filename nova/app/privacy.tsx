@@ -96,10 +96,6 @@ export default function PrivacyScreen() {
             Read today’s events from your primary Google Calendar to show them on the Home signal
             timeline and to avoid those times when packing Plan day.
           </Bullet>
-          <Bullet>
-            Offer a copyable reply draft on open loops — you paste it into Gmail yourself. Wahrly
-            never sends mail.
-          </Bullet>
           <P>Wahrly does not:</P>
           <Bullet>Send, draft, delete, or modify your email.</Bullet>
           <Bullet>Create, edit, or delete Google Calendar events.</Bullet>

@@ -13,9 +13,6 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
 import { canUseGmailAI } from '../lib/pro'
-import { draftForMeeting, draftForPromise } from '../lib/draftReply'
-import { copyDraftAsDemo, copyDraftOnly } from '../lib/sendReply'
-import { notifyUser } from '../lib/notify'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
@@ -291,32 +288,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     Alert.alert('On your list', 'Tracked under Waiting until you complete it.')
   }
 
-  const onCopyPromise = async (p: EmailPromise) => {
-    try {
-      const body = draftForPromise(p)
-      if (demo || !connected) {
-        await copyDraftAsDemo(body)
-      } else {
-        await copyDraftOnly(body)
-      }
-    } catch (e) {
-      notifyUser('Copy', e instanceof Error ? e.message : 'Could not copy')
-    }
-  }
-
-  const onCopyMeeting = async (m: MeetingAlert) => {
-    try {
-      const body = draftForMeeting(m)
-      if (demo || !connected) {
-        await copyDraftAsDemo(body)
-      } else {
-        await copyDraftOnly(body)
-      }
-    } catch (e) {
-      notifyUser('Copy', e instanceof Error ? e.message : 'Could not copy')
-    }
-  }
-
   const completeLinkedTasks = (sourceId: string) => {
     const now = new Date().toISOString()
     let n = 0
@@ -399,9 +370,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                       <Pressable style={styles.addBtn} onPress={() => onAddPromise(p)}>
                         <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
                       </Pressable>
-                      <Pressable style={styles.copyBtn} onPress={() => onCopyPromise(p)}>
-                        <Text style={styles.copyBtnText}>{t('home.draftReply')}</Text>
-                      </Pressable>
                       <Pressable onPress={() => onSnooze(p.id)} hitSlop={8}>
                         <Text style={styles.dismiss}>{t('home.snooze')}</Text>
                       </Pressable>
@@ -450,9 +418,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                   <View style={styles.actions}>
                     <Pressable style={styles.addBtn} onPress={() => onAddMeeting(m)}>
                       <Text style={styles.addBtnText}>{t('home.addTask')}</Text>
-                    </Pressable>
-                    <Pressable style={styles.copyBtn} onPress={() => onCopyMeeting(m)}>
-                      <Text style={styles.copyBtnText}>{t('home.draftReply')}</Text>
                     </Pressable>
                     <Pressable onPress={() => onSnooze(m.id)} hitSlop={8}>
                       <Text style={styles.dismiss}>{t('home.snooze')}</Text>
@@ -546,14 +511,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   addBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
-  copyBtn: {
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radii.full,
-  },
-  copyBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   autoPending: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, marginTop: 4 },
   btn: {
