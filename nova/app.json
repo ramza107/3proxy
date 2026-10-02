@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.wahrly.assistant",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Wahrly uses the microphone so you can dictate tasks and reminders."
+        "NSMicrophoneUsageDescription": "Wahrly uses the microphone so you can dictate tasks and reminders.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
