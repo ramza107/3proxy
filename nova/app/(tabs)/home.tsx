@@ -250,6 +250,12 @@ export default function HomeScreen() {
 
           <BillsBrief />
 
+          <OpenLoopsBrief
+            userId={userId}
+            autoPromises={emailPromisesAutoEnabled}
+            meetingAlertsEnabled={meetingEmailAlertsEnabled}
+          />
+
           <Pressable
             style={styles.googleToggle}
             onPress={() => setGoogleOpen((v) => !v)}
@@ -275,14 +281,7 @@ export default function HomeScreen() {
               onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
             />
             {isProUser ? (
-              <>
-                <InboxBrief userId={userId} enabled={emailDigestEnabled && googleOpen} />
-                <OpenLoopsBrief
-                  userId={userId}
-                  autoPromises={emailPromisesAutoEnabled}
-                  meetingAlertsEnabled={meetingEmailAlertsEnabled && googleOpen}
-                />
-              </>
+              <InboxBrief userId={userId} enabled={emailDigestEnabled && googleOpen} />
             ) : (
               <HomeSection title={t('pro.gmailTitle')} meta={t('pro.title')}>
                 <Text style={styles.prompt}>{t('pro.gmailLocked')}</Text>

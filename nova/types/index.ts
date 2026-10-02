@@ -20,7 +20,11 @@ export type Task = {
   completedAt?: string | null
   /** When set, completing spawns the next occurrence */
   recurrence?: TaskRecurrence | null
-  /** Link back to a Gmail loop (promise / inbox ask) */
+  /**
+   * Social loop kind — first-class, not a plain task:
+   * `promise` = I owe someone; `meeting` = Waiting on someone.
+   * May originate from Gmail or be created manually.
+   */
   sourceKind?: 'promise' | 'meeting' | null
   sourceId?: string | null
   created_at: string
