@@ -123,10 +123,11 @@ export async function refreshWidgetSnapshot(): Promise<void> {
   try {
     const { default: WahrlyToday } = await import('../widgets/WahrlyToday')
     const snapshot = buildSnapshot()
+    // Creating the widget instance also persists the layout into the App Group.
     WahrlyToday.updateSnapshot(snapshot)
-    // Force WidgetKit to re-read App Group timeline after writing.
     WahrlyToday.reload()
-  } catch {
-    // Widget native module only exists in a customized EAS binary
+  } catch (err) {
+    // Surface in Metro / device logs — silent failures look like a black widget.
+    console.warn('[widgetSync] refresh failed', err)
   }
 }
