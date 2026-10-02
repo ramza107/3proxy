@@ -34,7 +34,8 @@ export function ChatFab() {
     pathname.includes('/home') ||
     pathname.includes('/bills') ||
     pathname.includes('/life') ||
-    pathname.includes('/dates')
+    pathname.includes('/dates') ||
+    pathname.includes('/invest')
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))

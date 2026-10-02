@@ -67,10 +67,10 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="life"
+          name="invest"
           options={{
-            title: t(language, 'tabs.life'),
-            tabBarIcon: tabIcon('life'),
+            title: t(language, 'tabs.invest'),
+            tabBarIcon: tabIcon('invest'),
           }}
         />
         <Tabs.Screen
@@ -85,6 +85,13 @@ export default function TabsLayout() {
           options={{
             title: t(language, 'tabs.settings'),
             tabBarIcon: tabIcon('settings'),
+          }}
+        />
+        <Tabs.Screen
+          name="life"
+          options={{
+            title: t(language, 'tabs.life'),
+            href: null,
           }}
         />
         <Tabs.Screen

@@ -15,6 +15,7 @@ export type TabIconName =
   | 'bills'
   | 'life'
   | 'dates'
+  | 'invest'
   | 'settings'
 
 const ICONS: Record<
@@ -27,6 +28,7 @@ const ICONS: Record<
   bills: { active: 'wallet', idle: 'wallet-outline' },
   life: { active: 'folder-open', idle: 'folder-open-outline' },
   dates: { active: 'gift', idle: 'gift-outline' },
+  invest: { active: 'trending-up', idle: 'trending-up-outline' },
   settings: { active: 'settings', idle: 'settings-outline' },
 }
 
