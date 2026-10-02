@@ -29,7 +29,6 @@ import { resolveDayWindow } from '../../lib/scheduleDay'
 import { isMonday } from '../../lib/weekRange'
 import { useT } from '../../lib/useT'
 import {
-  confirmAddToGoogleCalendar,
   deleteTask,
   organizeMyDay,
   refreshTasks,
@@ -186,9 +185,6 @@ export default function HomeScreen() {
           },
         },
       ])
-      if (res.calendarCandidates?.length) {
-        confirmAddToGoogleCalendar(res.calendarCandidates)
-      }
     } catch (e) {
       Alert.alert(brand.name, e instanceof Error ? e.message : 'Could not plan the day')
     } finally {

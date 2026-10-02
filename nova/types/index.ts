@@ -324,7 +324,7 @@ export type EmailPromise = {
   promise: string
   suggestedTask: string
   suggestedDate: string | null
-  /** Short draft the user can copy or send via Gmail */
+  /** Short draft the user can copy into Gmail */
   suggestedReply?: string | null
   sentAt: string
 }
@@ -352,7 +352,7 @@ export type MeetingAlert = {
   notifyBody: string
   suggestedDate: string | null
   suggestedTime: string | null
-  /** Short draft the user can copy or send via Gmail */
+  /** Short draft the user can copy into Gmail */
   suggestedReply?: string | null
   receivedAt: string
 }

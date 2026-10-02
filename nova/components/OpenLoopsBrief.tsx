@@ -14,7 +14,7 @@ import { colors, fonts, radii } from '../constants/theme'
 import { fetchEmailMeetings, fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
 import { canUseGmailAI } from '../lib/pro'
 import { draftForMeeting, draftForPromise } from '../lib/draftReply'
-import { confirmSendReply, copyDraftAsDemo, copyDraftOnly, sendGmailOnly } from '../lib/sendReply'
+import { copyDraftAsDemo, copyDraftOnly } from '../lib/sendReply'
 import { notifyUser } from '../lib/notify'
 import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
 import { useNovaStore } from '../lib/store'
@@ -328,70 +328,8 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
     return n
   }
 
-  const onSendPromise = (p: EmailPromise) => {
-    const body = draftForPromise(p)
-    if (demo || !connected || !userId || !p.toEmail) {
-      void copyDraftAsDemo(body).catch((e) => {
-        notifyUser('Send', e instanceof Error ? e.message : 'Could not copy draft')
-      })
-      return
-    }
-    void (async () => {
-      const ok = await confirmSendReply({ to: p.toEmail })
-      if (!ok) return
-      const result = await sendGmailOnly({
-        userId,
-        to: p.toEmail,
-        subject: p.subject,
-        body,
-        threadId: p.messageId,
-      })
-      if (result !== 'sent') return
-      completeLinkedTasks(p.id)
-      dismissPromise(p.id)
-    })()
-  }
-
-  const onSendMeeting = (m: MeetingAlert) => {
-    const body = draftForMeeting(m)
-    if (demo || !connected || !userId || !m.fromEmail) {
-      void copyDraftAsDemo(body).catch((e) => {
-        notifyUser('Send', e instanceof Error ? e.message : 'Could not copy draft')
-      })
-      return
-    }
-    void (async () => {
-      const ok = await confirmSendReply({ to: m.fromEmail })
-      if (!ok) return
-      const result = await sendGmailOnly({
-        userId,
-        to: m.fromEmail,
-        subject: m.subject,
-        body,
-        threadId: m.messageId,
-      })
-      if (result !== 'sent') return
-      completeLinkedTasks(m.id)
-      dismissMeeting(`dismiss:${m.id}`)
-    })()
-  }
-
-  const onSendTaskLoop = (task: Task) => {
-    if (task.sourceKind === 'promise') {
-      const p = (promises?.promises || []).find((x) => x.id === task.sourceId)
-      if (p) {
-        onSendPromise(p)
-        return
-      }
-    }
-    if (task.sourceKind === 'meeting') {
-      const m = (meetings?.meetings || []).find((x) => x.id === task.sourceId)
-      if (m) {
-        onSendMeeting(m)
-        return
-      }
-    }
-    // No digest row left — just mark the loop done.
+  const onDoneTaskLoop = (task: Task) => {
+    if (task.sourceId) completeLinkedTasks(task.sourceId)
     upsertTask({ ...task, completed: true, updated_at: new Date().toISOString() })
     Alert.alert(t('home.loopClosed'), t('home.loopClosedBody'))
   }
@@ -442,8 +380,8 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                   key={task.id}
                   task={task}
                   hint={t('home.inTasks')}
-                  sendLabel={t('home.sendReply')}
-                  onSend={() => onSendTaskLoop(task)}
+                  doneLabel={t('home.loopClosed')}
+                  onDone={() => onDoneTaskLoop(task)}
                 />
               ))}
               {oweFromMail.map((p) => (
@@ -463,9 +401,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                       </Pressable>
                       <Pressable style={styles.copyBtn} onPress={() => onCopyPromise(p)}>
                         <Text style={styles.copyBtnText}>{t('home.draftReply')}</Text>
-                      </Pressable>
-                      <Pressable style={styles.sendBtn} onPress={() => onSendPromise(p)}>
-                        <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
                       </Pressable>
                       <Pressable onPress={() => onSnooze(p.id)} hitSlop={8}>
                         <Text style={styles.dismiss}>{t('home.snooze')}</Text>
@@ -490,8 +425,8 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                   key={task.id}
                   task={task}
                   hint={t('home.inTasks')}
-                  sendLabel={t('home.sendReply')}
-                  onSend={() => onSendTaskLoop(task)}
+                  doneLabel={t('home.loopClosed')}
+                  onDone={() => onDoneTaskLoop(task)}
                 />
               ))}
               {waitingFromMail.map((m) => (
@@ -519,9 +454,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                     <Pressable style={styles.copyBtn} onPress={() => onCopyMeeting(m)}>
                       <Text style={styles.copyBtnText}>{t('home.draftReply')}</Text>
                     </Pressable>
-                    <Pressable style={styles.sendBtn} onPress={() => onSendMeeting(m)}>
-                      <Text style={styles.sendBtnText}>{t('home.sendReply')}</Text>
-                    </Pressable>
                     <Pressable onPress={() => onSnooze(m.id)} hitSlop={8}>
                       <Text style={styles.dismiss}>{t('home.snooze')}</Text>
                     </Pressable>
@@ -548,13 +480,13 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
 function TaskLoopRow({
   task,
   hint,
-  sendLabel,
-  onSend,
+  doneLabel,
+  onDone,
 }: {
   task: Task
   hint: string
-  sendLabel: string
-  onSend: () => void
+  doneLabel: string
+  onDone: () => void
 }) {
   return (
     <View style={styles.item}>
@@ -567,8 +499,8 @@ function TaskLoopRow({
         {task.time ? ` · ${task.time}` : ''}
       </Text>
       <View style={styles.actions}>
-        <Pressable style={styles.sendBtn} onPress={onSend}>
-          <Text style={styles.sendBtnText}>{sendLabel}</Text>
+        <Pressable style={styles.addBtn} onPress={onDone}>
+          <Text style={styles.addBtnText}>{doneLabel}</Text>
         </Pressable>
       </View>
     </View>
@@ -622,13 +554,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
   },
   copyBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
-  sendBtn: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: radii.full,
-  },
-  sendBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   autoPending: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, marginTop: 4 },
   btn: {

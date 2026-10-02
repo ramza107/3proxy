@@ -18,12 +18,13 @@ Users never see this. They only tap **Connect with Google → Allow**.
 4. Support email: your email  
 5. **Privacy policy link** (required for verification):  
    `https://ramza107.github.io/3proxy/nova/privacy`  
-6. Scopes → Add:
+6. Scopes → Add (read-only only — no send / compose / calendar write):
    - `https://www.googleapis.com/auth/gmail.readonly`
    - `https://www.googleapis.com/auth/calendar.readonly`
 7. Test users → add your Gmail (while app is in Testing)
 
-**Existing users** who connected before Calendar was added must tap **Connect with Google** again (or Disconnect → Connect) so Google grants Calendar.
+**Existing users** who previously granted send/write must **Disconnect → Connect** again so Google
+issues a token with only the read-only scopes above.
 
 Source text for the policy: [`privacy-policy.md`](privacy-policy.md) / in-app route `/privacy`.
 
