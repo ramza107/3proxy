@@ -390,3 +390,79 @@ export type CalendarDigest = {
   events: CalendarEvent[]
   generatedAt: string
 }
+
+/** Life Admin — passports, insurance, contracts, renewals */
+export const LIFE_ADMIN_KINDS = [
+  'passport',
+  'id',
+  'insurance',
+  'visa',
+  'contract',
+  'subscription',
+  'warranty',
+  'other',
+] as const
+
+export type LifeAdminKind = (typeof LIFE_ADMIN_KINDS)[number]
+
+export type LifeAdminItem = {
+  id: string
+  title: string
+  kind: LifeAdminKind
+  /** YYYY-MM-DD expiry / renewal */
+  expiresOn: string | null
+  provider: string | null
+  notes: string | null
+  remindEnabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+/** Body — personal medical timeline */
+export const BODY_ENTRY_KINDS = [
+  'visit',
+  'diagnosis',
+  'medication',
+  'allergy',
+  'vaccine',
+  'lab',
+  'other',
+] as const
+
+export type BodyEntryKind = (typeof BODY_ENTRY_KINDS)[number]
+
+export type BodyEntry = {
+  id: string
+  title: string
+  kind: BodyEntryKind
+  /** YYYY-MM-DD when it happened / started */
+  date: string | null
+  provider: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** Birthdays, holidays, anniversaries — yearly reminders */
+export const IMPORTANT_DATE_KINDS = ['birthday', 'holiday', 'anniversary', 'other'] as const
+
+export type ImportantDateKind = (typeof IMPORTANT_DATE_KINDS)[number]
+
+export type ImportantDate = {
+  id: string
+  title: string
+  kind: ImportantDateKind
+  /** Calendar month 1–12 */
+  month: number
+  /** Day of month 1–31 */
+  day: number
+  /** Optional year (birth year / first anniversary) */
+  year: number | null
+  person: string | null
+  notes: string | null
+  remindEnabled: boolean
+  /** Days before to notify — default 14 */
+  remindLeadDays: number
+  created_at: string
+  updated_at: string
+}

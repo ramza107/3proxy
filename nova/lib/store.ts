@@ -2,7 +2,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import type { Bill, ChatMessage, Priority, Reminder, Task, TaskRecurrence, UserSettings } from '../types'
+import type {
+  Bill,
+  BodyEntry,
+  BodyEntryKind,
+  ChatMessage,
+  ImportantDate,
+  ImportantDateKind,
+  LifeAdminItem,
+  LifeAdminKind,
+  Priority,
+  Reminder,
+  Task,
+  TaskRecurrence,
+  UserSettings,
+} from '../types'
 import { defaultNewsInterests, defaultTypicalWeek, normalizeNewsInterests } from '../types'
 import { deviceLanguageFallback, isAppLanguage } from './i18n'
 import { localISODate, localISOMonth } from './localDate'
@@ -42,6 +56,9 @@ type NovaState = {
   settings: UserSettings
   tasks: Task[]
   bills: Bill[]
+  lifeAdmin: LifeAdminItem[]
+  bodyEntries: BodyEntry[]
+  importantDates: ImportantDate[]
   reminders: Reminder[]
   messages: ChatMessage[]
   dismissedPromiseIds: string[]
@@ -66,6 +83,38 @@ type NovaState = {
   upsertBill: (bill: Bill) => void
   removeBill: (id: string) => void
   markBillPaid: (id: string, month?: string) => void
+  upsertLifeAdmin: (item: LifeAdminItem) => void
+  removeLifeAdmin: (id: string) => void
+  createLifeAdminLocal: (input: {
+    title: string
+    kind?: LifeAdminKind
+    expiresOn?: string | null
+    provider?: string | null
+    notes?: string | null
+    remindEnabled?: boolean
+  }) => LifeAdminItem
+  upsertBodyEntry: (entry: BodyEntry) => void
+  removeBodyEntry: (id: string) => void
+  createBodyEntryLocal: (input: {
+    title: string
+    kind?: BodyEntryKind
+    date?: string | null
+    provider?: string | null
+    notes?: string | null
+  }) => BodyEntry
+  upsertImportantDate: (date: ImportantDate) => void
+  removeImportantDate: (id: string) => void
+  createImportantDateLocal: (input: {
+    title: string
+    kind?: ImportantDateKind
+    month: number
+    day: number
+    year?: number | null
+    person?: string | null
+    notes?: string | null
+    remindEnabled?: boolean
+    remindLeadDays?: number
+  }) => ImportantDate
   dismissPromise: (id: string) => void
   snoozeLoop: (id: string, untilISO: string) => void
   clearSnooze: (id: string) => void
@@ -143,6 +192,9 @@ export const useNovaStore = create<NovaState>()(
       settings: defaultSettings,
       tasks: [],
       bills: [],
+      lifeAdmin: [],
+      bodyEntries: [],
+      importantDates: [],
       reminders: [],
       messages: [],
       dismissedPromiseIds: [],
@@ -168,6 +220,9 @@ export const useNovaStore = create<NovaState>()(
           sessionEmail: null,
           tasks: [],
           bills: [],
+          lifeAdmin: [],
+          bodyEntries: [],
+          importantDates: [],
           reminders: [],
           messages: [],
           dismissedPromiseIds: [],
@@ -223,6 +278,117 @@ export const useNovaStore = create<NovaState>()(
             }
           }),
         })
+      },
+      upsertLifeAdmin: (item) => {
+        const existing = get().lifeAdmin
+        const idx = existing.findIndex((x) => x.id === item.id)
+        if (idx >= 0) {
+          const next = [...existing]
+          next[idx] = item
+          set({ lifeAdmin: next })
+        } else {
+          set({ lifeAdmin: [item, ...existing] })
+        }
+      },
+      removeLifeAdmin: (id) => set({ lifeAdmin: get().lifeAdmin.filter((x) => x.id !== id) }),
+      createLifeAdminLocal: ({
+        title,
+        kind = 'other',
+        expiresOn = null,
+        provider = null,
+        notes = null,
+        remindEnabled = true,
+      }) => {
+        const now = new Date().toISOString()
+        const item: LifeAdminItem = {
+          id: uid('life'),
+          title: title.trim() || 'Document',
+          kind,
+          expiresOn: expiresOn || null,
+          provider: provider?.trim() || null,
+          notes: notes?.trim() || null,
+          remindEnabled: remindEnabled !== false,
+          created_at: now,
+          updated_at: now,
+        }
+        set({ lifeAdmin: [item, ...get().lifeAdmin] })
+        return item
+      },
+      upsertBodyEntry: (entry) => {
+        const existing = get().bodyEntries
+        const idx = existing.findIndex((x) => x.id === entry.id)
+        if (idx >= 0) {
+          const next = [...existing]
+          next[idx] = entry
+          set({ bodyEntries: next })
+        } else {
+          set({ bodyEntries: [entry, ...existing] })
+        }
+      },
+      removeBodyEntry: (id) =>
+        set({ bodyEntries: get().bodyEntries.filter((x) => x.id !== id) }),
+      createBodyEntryLocal: ({
+        title,
+        kind = 'visit',
+        date = null,
+        provider = null,
+        notes = null,
+      }) => {
+        const now = new Date().toISOString()
+        const entry: BodyEntry = {
+          id: uid('body'),
+          title: title.trim() || 'Entry',
+          kind,
+          date: date || null,
+          provider: provider?.trim() || null,
+          notes: notes?.trim() || null,
+          created_at: now,
+          updated_at: now,
+        }
+        set({ bodyEntries: [entry, ...get().bodyEntries] })
+        return entry
+      },
+      upsertImportantDate: (date) => {
+        const existing = get().importantDates
+        const idx = existing.findIndex((x) => x.id === date.id)
+        if (idx >= 0) {
+          const next = [...existing]
+          next[idx] = date
+          set({ importantDates: next })
+        } else {
+          set({ importantDates: [date, ...existing] })
+        }
+      },
+      removeImportantDate: (id) =>
+        set({ importantDates: get().importantDates.filter((x) => x.id !== id) }),
+      createImportantDateLocal: ({
+        title,
+        kind = 'birthday',
+        month,
+        day,
+        year = null,
+        person = null,
+        notes = null,
+        remindEnabled = true,
+        remindLeadDays = 14,
+      }) => {
+        const now = new Date().toISOString()
+        const date: ImportantDate = {
+          id: uid('date'),
+          title: title.trim() || 'Date',
+          kind,
+          month: Math.min(12, Math.max(1, Math.round(month) || 1)),
+          day: Math.min(31, Math.max(1, Math.round(day) || 1)),
+          year: year && year > 1900 ? year : null,
+          person: person?.trim() || null,
+          notes: notes?.trim() || null,
+          remindEnabled: remindEnabled !== false,
+          remindLeadDays: Math.max(0, Math.min(60, Number(remindLeadDays) || 14)),
+          created_at: now,
+          updated_at: now,
+        }
+        set({ importantDates: [date, ...get().importantDates] })
+        return date
       },
       dismissPromise: (id) =>
         set({
@@ -338,6 +504,9 @@ export const useNovaStore = create<NovaState>()(
         settings: s.settings,
         tasks: s.tasks,
         bills: s.bills,
+        lifeAdmin: s.lifeAdmin,
+        bodyEntries: s.bodyEntries,
+        importantDates: s.importantDates,
         reminders: s.reminders,
         messages: s.messages,
         dismissedPromiseIds: s.dismissedPromiseIds,
@@ -363,6 +532,11 @@ export const useNovaStore = create<NovaState>()(
           }
           state.settings.newsInterests = normalizeNewsInterests(state.settings.newsInterests)
           state.bills = Array.isArray(state.bills) ? state.bills : []
+          state.lifeAdmin = Array.isArray(state.lifeAdmin) ? state.lifeAdmin : []
+          state.bodyEntries = Array.isArray(state.bodyEntries) ? state.bodyEntries : []
+          state.importantDates = Array.isArray(state.importantDates)
+            ? state.importantDates
+            : []
           state.dismissedPromiseIds = Array.isArray(state.dismissedPromiseIds)
             ? state.dismissedPromiseIds
             : []

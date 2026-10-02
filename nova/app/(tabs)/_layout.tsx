@@ -67,17 +67,17 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="news"
+          name="life"
           options={{
-            title: t(language, 'tabs.news'),
-            tabBarIcon: tabIcon('news'),
+            title: t(language, 'tabs.life'),
+            tabBarIcon: tabIcon('life'),
           }}
         />
         <Tabs.Screen
-          name="bills"
+          name="dates"
           options={{
-            title: t(language, 'tabs.bills'),
-            tabBarIcon: tabIcon('bills'),
+            title: t(language, 'tabs.dates'),
+            tabBarIcon: tabIcon('dates'),
           }}
         />
         <Tabs.Screen
@@ -85,6 +85,20 @@ export default function TabsLayout() {
           options={{
             title: t(language, 'tabs.settings'),
             tabBarIcon: tabIcon('settings'),
+          }}
+        />
+        <Tabs.Screen
+          name="news"
+          options={{
+            title: t(language, 'tabs.news'),
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="bills"
+          options={{
+            title: t(language, 'tabs.bills'),
+            href: null,
           }}
         />
         <Tabs.Screen

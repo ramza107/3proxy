@@ -30,7 +30,11 @@ export function ChatFab() {
   const scale = useSharedValue(1)
 
   const onChat = pathname.includes('/chat')
-  const hasLocalFab = pathname.includes('/home') || pathname.includes('/bills')
+  const hasLocalFab =
+    pathname.includes('/home') ||
+    pathname.includes('/bills') ||
+    pathname.includes('/life') ||
+    pathname.includes('/dates')
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))

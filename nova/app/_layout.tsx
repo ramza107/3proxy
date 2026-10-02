@@ -19,6 +19,8 @@ import {
   getNotifications,
   syncBillReminders,
   syncDailyRitualNotifications,
+  syncImportantDateReminders,
+  syncLifeAdminReminders,
   syncPromiseDueReminders,
 } from '../lib/notifications'
 import { identifyUser, initMonitoring, wrapRoot } from '../lib/monitoring'
@@ -52,6 +54,8 @@ function RootLayout() {
   const settings = useNovaStore((s) => s.settings)
   const tasks = useNovaStore((s) => s.tasks)
   const bills = useNovaStore((s) => s.bills)
+  const lifeAdmin = useNovaStore((s) => s.lifeAdmin)
+  const importantDates = useNovaStore((s) => s.importantDates)
   const setDemoSession = useNovaStore((s) => s.setDemoSession)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const clearSession = useNovaStore((s) => s.clearSession)
@@ -138,12 +142,14 @@ function RootLayout() {
     }
   }, [hydrated, fontsReady, sessionUserId, onboardingComplete, segments, router])
 
-  // Keep ritual + bill local notifications in sync with store
+  // Keep ritual + bill + dates local notifications in sync with store
   useEffect(() => {
     if (!hydrated || !sessionUserId || !onboardingComplete) return
     syncDailyRitualNotifications(settings, tasks).catch(() => undefined)
     syncBillReminders(bills, settings).catch(() => undefined)
     syncPromiseDueReminders(tasks, settings).catch(() => undefined)
+    syncImportantDateReminders(importantDates, settings).catch(() => undefined)
+    syncLifeAdminReminders(lifeAdmin, settings).catch(() => undefined)
     import('../lib/widgetSync')
       .then((m) => m.refreshWidgetSnapshot())
       .catch(() => undefined)
@@ -153,6 +159,8 @@ function RootLayout() {
     onboardingComplete,
     tasks,
     bills,
+    lifeAdmin,
+    importantDates,
     settings.notificationsEnabled,
     settings.morningBriefEnabled,
     settings.morningBriefTime,
@@ -198,6 +206,14 @@ function RootLayout() {
         if (data.kind === 'bill') {
           const billId = typeof data.billId === 'string' ? data.billId : ''
           router.push(billId ? { pathname: '/bills', params: { billId } } : '/bills')
+          return
+        }
+        if (data.kind === 'important_date') {
+          router.push('/dates')
+          return
+        }
+        if (data.kind === 'life_admin') {
+          router.push('/life')
           return
         }
         if (data.kind === 'task' || data.taskId) {

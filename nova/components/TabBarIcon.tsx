@@ -8,7 +8,14 @@ import Animated, {
 } from 'react-native-reanimated'
 import { colors } from '../constants/theme'
 
-export type TabIconName = 'tasks' | 'home' | 'news' | 'bills' | 'settings'
+export type TabIconName =
+  | 'tasks'
+  | 'home'
+  | 'news'
+  | 'bills'
+  | 'life'
+  | 'dates'
+  | 'settings'
 
 const ICONS: Record<
   TabIconName,
@@ -18,6 +25,8 @@ const ICONS: Record<
   home: { active: 'home', idle: 'home-outline' },
   news: { active: 'newspaper', idle: 'newspaper-outline' },
   bills: { active: 'wallet', idle: 'wallet-outline' },
+  life: { active: 'folder-open', idle: 'folder-open-outline' },
+  dates: { active: 'gift', idle: 'gift-outline' },
   settings: { active: 'settings', idle: 'settings-outline' },
 }
 

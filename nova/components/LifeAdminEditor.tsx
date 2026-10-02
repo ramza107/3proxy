@@ -1,0 +1,201 @@
+import { useEffect, useState } from 'react'
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { colors, fonts, radii, spacing } from '../constants/theme'
+import { useT } from '../lib/useT'
+import { LIFE_ADMIN_KINDS, type LifeAdminItem, type LifeAdminKind } from '../types'
+import { BottomSheet } from './BottomSheet'
+
+type Props = {
+  item: LifeAdminItem | null
+  visible: boolean
+  creating?: boolean
+  onClose: () => void
+  onSave: (patch: {
+    title: string
+    kind: LifeAdminKind
+    expiresOn: string | null
+    provider: string | null
+    notes: string | null
+    remindEnabled: boolean
+  }) => void
+  onDelete?: () => void
+}
+
+export function LifeAdminEditor({ item, visible, creating, onClose, onSave, onDelete }: Props) {
+  const t = useT()
+  const [title, setTitle] = useState('')
+  const [kind, setKind] = useState<LifeAdminKind>('other')
+  const [expiresOn, setExpiresOn] = useState('')
+  const [provider, setProvider] = useState('')
+  const [notes, setNotes] = useState('')
+  const [remindEnabled, setRemindEnabled] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!visible) return
+    setTitle(item?.title || '')
+    setKind(item?.kind || 'other')
+    setExpiresOn(item?.expiresOn || '')
+    setProvider(item?.provider || '')
+    setNotes(item?.notes || '')
+    setRemindEnabled(item?.remindEnabled !== false)
+    setError('')
+  }, [item, visible])
+
+  const save = () => {
+    const nextTitle = title.trim()
+    if (!nextTitle) {
+      setError(t('editor.nameRequired'))
+      return
+    }
+    const exp = expiresOn.trim()
+    if (exp && !/^\d{4}-\d{2}-\d{2}$/.test(exp)) {
+      setError(t('life.dateFmt'))
+      return
+    }
+    onSave({
+      title: nextTitle,
+      kind,
+      expiresOn: exp || null,
+      provider: provider.trim() || null,
+      notes: notes.trim() || null,
+      remindEnabled,
+    })
+    onClose()
+  }
+
+  return (
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      title={creating ? t('life.newItem') : t('life.editItem')}
+      footer={
+        <View style={styles.footer}>
+          <Pressable style={styles.saveBtn} onPress={save}>
+            <Text style={styles.saveText}>{t('common.save')}</Text>
+          </Pressable>
+          {onDelete ? (
+            <Pressable style={styles.deleteBtn} onPress={onDelete}>
+              <Text style={styles.deleteText}>{t('common.delete')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      }
+    >
+      <Text style={styles.label}>{t('auth.name')}</Text>
+      <TextInput
+        value={title}
+        onChangeText={setTitle}
+        style={styles.input}
+        placeholder={t('life.titlePh')}
+        placeholderTextColor={colors.textDim}
+      />
+
+      <Text style={styles.label}>{t('life.kind')}</Text>
+      <View style={styles.chips}>
+        {LIFE_ADMIN_KINDS.map((k) => (
+          <Pressable
+            key={k}
+            style={[styles.chip, kind === k && styles.chipOn]}
+            onPress={() => setKind(k)}
+          >
+            <Text style={[styles.chipText, kind === k && styles.chipTextOn]}>
+              {t(`life.kind.${k}`)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Text style={styles.label}>{t('life.expires')}</Text>
+      <TextInput
+        value={expiresOn}
+        onChangeText={setExpiresOn}
+        style={styles.input}
+        placeholder="YYYY-MM-DD"
+        placeholderTextColor={colors.textDim}
+        autoCapitalize="none"
+      />
+
+      <Text style={styles.label}>{t('life.provider')}</Text>
+      <TextInput
+        value={provider}
+        onChangeText={setProvider}
+        style={styles.input}
+        placeholder={t('life.providerPh')}
+        placeholderTextColor={colors.textDim}
+      />
+
+      <Text style={styles.label}>{t('editor.notes')}</Text>
+      <TextInput
+        value={notes}
+        onChangeText={setNotes}
+        style={[styles.input, styles.notes]}
+        placeholder={t('life.notesPh')}
+        placeholderTextColor={colors.textDim}
+        multiline
+      />
+
+      <Pressable style={styles.toggleRow} onPress={() => setRemindEnabled((v) => !v)}>
+        <Text style={styles.toggleLabel}>{t('life.remind')}</Text>
+        <Text style={styles.toggleValue}>{remindEnabled ? t('common.on') : t('common.off')}</Text>
+      </Pressable>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+    </BottomSheet>
+  )
+}
+
+const styles = StyleSheet.create({
+  label: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  input: {
+    backgroundColor: colors.bgSoft,
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 16,
+  },
+  notes: { minHeight: 72, textAlignVertical: 'top' },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: colors.bgElevated,
+  },
+  chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  chipTextOn: { color: colors.accentStrong },
+  toggleRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  toggleLabel: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  toggleValue: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 14 },
+  error: { color: colors.danger, fontFamily: fonts.body, marginTop: 10 },
+  footer: { gap: 10, paddingTop: spacing.sm },
+  saveBtn: {
+    backgroundColor: colors.bgDeep,
+    borderRadius: radii.md,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 16 },
+  deleteBtn: { alignItems: 'center', paddingVertical: 10 },
+  deleteText: { color: colors.danger, fontFamily: fonts.bodyBold, fontSize: 14 },
+})
