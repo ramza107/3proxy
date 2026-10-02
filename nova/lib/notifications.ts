@@ -1,7 +1,8 @@
 import { Platform } from 'react-native'
-import type { Bill, Task, UserSettings } from '../types'
+import type { Bill, ImportantDate, LifeAdminItem, Task, UserSettings } from '../types'
 import { isPaidThisMonth, nextDueDate } from './bills'
 import { t, tf } from './i18n'
+import { importantDateNext, parseExpiresOn } from './lifeDates'
 import { tasksForDay, todayISO, useNovaStore } from './store'
 
 let Notifications: typeof import('expo-notifications') | null = null
@@ -9,6 +10,8 @@ let Notifications: typeof import('expo-notifications') | null = null
 const MORNING_ID_KEY = 'wahrly-morning-brief'
 const EVENING_ID_KEY = 'wahrly-evening-clear'
 const BILL_PREFIX = 'wahrly-bill-'
+const DATE_PREFIX = 'wahrly-date-'
+const LIFE_PREFIX = 'wahrly-life-'
 
 function langOf(settings: UserSettings) {
   return settings.language || 'en'
@@ -437,6 +440,206 @@ export async function syncPromiseDueReminders(
       scheduled += 1
     } catch {
       // skip
+    }
+  }
+
+  return { scheduled }
+}
+
+/**
+ * Important dates (birthdays / holidays): remind `remindLeadDays` before
+ * (default 14) and again on the day.
+ */
+export async function syncImportantDateReminders(
+  dates: ImportantDate[],
+  settings: UserSettings,
+): Promise<{ scheduled: number; webNote?: string }> {
+  const lang = langOf(settings)
+  if (Platform.OS === 'web') {
+    return { scheduled: 0, webNote: t(lang, 'notif.webDates') }
+  }
+
+  const NotificationsMod = await getNotifications()
+  if (!NotificationsMod) return { scheduled: 0 }
+
+  try {
+    const all = await NotificationsMod.getAllScheduledNotificationsAsync()
+    await Promise.all(
+      all
+        .filter(
+          (n) =>
+            String(n.content.data?.kind || '') === 'important_date' ||
+            String(n.identifier || '').startsWith(DATE_PREFIX),
+        )
+        .map((n) => NotificationsMod.cancelScheduledNotificationAsync(n.identifier)),
+    )
+  } catch {
+    // ignore
+  }
+
+  if (!settings.notificationsEnabled) return { scheduled: 0 }
+
+  const granted = await ensureNotificationPermissions()
+  if (!granted) return { scheduled: 0 }
+
+  const hm = parseHm(settings.billRemindTime || '09:00')
+  if (!hm) return { scheduled: 0 }
+
+  const now = Date.now()
+  let scheduled = 0
+
+  for (const date of dates) {
+    if (date.remindEnabled === false) continue
+    const next = importantDateNext(date)
+    const lead = Math.max(0, Math.min(60, Number(date.remindLeadDays ?? 14) || 14))
+    const dueStart = startOfLocalDay(next)
+    const pingDays = [addLocalDays(dueStart, -lead), dueStart]
+
+    for (const day of pingDays) {
+      const when = new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate(),
+        hm.hour,
+        hm.minute,
+        0,
+        0,
+      )
+      if (when.getTime() <= now + 5000) continue
+
+      const dayIso = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`
+      const id = `${DATE_PREFIX}${date.id}-${dayIso}`
+      const daysLeft = Math.round(
+        (dueStart.getTime() - startOfLocalDay(when).getTime()) / 86400000,
+      )
+      const whenLabel =
+        daysLeft <= 0
+          ? t(lang, 'notif.datesToday')
+          : daysLeft === 1
+            ? t(lang, 'notif.datesTomorrow')
+            : tf(lang, 'notif.datesIn', { n: daysLeft })
+      const who = date.person?.trim()
+      const label = who ? `${date.title} · ${who}` : date.title
+
+      try {
+        await NotificationsMod.scheduleNotificationAsync({
+          content: {
+            title: t(lang, 'notif.datesTitle'),
+            body: `${label} — ${whenLabel}`,
+            data: {
+              kind: 'important_date',
+              dateId: date.id,
+              ritualId: id,
+              route: '/dates',
+            },
+          },
+          trigger: {
+            type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
+            date: when,
+          },
+          identifier: id,
+        })
+        scheduled += 1
+      } catch {
+        // skip
+      }
+    }
+  }
+
+  return { scheduled }
+}
+
+/** Life Admin document expiry — 30 days before + on the day. */
+export async function syncLifeAdminReminders(
+  items: LifeAdminItem[],
+  settings: UserSettings,
+): Promise<{ scheduled: number }> {
+  if (Platform.OS === 'web') return { scheduled: 0 }
+
+  const NotificationsMod = await getNotifications()
+  if (!NotificationsMod) return { scheduled: 0 }
+
+  try {
+    const all = await NotificationsMod.getAllScheduledNotificationsAsync()
+    await Promise.all(
+      all
+        .filter(
+          (n) =>
+            String(n.content.data?.kind || '') === 'life_admin' ||
+            String(n.identifier || '').startsWith(LIFE_PREFIX),
+        )
+        .map((n) => NotificationsMod.cancelScheduledNotificationAsync(n.identifier)),
+    )
+  } catch {
+    // ignore
+  }
+
+  if (!settings.notificationsEnabled) return { scheduled: 0 }
+
+  const granted = await ensureNotificationPermissions()
+  if (!granted) return { scheduled: 0 }
+
+  const hm = parseHm(settings.billRemindTime || '09:00')
+  if (!hm) return { scheduled: 0 }
+
+  const lang = langOf(settings)
+  const now = Date.now()
+  let scheduled = 0
+  const lead = 30
+
+  for (const item of items) {
+    if (item.remindEnabled === false) continue
+    const exp = parseExpiresOn(item.expiresOn)
+    if (!exp) continue
+    const dueStart = startOfLocalDay(exp)
+    const pingDays = [addLocalDays(dueStart, -lead), dueStart]
+
+    for (const day of pingDays) {
+      const when = new Date(
+        day.getFullYear(),
+        day.getMonth(),
+        day.getDate(),
+        hm.hour,
+        hm.minute,
+        0,
+        0,
+      )
+      if (when.getTime() <= now + 5000) continue
+
+      const dayIso = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`
+      const id = `${LIFE_PREFIX}${item.id}-${dayIso}`
+      const daysLeft = Math.round(
+        (dueStart.getTime() - startOfLocalDay(when).getTime()) / 86400000,
+      )
+      const whenLabel =
+        daysLeft <= 0
+          ? t(lang, 'notif.lifeExpiresToday')
+          : daysLeft === 1
+            ? t(lang, 'notif.lifeExpiresTomorrow')
+            : tf(lang, 'notif.lifeExpiresIn', { n: daysLeft })
+
+      try {
+        await NotificationsMod.scheduleNotificationAsync({
+          content: {
+            title: t(lang, 'notif.lifeTitle'),
+            body: `${item.title} — ${whenLabel}`,
+            data: {
+              kind: 'life_admin',
+              lifeId: item.id,
+              ritualId: id,
+              route: '/life',
+            },
+          },
+          trigger: {
+            type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
+            date: when,
+          },
+          identifier: id,
+        })
+        scheduled += 1
+      } catch {
+        // skip
+      }
     }
   }
 
