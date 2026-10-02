@@ -39,6 +39,7 @@ module.exports = ({ config }) => {
         NSMicrophoneUsageDescription:
           'Wahrly uses the microphone so you can dictate tasks and reminders.',
         ExpoWidgetsAppGroupIdentifier: 'group.com.wahrly.assistant',
+        ITSAppUsesNonExemptEncryption: false,
       },
     },
     android: {
