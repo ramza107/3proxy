@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ImportantDateEditor } from '../../components/ImportantDateEditor'
@@ -145,7 +145,7 @@ function Section({
 }: {
   title: string
   count: number
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <View style={styles.section}>
