@@ -49,6 +49,7 @@ import {
   checkVoiceRateLimit,
   voiceUploadLimits,
 } from './voiceGuard.js'
+import { fetchQuotes } from './invest/quotes.js'
 import { buildYesterdayNews, NEWS_INTERESTS } from './news/yesterday.js'
 
 dotenv.config({ path: new URL('../../.env', import.meta.url).pathname })
@@ -267,6 +268,33 @@ app.get('/api/news/yesterday', async (req, res) => {
 
 app.get('/api/news/interests', (_req, res) => {
   res.json({ interests: NEWS_INTERESTS })
+})
+
+/** Live / delayed market quotes for Invest (Pro) — Yahoo + Coinbase, no API key. */
+app.get('/api/invest/quotes', async (req, res) => {
+  try {
+    const symbols = String(req.query.symbols || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (!symbols.length) {
+      return res.status(400).json({ error: 'symbols required', quotes: [] })
+    }
+    const demo =
+      String(req.query.demo || '') === '1' || String(req.query.demo || '') === 'true'
+    const result = await fetchQuotes(symbols, { demo })
+    return res.json({
+      quotes: result.quotes,
+      demo: result.demo,
+      generatedAt: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('invest/quotes', error)
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'quotes failed',
+      quotes: [],
+    })
+  }
 })
 
 app.get('/api/email/status', async (req, res) => {

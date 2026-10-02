@@ -34,6 +34,11 @@ export function canUseWeeklyBrief(): boolean {
   return isPro()
 }
 
+/** Invest portfolio + live quotes — Pro only. */
+export function canUseInvestments(): boolean {
+  return isPro()
+}
+
 /** Gmail digest / meetings / promises AI scans — Pro only. */
 export function canUseGmailAI(): boolean {
   return isPro()

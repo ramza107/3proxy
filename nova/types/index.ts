@@ -466,3 +466,40 @@ export type ImportantDate = {
   created_at: string
   updated_at: string
 }
+
+/** Invest (Pro) — track holdings with live price + P&L */
+export const INVEST_ASSET_KINDS = ['stock', 'etf', 'crypto', 'other'] as const
+
+export type InvestAssetKind = (typeof INVEST_ASSET_KINDS)[number]
+
+export type InvestmentHolding = {
+  id: string
+  /** Ticker: AAPL, VOO, BTC-USD */
+  symbol: string
+  name: string | null
+  kind: InvestAssetKind
+  quantity: number
+  /** Buy price per unit */
+  costBasisPerUnit: number
+  currency: string
+  /** YYYY-MM-DD purchase date */
+  boughtOn: string
+  notes: string | null
+  /** Last fetched market price */
+  lastPrice: number | null
+  lastPriceAt: string | null
+  lastChangePct: number | null
+  created_at: string
+  updated_at: string
+}
+
+export type InvestQuote = {
+  symbol: string
+  name: string | null
+  price: number
+  currency: string
+  changePct: number | null
+  kind: InvestAssetKind
+  source: string
+  asOf: string
+}
