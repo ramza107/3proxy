@@ -6,7 +6,7 @@ import multer from 'multer'
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { buildDigest, demoDigest } from './email/digest.js'
-import { demoCalendarEvents, listCalendarEvents, createCalendarEvent } from './email/calendar.js'
+import { demoCalendarEvents, listCalendarEvents } from './email/calendar.js'
 import {
   buildAuthUrl,
   exchangeCode,
@@ -16,8 +16,6 @@ import {
   listRecentInboxMessages,
   listRecentSentMessages,
   parseOAuthState,
-  sendGmailMessage,
-  createGmailDraft,
 } from './email/gmail.js'
 import {
   enqueueGmailUser,
@@ -594,78 +592,6 @@ app.get('/api/calendar/events', async (req, res) => {
   } catch (error) {
     console.error('calendar', error)
     const msg = error instanceof Error ? error.message : 'calendar failed'
-    const needsReconnect = /permission missing|reconnect/i.test(msg)
-    return res.status(needsReconnect ? 403 : 500).json({ error: msg })
-  }
-})
-
-/** Create a Google Calendar event on the primary calendar. */
-app.post('/api/calendar/events', async (req, res) => {
-  try {
-    const userId = String(req.body?.user_id || '')
-    const title = String(req.body?.title || '').trim()
-    const start = String(req.body?.start || '')
-    const end = String(req.body?.end || '')
-    const location = req.body?.location ? String(req.body.location) : null
-    const description = req.body?.description ? String(req.body.description) : null
-    const allDay = Boolean(req.body?.allDay)
-    if (!userId || !title || !start || !end) {
-      return res.status(400).json({ error: 'user_id, title, start, end required' })
-    }
-    const event = await createCalendarEvent(userId, {
-      title,
-      start,
-      end,
-      allDay,
-      location,
-      description,
-    })
-    return res.json({ ok: true, event })
-  } catch (error) {
-    console.error('calendar create', error)
-    const msg = error instanceof Error ? error.message : 'calendar create failed'
-    const needsReconnect = /permission missing|reconnect/i.test(msg)
-    return res.status(needsReconnect ? 403 : 500).json({ error: msg })
-  }
-})
-
-/** Send a Gmail reply as the connected user. */
-app.post('/api/email/send', async (req, res) => {
-  try {
-    const userId = String(req.body?.user_id || '')
-    const to = String(req.body?.to || '').trim()
-    const subject = String(req.body?.subject || '').trim()
-    const body = String(req.body?.body || '')
-    const threadId = req.body?.thread_id ? String(req.body.thread_id) : null
-    if (!userId || !to || !subject || !body.trim()) {
-      return res.status(400).json({ error: 'user_id, to, subject, body required' })
-    }
-    const result = await sendGmailMessage(userId, { to, subject, body, threadId })
-    return res.json({ ok: true, ...result })
-  } catch (error) {
-    console.error('email send', error)
-    const msg = error instanceof Error ? error.message : 'send failed'
-    const needsReconnect = /permission missing|reconnect/i.test(msg)
-    return res.status(needsReconnect ? 403 : 500).json({ error: msg })
-  }
-})
-
-/** Create a Gmail draft (does not send). */
-app.post('/api/email/draft', async (req, res) => {
-  try {
-    const userId = String(req.body?.user_id || '')
-    const to = String(req.body?.to || '').trim()
-    const subject = String(req.body?.subject || '').trim()
-    const body = String(req.body?.body || '')
-    const threadId = req.body?.thread_id ? String(req.body.thread_id) : null
-    if (!userId || !to || !subject || !body.trim()) {
-      return res.status(400).json({ error: 'user_id, to, subject, body required' })
-    }
-    const result = await createGmailDraft(userId, { to, subject, body, threadId })
-    return res.json({ ok: true, ...result })
-  } catch (error) {
-    console.error('email draft', error)
-    const msg = error instanceof Error ? error.message : 'draft failed'
     const needsReconnect = /permission missing|reconnect/i.test(msg)
     return res.status(needsReconnect ? 403 : 500).json({ error: msg })
   }
