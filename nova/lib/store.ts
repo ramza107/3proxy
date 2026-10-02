@@ -9,6 +9,8 @@ import type {
   ChatMessage,
   ImportantDate,
   ImportantDateKind,
+  InvestAssetKind,
+  InvestmentHolding,
   LifeAdminItem,
   LifeAdminKind,
   Priority,
@@ -17,6 +19,7 @@ import type {
   TaskRecurrence,
   UserSettings,
 } from '../types'
+import { guessKind, normalizeInvestSymbol } from './invest'
 import { defaultNewsInterests, defaultTypicalWeek, normalizeNewsInterests } from '../types'
 import { deviceLanguageFallback, isAppLanguage } from './i18n'
 import { localISODate, localISOMonth } from './localDate'
@@ -59,6 +62,7 @@ type NovaState = {
   lifeAdmin: LifeAdminItem[]
   bodyEntries: BodyEntry[]
   importantDates: ImportantDate[]
+  investments: InvestmentHolding[]
   reminders: Reminder[]
   messages: ChatMessage[]
   dismissedPromiseIds: string[]
@@ -115,6 +119,21 @@ type NovaState = {
     remindEnabled?: boolean
     remindLeadDays?: number
   }) => ImportantDate
+  upsertInvestment: (holding: InvestmentHolding) => void
+  removeInvestment: (id: string) => void
+  createInvestmentLocal: (input: {
+    symbol: string
+    name?: string | null
+    kind?: InvestAssetKind
+    quantity: number
+    costBasisPerUnit: number
+    currency?: string
+    boughtOn: string
+    notes?: string | null
+  }) => InvestmentHolding
+  patchInvestmentQuotes: (
+    quotes: { symbol: string; price: number; name?: string | null; changePct?: number | null }[],
+  ) => void
   dismissPromise: (id: string) => void
   snoozeLoop: (id: string, untilISO: string) => void
   clearSnooze: (id: string) => void
@@ -195,6 +214,7 @@ export const useNovaStore = create<NovaState>()(
       lifeAdmin: [],
       bodyEntries: [],
       importantDates: [],
+      investments: [],
       reminders: [],
       messages: [],
       dismissedPromiseIds: [],
@@ -223,6 +243,7 @@ export const useNovaStore = create<NovaState>()(
           lifeAdmin: [],
           bodyEntries: [],
           importantDates: [],
+          investments: [],
           reminders: [],
           messages: [],
           dismissedPromiseIds: [],
@@ -390,6 +411,73 @@ export const useNovaStore = create<NovaState>()(
         set({ importantDates: [date, ...get().importantDates] })
         return date
       },
+      upsertInvestment: (holding) => {
+        const existing = get().investments
+        const idx = existing.findIndex((x) => x.id === holding.id)
+        if (idx >= 0) {
+          const next = [...existing]
+          next[idx] = holding
+          set({ investments: next })
+        } else {
+          set({ investments: [holding, ...existing] })
+        }
+      },
+      removeInvestment: (id) =>
+        set({ investments: get().investments.filter((x) => x.id !== id) }),
+      createInvestmentLocal: ({
+        symbol,
+        name = null,
+        kind,
+        quantity,
+        costBasisPerUnit,
+        currency = 'USD',
+        boughtOn,
+        notes = null,
+      }) => {
+        const now = new Date().toISOString()
+        const sym = normalizeInvestSymbol(symbol)
+        const holding: InvestmentHolding = {
+          id: uid('inv'),
+          symbol: sym,
+          name: name?.trim() || null,
+          kind: kind || guessKind(sym),
+          quantity: Math.max(0, Number(quantity) || 0),
+          costBasisPerUnit: Math.max(0, Number(costBasisPerUnit) || 0),
+          currency: (currency || 'USD').trim().toUpperCase() || 'USD',
+          boughtOn: boughtOn || localISODate(),
+          notes: notes?.trim() || null,
+          lastPrice: null,
+          lastPriceAt: null,
+          lastChangePct: null,
+          created_at: now,
+          updated_at: now,
+        }
+        set({ investments: [holding, ...get().investments] })
+        return holding
+      },
+      patchInvestmentQuotes: (quotes) => {
+        if (!quotes.length) return
+        const bySym = new Map(
+          quotes.map((q) => [normalizeInvestSymbol(q.symbol), q] as const),
+        )
+        const now = new Date().toISOString()
+        set({
+          investments: get().investments.map((h) => {
+            const q =
+              bySym.get(normalizeInvestSymbol(h.symbol)) ||
+              bySym.get(h.symbol.toUpperCase())
+            if (!q) return h
+            return {
+              ...h,
+              lastPrice: q.price,
+              lastPriceAt: now,
+              lastChangePct: q.changePct ?? h.lastChangePct,
+              name: h.name || q.name || null,
+              updated_at: now,
+            }
+          }),
+        })
+      },
       dismissPromise: (id) =>
         set({
           dismissedPromiseIds: [...new Set([...get().dismissedPromiseIds, id])].slice(-80),
@@ -507,6 +595,7 @@ export const useNovaStore = create<NovaState>()(
         lifeAdmin: s.lifeAdmin,
         bodyEntries: s.bodyEntries,
         importantDates: s.importantDates,
+        investments: s.investments,
         reminders: s.reminders,
         messages: s.messages,
         dismissedPromiseIds: s.dismissedPromiseIds,
@@ -537,6 +626,7 @@ export const useNovaStore = create<NovaState>()(
           state.importantDates = Array.isArray(state.importantDates)
             ? state.importantDates
             : []
+          state.investments = Array.isArray(state.investments) ? state.investments : []
           state.dismissedPromiseIds = Array.isArray(state.dismissedPromiseIds)
             ? state.dismissedPromiseIds
             : []

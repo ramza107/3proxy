@@ -12,6 +12,8 @@ type Props = {
   onOpenChat: () => void
   onOpenTasks: () => void
   onOpenBills?: () => void
+  onOpenLife?: () => void
+  onOpenInvest?: () => void
   onOpenSettings: () => void
   onOpenEvening?: () => void
   onOpenMorning?: () => void
@@ -28,6 +30,8 @@ export function QuickActionsSheet({
   onOpenChat,
   onOpenTasks,
   onOpenBills,
+  onOpenLife,
+  onOpenInvest,
   onOpenSettings,
   onOpenEvening,
   onOpenMorning,
@@ -63,6 +67,20 @@ export function QuickActionsSheet({
             label={t('quick.bills')}
             sub={t('quick.billsSub')}
             onPress={() => run(onOpenBills)}
+          />
+        ) : null}
+        {onOpenInvest ? (
+          <Action
+            label={t('quick.invest')}
+            sub={t('quick.investSub')}
+            onPress={() => run(onOpenInvest)}
+          />
+        ) : null}
+        {onOpenLife ? (
+          <Action
+            label={t('quick.life')}
+            sub={t('quick.lifeSub')}
+            onPress={() => run(onOpenLife)}
           />
         ) : null}
         {onOpenMorning ? (
