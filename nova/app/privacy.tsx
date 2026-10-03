@@ -41,7 +41,7 @@ export default function PrivacyScreen() {
           <P>
             This Privacy Policy explains how Wahrly (“we”, “the app”) collects, uses, and protects
             information when you use the Wahrly website and mobile apps, including when you connect
-            Google / Gmail.
+            Google Calendar.
           </P>
           <P>
             By using Wahrly, you agree to this policy. If you do not agree, please do not use the
@@ -69,42 +69,34 @@ export default function PrivacyScreen() {
           </Bullet>
           <Bullet>
             Google account data (only after you tap “Connect with Google” and grant permission) —
-            limited Gmail access described in section 3.
+            limited Calendar access described in section 3.
           </Bullet>
           <Bullet>
             Technical data — basic server logs (timestamps, error messages) needed to keep the
             service running. We do not sell advertising profiles.
           </Bullet>
 
-          <H>3. Google / Gmail + Calendar access</H>
+          <H>3. Google Calendar access</H>
           <P>
-            If you connect Google, Wahrly requests only: gmail.readonly and calendar.readonly.
-            Reconnect in Settings if you connected earlier with send/write scopes so Google drops
-            them.
+            If you connect Google, Wahrly requests only calendar.readonly (plus basic account email
+            for the connected-account label). Wahrly does not request Gmail scopes and does not read
+            your mail. Reconnect in Settings if you connected earlier with mail scopes so Google
+            drops them.
           </P>
           <P>With those permissions, Wahrly may:</P>
-          <Bullet>
-            Read recent inbox messages to build a morning brief (who wrote to you, typically for the
-            previous local calendar day).
-          </Bullet>
-          <Bullet>
-            Read messages in Sent to detect open commitments you wrote (for example “I’ll send…” /
-            “я перезвоню…”) and suggest turning them into tasks — only if you use the Promises
-            feature.
-          </Bullet>
           <Bullet>
             Read today’s events from your primary Google Calendar to show them on the Home signal
             timeline and to avoid those times when packing Plan day.
           </Bullet>
           <P>Wahrly does not:</P>
-          <Bullet>Send, draft, delete, or modify your email.</Bullet>
+          <Bullet>Read, send, draft, delete, or modify your email.</Bullet>
           <Bullet>Create, edit, or delete Google Calendar events.</Bullet>
-          <Bullet>Read your mail or calendar without your explicit Connect / Allow step.</Bullet>
+          <Bullet>Read your calendar without your explicit Connect / Allow step.</Bullet>
           <Bullet>Sell your Google content to third parties.</Bullet>
           <P>
-            Google OAuth tokens (access / refresh) are stored on our API server so briefs can be
-            refreshed without asking you to Allow every day. You can disconnect Google at any time in
-            Settings; we then delete the stored tokens for your account.
+            Google OAuth tokens (access / refresh) are stored on our API server so calendar events
+            can refresh without asking you to Allow every day. You can disconnect Google at any time
+            in Settings; we then delete the stored tokens for your account.
           </P>
           <P>
             Wahrly’s use of information received from Google APIs will adhere to the Google API
@@ -112,18 +104,17 @@ export default function PrivacyScreen() {
           </P>
 
           <H>4. How we use information</H>
-          <Bullet>Provide and improve Wahrly features (tasks, chat, morning brief, promises).</Bullet>
+          <Bullet>Provide and improve Wahrly features (tasks, chat, morning brief, calendar).</Bullet>
           <Bullet>Authenticate you and keep your session secure.</Bullet>
           <Bullet>Call AI providers (for example Groq or OpenAI) with the text needed to answer
-            your chat or summarize mail highlights — not for unrelated advertising.</Bullet>
+            your chat — not for unrelated advertising.</Bullet>
           <Bullet>Comply with law if required.</Bullet>
 
           <H>5. AI processing</H>
           <P>
-            When you chat with Wahrly or enable mail summaries, message text (and limited mail
-            metadata / snippets needed for the brief or promise detection) may be sent to our API
-            server and then to the configured AI provider to generate a reply or summary. Do not
-            paste secrets (passwords, bank codes) into chat.
+            When you chat with Wahrly, message text may be sent to our API server and then to the
+            configured AI provider to generate a reply. Do not paste secrets (passwords, bank codes)
+            into chat.
           </P>
 
           <H>6. Storage and retention</H>
@@ -134,17 +125,17 @@ export default function PrivacyScreen() {
             Supabase (when configured) — account and task data under your project’s access controls.
           </Bullet>
           <Bullet>
-            API server — Gmail OAuth tokens while connected; short-lived processing of mail for
-            digests/promises. We do not keep a full archive of your mailbox.
+            API server — Google OAuth tokens while Calendar is connected. We do not store your
+            mailbox.
           </Bullet>
           <P>
-            You can clear local data by signing out / clearing site data. Disconnect Gmail to remove
+            You can clear local data by signing out / clearing site data. Disconnect Google to remove
             server tokens. For account deletion requests, contact us at the email above.
           </P>
 
           <H>7. Sharing</H>
           <P>We share data only as needed to run the product:</P>
-          <Bullet>Google — when you authorize Gmail access.</Bullet>
+          <Bullet>Google — when you authorize Calendar access.</Bullet>
           <Bullet>Hosting / auth / AI providers we configure (for example Render, Supabase, Groq,
             OpenAI) under their respective terms.</Bullet>
           <Bullet>Authorities if legally required.</Bullet>
@@ -153,8 +144,9 @@ export default function PrivacyScreen() {
           <H>8. Security</H>
           <P>
             We use HTTPS, store secrets on the server (not in the mobile app bundle), and limit
-            Gmail access to read-only. No method of transmission or storage is 100% secure; please
-            use a strong account password and disconnect Gmail if you stop using Wahrly.
+            Google access to Calendar read-only. No method of transmission or storage is 100%
+            secure; please use a strong account password and disconnect Google if you stop using
+            Wahrly.
           </P>
 
           <H>9. Children</H>
@@ -164,9 +156,9 @@ export default function PrivacyScreen() {
           </P>
 
           <H>10. Your choices</H>
-          <Bullet>Use Wahrly without connecting Gmail (tasks and chat still work in demo / local
+          <Bullet>Use Wahrly without connecting Google (tasks and chat still work in demo / local
             modes).</Bullet>
-          <Bullet>Disconnect Gmail in Settings.</Bullet>
+          <Bullet>Disconnect Google in Settings.</Bullet>
           <Bullet>Revoke access anytime in your Google Account → Security → Third-party access.</Bullet>
           <Bullet>Contact us to ask questions or request deletion of server-side tokens / account
             data we control.</Bullet>

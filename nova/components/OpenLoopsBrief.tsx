@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  ActivityIndicator,
   Alert,
-  AppState,
   Platform,
   Pressable,
   StyleSheet,
@@ -10,55 +8,35 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { useFocusEffect, useRouter } from 'expo-router'
-import { colors, fonts, radii, spacing } from '../constants/theme'
-import { fetchEmailMeetings, fetchEmailPromises, fetchEmailStatus } from '../lib/emailApi'
-import { canUseGmailAI } from '../lib/pro'
-import { notifyMeetingEmail, registerDevicePushToken } from '../lib/notifications'
+import { colors, fonts, radii } from '../constants/theme'
 import { useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
-import type { EmailPromise, MeetingAlert, MeetingsDigest, PromisesDigest, Task } from '../types'
+import type { Task } from '../types'
 import { HomeSection } from './HomeSection'
 
 type Props = {
   userId: string | null
-  autoPromises: boolean
-  meetingAlertsEnabled: boolean
 }
 
 type LoopKind = 'promise' | 'meeting'
 
 /**
  * First-class social loops: “I owe” vs “Waiting”.
- * Local tasks are the source of truth; Gmail (Pro) is optional intake.
+ * Local tasks with sourceKind promise/meeting are the source of truth.
  */
-export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: Props) {
+export function OpenLoopsBrief({ userId }: Props) {
   const t = useT()
-  const router = useRouter()
-  const dismissed = useNovaStore((s) => s.dismissedPromiseIds)
-  const notified = useNovaStore((s) => s.notifiedMeetingIds)
   const snoozedLoops = useNovaStore((s) => s.snoozedLoops)
-  const dismissPromise = useNovaStore((s) => s.dismissPromise)
-  const dismissMeeting = useNovaStore((s) => s.dismissMeeting)
   const snoozeLoop = useNovaStore((s) => s.snoozeLoop)
-  const markMeetingNotified = useNovaStore((s) => s.markMeetingNotified)
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const upsertTask = useNovaStore((s) => s.upsertTask)
   const sessionUserId = useNovaStore((s) => s.sessionUserId)
   const tasks = useNovaStore((s) => s.tasks)
-  const notificationsEnabled = useNovaStore((s) => s.settings.notificationsEnabled)
 
-  const [promises, setPromises] = useState<PromisesDigest | null>(null)
-  const [meetings, setMeetings] = useState<MeetingsDigest | null>(null)
-  const [connected, setConnected] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [adding, setAdding] = useState(false)
   const [draftKind, setDraftKind] = useState<LoopKind>('promise')
   const [draftTitle, setDraftTitle] = useState('')
   const [draftWho, setDraftWho] = useState('')
-  const notifying = useRef(false)
-  const autoRanFor = useRef<string | null>(null)
 
   const isSnoozed = (id: string) => {
     const until = snoozedLoops[id]
@@ -83,203 +61,21 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
 
   const openTasks = useMemo(() => tasks.filter((x) => !x.completed), [tasks])
 
-  const loadMail = async (allowDemo = false, refresh = false) => {
-    if (!userId || !canUseGmailAI()) {
-      setPromises(null)
-      setMeetings(null)
-      setConnected(false)
-      return
-    }
-    setLoading(true)
-    setError('')
-    try {
-      const status = await fetchEmailStatus(userId)
-      setConnected(status.connected)
-      if (!status.connected) {
-        if (allowDemo) {
-          setPromises(await fetchEmailPromises(userId, { demo: true, isPro: true }))
-          setMeetings(await fetchEmailMeetings(userId, { demo: true, isPro: true }))
-        } else {
-          setPromises(null)
-          setMeetings(null)
-        }
-        return
-      }
-      const p = await fetchEmailPromises(userId, { days: 7, refresh, isPro: true })
-      setPromises(p)
-      const m = await fetchEmailMeetings(userId, { hours: 48, refresh, isPro: true })
-      setMeetings(m)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not scan mail')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useFocusEffect(
-    useCallback(() => {
-      loadMail(false).catch(() => undefined)
-    }, [userId]),
-  )
-
-  useEffect(() => {
-    if (!userId || !meetingAlertsEnabled || !notificationsEnabled) return
-    if (Platform.OS === 'web') return
-    if (!canUseGmailAI()) return
-    registerDevicePushToken(userId).catch(() => undefined)
-  }, [userId, meetingAlertsEnabled, notificationsEnabled])
-
-  useEffect(() => {
-    if (!userId || !meetingAlertsEnabled || !canUseGmailAI()) return
-    const id = setInterval(() => {
-      if (AppState.currentState === 'active') {
-        fetchEmailMeetings(userId, { hours: 48, isPro: true })
-          .then((m) => setMeetings(m))
-          .catch(() => undefined)
-      }
-    }, 30 * 60 * 1000)
-    return () => clearInterval(id)
-  }, [userId, meetingAlertsEnabled])
-
-  useEffect(() => {
-    if (!autoPromises) autoRanFor.current = null
-  }, [autoPromises])
-
-  useEffect(() => {
-    if (!meetingAlertsEnabled || !meetings?.meetings?.length || notifying.current) return
-    const fresh = meetings.meetings.filter((m) => !notified.includes(m.id))
-    if (!fresh.length) return
-    notifying.current = true
-    ;(async () => {
-      for (const m of fresh) {
-        if (Platform.OS === 'web') {
-          markMeetingNotified(m.id)
-          continue
-        }
-        await notifyMeetingEmail({
-          body: m.notifyBody,
-          alertId: m.id,
-          enabled: notificationsEnabled,
-        })
-        markMeetingNotified(m.id)
-      }
-      notifying.current = false
-    })().catch(() => {
-      notifying.current = false
-    })
-  }, [meetingAlertsEnabled, meetings, notified, notificationsEnabled, markMeetingNotified])
-
-  const oweFromMail = useMemo(() => {
-    const list = promises?.promises || []
-    return list.filter((p) => {
-      if (dismissed.includes(p.id)) return false
-      if (isSnoozed(p.id)) return false
-      const spawned = openTasks.some((task) => task.sourceKind === 'promise' && task.sourceId === p.id)
-      return !spawned
-    })
-  }, [promises?.promises, dismissed, openTasks, snoozedLoops])
-
   const oweFromTasks = useMemo(
-    () =>
-      openTasks.filter((task) => task.sourceKind === 'promise' && !isSnoozed(task.id)),
+    () => openTasks.filter((task) => task.sourceKind === 'promise' && !isSnoozed(task.id)),
     [openTasks, snoozedLoops],
   )
-
-  const waitingFromMail = useMemo(() => {
-    const list = meetings?.meetings || []
-    return list.filter((m) => {
-      if (notified.includes(`dismiss:${m.id}`)) return false
-      if (isSnoozed(m.id)) return false
-      const spawned = openTasks.some((task) => task.sourceKind === 'meeting' && task.sourceId === m.id)
-      return !spawned
-    })
-  }, [meetings?.meetings, notified, openTasks, snoozedLoops])
 
   const waitingFromTasks = useMemo(
-    () =>
-      openTasks.filter((task) => task.sourceKind === 'meeting' && !isSnoozed(task.id)),
+    () => openTasks.filter((task) => task.sourceKind === 'meeting' && !isSnoozed(task.id)),
     [openTasks, snoozedLoops],
   )
-
-  useEffect(() => {
-    if (!autoPromises || !userId || !promises?.promises?.length) return
-    const fingerprint = `${promises.generatedAt}:${promises.promises.map((p) => p.id).join(',')}`
-    if (autoRanFor.current === fingerprint) return
-    autoRanFor.current = fingerprint
-    const uidUser = sessionUserId || userId
-    if (!uidUser) return
-    const state = useNovaStore.getState()
-    const already = new Set(state.dismissedPromiseIds)
-    const titles = new Set(
-      state.tasks.filter((x) => !x.completed).map((x) => x.title.trim().toLowerCase()),
-    )
-    for (const p of promises.promises) {
-      if (already.has(p.id)) continue
-      if (state.isLoopSnoozed(p.id)) continue
-      if (state.tasks.some((x) => !x.completed && x.sourceId === p.id)) {
-        dismissPromise(p.id)
-        continue
-      }
-      const key = p.suggestedTask.trim().toLowerCase()
-      if (titles.has(key)) {
-        dismissPromise(p.id)
-        continue
-      }
-      createTaskLocal({
-        title: p.suggestedTask,
-        date: p.suggestedDate,
-        priority: 'high',
-        userId: uidUser,
-        sourceKind: 'promise',
-        sourceId: p.id,
-      })
-      dismissPromise(p.id)
-      titles.add(key)
-    }
-  }, [autoPromises, userId, sessionUserId, promises, createTaskLocal, dismissPromise])
 
   if (!userId) return null
 
-  const oweCount = oweFromMail.length + oweFromTasks.length
-  const waitCount = waitingFromMail.length + waitingFromTasks.length
+  const oweCount = oweFromTasks.length
+  const waitCount = waitingFromTasks.length
   const total = oweCount + waitCount
-  const demo = !!(promises?.demo || meetings?.demo)
-  const gmailPro = canUseGmailAI()
-
-  const onAddPromise = (p: EmailPromise) => {
-    const uidUser = sessionUserId || userId
-    if (!uidUser) return
-    createTaskLocal({
-      title: p.suggestedTask,
-      date: p.suggestedDate,
-      priority: 'high',
-      userId: uidUser,
-      sourceKind: 'promise',
-      sourceId: p.id,
-    })
-    dismissPromise(p.id)
-  }
-
-  const onAddMeeting = (m: MeetingAlert) => {
-    const uidUser = sessionUserId || userId
-    if (!uidUser) return
-    const title =
-      m.intent === 'meet'
-        ? `Meet ${m.fromName}${m.suggestedTime ? ` at ${m.suggestedTime}` : ''}`
-        : m.intent === 'report'
-          ? `Send report to ${m.fromName}`
-          : m.summary
-    createTaskLocal({
-      title,
-      date: m.suggestedDate,
-      time: m.suggestedTime,
-      priority: 'high',
-      userId: uidUser,
-      sourceKind: 'meeting',
-      sourceId: m.id,
-    })
-    dismissMeeting(`dismiss:${m.id}`)
-  }
 
   const completeLinkedTasks = (sourceId: string) => {
     const now = new Date().toISOString()
@@ -412,33 +208,6 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                   onSnooze={() => onSnooze(task.id)}
                 />
               ))}
-              {oweFromMail.map((p) => (
-                <View key={p.id} style={styles.item}>
-                  <Text style={styles.meta}>{t.tf('home.to', { name: p.toName })}</Text>
-                  <Text style={styles.title} numberOfLines={2}>
-                    “{p.promise}”
-                  </Text>
-                  <Text style={styles.hint} numberOfLines={2}>
-                    → {p.suggestedTask}
-                    {p.suggestedDate ? ` · ${p.suggestedDate}` : ''}
-                  </Text>
-                  {!autoPromises ? (
-                    <View style={styles.actions}>
-                      <Pressable style={styles.addBtn} onPress={() => onAddPromise(p)}>
-                        <Text style={styles.addBtnText}>{t('home.trackLoop')}</Text>
-                      </Pressable>
-                      <Pressable onPress={() => onSnooze(p.id)} hitSlop={8}>
-                        <Text style={styles.dismiss}>{t('home.snooze')}</Text>
-                      </Pressable>
-                      <Pressable onPress={() => dismissPromise(p.id)} hitSlop={8}>
-                        <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
-                      </Pressable>
-                    </View>
-                  ) : (
-                    <Text style={styles.autoPending}>{t('home.adding')}</Text>
-                  )}
-                </View>
-              ))}
             </View>
           ) : null}
 
@@ -456,68 +225,10 @@ export function OpenLoopsBrief({ userId, autoPromises, meetingAlertsEnabled }: P
                   onSnooze={() => onSnooze(task.id)}
                 />
               ))}
-              {waitingFromMail.map((m) => (
-                <View key={m.id} style={styles.item}>
-                  <Text style={styles.meta}>
-                    {m.fromName}
-                    {m.intent === 'meet'
-                      ? ` · ${t('home.intentMeet')}`
-                      : m.intent === 'report'
-                        ? ` · ${t('home.intentReport')}`
-                        : m.intent === 'call'
-                          ? ` · ${t('home.intentCall')}`
-                          : ''}
-                  </Text>
-                  <Text style={styles.title} numberOfLines={2}>
-                    {m.summary}
-                  </Text>
-                  <Text style={styles.hint} numberOfLines={1}>
-                    {m.subject}
-                  </Text>
-                  <View style={styles.actions}>
-                    <Pressable style={styles.addBtn} onPress={() => onAddMeeting(m)}>
-                      <Text style={styles.addBtnText}>{t('home.trackLoop')}</Text>
-                    </Pressable>
-                    <Pressable onPress={() => onSnooze(m.id)} hitSlop={8}>
-                      <Text style={styles.dismiss}>{t('home.snooze')}</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {
-                        markMeetingNotified(m.id)
-                        dismissMeeting(`dismiss:${m.id}`)
-                      }}
-                      hitSlop={8}
-                    >
-                      <Text style={styles.dismiss}>{t('home.dismiss')}</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
             </View>
           ) : null}
         </>
       )}
-
-      {gmailPro ? (
-        <View style={styles.mailFoot}>
-          {loading ? <ActivityIndicator color={colors.accent} /> : null}
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          {connected ? (
-            <Pressable onPress={() => loadMail(false, true)} hitSlop={8}>
-              <Text style={styles.demoLink}>
-                {loading ? '…' : demo ? t('home.previewLoops') : t('home.scanMailLoops')}
-              </Text>
-            </Pressable>
-          ) : (
-            <>
-              <Text style={styles.mailHint}>{t('home.loopsMailOptional')}</Text>
-              <Pressable onPress={() => router.push('/settings')} hitSlop={8}>
-                <Text style={styles.demoLink}>{t('home.connectGoogle')}</Text>
-              </Pressable>
-            </>
-          )}
-        </View>
-      ) : null}
     </HomeSection>
   )
 }
@@ -570,13 +281,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   quiet: { color: colors.textDim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  demoLink: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyMedium,
-    fontSize: 13,
-    marginTop: 4,
-  },
-  error: { color: colors.danger, fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
   composer: {
     gap: 8,
     paddingVertical: 8,
@@ -638,13 +342,4 @@ const styles = StyleSheet.create({
   addBtnOff: { opacity: 0.4 },
   addBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
   dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  autoPending: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, marginTop: 4 },
-  mailFoot: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    gap: 4,
-  },
-  mailHint: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12, lineHeight: 16 },
 })

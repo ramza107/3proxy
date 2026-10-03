@@ -1,4 +1,4 @@
-/** Wahrly Pro gates — Free is near-zero COGS; cloud AI / Gmail / voice are Pro-only. */
+/** Wahrly Pro gates — Free is near-zero COGS; cloud AI / voice / invest are Pro-only. */
 
 import { localISODate } from './localDate'
 import { useNovaStore } from './store'
@@ -24,11 +24,6 @@ export function useIsPro(): boolean {
   return useNovaStore((s) => s.settings.isPro === true)
 }
 
-/** Auto-add Gmail promises — Pro only. */
-export function canUseAutoPromises(): boolean {
-  return isPro()
-}
-
 /** Weekly brief — Pro only. */
 export function canUseWeeklyBrief(): boolean {
   return isPro()
@@ -36,16 +31,6 @@ export function canUseWeeklyBrief(): boolean {
 
 /** Invest portfolio + live quotes — Pro only. */
 export function canUseInvestments(): boolean {
-  return isPro()
-}
-
-/** Gmail digest / meetings / promises AI scans — Pro only. */
-export function canUseGmailAI(): boolean {
-  return isPro()
-}
-
-/** Server meeting push registration — Pro only. */
-export function canUseMeetingPush(): boolean {
   return isPro()
 }
 

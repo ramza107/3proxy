@@ -5,40 +5,16 @@ import express from 'express'
 import multer from 'multer'
 import OpenAI from 'openai'
 import { z } from 'zod'
-import { buildDigest, demoDigest } from './email/digest.js'
-import { demoCalendarEvents, listCalendarEvents } from './email/calendar.js'
+import { demoCalendarEvents, listCalendarEvents } from './google/calendar.js'
 import {
   buildAuthUrl,
   exchangeCode,
-  gmailConfigured,
+  googleConfigured,
   resolveAppReturnUrl,
-  listOvernightMessages,
-  listRecentInboxMessages,
-  listRecentSentMessages,
   parseOAuthState,
-} from './email/gmail.js'
-import {
-  enqueueGmailUser,
-  friendlyGmailError,
-  gmailCacheKey,
-  GMAIL_PUSH_POLL_TTL_MS,
-  isGmailQuotaError,
-  withGmailCache,
-} from './email/gmailGuard.js'
-import { buildMeetingsDigest, demoMeetings } from './email/meetings.js'
-import { buildPromisesDigest, demoPromises } from './email/promises.js'
-import {
-  getPushToken,
-  hydratePushTokensFromSupabase,
-  listActivePushUsers,
-  markAlertPushed,
-  savePushToken,
-  sendExpoPush,
-  touchPushActivity,
-  wasAlertPushed,
-} from './email/pushStore.js'
+} from './google/oauth.js'
 import { checkChatRateLimit } from './chatGuard.js'
-import { deleteConnection, getConnection, saveConnection } from './email/store.js'
+import { deleteConnection, getConnection, saveConnection } from './google/store.js'
 import { localAI } from './localAI.js'
 import { sanitizeAIActions } from './aiActions.js'
 import { SYSTEM_PROMPT } from './prompt.js'
@@ -238,7 +214,7 @@ app.get('/health', (_req, res) => {
     model: provider?.model || null,
     groq: Boolean(groqKey && !groqKey.includes('your-groq')),
     openai: Boolean(openaiKey && !openaiKey.includes('your-openai')),
-    gmail: gmailConfigured(),
+    google: googleConfigured(),
   })
 })
 
@@ -297,13 +273,13 @@ app.get('/api/invest/quotes', async (req, res) => {
   }
 })
 
-app.get('/api/email/status', async (req, res) => {
+app.get('/api/google/status', async (req, res) => {
   try {
     const userId = String(req.query.user_id || '')
     if (!userId) return res.status(400).json({ error: 'user_id required' })
     const conn = await getConnection(userId)
     return res.json({
-      configured: gmailConfigured(),
+      configured: googleConfigured(),
       connected: Boolean(conn),
       email: conn?.email || null,
       provider: conn?.provider || null,
@@ -315,12 +291,12 @@ app.get('/api/email/status', async (req, res) => {
   }
 })
 
-app.get('/api/email/connect', (req, res) => {
+app.get('/api/google/connect', (req, res) => {
   const userId = String(req.query.user_id || '')
   if (!userId) return res.status(400).json({ error: 'user_id required' })
-  if (!gmailConfigured()) {
+  if (!googleConfigured()) {
     return res.status(503).json({
-      error: 'Gmail OAuth not configured',
+      error: 'Google OAuth not configured',
       hint: 'Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI on the AI server (one-time). Users then only tap Allow.',
     })
   }
@@ -337,14 +313,14 @@ app.get('/api/email/connect', (req, res) => {
   return res.redirect(url)
 })
 
-app.get('/api/email/callback', async (req, res) => {
+async function handleGoogleOAuthCallback(req: express.Request, res: express.Response) {
   const code = String(req.query.code || '')
   const state = String(req.query.state || '')
   const parsed = parseOAuthState(state)
   const client = parsed?.client || 'web'
   const appUrl = resolveAppReturnUrl(client)
 
-  const fail = () => res.redirect(`${appUrl}settings?gmail=error`)
+  const fail = () => res.redirect(`${appUrl}settings?google=error`)
 
   try {
     if (!code || !parsed) return fail()
@@ -365,21 +341,25 @@ app.get('/api/email/callback', async (req, res) => {
     const existing = await getConnection(parsed.userId)
     await saveConnection({
       userId: parsed.userId,
-      provider: 'gmail',
+      provider: 'google',
       email: tokens.email,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken || existing?.refreshToken || '',
       expiryDate: tokens.expiryDate,
       updatedAt: new Date().toISOString(),
     })
-    return res.redirect(`${appUrl}settings?gmail=connected`)
+    return res.redirect(`${appUrl}settings?google=connected`)
   } catch (error) {
-    console.error('gmail callback', error)
+    console.error('google oauth callback', error)
     return fail()
   }
-})
+}
 
-app.post('/api/email/disconnect', async (req, res) => {
+app.get('/api/google/callback', handleGoogleOAuthCallback)
+/** Legacy redirect URI still registered in some Google Cloud consoles / Render envs. */
+app.get('/api/email/callback', handleGoogleOAuthCallback)
+
+app.post('/api/google/disconnect', async (req, res) => {
   try {
     const userId = String(req.body?.user_id || '')
     if (!userId) return res.status(400).json({ error: 'user_id required' })
@@ -388,187 +368,6 @@ app.post('/api/email/disconnect', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'disconnect failed',
-    })
-  }
-})
-
-function queryIsPro(req: { query: Record<string, unknown> }) {
-  const v = String(req.query.is_pro || req.query.pro || '')
-  return v === '1' || v === 'true'
-}
-
-app.get('/api/email/digest', async (req, res) => {
-  try {
-    const userId = String(req.query.user_id || '')
-    const timeZone = String(req.query.timezone || req.query.tz || '')
-    const allowDemo = String(req.query.demo || '') === '1'
-    const force = String(req.query.refresh || '') === '1'
-    if (!userId) return res.status(400).json({ error: 'user_id required' })
-    if (!queryIsPro(req) && !allowDemo) {
-      return res.status(402).json({
-        error: 'Gmail digest is Wahrly Pro',
-        code: 'pro_required',
-      })
-    }
-
-    const conn = await getConnection(userId)
-    if (!conn) {
-      if (allowDemo) return res.json(demoDigest(timeZone))
-      return res.json({
-        connected: false,
-        email: null,
-        demo: false,
-        total: 0,
-        senders: [],
-        summary: 'Connect Gmail in Settings to get yesterday’s inbox brief.',
-        highlights: [],
-        generatedAt: new Date().toISOString(),
-      })
-    }
-
-    const cacheKey = gmailCacheKey(userId, 'digest', timeZone || 'local')
-    const digest = await enqueueGmailUser(userId, () =>
-      withGmailCache(
-        cacheKey,
-        async () => {
-          const messages = await listOvernightMessages(userId, { timeZone, max: 18 })
-          const provider = resolveProvider()
-          return buildDigest({
-            messages,
-            email: conn.email,
-            timeZone,
-            provider: provider ? { client: provider.client, model: provider.model } : null,
-          })
-        },
-        { force },
-      ),
-    )
-    return res.json(digest)
-  } catch (error) {
-    console.error('digest', error)
-    const status = isGmailQuotaError(error) ? 429 : 500
-    return res.status(status).json({
-      error: friendlyGmailError(error, 'Couldn’t load yesterday’s inbox'),
-    })
-  }
-})
-
-app.get('/api/email/promises', async (req, res) => {
-  try {
-    const userId = String(req.query.user_id || '')
-    const allowDemo = String(req.query.demo || '') === '1'
-    const days = Number(req.query.days || 7)
-    const force = String(req.query.refresh || '') === '1'
-    if (!userId) return res.status(400).json({ error: 'user_id required' })
-    if (!queryIsPro(req) && !allowDemo) {
-      return res.status(402).json({
-        error: 'Gmail open loops are Wahrly Pro',
-        code: 'pro_required',
-      })
-    }
-
-    const conn = await getConnection(userId)
-    if (!conn) {
-      if (allowDemo) return res.json(demoPromises())
-      return res.json({
-        connected: false,
-        email: null,
-        demo: false,
-        summary: 'Connect Gmail to catch promises you made in sent mail.',
-        promises: [],
-        scanned: 0,
-        generatedAt: new Date().toISOString(),
-        days: 7,
-      })
-    }
-
-    const safeDays = Number.isFinite(days) ? days : 7
-    const cacheKey = gmailCacheKey(userId, 'promises', String(safeDays))
-    const digest = await enqueueGmailUser(userId, () =>
-      withGmailCache(
-        cacheKey,
-        async () => {
-          const messages = await listRecentSentMessages(userId, { days: safeDays, max: 12 })
-          const provider = resolveProvider()
-          return buildPromisesDigest({
-            messages,
-            email: conn.email,
-            days: safeDays,
-            provider: provider ? { client: provider.client, model: provider.model } : null,
-          })
-        },
-        { force },
-      ),
-    )
-    return res.json(digest)
-  } catch (error) {
-    console.error('promises', error)
-    const status = isGmailQuotaError(error) ? 429 : 500
-    return res.status(status).json({
-      error: friendlyGmailError(error, 'Couldn’t scan sent mail'),
-    })
-  }
-})
-
-/** Scan recent Primary inbox for meet / call / report asks. */
-app.get('/api/email/meetings', async (req, res) => {
-  try {
-    const userId = String(req.query.user_id || '')
-    const allowDemo = String(req.query.demo || '') === '1'
-    const hours = Number(req.query.hours || 48)
-    const force = String(req.query.refresh || '') === '1'
-    if (!userId) return res.status(400).json({ error: 'user_id required' })
-    if (!queryIsPro(req) && !allowDemo) {
-      return res.status(402).json({
-        error: 'Inbox ask alerts are Wahrly Pro',
-        code: 'pro_required',
-      })
-    }
-
-    const conn = await getConnection(userId)
-    if (!conn) {
-      if (allowDemo) return res.json(demoMeetings())
-      return res.json({
-        connected: false,
-        email: null,
-        demo: false,
-        summary: 'Connect Gmail to get alerts when someone asks to meet or wants a report.',
-        meetings: [],
-        scanned: 0,
-        generatedAt: new Date().toISOString(),
-        hours: 48,
-      })
-    }
-
-    const safeHours = Number.isFinite(hours) ? hours : 48
-    const cacheKey = gmailCacheKey(userId, 'meetings', String(safeHours))
-    const digest = await enqueueGmailUser(userId, () =>
-      withGmailCache(
-        cacheKey,
-        async () => {
-          const messages = await listRecentInboxMessages(userId, {
-            hours: safeHours,
-            max: 12,
-          })
-          const provider = resolveProvider()
-          return buildMeetingsDigest({
-            messages,
-            email: conn.email,
-            hours: safeHours,
-            provider: provider ? { client: provider.client, model: provider.model } : null,
-          })
-        },
-        { force },
-      ),
-    )
-    // Keep push-poll eligibility alive while the app is actually used.
-    touchPushActivity(userId)
-    return res.json(digest)
-  } catch (error) {
-    console.error('meetings', error)
-    const status = isGmailQuotaError(error) ? 429 : 500
-    return res.status(status).json({
-      error: friendlyGmailError(error, 'Couldn’t scan inbox asks'),
     })
   }
 })
@@ -622,29 +421,6 @@ app.get('/api/calendar/events', async (req, res) => {
     const msg = error instanceof Error ? error.message : 'calendar failed'
     const needsReconnect = /permission missing|reconnect/i.test(msg)
     return res.status(needsReconnect ? 403 : 500).json({ error: msg })
-  }
-})
-
-/** Register Expo push token for meeting-email alerts while the app is closed. */
-app.post('/api/push/register', async (req, res) => {
-  try {
-    const userId = String(req.body?.user_id || '')
-    const token = String(req.body?.token || '')
-    const isPro =
-      req.body?.is_pro === true ||
-      req.body?.is_pro === 1 ||
-      String(req.body?.is_pro || '') === '1'
-    if (!userId || !token) return res.status(400).json({ error: 'user_id and token required' })
-    // Free users must not enter the background Gmail poll set.
-    if (!isPro) {
-      return res.json({ ok: true, skipped: true, reason: 'pro_required' })
-    }
-    savePushToken(userId, token, { isPro: true })
-    return res.json({ ok: true })
-  } catch (error) {
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : 'push register failed',
-    })
   }
 })
 
@@ -810,67 +586,4 @@ app.listen(Port, '0.0.0.0', () => {
   const provider = resolveProvider()
   console.log(`Wahrly AI server listening on http://0.0.0.0:${Port}`)
   console.log(`Provider: ${provider?.name || 'local'} ${provider?.model || ''}`.trim())
-
-  hydratePushTokensFromSupabase().catch(() => undefined)
-
-  // Background meeting push — sparse on purpose (unit econ).
-  // Full AI scan runs when the app opens Home; here we use local heuristics only
-  // and skip dormant installs. Free Render may still sleep between cycles.
-  const POLL_MS = 90 * 60 * 1000
-  setInterval(() => {
-    pollMeetingPushes().catch((e) => console.warn('meeting poll', e))
-  }, POLL_MS)
-  setTimeout(() => {
-    pollMeetingPushes().catch(() => undefined)
-  }, 120_000)
 })
-
-async function pollMeetingPushes() {
-  const users = listActivePushUsers(14)
-  if (!users.length) return
-  for (let i = 0; i < users.length; i++) {
-    const userId = users[i]
-    const token = getPushToken(userId)
-    if (!token) continue
-    const conn = await getConnection(userId)
-    if (!conn) continue
-    try {
-      const cacheKey = gmailCacheKey(userId, 'meetings', '48')
-      const digest = await enqueueGmailUser(userId, () =>
-        withGmailCache(
-          cacheKey,
-          async () => {
-            const messages = await listRecentInboxMessages(userId, { hours: 48, max: 10 })
-            // No AI on background sweep — local precision filters are enough for push.
-            return buildMeetingsDigest({
-              messages,
-              email: conn.email,
-              hours: 48,
-              provider: null,
-            })
-          },
-          { ttlMs: GMAIL_PUSH_POLL_TTL_MS },
-        ),
-      )
-      for (const m of digest.meetings) {
-        if (wasAlertPushed(userId, m.id)) continue
-        const ok = await sendExpoPush({
-          token,
-          title: 'Wahrly · Inbox',
-          body: m.notifyBody,
-          data: {
-            kind: 'meeting',
-            alertId: m.id,
-            messageId: m.messageId,
-            route: '/home',
-          },
-        })
-        if (ok) markAlertPushed(userId, m.id)
-      }
-    } catch (e) {
-      console.warn('meeting poll user', userId, e)
-    }
-    // Mild pacing across users in one sweep.
-    if (i < users.length - 1) await new Promise((r) => setTimeout(r, 120))
-  }
-}

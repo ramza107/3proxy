@@ -1,6 +1,6 @@
-export type EmailConnection = {
+export type GoogleConnection = {
   userId: string
-  provider: 'gmail'
+  provider: 'google'
   email: string
   accessToken: string
   refreshToken: string
@@ -9,15 +9,15 @@ export type EmailConnection = {
 }
 
 /** In-memory fallback when Supabase service role is not configured. */
-const memory = new Map<string, EmailConnection>()
+const memory = new Map<string, GoogleConnection>()
 
-export async function getConnection(userId: string): Promise<EmailConnection | null> {
+export async function getConnection(userId: string): Promise<GoogleConnection | null> {
   const fromDb = await getFromSupabase(userId)
   if (fromDb) return fromDb
   return memory.get(userId) || null
 }
 
-export async function saveConnection(conn: EmailConnection): Promise<void> {
+export async function saveConnection(conn: GoogleConnection): Promise<void> {
   memory.set(conn.userId, conn)
   await saveToSupabase(conn)
 }
@@ -35,10 +35,11 @@ async function getSupabaseAdmin() {
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
-async function getFromSupabase(userId: string): Promise<EmailConnection | null> {
+async function getFromSupabase(userId: string): Promise<GoogleConnection | null> {
   try {
     const sb = await getSupabaseAdmin()
     if (!sb) return null
+    // Table name kept for existing deployments (tokens are calendar-only now).
     const { data, error } = await sb
       .from('email_connections')
       .select('*')
@@ -47,7 +48,7 @@ async function getFromSupabase(userId: string): Promise<EmailConnection | null> 
     if (error || !data) return null
     return {
       userId: data.user_id,
-      provider: 'gmail',
+      provider: 'google',
       email: data.email,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
@@ -59,14 +60,14 @@ async function getFromSupabase(userId: string): Promise<EmailConnection | null> 
   }
 }
 
-async function saveToSupabase(conn: EmailConnection): Promise<void> {
+async function saveToSupabase(conn: GoogleConnection): Promise<void> {
   try {
     const sb = await getSupabaseAdmin()
     if (!sb) return
     await sb.from('email_connections').upsert(
       {
         user_id: conn.userId,
-        provider: conn.provider,
+        provider: 'google',
         email: conn.email,
         access_token: conn.accessToken,
         refresh_token: conn.refreshToken,
@@ -76,7 +77,7 @@ async function saveToSupabase(conn: EmailConnection): Promise<void> {
       { onConflict: 'user_id' },
     )
   } catch (e) {
-    console.warn('email_connections upsert skipped:', e)
+    console.warn('google_connections upsert skipped:', e)
   }
 }
 

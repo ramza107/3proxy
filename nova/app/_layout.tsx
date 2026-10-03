@@ -166,7 +166,6 @@ function RootLayout() {
     settings.morningBriefTime,
     settings.eveningClearEnabled,
     settings.eveningClearTime,
-    settings.emailDigestEnabled,
     settings.billRemindersEnabled,
     settings.billRemindLeadDays,
     settings.billRemindCadence,
@@ -219,10 +218,6 @@ function RootLayout() {
         if (data.kind === 'task' || data.taskId) {
           const taskId = typeof data.taskId === 'string' ? data.taskId : ''
           router.push(taskId ? { pathname: '/tasks', params: { taskId } } : '/tasks')
-          return
-        }
-        if (data.kind === 'meeting') {
-          router.push('/home')
           return
         }
         if (data.kind === 'morning' || data.openMorning === true) {
