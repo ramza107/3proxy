@@ -341,8 +341,11 @@ export function MorningBrief({
       <View style={styles.actions}>
         <SoftPressable
           style={[styles.planBtn, planning && styles.planDisabled]}
-          onPress={onPlanDay}
+          onPress={() => {
+            if (!planning) void onPlanDay()
+          }}
           disabled={!!planning}
+          hitSlop={12}
         >
           <Text style={styles.planText}>{planning ? 'Arranging…' : 'Plan day'}</Text>
         </SoftPressable>

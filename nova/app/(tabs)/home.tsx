@@ -165,7 +165,18 @@ export default function HomeScreen() {
     }
   }
 
-  const openPlanSheet = () => setPlanOpen(true)
+  /** Close any open Modal first — iOS won't reliably present a second sheet on top. */
+  const openPlanSheet = () => {
+    const hadModal = showMorningBrief || weekOpen || quickOpen
+    if (showMorningBrief) dismissMorningBrief()
+    if (weekOpen) dismissWeeklyBrief()
+    if (quickOpen) setQuickOpen(false)
+    if (hadModal) {
+      setTimeout(() => setPlanOpen(true), 280)
+    } else {
+      setPlanOpen(true)
+    }
+  }
 
   const onArrangeDay = async (skipTaskIds: string[] = []) => {
     setPlanning(true)
@@ -197,7 +208,13 @@ export default function HomeScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
+        >
           <View style={styles.topBar}>
             <View style={styles.brandLockup}>
               <BrandMark size={28} color={colors.accentStrong} />
@@ -328,10 +345,8 @@ export default function HomeScreen() {
       <BottomSheet visible={weekOpen} onClose={dismissWeeklyBrief} title={t('home.weeklyBriefTitle')}>
         <WeeklyBrief
           onClose={dismissWeeklyBrief}
-          onPlanDay={() => {
-            dismissWeeklyBrief()
-            openPlanSheet()
-          }}
+          onPlanDay={openPlanSheet}
+
           onOpenTasks={() => {
             dismissWeeklyBrief()
             router.push('/tasks')
@@ -421,6 +436,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
+  scroll: { flex: 1 },
   content: {
     padding: spacing.lg,
     gap: spacing.md,
@@ -428,6 +444,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 520 : undefined,
     alignSelf: 'center',
+    flexGrow: 1,
   },
   topBar: {
     flexDirection: 'row',
