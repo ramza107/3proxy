@@ -132,8 +132,11 @@ export function DailyPlan({
                 styles.planBtn,
                 (planning || (!hasUntimed && openCount === 0)) && styles.planDisabled,
               ]}
-              onPress={onPlanDay}
+              onPress={() => {
+                if (!planning) void onPlanDay()
+              }}
               disabled={!!planning}
+              hitSlop={12}
             >
               <Text style={styles.planBtnText}>
                 {planning ? t('home.planning') : t('home.planDay')}

@@ -1,5 +1,5 @@
 import { ReactNode } from 'react'
-import { Pressable, StyleProp, ViewStyle } from 'react-native'
+import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native'
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,7 +16,13 @@ type Props = {
   stretch?: boolean
 }
 
-/** Soft scale on press — presence without bounce noise. */
+/**
+ * Soft scale on press — presence without bounce noise.
+ *
+ * Important: do NOT put `flex: 1` on the inner view. That expands the touch
+ * target in parent flex layouts and can swallow ScrollView pans on iOS
+ * (Home stopped scrolling; Plan day looked dead).
+ */
 export function SoftPressable({
   children,
   onPress,
@@ -32,7 +38,7 @@ export function SoftPressable({
 
   return (
     <Pressable
-      style={style}
+      style={[styles.base, stretch && styles.stretch, style]}
       onPress={onPress}
       disabled={disabled}
       hitSlop={hitSlop}
@@ -44,15 +50,31 @@ export function SoftPressable({
       }}
     >
       <Animated.View
-        style={[
-          stretch
-            ? { alignSelf: 'stretch', width: '100%' }
-            : { alignItems: 'center', justifyContent: 'center', flex: 1 },
-          anim,
-        ]}
+        style={[stretch ? styles.stretchInner : styles.inner, anim]}
+        pointerEvents="none"
       >
         {children}
       </Animated.View>
     </Pressable>
   )
 }
+
+const styles = StyleSheet.create({
+  base: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stretch: {
+    alignSelf: 'stretch',
+  },
+  inner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stretchInner: {
+    alignSelf: 'stretch',
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+})
