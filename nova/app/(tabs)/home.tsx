@@ -9,7 +9,6 @@ import { BrandMark } from '../../components/BrandMark'
 import { CalendarBrief } from '../../components/CalendarBrief'
 import { DailyPlan } from '../../components/DailyPlan'
 import { HomeSection } from '../../components/HomeSection'
-import { InboxBrief } from '../../components/InboxBrief'
 import { MorningBrief } from '../../components/MorningBrief'
 import { BillsBrief } from '../../components/BillsBrief'
 import { OpenLoopsBrief } from '../../components/OpenLoopsBrief'
@@ -90,14 +89,7 @@ export default function HomeScreen() {
   const setForceWeeklyBrief = useNovaStore((s) => s.setForceWeeklyBrief)
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const userId = useNovaStore((s) => s.sessionUserId)
-  const emailDigestEnabled = useNovaStore((s) => s.settings.emailDigestEnabled !== false)
   const isProUser = useNovaStore((s) => s.settings.isPro === true)
-  const emailPromisesAutoEnabled = useNovaStore(
-    (s) => s.settings.isPro === true && s.settings.emailPromisesAutoEnabled === true,
-  )
-  const meetingEmailAlertsEnabled = useNovaStore(
-    (s) => s.settings.meetingEmailAlertsEnabled !== false,
-  )
   const [loading, setLoading] = useState(false)
   const [planning, setPlanning] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
@@ -267,11 +259,7 @@ export default function HomeScreen() {
 
           <BillsBrief />
 
-          <OpenLoopsBrief
-            userId={userId}
-            autoPromises={emailPromisesAutoEnabled}
-            meetingAlertsEnabled={meetingEmailAlertsEnabled}
-          />
+          <OpenLoopsBrief userId={userId} />
 
           <Pressable
             style={styles.googleToggle}
@@ -297,16 +285,6 @@ export default function HomeScreen() {
               userId={userId}
               onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
             />
-            {isProUser ? (
-              <InboxBrief userId={userId} enabled={emailDigestEnabled && googleOpen} />
-            ) : (
-              <HomeSection title={t('pro.gmailTitle')} meta={t('pro.title')}>
-                <Text style={styles.prompt}>{t('pro.gmailLocked')}</Text>
-                <Pressable style={styles.ask} onPress={() => router.push('/settings')}>
-                  <Text style={styles.askText}>{t('pro.upgrade')}</Text>
-                </Pressable>
-              </HomeSection>
-            )}
           </View>
 
           <HomeSection title={t('home.askWahrly')} emphasize>
