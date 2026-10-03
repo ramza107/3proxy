@@ -1,26 +1,19 @@
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
-import type { EmailDigest } from '../types'
 import { apiUrl } from './api'
 
 const extra = Constants.expoConfig?.extra ?? {}
 
-/** Never dump HTML / raw Express / Google quota JSON into the UI. */
+/** Never dump HTML / raw Express JSON into the UI. */
 export function friendlyApiError(raw: string, fallback: string): string {
   const text = (raw || '').trim()
   if (!text) return fallback
   if (/^\s*</.test(text) || /Cannot GET|Cannot POST|<html/i.test(text)) {
     return fallback
   }
-  if (/Quota exceeded|Total Query Cost|rateLimitExceeded|userRateLimitExceeded|Gmail is busy/i.test(text)) {
-    return 'Gmail is busy — try again in a minute'
-  }
   try {
     const j = JSON.parse(text) as { error?: string; message?: string }
     const msg = j.error || j.message || ''
-    if (/Quota exceeded|Total Query Cost|rateLimitExceeded|Gmail is busy/i.test(msg)) {
-      return 'Gmail is busy — try again in a minute'
-    }
     if (msg && msg.length <= 120 && !/^\s*\{/.test(msg)) return msg
   } catch {
     // plain text
@@ -29,6 +22,7 @@ export function friendlyApiError(raw: string, fallback: string): string {
   return text
 }
 
+/** Google Calendar OAuth connect URL (routes still under /api/email/* for compatibility). */
 export function emailConnectUrl(userId: string) {
   const client = Platform.OS === 'web' ? 'web' : 'native'
   return `${apiUrl}/api/email/connect?user_id=${encodeURIComponent(userId)}&client=${client}`
@@ -47,28 +41,6 @@ export async function fetchEmailStatus(userId: string): Promise<{
   return res.json()
 }
 
-export async function fetchEmailDigest(
-  userId: string,
-  opts?: { demo?: boolean; timeZone?: string; refresh?: boolean; isPro?: boolean },
-): Promise<EmailDigest> {
-  const q = new URLSearchParams({ user_id: userId })
-  if (opts?.demo) q.set('demo', '1')
-  if (opts?.refresh) q.set('refresh', '1')
-  if (opts?.isPro) q.set('is_pro', '1')
-  const tz =
-    opts?.timeZone ||
-    (typeof Intl !== 'undefined'
-      ? Intl.DateTimeFormat().resolvedOptions().timeZone
-      : undefined)
-  if (tz) q.set('timezone', tz)
-  const res = await fetch(`${apiUrl}/api/email/digest?${q.toString()}`)
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(friendlyApiError(text, `Couldn’t load inbox (${res.status})`))
-  }
-  return res.json()
-}
-
 export async function disconnectEmail(userId: string): Promise<void> {
   const res = await fetch(`${apiUrl}/api/email/disconnect`, {
     method: 'POST',
@@ -79,40 +51,6 @@ export async function disconnectEmail(userId: string): Promise<void> {
     const text = await res.text()
     throw new Error(friendlyApiError(text, `Disconnect failed (${res.status})`))
   }
-}
-
-export async function fetchEmailPromises(
-  userId: string,
-  opts?: { demo?: boolean; days?: number; refresh?: boolean; isPro?: boolean },
-): Promise<import('../types').PromisesDigest> {
-  const q = new URLSearchParams({ user_id: userId })
-  if (opts?.demo) q.set('demo', '1')
-  if (opts?.days) q.set('days', String(opts.days))
-  if (opts?.refresh) q.set('refresh', '1')
-  if (opts?.isPro) q.set('is_pro', '1')
-  const res = await fetch(`${apiUrl}/api/email/promises?${q.toString()}`)
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(friendlyApiError(text, `Couldn’t scan sent mail (${res.status})`))
-  }
-  return res.json()
-}
-
-export async function fetchEmailMeetings(
-  userId: string,
-  opts?: { demo?: boolean; hours?: number; refresh?: boolean; isPro?: boolean },
-): Promise<import('../types').MeetingsDigest> {
-  const q = new URLSearchParams({ user_id: userId })
-  if (opts?.demo) q.set('demo', '1')
-  if (opts?.hours) q.set('hours', String(opts.hours))
-  if (opts?.refresh) q.set('refresh', '1')
-  if (opts?.isPro) q.set('is_pro', '1')
-  const res = await fetch(`${apiUrl}/api/email/meetings?${q.toString()}`)
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(friendlyApiError(text, `Couldn’t scan inbox asks (${res.status})`))
-  }
-  return res.json()
 }
 
 export async function fetchCalendarEvents(
@@ -129,22 +67,6 @@ export async function fetchCalendarEvents(
     throw new Error(friendlyApiError(text, `Couldn’t load calendar (${res.status})`))
   }
   return res.json()
-}
-
-export async function registerPushToken(
-  userId: string,
-  token: string,
-  opts?: { isPro?: boolean },
-): Promise<void> {
-  await fetch(`${apiUrl}/api/push/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      user_id: userId,
-      token,
-      is_pro: opts?.isPro === true,
-    }),
-  })
 }
 
 /** Public site URL used after OAuth (for docs / redirects). */

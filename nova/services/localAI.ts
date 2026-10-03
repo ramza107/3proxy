@@ -211,18 +211,6 @@ export function clientLocalAI(
   }
 
   if (
-    /(проверь|проверить|посмотри|покажи).{0,40}(почт|inbox|gmail|письм)/i.test(lower) ||
-    /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail|gmail)\b/i.test(lower)
-  ) {
-    return {
-      reply: /[а-яё]/i.test(text)
-        ? 'Могу проверить почту — скажи ещё раз «проверь почту» (нужен Connected Gmail в Settings). Или открой Home.'
-        : 'I can check your mail — say “check my email” again (Gmail must be connected in Settings), or open Home.',
-      actions: [],
-    }
-  }
-
-  if (
     /what.*(today|do i have|need to do)/i.test(lower) ||
     /(что|какие).{0,20}(сегодня|дела|задач)/i.test(lower)
   ) {

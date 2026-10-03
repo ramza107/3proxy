@@ -400,57 +400,6 @@ export default function SettingsScreen() {
               </>
             )}
 
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{tr('settings.showOnHome')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.showOnHomeSub')}</Text>
-              </View>
-              <Switch
-                value={settings.emailDigestEnabled !== false}
-                onValueChange={(v) => updateSettings({ emailDigestEnabled: v })}
-                trackColor={{ true: colors.accent, false: colors.bgSoft }}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{tr('settings.autoAddPromises')}</Text>
-                <Text style={styles.rowSub}>
-                  {isPro ? tr('settings.autoAddPromisesSub') : tr('pro.featureLocked')}
-                </Text>
-              </View>
-              <Switch
-                value={isPro && settings.emailPromisesAutoEnabled === true}
-                onValueChange={(v) => {
-                  if (!isPro) {
-                    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
-                    return
-                  }
-                  updateSettings({ emailPromisesAutoEnabled: v })
-                }}
-                trackColor={{ true: colors.accent, false: colors.bgSoft }}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{tr('settings.meetingAlerts')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.meetingAlertsSub')}</Text>
-              </View>
-              <Switch
-                value={settings.meetingEmailAlertsEnabled !== false}
-                onValueChange={async (v) => {
-                  updateSettings({ meetingEmailAlertsEnabled: v })
-                  if (v) {
-                    const { ensureNotificationPermissions, registerDevicePushToken } =
-                      await import('../../lib/notifications')
-                    await ensureNotificationPermissions()
-                    if (userId) await registerDevicePushToken(userId)
-                  }
-                }}
-                trackColor={{ true: colors.accent, false: colors.bgSoft }}
-              />
-            </View>
           </View>
 
           <View style={styles.card}>

@@ -169,19 +169,6 @@ export type UserSettings = {
   weeklyBriefEnabled: boolean
   /** YYYY-MM-DD — last weekly brief dismissed */
   lastWeeklyBriefDate: string | null
-  /** Show automatic Gmail morning inbox on Home */
-  emailDigestEnabled: boolean
-  /**
-   * When on: scan Sent for “I’ll…” promises and auto-add them as Tasks.
-   * When off: Home still can show the Promises card for manual Add.
-   * Pro feature — Free users stay on manual Add.
-   */
-  emailPromisesAutoEnabled: boolean
-  /**
-   * When on: scan recent Primary inbox for meet/call/report asks and
-   * fire push / local notifications for new ones.
-   */
-  meetingEmailAlertsEnabled: boolean
   /**
    * Bill due reminders (local notifications).
    * Default: start 3 days before due, then every day until paid.
@@ -205,7 +192,7 @@ export type UserSettings = {
   newsInterests: NewsInterest[]
   /**
    * Wahrly Pro (demo toggle until StoreKit / RevenueCat).
-   * Unlocks auto-promises, weekly brief, higher voice/chat fair-use.
+   * Unlocks weekly brief, invest, higher voice/chat fair-use.
    */
   isPro: boolean
   /** YYYY-MM-DD — day voice credits were last consumed */
@@ -295,82 +282,10 @@ export type YesterdayNewsDigest = {
   generatedAt: string
 }
 
-export type EmailDigestSender = {
-  fromName: string
-  from: string
-  count: number
-  subjects: string[]
-}
-
-export type EmailDigest = {
-  connected: boolean
-  email: string | null
-  demo: boolean
-  total: number
-  senders: EmailDigestSender[]
-  summary: string
-  highlights: { fromName: string; subject: string; time?: string }[]
-  generatedAt: string
-  window?: {
-    day: string
-    dayLabel: string
-    timeZone: string
-  }
-}
 
 /** Open loop found in the user's own sent mail */
-export type EmailPromise = {
-  id: string
-  messageId: string
-  toName: string
-  toEmail: string
-  subject: string
-  promise: string
-  suggestedTask: string
-  suggestedDate: string | null
-  /** Short draft the user can copy into Gmail */
-  suggestedReply?: string | null
-  sentAt: string
-}
-
-export type PromisesDigest = {
-  connected: boolean
-  email: string | null
-  demo: boolean
-  summary: string
-  promises: EmailPromise[]
-  scanned: number
-  generatedAt: string
-  days: number
-}
 
 /** Important ask found in recent incoming mail */
-export type MeetingAlert = {
-  id: string
-  messageId: string
-  fromName: string
-  fromEmail: string
-  subject: string
-  intent: 'meet' | 'report' | 'call' | 'other'
-  summary: string
-  notifyBody: string
-  suggestedDate: string | null
-  suggestedTime: string | null
-  /** Short draft the user can copy into Gmail */
-  suggestedReply?: string | null
-  receivedAt: string
-}
-
-export type MeetingsDigest = {
-  connected: boolean
-  email: string | null
-  demo: boolean
-  summary: string
-  meetings: MeetingAlert[]
-  scanned: number
-  generatedAt: string
-  hours: number
-}
 
 /** Google Calendar event (primary calendar) */
 export type CalendarEvent = {

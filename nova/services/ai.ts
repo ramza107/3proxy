@@ -1,9 +1,7 @@
 import { Alert } from 'react-native'
 import { chatWithNova } from '../lib/api'
-import { isCheckEmailIntent, replyFromEmailCheck } from '../lib/checkEmail'
 import {
   canUseCloudChat,
-  canUseGmailAI,
   chatDailyLimit,
   consumeChatCredit,
   isPro,
@@ -446,21 +444,6 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
   store.addMessage({ role: 'user', content: message })
 
   let response: AIChatResponse | OrganizeMyDayResult
-
-  // Real Gmail check — Pro only (costs Gmail + AI).
-  if (isCheckEmailIntent(message)) {
-    if (!canUseGmailAI()) {
-      const reply =
-        store.settings.language === 'ru'
-          ? 'Проверка Gmail — функция Wahrly Pro. Включи Pro в Настройках.'
-          : 'Checking Gmail is a Wahrly Pro feature. Turn on Pro in Settings.'
-      store.addMessage({ role: 'assistant', content: reply })
-      return { reply, actions: [] }
-    }
-    response = await replyFromEmailCheck(userId, message)
-    store.addMessage({ role: 'assistant', content: response.reply })
-    return response
-  }
 
   // Smart day packer — local, free for everyone
   if (isOrganizeDayIntent(message)) {

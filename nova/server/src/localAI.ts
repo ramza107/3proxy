@@ -257,8 +257,8 @@ export function localAI(
   ) {
     return {
       reply: /[а-яё]/i.test(text)
-        ? 'Могу проверить почту — скажи «проверь почту» в чате (Gmail в Settings) или открой Home.'
-        : 'I can check your mail — say “check my email” in chat (connect Gmail in Settings) or open Home.',
+        ? 'Wahrly больше не читает почту. Могу помочь с задачами, календарём и планом дня — или добавь обещание вручную в Open loops на Home.'
+        : 'Wahrly no longer reads email. I can help with tasks, calendar, and Plan day — or add a promise manually in Open loops on Home.',
       actions: [],
     }
   }

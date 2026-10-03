@@ -1,6 +1,7 @@
 export type EmailConnection = {
   userId: string
-  provider: 'gmail'
+  /** Legacy rows may still say gmail; new connects use google (calendar-only). */
+  provider: 'gmail' | 'google'
   email: string
   accessToken: string
   refreshToken: string
@@ -47,7 +48,7 @@ async function getFromSupabase(userId: string): Promise<EmailConnection | null> 
     if (error || !data) return null
     return {
       userId: data.user_id,
-      provider: 'gmail',
+      provider: data.provider === 'google' ? 'google' : 'gmail',
       email: data.email,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,

@@ -1,53 +1,26 @@
+/**
+ * Google OAuth + token refresh for Calendar (read-only).
+ * Mail / Gmail API access was removed — no gmail.readonly, no CASA path.
+ */
 import crypto from 'crypto'
-import { isInWindow, previousLocalDayWindow, type DayWindow } from './timeWindow.js'
 import { deleteConnection, getConnection, saveConnection, type EmailConnection } from './store.js'
 
-const GMAIL_READONLY = 'https://www.googleapis.com/auth/gmail.readonly'
 const CALENDAR_READONLY = 'https://www.googleapis.com/auth/calendar.readonly'
-/** Read-only mail + calendar. Reconnect in Settings if you previously granted send/write. */
-const GOOGLE_SCOPES = `${GMAIL_READONLY} ${CALENDAR_READONLY}`
+const USERINFO_EMAIL = 'https://www.googleapis.com/auth/userinfo.email'
+/** Calendar read + email for the connected account label. */
+const GOOGLE_SCOPES = `${CALENDAR_READONLY} ${USERINFO_EMAIL}`
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
-const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me'
-
-export type GmailMessagePreview = {
-  id: string
-  from: string
-  fromName: string
-  subject: string
-  snippet: string
-  date: string
-  unread: boolean
-}
-
-export type SentMessagePreview = {
-  id: string
-  to: string
-  toName: string
-  toEmail: string
-  subject: string
-  snippet: string
-  bodyText: string
-  date: string
-}
-
-/** Inbox message with body — for meeting / important-intent detection. */
-export type InboxMessagePreview = {
-  id: string
-  from: string
-  fromName: string
-  subject: string
-  snippet: string
-  bodyText: string
-  date: string
-  unread: boolean
-}
+const USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
 
 export function gmailConfigured() {
   const id = process.env.GOOGLE_CLIENT_ID || ''
   const secret = process.env.GOOGLE_CLIENT_SECRET || ''
   return Boolean(id && secret && !id.includes('your-google') && !secret.includes('your-google'))
 }
+
+/** @deprecated use googleConfigured — kept for route compatibility */
+export const googleConfigured = gmailConfigured
 
 export function getRedirectUri() {
   return (
@@ -94,8 +67,9 @@ export function buildAuthUrl(userId: string, _stateNonce: string, client: 'web' 
     response_type: 'code',
     scope: GOOGLE_SCOPES,
     access_type: 'offline',
+    // Force consent so users who previously granted gmail.readonly get a fresh calendar-only grant.
     prompt: 'consent',
-    include_granted_scopes: 'true',
+    include_granted_scopes: 'false',
     state,
   })
   return `${AUTH_URL}?${params.toString()}`
@@ -105,7 +79,6 @@ export function parseOAuthState(
   state: string,
 ): { userId: string; nonce: string; client: 'web' | 'native' } | null {
   try {
-    // New format: body.sig
     if (state.includes('.')) {
       const [body, sig] = state.split('.')
       if (!body || !sig) return null
@@ -122,7 +95,6 @@ export function parseOAuthState(
       }
     }
 
-    // Legacy unsigned format (in-flight sessions)
     const raw = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'))
     if (!raw?.userId || !raw?.nonce) return null
     const client: 'web' | 'native' =
@@ -161,17 +133,17 @@ export async function exchangeCode(code: string): Promise<{
     expires_in?: number
   }
 
-  const profileRes = await fetch(`${GMAIL_API}/profile`, {
+  const profileRes = await fetch(USERINFO_URL, {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   })
-  if (!profileRes.ok) throw new Error('Could not read Gmail profile')
-  const profile = (await profileRes.json()) as { emailAddress?: string }
+  if (!profileRes.ok) throw new Error('Could not read Google profile')
+  const profile = (await profileRes.json()) as { email?: string }
 
   return {
     accessToken: tokens.access_token,
     refreshToken: tokens.refresh_token || '',
     expiryDate: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-    email: profile.emailAddress || 'gmail',
+    email: profile.email || 'google',
   }
 }
 
@@ -190,7 +162,7 @@ async function refreshAccessToken(conn: EmailConnection): Promise<EmailConnectio
   })
   if (!res.ok) {
     await deleteConnection(conn.userId)
-    throw new Error('Gmail access expired — reconnect in Settings')
+    throw new Error('Google access expired — reconnect in Settings')
   }
   const tokens = (await res.json()) as { access_token: string; expires_in?: number }
   const next: EmailConnection = {
@@ -205,305 +177,12 @@ async function refreshAccessToken(conn: EmailConnection): Promise<EmailConnectio
 
 async function withFreshToken(userId: string): Promise<EmailConnection> {
   let conn = await getConnection(userId)
-  if (!conn) throw new Error('Gmail not connected')
+  if (!conn) throw new Error('Google not connected')
   if (conn.expiryDate && conn.expiryDate < Date.now() + 60_000) {
     conn = await refreshAccessToken(conn)
   }
   return conn
 }
 
-/** Shared by Gmail + Calendar routes — refresh access token when needed. */
+/** Shared by Calendar routes — refresh access token when needed. */
 export { withFreshToken }
-
-export class GmailQuotaError extends Error {
-  constructor(message = 'Gmail is busy — try again in a minute') {
-    super(message)
-    this.name = 'GmailQuotaError'
-  }
-}
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms))
-}
-
-function isQuotaResponse(status: number, text: string) {
-  return (
-    status === 429 ||
-    (status === 403 &&
-      /Quota exceeded|rateLimitExceeded|userRateLimitExceeded|Total Query Cost/i.test(text))
-  )
-}
-
-/** Gmail fetch with short backoff on per-user quota / 429. */
-async function gmailFetch(
-  url: string,
-  accessToken: string,
-  init?: RequestInit,
-): Promise<Response> {
-  let lastText = ''
-  let lastStatus = 0
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await fetch(url, {
-      ...init,
-      headers: {
-        ...(init?.headers || {}),
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
-    if (res.ok) return res
-    lastText = await res.text()
-    lastStatus = res.status
-    if (isQuotaResponse(res.status, lastText) && attempt < 2) {
-      await sleep(2000 * (attempt + 1) * (attempt + 1))
-      continue
-    }
-    if (isQuotaResponse(res.status, lastText)) {
-      throw new GmailQuotaError()
-    }
-    throw new Error(`Gmail request failed (${res.status})`)
-  }
-  if (isQuotaResponse(lastStatus, lastText)) throw new GmailQuotaError()
-  throw new Error(`Gmail request failed (${lastStatus || 500})`)
-}
-
-function headerValue(headers: { name: string; value: string }[] | undefined, name: string) {
-  return headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || ''
-}
-
-function parseFrom(raw: string): { from: string; fromName: string } {
-  const m = raw.match(/^(?:"?([^"]*)"?\s)?<?([^>]+@[^>]+)>?$/)
-  if (m) {
-    const name = (m[1] || '').trim()
-    const email = (m[2] || '').trim()
-    return { from: email, fromName: name || email.split('@')[0] }
-  }
-  return { from: raw, fromName: raw.split('@')[0] || raw }
-}
-
-/** Previous local calendar day (Gmail epoch query + client-side filter). */
-function previousDayQuery(window: DayWindow) {
-  const afterSec = Math.floor(window.start.getTime() / 1000)
-  const beforeSec = Math.floor(window.end.getTime() / 1000)
-  return `after:${afterSec} before:${beforeSec} -category:promotions -category:social`
-}
-
-export async function listOvernightMessages(
-  userId: string,
-  opts?: { timeZone?: string | null; max?: number },
-): Promise<GmailMessagePreview[]> {
-  const conn = await withFreshToken(userId)
-  const window = previousLocalDayWindow(opts?.timeZone)
-  const max = Math.min(25, Math.max(5, opts?.max ?? 18))
-  const q = encodeURIComponent(previousDayQuery(window))
-  const listRes = await gmailFetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, conn.accessToken)
-  const list = (await listRes.json()) as { messages?: { id: string }[] }
-  const ids = (list.messages || []).map((m) => m.id)
-  const previews: GmailMessagePreview[] = []
-
-  for (let i = 0; i < ids.length; i++) {
-    const id = ids[i]
-    if (i > 0) await sleep(40)
-    let msgRes: Response
-    try {
-      msgRes = await gmailFetch(
-        `${GMAIL_API}/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
-        conn.accessToken,
-      )
-    } catch (e) {
-      if (e instanceof GmailQuotaError) throw e
-      continue
-    }
-    const msg = (await msgRes.json()) as {
-      id: string
-      snippet?: string
-      labelIds?: string[]
-      internalDate?: string
-      payload?: { headers?: { name: string; value: string }[] }
-    }
-    const fromRaw = headerValue(msg.payload?.headers, 'From')
-    const { from, fromName } = parseFrom(fromRaw)
-    const headerDate = headerValue(msg.payload?.headers, 'Date')
-    const when = msg.internalDate
-      ? new Date(Number(msg.internalDate))
-      : headerDate
-        ? new Date(headerDate)
-        : null
-    if (when && !Number.isNaN(when.getTime()) && !isInWindow(when, window)) continue
-
-    previews.push({
-      id: msg.id,
-      from,
-      fromName,
-      subject: headerValue(msg.payload?.headers, 'Subject') || '(no subject)',
-      snippet: msg.snippet || '',
-      date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate,
-      unread: (msg.labelIds || []).includes('UNREAD'),
-    })
-  }
-
-  return previews
-}
-function decodeBodyData(data?: string) {
-  if (!data) return ''
-  try {
-    const normalized = data.replace(/-/g, '+').replace(/_/g, '/')
-    return Buffer.from(normalized, 'base64').toString('utf8')
-  } catch {
-    return ''
-  }
-}
-
-type MimePart = {
-  mimeType?: string
-  filename?: string
-  body?: { data?: string; size?: number }
-  parts?: MimePart[]
-}
-
-function collectPlainText(part: MimePart | undefined, depth = 0): string {
-  if (!part || depth > 8) return ''
-  if (part.mimeType === 'text/plain' && part.body?.data) {
-    return decodeBodyData(part.body.data)
-  }
-  let out = ''
-  for (const child of part.parts || []) {
-    out += collectPlainText(child, depth + 1)
-    if (out.length > 6000) break
-  }
-  if (!out && part.mimeType === 'text/html' && part.body?.data) {
-    out = decodeBodyData(part.body.data)
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-  }
-  return out
-}
-
-function parseAddressList(raw: string): { to: string; toName: string; toEmail: string } {
-  const first = raw.split(',')[0]?.trim() || raw
-  const parsed = parseFrom(first)
-  return {
-    to: first,
-    toName: parsed.fromName,
-    toEmail: parsed.from,
-  }
-}
-
-/** Recent SENT mail with body text — for open-loop / promise detection. */
-export async function listRecentSentMessages(
-  userId: string,
-  opts?: { days?: number; max?: number },
-): Promise<SentMessagePreview[]> {
-  const conn = await withFreshToken(userId)
-  const days = Math.min(30, Math.max(1, opts?.days ?? 7))
-  const max = Math.min(20, Math.max(5, opts?.max ?? 12))
-  const afterSec = Math.floor((Date.now() - days * 24 * 60 * 60 * 1000) / 1000)
-  const q = encodeURIComponent(`in:sent after:${afterSec}`)
-  const listRes = await gmailFetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, conn.accessToken)
-  const list = (await listRes.json()) as { messages?: { id: string }[] }
-  const ids = (list.messages || []).map((m) => m.id)
-  const previews: SentMessagePreview[] = []
-
-  for (let i = 0; i < ids.length; i++) {
-    const id = ids[i]
-    if (i > 0) await sleep(40)
-    let msgRes: Response
-    try {
-      msgRes = await gmailFetch(`${GMAIL_API}/messages/${id}?format=full`, conn.accessToken)
-    } catch (e) {
-      if (e instanceof GmailQuotaError) throw e
-      continue
-    }
-    const msg = (await msgRes.json()) as {
-      id: string
-      snippet?: string
-      internalDate?: string
-      payload?: MimePart & { headers?: { name: string; value: string }[] }
-    }
-    const toRaw = headerValue(msg.payload?.headers, 'To')
-    const addr = parseAddressList(toRaw || 'unknown')
-    const headerDate = headerValue(msg.payload?.headers, 'Date')
-    const when = msg.internalDate
-      ? new Date(Number(msg.internalDate))
-      : headerDate
-        ? new Date(headerDate)
-        : null
-    const bodyText = collectPlainText(msg.payload).slice(0, 6000)
-
-    previews.push({
-      id: msg.id,
-      to: addr.to,
-      toName: addr.toName,
-      toEmail: addr.toEmail,
-      subject: headerValue(msg.payload?.headers, 'Subject') || '(no subject)',
-      snippet: msg.snippet || '',
-      bodyText,
-      date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate || '',
-    })
-  }
-
-  return previews
-}
-
-/**
- * Recent INBOX mail (Primary-ish) with body text.
- * Excludes Promotions/Social noise; looks at the last `hours` (default 48).
- */
-export async function listRecentInboxMessages(
-  userId: string,
-  opts?: { hours?: number; max?: number },
-): Promise<InboxMessagePreview[]> {
-  const conn = await withFreshToken(userId)
-  const hours = Math.min(168, Math.max(6, opts?.hours ?? 48))
-  const max = Math.min(20, Math.max(5, opts?.max ?? 12))
-  const afterSec = Math.floor((Date.now() - hours * 60 * 60 * 1000) / 1000)
-  // Primary-ish only: drop promo/social/updates/forums noise that floods "important asks".
-  const q = encodeURIComponent(
-    `in:inbox after:${afterSec} -category:promotions -category:social -category:updates -category:forums`,
-  )
-  const listRes = await gmailFetch(`${GMAIL_API}/messages?maxResults=${max}&q=${q}`, conn.accessToken)
-  const list = (await listRes.json()) as { messages?: { id: string }[] }
-  const ids = (list.messages || []).map((m) => m.id)
-  const previews: InboxMessagePreview[] = []
-
-  for (let i = 0; i < ids.length; i++) {
-    const id = ids[i]
-    if (i > 0) await sleep(40)
-    let msgRes: Response
-    try {
-      msgRes = await gmailFetch(`${GMAIL_API}/messages/${id}?format=full`, conn.accessToken)
-    } catch (e) {
-      if (e instanceof GmailQuotaError) throw e
-      continue
-    }
-    const msg = (await msgRes.json()) as {
-      id: string
-      snippet?: string
-      internalDate?: string
-      labelIds?: string[]
-      payload?: MimePart & { headers?: { name: string; value: string }[] }
-    }
-    const fromRaw = headerValue(msg.payload?.headers, 'From')
-    const { from, fromName } = parseFrom(fromRaw)
-    const headerDate = headerValue(msg.payload?.headers, 'Date')
-    const when = msg.internalDate
-      ? new Date(Number(msg.internalDate))
-      : headerDate
-        ? new Date(headerDate)
-        : null
-    const bodyText = collectPlainText(msg.payload).slice(0, 6000)
-
-    previews.push({
-      id: msg.id,
-      from,
-      fromName,
-      subject: headerValue(msg.payload?.headers, 'Subject') || '(no subject)',
-      snippet: msg.snippet || '',
-      bodyText,
-      date: when && !Number.isNaN(when.getTime()) ? when.toISOString() : headerDate || '',
-      unread: (msg.labelIds || []).includes('UNREAD'),
-    })
-  }
-
-  return previews
-}

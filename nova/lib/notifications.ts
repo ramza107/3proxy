@@ -134,13 +134,9 @@ async function cancelByIdentifier(identifier: string) {
 function morningBody(tasks: Task[], settings: UserSettings) {
   const lang = langOf(settings)
   const today = tasksForDay(tasks, todayISO())
-  const inboxHint =
-    '\n' +
-    (settings.emailDigestEnabled !== false
-      ? t(lang, 'notif.morningInboxWeather')
-      : t(lang, 'notif.morningInboxPlan'))
+  const planHint = `\n${t(lang, 'notif.morningInboxPlan')}`
   if (!today.length) {
-    return `${t(lang, 'notif.morningClear')}${inboxHint}`
+    return `${t(lang, 'notif.morningClear')}${planHint}`
   }
   const preview = today
     .slice(0, 4)
@@ -148,7 +144,7 @@ function morningBody(tasks: Task[], settings: UserSettings) {
     .join('\n')
   const more =
     today.length > 4 ? `\n${tf(lang, 'notif.morningMore', { n: today.length - 4 })}` : ''
-  return `${t(lang, 'notif.morningList')}\n${preview}${more}${inboxHint}`
+  return `${t(lang, 'notif.morningList')}\n${preview}${more}${planHint}`
 }
 
 export async function syncDailyRitualNotifications(
@@ -644,63 +640,6 @@ export async function syncLifeAdminReminders(
   }
 
   return { scheduled }
-}
-
-/** Immediate local notification for an inbox meeting / report ask. */
-export async function notifyMeetingEmail(params: {
-  title?: string
-  body: string
-  alertId: string
-  enabled: boolean
-}): Promise<boolean> {
-  if (Platform.OS === 'web' || !params.enabled) return false
-  const granted = await ensureNotificationPermissions()
-  if (!granted) return false
-  const NotificationsMod = await getNotifications()
-  if (!NotificationsMod) return false
-  const lang = useNovaStore.getState().settings.language || 'en'
-  try {
-    await NotificationsMod.scheduleNotificationAsync({
-      content: {
-        title: params.title || t(lang, 'notif.inboxTitle'),
-        body: params.body,
-        data: { kind: 'meeting', alertId: params.alertId, route: '/home' },
-      },
-      trigger: null,
-    })
-    return true
-  } catch {
-    return false
-  }
-}
-
-/** Best-effort Expo push token for server-side meeting alerts. */
-export async function registerDevicePushToken(userId: string): Promise<string | null> {
-  if (Platform.OS === 'web' || !userId) return null
-  try {
-    const granted = await ensureNotificationPermissions()
-    if (!granted) return null
-    const NotificationsMod = await getNotifications()
-    if (!NotificationsMod) return null
-    const Constants = await import('expo-constants')
-    const projectId =
-      Constants.default?.easConfig?.projectId ||
-      (Constants.default?.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas
-        ?.projectId
-    const tokenRes = projectId
-      ? await NotificationsMod.getExpoPushTokenAsync({ projectId })
-      : await NotificationsMod.getExpoPushTokenAsync()
-    const token = tokenRes.data
-    if (!token) return null
-    const { registerPushToken } = await import('./emailApi')
-    const { isPro } = await import('./pro')
-    // Background Gmail poll is Pro-only — Free tokens must not enter the set.
-    if (!isPro()) return null
-    await registerPushToken(userId, token, { isPro: true })
-    return token
-  } catch {
-    return null
-  }
 }
 
 export { parseHm }
