@@ -7,7 +7,7 @@ Free is designed for **~$0–0.02 COGS / MAU**. All expensive usage is Pro-only.
 | Plan | Price | What you get |
 |------|------:|--------------|
 | **Free** | $0 | Tasks, calendar (readonly), news RSS, morning/evening local rituals, **on-device local chat** |
-| **Pro** | **$6.99 / mo** (target) | Cloud AI chat (400/day), voice (200/day), Gmail digest, open loops, meeting push, auto-promises, weekly brief |
+| **Pro** | **$6.99 / mo** (target) | Cloud AI chat (400/day), voice (200/day), invest, weekly brief |
 
 Net after store cut ≈ **$5.00 / Pro / month**.
 
@@ -17,10 +17,8 @@ Net after store cut ≈ **$5.00 / Pro / month**.
 |------|:-----:|-----------|
 | Cloud LLM chat | ❌ | Local AI only on device |
 | Whisper voice | ❌ | Pro only |
-| Gmail digest / meetings / promises | ❌ | Pro only (+ server 402) |
-| Background meeting push poll | ❌ | Tokens not registered for Free |
 | News RSS | ✅ | Shared cache, no AI |
-| Calendar list | ✅ | Google quota, ~$0 |
+| Calendar list (readonly) | ✅ | Google quota, ~$0 |
 | Supabase row | ✅ | Tiny per idle user |
 | Hosting share | ✅ | Free barely hits AI server |
 
@@ -30,13 +28,12 @@ Net after store cut ≈ **$5.00 / Pro / month**.
 
 | Driver | $/Pro / month |
 |--------|-------------:|
-| Cloud chat + email AI | $0.25–0.80 |
+| Cloud chat | $0.20–0.70 |
 | Whisper | $0.05–0.30 |
-| Gmail polls (active) | ~$0 (quota) |
 | Infra share | $0.03–0.08 |
-| **Total** | **~$0.35–1.20** |
+| **Total** | **~$0.30–1.10** |
 
-Contribution ≈ **$3.80–4.65 / Pro / month**.
+Contribution ≈ **$3.90–4.70 / Pro / month**.
 
 ## Daily-use at 100k registered
 
@@ -54,9 +51,9 @@ Even at heavy daily use, Free no longer sinks the business.
 
 ## Code guards
 
-- Client: Free → `clientLocalAI` only; no Gmail UI scans; no mic Whisper; no push register
-- Server: `/api/ai/chat` requires `is_pro`; `/api/ai/transcribe` 402 without Pro; Gmail digest/promises/meetings 402 without Pro; push register skipped for Free
-- Background poll: Pro + active 14d only, local heuristics, 90 min
+- Client: Free → `clientLocalAI` only; no mic Whisper
+- Server: `/api/ai/chat` requires `is_pro`; `/api/ai/transcribe` 402 without Pro
+- Calendar readonly works on Free (Google quota only)
 
 ## Rule of thumb
 

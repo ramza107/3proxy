@@ -7,7 +7,7 @@ import {
   isPro,
 } from '../lib/pro'
 import { currentMonthKey } from '../lib/bills'
-import { fetchCalendarEvents } from '../lib/emailApi'
+import { fetchCalendarEvents } from '../lib/googleApi'
 import { scheduleTaskNotification, cancelNotification, syncBillReminders } from '../lib/notifications'
 import { firstOccurrenceDate, nextOccurrenceDate } from '../lib/recurrence'
 import { isDestructiveAction, sanitizeAIActions } from '../lib/sanitizeActions'

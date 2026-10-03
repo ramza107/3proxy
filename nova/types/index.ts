@@ -23,7 +23,6 @@ export type Task = {
   /**
    * Social loop kind — first-class, not a plain task:
    * `promise` = I owe someone; `meeting` = Waiting on someone.
-   * May originate from Gmail or be created manually.
    */
   sourceKind?: 'promise' | 'meeting' | null
   sourceId?: string | null
@@ -282,10 +281,6 @@ export type YesterdayNewsDigest = {
   generatedAt: string
 }
 
-
-/** Open loop found in the user's own sent mail */
-
-/** Important ask found in recent incoming mail */
 
 /** Google Calendar event (primary calendar) */
 export type CalendarEvent = {

@@ -1,9 +1,9 @@
 /**
  * Google OAuth + token refresh for Calendar (read-only).
- * Mail / Gmail API access was removed — no gmail.readonly, no CASA path.
+ * No Gmail / mail API access.
  */
 import crypto from 'crypto'
-import { deleteConnection, getConnection, saveConnection, type EmailConnection } from './store.js'
+import { deleteConnection, getConnection, saveConnection, type GoogleConnection } from './store.js'
 
 const CALENDAR_READONLY = 'https://www.googleapis.com/auth/calendar.readonly'
 const USERINFO_EMAIL = 'https://www.googleapis.com/auth/userinfo.email'
@@ -13,19 +13,16 @@ const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo'
 
-export function gmailConfigured() {
+export function googleConfigured() {
   const id = process.env.GOOGLE_CLIENT_ID || ''
   const secret = process.env.GOOGLE_CLIENT_SECRET || ''
   return Boolean(id && secret && !id.includes('your-google') && !secret.includes('your-google'))
 }
 
-/** @deprecated use googleConfigured — kept for route compatibility */
-export const googleConfigured = gmailConfigured
-
 export function getRedirectUri() {
   return (
     process.env.GOOGLE_REDIRECT_URI ||
-    `${process.env.PUBLIC_API_URL || 'http://localhost:8787'}/api/email/callback`
+    `${process.env.PUBLIC_API_URL || 'http://localhost:8787'}/api/google/callback`
   )
 }
 
@@ -67,7 +64,7 @@ export function buildAuthUrl(userId: string, _stateNonce: string, client: 'web' 
     response_type: 'code',
     scope: GOOGLE_SCOPES,
     access_type: 'offline',
-    // Force consent so users who previously granted gmail.readonly get a fresh calendar-only grant.
+    // Force consent so older grants that included Gmail scopes are replaced.
     prompt: 'consent',
     include_granted_scopes: 'false',
     state,
@@ -147,7 +144,7 @@ export async function exchangeCode(code: string): Promise<{
   }
 }
 
-async function refreshAccessToken(conn: EmailConnection): Promise<EmailConnection> {
+async function refreshAccessToken(conn: GoogleConnection): Promise<GoogleConnection> {
   if (!conn.refreshToken) return conn
   const body = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
@@ -165,7 +162,7 @@ async function refreshAccessToken(conn: EmailConnection): Promise<EmailConnectio
     throw new Error('Google access expired — reconnect in Settings')
   }
   const tokens = (await res.json()) as { access_token: string; expires_in?: number }
-  const next: EmailConnection = {
+  const next: GoogleConnection = {
     ...conn,
     accessToken: tokens.access_token,
     expiryDate: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : conn.expiryDate,
@@ -175,7 +172,7 @@ async function refreshAccessToken(conn: EmailConnection): Promise<EmailConnectio
   return next
 }
 
-async function withFreshToken(userId: string): Promise<EmailConnection> {
+async function withFreshToken(userId: string): Promise<GoogleConnection> {
   let conn = await getConnection(userId)
   if (!conn) throw new Error('Google not connected')
   if (conn.expiryDate && conn.expiryDate < Date.now() + 60_000) {

@@ -30,7 +30,7 @@ EXPO_PUBLIC_POSTHOG_KEY=phc_xxxx
 
 4. Redeploy web / restart Metro. Native rebuild **not** required (HTTP capture only).
 
-### Events we send (no task titles / mail bodies)
+### Events we send (no task titles / event details)
 
 | Event | When |
 |-------|------|
@@ -40,7 +40,7 @@ EXPO_PUBLIC_POSTHOG_KEY=phc_xxxx
 | `morning_brief_shown` | Morning brief sheet opens |
 | `plan_day` | Plan day runs |
 | `evening_clear_finish` | Evening Clear finished |
-| `google_connect` | Gmail/Calendar Allow succeeds |
+| `google_connect` | Calendar Allow succeeds |
 
 ## EAS secrets
 

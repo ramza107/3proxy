@@ -5,16 +5,16 @@ import express from 'express'
 import multer from 'multer'
 import OpenAI from 'openai'
 import { z } from 'zod'
-import { demoCalendarEvents, listCalendarEvents } from './email/calendar.js'
+import { demoCalendarEvents, listCalendarEvents } from './google/calendar.js'
 import {
   buildAuthUrl,
   exchangeCode,
-  gmailConfigured,
+  googleConfigured,
   resolveAppReturnUrl,
   parseOAuthState,
-} from './email/gmail.js'
+} from './google/oauth.js'
 import { checkChatRateLimit } from './chatGuard.js'
-import { deleteConnection, getConnection, saveConnection } from './email/store.js'
+import { deleteConnection, getConnection, saveConnection } from './google/store.js'
 import { localAI } from './localAI.js'
 import { sanitizeAIActions } from './aiActions.js'
 import { SYSTEM_PROMPT } from './prompt.js'
@@ -214,7 +214,7 @@ app.get('/health', (_req, res) => {
     model: provider?.model || null,
     groq: Boolean(groqKey && !groqKey.includes('your-groq')),
     openai: Boolean(openaiKey && !openaiKey.includes('your-openai')),
-    gmail: gmailConfigured(),
+    google: googleConfigured(),
   })
 })
 
@@ -273,13 +273,13 @@ app.get('/api/invest/quotes', async (req, res) => {
   }
 })
 
-app.get('/api/email/status', async (req, res) => {
+app.get('/api/google/status', async (req, res) => {
   try {
     const userId = String(req.query.user_id || '')
     if (!userId) return res.status(400).json({ error: 'user_id required' })
     const conn = await getConnection(userId)
     return res.json({
-      configured: gmailConfigured(),
+      configured: googleConfigured(),
       connected: Boolean(conn),
       email: conn?.email || null,
       provider: conn?.provider || null,
@@ -291,10 +291,10 @@ app.get('/api/email/status', async (req, res) => {
   }
 })
 
-app.get('/api/email/connect', (req, res) => {
+app.get('/api/google/connect', (req, res) => {
   const userId = String(req.query.user_id || '')
   if (!userId) return res.status(400).json({ error: 'user_id required' })
-  if (!gmailConfigured()) {
+  if (!googleConfigured()) {
     return res.status(503).json({
       error: 'Google OAuth not configured',
       hint: 'Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI on the AI server (one-time). Users then only tap Allow.',
@@ -313,14 +313,14 @@ app.get('/api/email/connect', (req, res) => {
   return res.redirect(url)
 })
 
-app.get('/api/email/callback', async (req, res) => {
+async function handleGoogleOAuthCallback(req: express.Request, res: express.Response) {
   const code = String(req.query.code || '')
   const state = String(req.query.state || '')
   const parsed = parseOAuthState(state)
   const client = parsed?.client || 'web'
   const appUrl = resolveAppReturnUrl(client)
 
-  const fail = () => res.redirect(`${appUrl}settings?gmail=error`)
+  const fail = () => res.redirect(`${appUrl}settings?google=error`)
 
   try {
     if (!code || !parsed) return fail()
@@ -348,14 +348,18 @@ app.get('/api/email/callback', async (req, res) => {
       expiryDate: tokens.expiryDate,
       updatedAt: new Date().toISOString(),
     })
-    return res.redirect(`${appUrl}settings?gmail=connected`)
+    return res.redirect(`${appUrl}settings?google=connected`)
   } catch (error) {
     console.error('google oauth callback', error)
     return fail()
   }
-})
+}
 
-app.post('/api/email/disconnect', async (req, res) => {
+app.get('/api/google/callback', handleGoogleOAuthCallback)
+/** Legacy redirect URI still registered in some Google Cloud consoles / Render envs. */
+app.get('/api/email/callback', handleGoogleOAuthCallback)
+
+app.post('/api/google/disconnect', async (req, res) => {
   try {
     const userId = String(req.body?.user_id || '')
     if (!userId) return res.status(400).json({ error: 'user_id required' })

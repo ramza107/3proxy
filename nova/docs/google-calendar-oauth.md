@@ -2,7 +2,7 @@
 
 Users never see this. They only tap **Connect with Google → Allow**.
 
-Wahrly does **not** use Gmail APIs. Scope is Calendar read-only only (no CASA).
+Wahrly does **not** use Gmail or any mail APIs. Scope is Calendar read-only only (no CASA).
 
 ## 1. Google Cloud project
 1. Open https://console.cloud.google.com/
@@ -11,7 +11,7 @@ Wahrly does **not** use Gmail APIs. Scope is Calendar read-only only (no CASA).
 ## 2. Enable APIs
 1. APIs & Services → Library  
 2. Enable **Google Calendar API**  
-3. You do **not** need the Gmail API
+3. Do **not** enable the Gmail API
 
 ## 3. OAuth consent screen
 1. APIs & Services → OAuth consent screen  
@@ -34,15 +34,16 @@ issues a calendar-only token.
 3. Name: `Wahrly web`  
 4. Authorized redirect URIs — add exactly:
    ```
-   https://threeproxy-x9bi.onrender.com/api/email/callback
+   https://threeproxy-x9bi.onrender.com/api/google/callback
    ```
+   (Optional: keep the old `/api/email/callback` URI until you update Render.)
 5. Create → copy **Client ID** and **Client Secret**
 
 ## 5. Put keys on Render (AI server)
 Environment variables:
 - `GOOGLE_CLIENT_ID` = (Client ID)
 - `GOOGLE_CLIENT_SECRET` = (Client Secret)
-- `GOOGLE_REDIRECT_URI` = `https://threeproxy-x9bi.onrender.com/api/email/callback`
+- `GOOGLE_REDIRECT_URI` = `https://threeproxy-x9bi.onrender.com/api/google/callback`
 - `PUBLIC_APP_URL` = `https://ramza107.github.io/3proxy/nova/`
 - `PUBLIC_NATIVE_APP_URL` = `wahrly://`
 - `PUBLIC_API_URL` = `https://threeproxy-x9bi.onrender.com`
@@ -52,5 +53,4 @@ Redeploy the service.
 ## 6. Try it
 Settings → **Connect with Google** → Allow → Home shows Calendar events on Today.
 
-On the installed iOS/Android app the same button returns via `wahrly://settings?gmail=connected`
-(query param name kept for compatibility).
+On the installed iOS/Android app the same button returns via `wahrly://settings?google=connected`.

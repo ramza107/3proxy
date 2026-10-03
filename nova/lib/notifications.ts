@@ -134,7 +134,7 @@ async function cancelByIdentifier(identifier: string) {
 function morningBody(tasks: Task[], settings: UserSettings) {
   const lang = langOf(settings)
   const today = tasksForDay(tasks, todayISO())
-  const planHint = `\n${t(lang, 'notif.morningInboxPlan')}`
+  const planHint = `\n${t(lang, 'notif.morningPlan')}`
   if (!today.length) {
     return `${t(lang, 'notif.morningClear')}${planHint}`
   }

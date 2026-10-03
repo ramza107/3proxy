@@ -2,17 +2,17 @@
 
 Wahrly is one Expo codebase (same features as the web demo on GitHub Pages). Native installs are built with [EAS Build](https://docs.expo.dev/build/introduction/).
 
-| Platform | Bundle ID | Deep link after Gmail OAuth |
-|----------|-----------|-----------------------------|
-| iOS | `com.wahrly.assistant` | `wahrly://settings?gmail=connected` |
-| Android | `com.wahrly.assistant` | `wahrly://settings?gmail=connected` |
+| Platform | Bundle ID | Deep link after Google Calendar OAuth |
+|----------|-----------|---------------------------------------|
+| iOS | `com.wahrly.assistant` | `wahrly://settings?google=connected` |
+| Android | `com.wahrly.assistant` | `wahrly://settings?google=connected` |
 | Web | GitHub Pages | `https://ramza107.github.io/3proxy/nova/settings?...` |
 
 ## Prerequisites
 
 1. [Expo account](https://expo.dev/signup) (free)
 2. **Apple Developer** account — required for TestFlight / device builds
-3. Same backend as the website: Render API + Gmail OAuth (`PUBLIC_NATIVE_APP_URL=wahrly://`)
+3. Same backend as the website: Render API + Google Calendar OAuth (`PUBLIC_NATIVE_APP_URL=wahrly://`)
 
 Optional:
 
@@ -99,4 +99,4 @@ npm start
 
 ## Server note
 
-`/api/email/connect?client=native` returns to `wahrly://settings?gmail=…` after Google Allow (web still uses Pages URL).
+`/api/google/connect?client=native` returns to `wahrly://settings?google=…` after Google Allow (web still uses Pages URL).

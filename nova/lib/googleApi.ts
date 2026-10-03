@@ -22,27 +22,27 @@ export function friendlyApiError(raw: string, fallback: string): string {
   return text
 }
 
-/** Google Calendar OAuth connect URL (routes still under /api/email/* for compatibility). */
-export function emailConnectUrl(userId: string) {
+/** Google Calendar OAuth connect URL. */
+export function googleConnectUrl(userId: string) {
   const client = Platform.OS === 'web' ? 'web' : 'native'
-  return `${apiUrl}/api/email/connect?user_id=${encodeURIComponent(userId)}&client=${client}`
+  return `${apiUrl}/api/google/connect?user_id=${encodeURIComponent(userId)}&client=${client}`
 }
 
-export async function fetchEmailStatus(userId: string): Promise<{
+export async function fetchGoogleStatus(userId: string): Promise<{
   configured: boolean
   connected: boolean
   email: string | null
   provider: string | null
 }> {
-  const res = await fetch(`${apiUrl}/api/email/status?user_id=${encodeURIComponent(userId)}`)
+  const res = await fetch(`${apiUrl}/api/google/status?user_id=${encodeURIComponent(userId)}`)
   if (!res.ok) {
     return { configured: false, connected: false, email: null, provider: null }
   }
   return res.json()
 }
 
-export async function disconnectEmail(userId: string): Promise<void> {
-  const res = await fetch(`${apiUrl}/api/email/disconnect`, {
+export async function disconnectGoogle(userId: string): Promise<void> {
+  const res = await fetch(`${apiUrl}/api/google/disconnect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: userId }),
