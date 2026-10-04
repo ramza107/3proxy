@@ -26,6 +26,7 @@ import {
   voiceUploadLimits,
 } from './voiceGuard.js'
 import { fetchQuotes } from './invest/quotes.js'
+import { searchInvest } from './invest/search.js'
 import { buildYesterdayNews, NEWS_INTERESTS } from './news/yesterday.js'
 
 dotenv.config({ path: new URL('../../.env', import.meta.url).pathname })
@@ -269,6 +270,21 @@ app.get('/api/invest/quotes', async (req, res) => {
     return res.status(500).json({
       error: error instanceof Error ? error.message : 'quotes failed',
       quotes: [],
+    })
+  }
+})
+
+/** Symbol / name search for Invest editor (gold → GC=F, apple → AAPL, …). */
+app.get('/api/invest/search', async (req, res) => {
+  try {
+    const q = String(req.query.q || req.query.query || '')
+    const results = await searchInvest(q)
+    return res.json({ results, query: q, generatedAt: new Date().toISOString() })
+  } catch (error) {
+    console.error('invest/search', error)
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'search failed',
+      results: [],
     })
   }
 })

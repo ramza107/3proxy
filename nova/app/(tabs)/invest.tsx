@@ -24,7 +24,7 @@ import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
-import { holdingPnL, portfolioSummary } from '../../lib/invest'
+import { holdingPnL, normalizeInvestSymbol, portfolioSummary } from '../../lib/invest'
 import { fetchInvestQuotes, formatMoney, formatPct } from '../../lib/investApi'
 import { useIsPro } from '../../lib/pro'
 import { useNovaStore } from '../../lib/store'
@@ -51,8 +51,18 @@ export default function InvestScreen() {
   const quoteMap = useMemo(() => {
     const m = new Map<string, InvestQuote>()
     for (const q of quotes) {
-      m.set(q.symbol.toUpperCase(), q)
-      m.set(q.symbol.replace('-USD', '').toUpperCase(), q)
+      const sym = q.symbol.toUpperCase()
+      m.set(sym, q)
+      m.set(sym.replace('-USD', ''), q)
+      // Alias keys so GOLD holdings match GC=F quotes and vice versa
+      if (sym === 'GC=F') {
+        m.set('GOLD', q)
+        m.set('XAU', q)
+      }
+      if (sym === 'SI=F') {
+        m.set('SILVER', q)
+        m.set('XAG', q)
+      }
     }
     return m
   }, [quotes])
@@ -60,9 +70,10 @@ export default function InvestScreen() {
   const rows = useMemo(() => {
     return investments
       .map((h) => {
+        const key = h.symbol.toUpperCase()
         const q =
-          quoteMap.get(h.symbol.toUpperCase()) ||
-          quoteMap.get(h.symbol.replace('-USD', '').toUpperCase()) ||
+          quoteMap.get(key) ||
+          quoteMap.get(key.replace('-USD', '')) ||
           null
         return holdingPnL(h, q)
       })
@@ -73,7 +84,11 @@ export default function InvestScreen() {
 
   const symbolsKey = useMemo(
     () =>
-      [...investments.map((h) => h.symbol.toUpperCase())]
+      [
+        ...new Set(
+          investments.map((h) => normalizeInvestSymbol(h.symbol)).filter(Boolean),
+        ),
+      ]
         .sort()
         .join(','),
     [investments],

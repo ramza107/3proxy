@@ -1,4 +1,5 @@
 import type { InvestmentHolding, InvestQuote } from '../types'
+import { resolveInvestAlias } from './investCatalog'
 
 export type HoldingPnL = {
   holding: InvestmentHolding
@@ -58,20 +59,18 @@ export function portfolioSummary(rows: HoldingPnL[]) {
 }
 
 export function normalizeInvestSymbol(raw: string) {
-  let s = raw.trim().toUpperCase().replace(/\s+/g, '')
-  if (s === 'BITCOIN') s = 'BTC-USD'
-  if (s === 'ETHEREUM') s = 'ETH-USD'
-  if (s === 'BTC' || s === 'ETH' || s === 'SOL' || s === 'DOGE' || s === 'XRP') {
-    s = `${s}-USD`
-  }
-  return s
+  const { symbol } = resolveInvestAlias(raw)
+  return symbol
 }
 
 export function guessKind(symbol: string): InvestmentHolding['kind'] {
+  const alias = resolveInvestAlias(symbol)
+  if (alias.kind) return alias.kind
   const s = normalizeInvestSymbol(symbol)
   if (s.endsWith('-USD') || ['BTC', 'ETH', 'SOL'].includes(s.replace('-USD', ''))) {
     return 'crypto'
   }
-  if (['SPY', 'VOO', 'QQQ', 'IWM', 'VTI', 'ARKK'].includes(s)) return 'etf'
+  if (/^(GC|SI|HG)=F$/i.test(s) || s === 'XAUUSD=X' || s === 'XAGUSD=X') return 'metal'
+  if (['SPY', 'VOO', 'QQQ', 'IWM', 'VTI', 'ARKK', 'GLD', 'SLV'].includes(s)) return 'etf'
   return 'stock'
 }
