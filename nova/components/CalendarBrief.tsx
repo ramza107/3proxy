@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useFocusEffect, useRouter } from 'expo-router'
 import { format, parseISO } from 'date-fns'
 import { colors, fonts, radii } from '../constants/theme'
-import { fetchCalendarEvents, fetchEmailStatus } from '../lib/emailApi'
+import { fetchCalendarEvents, fetchGoogleStatus } from '../lib/googleApi'
 import { todayISO } from '../lib/store'
 import type { CalendarEvent } from '../types'
 import { HomeSection } from './HomeSection'
@@ -48,7 +48,7 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
     setLoading(true)
     setError('')
     try {
-      const status = await fetchEmailStatus(userId)
+      const status = await fetchGoogleStatus(userId)
       setConnected(status.connected)
       if (!status.connected) {
         const demoData = await fetchCalendarEvents(userId, { demo: true, ...dayBounds(todayISO()) })

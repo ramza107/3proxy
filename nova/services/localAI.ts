@@ -132,8 +132,8 @@ function isSmallTalk(text: string) {
 function hasTaskIntent(text: string) {
   const lower = normalize(text)
   if (
-    /(проверь|проверить|посмотри|покажи).{0,40}(почт|inbox|gmail|письм)/i.test(lower) ||
-    /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail|gmail)\b/i.test(lower)
+    /(проверь|проверить|посмотри|покажи).{0,40}(почт|письм)/i.test(lower) ||
+    /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail)\b/i.test(lower)
   ) {
     return false
   }
@@ -211,13 +211,13 @@ export function clientLocalAI(
   }
 
   if (
-    /(проверь|проверить|посмотри|покажи).{0,40}(почт|inbox|gmail|письм)/i.test(lower) ||
-    /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail|gmail)\b/i.test(lower)
+    /(проверь|проверить|посмотри|покажи).{0,40}(почт|письм)/i.test(lower) ||
+    /\b(check|read|scan)\b.{0,40}\b(e-?mail|inbox|mail)\b/i.test(lower)
   ) {
     return {
       reply: /[а-яё]/i.test(text)
-        ? 'Могу проверить почту — скажи ещё раз «проверь почту» (нужен Connected Gmail в Settings). Или открой Home.'
-        : 'I can check your mail — say “check my email” again (Gmail must be connected in Settings), or open Home.',
+        ? 'Wahrly не читает почту. Могу помочь с задачами, календарём и планом дня — или добавь «я должен / жду» вручную в Open loops на Home.'
+        : 'Wahrly does not read email. I can help with tasks, calendar, and Plan day — or add an I owe / Waiting loop on Home.',
       actions: [],
     }
   }

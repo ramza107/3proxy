@@ -1,4 +1,4 @@
-import { withFreshToken } from './gmail.js'
+import { withFreshToken } from './oauth.js'
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3'
 

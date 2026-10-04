@@ -27,7 +27,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: GOOGLE_REDIRECT_URI
-        value: https://threeproxy-x9bi.onrender.com/api/email/callback
+        value: https://threeproxy-x9bi.onrender.com/api/google/callback
       - key: PUBLIC_API_URL
         value: https://threeproxy-x9bi.onrender.com
       - key: PUBLIC_APP_URL

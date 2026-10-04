@@ -48,12 +48,12 @@ function sampleWeekTasks(userId: string, today: string): Task[] {
 
   return [
     mk('Morning focus block', 0, '09:30', 'high', 'Deep work before meetings'),
-    mk('Inbox triage', 0, '11:00', 'medium', 'Clear Primary + flag asks'),
+    mk('Plan afternoon focus', 0, '11:00', 'medium', 'Block deep work after standup'),
     mk('Walk / reset', 0, '13:30', 'low', '20 minutes outside'),
     mk('Call Mom', 1, '18:00', 'medium', 'Catch up this evening'),
     mk('Prep weekly plan', 1, null, 'high', 'Sketch next 5 days'),
     mk('Groceries', 2, '17:00', 'low', 'Meat, greens, coffee'),
-    mk('Send deck follow-up', 3, '10:00', 'high', 'Promise from last week'),
+    mk('Send deck follow-up', 3, '10:00', 'high', 'Open loop from last week'),
     mk('Light admin', 4, '11:30', 'low', 'Receipts + calendar hygiene'),
     mk('Weekend planning', 5, '10:00', 'medium', 'What matters this weekend'),
     {

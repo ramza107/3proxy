@@ -18,7 +18,7 @@ import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
 import { APP_LANGUAGES, type AppLanguage } from '../../lib/i18n'
-import { disconnectEmail, emailConnectUrl, fetchEmailStatus } from '../../lib/emailApi'
+import { disconnectGoogle, fetchGoogleStatus, googleConnectUrl } from '../../lib/googleApi'
 import {
   ensureNotificationPermissions,
   parseHm,
@@ -52,7 +52,7 @@ export default function SettingsScreen() {
   const router = useRouter()
   const tr = useT()
   const isPro = useIsPro()
-  const params = useLocalSearchParams<{ gmail?: string }>()
+  const params = useLocalSearchParams<{ google?: string }>()
   const settings = useNovaStore((s) => s.settings)
   const email = useNovaStore((s) => s.sessionEmail)
   const userId = useNovaStore((s) => s.sessionUserId)
@@ -72,21 +72,21 @@ export default function SettingsScreen() {
   const [weekendEnd, setWeekendEnd] = useState(settings.typicalWeek?.weekendEnd || '14:00')
   const [weekBlurb, setWeekBlurb] = useState(settings.typicalWeek?.blurb || '')
   const [oauthReady, setOauthReady] = useState(false)
-  const [gmailConnected, setGmailConnected] = useState(false)
-  const [gmailEmail, setGmailEmail] = useState<string | null>(null)
-  const [gmailBusy, setGmailBusy] = useState(false)
+  const [googleConnected, setGoogleConnected] = useState(false)
+  const [googleEmail, setGoogleEmail] = useState<string | null>(null)
+  const [googleBusy, setGoogleBusy] = useState(false)
 
-  const refreshGmail = useCallback(async () => {
+  const refreshGoogle = useCallback(async () => {
     if (!userId) return
     try {
-      const status = await fetchEmailStatus(userId)
+      const status = await fetchGoogleStatus(userId)
       setOauthReady(status.configured)
-      setGmailConnected(status.connected)
-      setGmailEmail(status.email)
+      setGoogleConnected(status.connected)
+      setGoogleEmail(status.email)
     } catch {
       setOauthReady(false)
-      setGmailConnected(false)
-      setGmailEmail(null)
+      setGoogleConnected(false)
+      setGoogleEmail(null)
     }
   }, [userId])
 
@@ -158,22 +158,19 @@ export default function SettingsScreen() {
   }
 
   useEffect(() => {
-    refreshGmail().catch(() => undefined)
-  }, [refreshGmail])
+    refreshGoogle().catch(() => undefined)
+  }, [refreshGoogle])
 
   useEffect(() => {
-    if (params.gmail === 'connected') {
-      Alert.alert(
-        tr('home.connectGoogle'),
-        tr('settings.autoAddPromisesSub'),
-      )
-      refreshGmail().catch(() => undefined)
+    if (params.google === 'connected') {
+      Alert.alert(tr('home.connectGoogle'), tr('settings.googleHint'))
+      refreshGoogle().catch(() => undefined)
       router.replace('/settings')
-    } else if (params.gmail === 'error') {
+    } else if (params.google === 'error') {
       Alert.alert(tr('settings.google'), tr('settings.oauthSetupHint'))
       router.replace('/settings')
     }
-  }, [params.gmail, refreshGmail, router, tr])
+  }, [params.google, refreshGoogle, router, tr])
 
   const saveName = () => {
     updateSettings({ name: name.trim() || settings.name })
@@ -242,7 +239,7 @@ export default function SettingsScreen() {
 
   const connectWithGoogle = async () => {
     if (!userId) {
-      Alert.alert('Sign in', 'Sign in to Wahrly first, then connect Gmail.')
+      Alert.alert('Sign in', 'Sign in to Wahrly first, then connect Google Calendar.')
       return
     }
     if (!oauthReady) {
@@ -252,8 +249,8 @@ export default function SettingsScreen() {
       )
       return
     }
-    const url = emailConnectUrl(userId)
-    setGmailBusy(true)
+    const url = googleConnectUrl(userId)
+    setGoogleBusy(true)
     try {
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         window.location.href = url
@@ -262,37 +259,37 @@ export default function SettingsScreen() {
       // Opens in-app browser and returns to wahrly://settings after Google Allow
       const result = await WebBrowser.openAuthSessionAsync(url, NATIVE_OAUTH_RETURN)
       if (result.type === 'success' && result.url) {
-        const q = result.url.includes('gmail=connected')
+        const q = result.url.includes('google=connected')
           ? 'connected'
-          : result.url.includes('gmail=error')
+          : result.url.includes('google=error')
             ? 'error'
             : null
         if (q === 'connected') {
-          await refreshGmail()
+          await refreshGoogle()
           void track(AnalyticsEvents.googleConnect)
-          Alert.alert('Google connected', 'Wahrly can read Gmail + Calendar (readonly).')
+          Alert.alert('Google connected', 'Wahrly can read Calendar (readonly).')
           router.replace('/settings')
         } else if (q === 'error') {
-          Alert.alert('Gmail', 'Could not connect. Try Connect with Google again.')
+          Alert.alert('Google', 'Could not connect. Try Connect with Google again.')
         }
       }
     } finally {
-      setGmailBusy(false)
+      setGoogleBusy(false)
     }
   }
 
-  const onDisconnectGmail = async () => {
+  const onDisconnectGoogle = async () => {
     if (!userId) return
-    setGmailBusy(true)
+    setGoogleBusy(true)
     try {
-      await disconnectEmail(userId)
-      setGmailConnected(false)
-      setGmailEmail(null)
-      Alert.alert('Disconnected', 'Gmail was removed from Wahrly.')
+      await disconnectGoogle(userId)
+      setGoogleConnected(false)
+      setGoogleEmail(null)
+      Alert.alert('Disconnected', 'Google Calendar was removed from Wahrly.')
     } catch (e) {
-      Alert.alert('Gmail', e instanceof Error ? e.message : 'Disconnect failed')
+      Alert.alert('Google', e instanceof Error ? e.message : 'Disconnect failed')
     } finally {
-      setGmailBusy(false)
+      setGoogleBusy(false)
     }
   }
 
@@ -368,15 +365,15 @@ export default function SettingsScreen() {
             <Text style={styles.rowTitle}>{tr('settings.google')}</Text>
             <Text style={styles.rowSub}>{tr('settings.googleHint')}</Text>
 
-            {gmailConnected ? (
+            {googleConnected ? (
               <>
                 <Text style={styles.connected}>
-                  {tr.tf('settings.connectedAs', { email: gmailEmail || 'Gmail' })}
+                  {tr.tf('settings.connectedAs', { email: googleEmail || 'Google' })}
                 </Text>
                 <Pressable
-                  style={[styles.btn, styles.btnGhost, gmailBusy && { opacity: 0.5 }]}
-                  onPress={onDisconnectGmail}
-                  disabled={gmailBusy}
+                  style={[styles.btn, styles.btnGhost, googleBusy && { opacity: 0.5 }]}
+                  onPress={onDisconnectGoogle}
+                  disabled={googleBusy}
                 >
                   <Text style={styles.btnGhostText}>{tr('settings.disconnect')}</Text>
                 </Pressable>
@@ -384,12 +381,12 @@ export default function SettingsScreen() {
             ) : (
               <>
                 <Pressable
-                  style={[styles.googleBtn, gmailBusy && { opacity: 0.5 }]}
+                  style={[styles.googleBtn, googleBusy && { opacity: 0.5 }]}
                   onPress={connectWithGoogle}
-                  disabled={gmailBusy}
+                  disabled={googleBusy}
                 >
                   <Text style={styles.googleBtnText}>
-                    {gmailBusy ? tr('settings.connecting') : tr('home.connectGoogle')}
+                    {googleBusy ? tr('settings.connecting') : tr('home.connectGoogle')}
                   </Text>
                 </Pressable>
                 <Text style={styles.hint}>
@@ -400,57 +397,6 @@ export default function SettingsScreen() {
               </>
             )}
 
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{tr('settings.showOnHome')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.showOnHomeSub')}</Text>
-              </View>
-              <Switch
-                value={settings.emailDigestEnabled !== false}
-                onValueChange={(v) => updateSettings({ emailDigestEnabled: v })}
-                trackColor={{ true: colors.accent, false: colors.bgSoft }}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{tr('settings.autoAddPromises')}</Text>
-                <Text style={styles.rowSub}>
-                  {isPro ? tr('settings.autoAddPromisesSub') : tr('pro.featureLocked')}
-                </Text>
-              </View>
-              <Switch
-                value={isPro && settings.emailPromisesAutoEnabled === true}
-                onValueChange={(v) => {
-                  if (!isPro) {
-                    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
-                    return
-                  }
-                  updateSettings({ emailPromisesAutoEnabled: v })
-                }}
-                trackColor={{ true: colors.accent, false: colors.bgSoft }}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{tr('settings.meetingAlerts')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.meetingAlertsSub')}</Text>
-              </View>
-              <Switch
-                value={settings.meetingEmailAlertsEnabled !== false}
-                onValueChange={async (v) => {
-                  updateSettings({ meetingEmailAlertsEnabled: v })
-                  if (v) {
-                    const { ensureNotificationPermissions, registerDevicePushToken } =
-                      await import('../../lib/notifications')
-                    await ensureNotificationPermissions()
-                    if (userId) await registerDevicePushToken(userId)
-                  }
-                }}
-                trackColor={{ true: colors.accent, false: colors.bgSoft }}
-              />
-            </View>
           </View>
 
           <View style={styles.card}>

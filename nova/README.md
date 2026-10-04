@@ -56,7 +56,7 @@ npm run build:ios:testflight
 npm run build:ios
 ```
 
-Deep link: `wahrly://` (Gmail OAuth returns into the app after Allow).
+Deep link: `wahrly://` (Google Calendar OAuth returns into the app after Allow).
 
 ## Quick start (mobile / Expo Go)
 
@@ -215,16 +215,16 @@ Supported actions: `create_task`, `update_task`, `complete_task`, `delete_task`,
 
 ## Screens
 
-- **Home** — greeting, morning inbox brief, today plan, composer
+- **Home** — greeting, today plan, calendar rail, composer
 - **Chat** — primary AI interface
 - **Tasks** — Today / Tomorrow / Upcoming / Completed
-- **Settings** — name, Gmail connect, morning/evening rituals, AI tone, sign out
+- **Settings** — name, Google Calendar connect, morning/evening rituals, AI tone, sign out
 
-## Morning inbox (automatic from Gmail)
+## Google Calendar (readonly)
 
-**For users:** Settings → **Connect with Google** → tap **Allow** on Google’s screen. No passwords.
+**For users:** Settings → **Connect Google Calendar** → tap **Allow** on Google’s screen. No passwords.
 
-**For the app owner (once):** follow [`docs/gmail-oauth-setup.md`](docs/gmail-oauth-setup.md) — add `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` on Render.
+**For the app owner (once):** follow [`docs/google-calendar-oauth.md`](docs/google-calendar-oauth.md) — add `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` on Render.
 
 ## Voice
 
@@ -232,4 +232,4 @@ Mic button is present and wired for future speech-to-text. MVP accepts typed tex
 
 ## MVP boundaries
 
-Not included yet: banking, shopping, WhatsApp automation, maps, bookings, social, subscriptions, ads. Gmail is read-only digest (who wrote), not full inbox automation.
+Not included yet: banking, shopping, WhatsApp automation, maps, bookings, social, subscriptions, ads, mail reading. Google Calendar is readonly (today’s events on the Home rail).
