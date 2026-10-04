@@ -378,13 +378,13 @@ export type ImportantDate = {
 }
 
 /** Invest (Pro) — track holdings with live price + P&L */
-export const INVEST_ASSET_KINDS = ['stock', 'etf', 'crypto', 'other'] as const
+export const INVEST_ASSET_KINDS = ['stock', 'etf', 'crypto', 'metal', 'other'] as const
 
 export type InvestAssetKind = (typeof INVEST_ASSET_KINDS)[number]
 
 export type InvestmentHolding = {
   id: string
-  /** Ticker: AAPL, VOO, BTC-USD */
+  /** Ticker: AAPL, VOO, BTC-USD, GC=F (gold) */
   symbol: string
   name: string | null
   kind: InvestAssetKind

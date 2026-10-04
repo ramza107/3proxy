@@ -1,7 +1,16 @@
-import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { useEffect, useRef, useState } from 'react'
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { guessKind, normalizeInvestSymbol } from '../lib/invest'
+import { fetchInvestQuotes, formatMoney, searchInvestSymbols } from '../lib/investApi'
+import { resolveInvestAlias, type InvestSearchHit } from '../lib/investCatalog'
 import { localISODate } from '../lib/localDate'
 import { useT } from '../lib/useT'
 import { INVEST_ASSET_KINDS, type InvestAssetKind, type InvestmentHolding } from '../types'
@@ -42,6 +51,13 @@ export function InvestmentEditor({
   const [boughtOn, setBoughtOn] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState('')
+  const [suggestions, setSuggestions] = useState<InvestSearchHit[]>([])
+  const [searching, setSearching] = useState(false)
+  const [livePrice, setLivePrice] = useState<number | null>(null)
+  const [liveCurrency, setLiveCurrency] = useState('USD')
+  const [priceLoading, setPriceLoading] = useState(false)
+  const searchSeq = useRef(0)
+  const priceSeq = useRef(0)
 
   useEffect(() => {
     if (!visible) return
@@ -53,12 +69,90 @@ export function InvestmentEditor({
     setBoughtOn(holding?.boughtOn || localISODate())
     setNotes(holding?.notes || '')
     setError('')
+    setSuggestions([])
+    setLivePrice(holding?.lastPrice ?? null)
+    setLiveCurrency(holding?.currency || 'USD')
+    setSearching(false)
+    setPriceLoading(false)
   }, [holding, visible])
 
+  useEffect(() => {
+    if (!visible) return
+    const q = symbol.trim()
+    if (q.length < 1) {
+      setSuggestions([])
+      setSearching(false)
+      return
+    }
+    // Don't keep suggesting after an exact ticker pick with no query change noise
+    const seq = ++searchSeq.current
+    setSearching(true)
+    const timer = setTimeout(() => {
+      searchInvestSymbols(q)
+        .then((hits) => {
+          if (seq !== searchSeq.current) return
+          setSuggestions(hits)
+        })
+        .catch(() => {
+          if (seq !== searchSeq.current) return
+          setSuggestions([])
+        })
+        .finally(() => {
+          if (seq === searchSeq.current) setSearching(false)
+        })
+    }, 280)
+    return () => clearTimeout(timer)
+  }, [symbol, visible])
+
+  const loadLivePrice = async (sym: string) => {
+    const ticker = normalizeInvestSymbol(sym)
+    if (!ticker) {
+      setLivePrice(null)
+      return
+    }
+    const seq = ++priceSeq.current
+    setPriceLoading(true)
+    try {
+      const { quotes } = await fetchInvestQuotes([ticker])
+      if (seq !== priceSeq.current) return
+      const quote =
+        quotes.find((q) => q.symbol.toUpperCase() === ticker.toUpperCase()) || quotes[0]
+      if (quote) {
+        setLivePrice(quote.price)
+        setLiveCurrency(quote.currency || 'USD')
+        if (quote.name && !name.trim()) setName(quote.name)
+        if (quote.kind) setKind(quote.kind)
+      } else {
+        setLivePrice(null)
+      }
+    } catch {
+      if (seq === priceSeq.current) setLivePrice(null)
+    } finally {
+      if (seq === priceSeq.current) setPriceLoading(false)
+    }
+  }
+
+  const applyHit = (hit: InvestSearchHit) => {
+    setSymbol(hit.symbol)
+    setName(hit.name)
+    setKind(hit.kind)
+    setSuggestions([])
+    setSearching(false)
+    void loadLivePrice(hit.symbol)
+  }
+
   const onSymbolBlur = () => {
-    const next = normalizeInvestSymbol(symbol)
+    const alias = resolveInvestAlias(symbol)
+    const next = alias.symbol || normalizeInvestSymbol(symbol)
     setSymbol(next)
-    if (!holding?.kind || creating) setKind(guessKind(next))
+    if (alias.name && !name.trim()) setName(alias.name)
+    if (!holding?.kind || creating) setKind(alias.kind || guessKind(next))
+    if (next) void loadLivePrice(next)
+  }
+
+  const useLiveAsBuy = () => {
+    if (livePrice == null) return
+    setCost(String(Number(livePrice.toFixed(livePrice >= 100 ? 2 : 4))))
   }
 
   const save = () => {
@@ -125,6 +219,48 @@ export function InvestmentEditor({
         autoCapitalize="characters"
         autoCorrect={false}
       />
+      {searching ? (
+        <View style={styles.searchRow}>
+          <ActivityIndicator size="small" color={colors.accent} />
+          <Text style={styles.searchHint}>{t('invest.searching')}</Text>
+        </View>
+      ) : null}
+      {suggestions.length ? (
+        <View style={styles.suggestBox}>
+          {suggestions.map((hit) => (
+            <Pressable
+              key={`${hit.symbol}-${hit.name}`}
+              style={styles.suggestRow}
+              onPress={() => applyHit(hit)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.suggestSym}>{hit.symbol}</Text>
+                <Text style={styles.suggestName} numberOfLines={1}>
+                  {hit.name}
+                </Text>
+              </View>
+              <Text style={styles.suggestKind}>{t(`invest.kind.${hit.kind}`)}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
+      {(priceLoading || livePrice != null) && (
+        <View style={styles.liveBox}>
+          {priceLoading ? (
+            <Text style={styles.liveText}>{t('invest.waitingPrice')}</Text>
+          ) : livePrice != null ? (
+            <>
+              <Text style={styles.liveText}>
+                {t.tf('invest.livePrice', { amount: formatMoney(livePrice, liveCurrency) })}
+              </Text>
+              <Pressable onPress={useLiveAsBuy} hitSlop={8}>
+                <Text style={styles.liveAction}>{t('invest.useLivePrice')}</Text>
+              </Pressable>
+            </>
+          ) : null}
+        </View>
+      )}
 
       <Text style={styles.label}>{t('invest.nameOpt')}</Text>
       <TextInput
@@ -233,6 +369,46 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
   chipTextOn: { color: colors.accentStrong },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  searchHint: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
+  suggestBox: {
+    marginTop: 8,
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.bgElevated,
+    overflow: 'hidden',
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  suggestSym: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 14 },
+  suggestName: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
+  suggestKind: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 11 },
+  liveBox: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: radii.md,
+    backgroundColor: colors.accentSoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  liveText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13, flex: 1 },
+  liveAction: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   error: { color: colors.danger, fontFamily: fonts.body, marginTop: 10 },
   footer: { gap: 10, paddingTop: spacing.sm },
   saveBtn: {

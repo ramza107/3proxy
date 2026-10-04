@@ -1,4 +1,6 @@
-/** Market quotes for Invest tab — Yahoo (stocks/ETFs) + Coinbase (crypto). */
+/** Market quotes for Invest tab — Yahoo (stocks/ETFs/metals) + Coinbase (crypto). */
+
+import { resolveInvestSymbol } from './catalog.js'
 
 export type InvestQuote = {
   symbol: string
@@ -6,7 +8,7 @@ export type InvestQuote = {
   price: number
   currency: string
   changePct: number | null
-  kind: 'stock' | 'etf' | 'crypto' | 'other'
+  kind: 'stock' | 'etf' | 'crypto' | 'metal' | 'other'
   source: string
   asOf: string
 }
@@ -27,8 +29,22 @@ const CRYPTO_MAP: Record<string, { base: string; name: string }> = {
   'XRP-USD': { base: 'XRP', name: 'XRP' },
 }
 
+/** Metals via Coinbase spot (XAU/XAG) — more reliable than Yahoo futures here. */
+const METAL_MAP: Record<string, { base: string; name: string; display: string }> = {
+  GOLD: { base: 'XAU', name: 'Gold', display: 'GC=F' },
+  XAU: { base: 'XAU', name: 'Gold', display: 'GC=F' },
+  XAUUSD: { base: 'XAU', name: 'Gold', display: 'GC=F' },
+  'XAU-USD': { base: 'XAU', name: 'Gold', display: 'GC=F' },
+  'GC=F': { base: 'XAU', name: 'Gold', display: 'GC=F' },
+  SILVER: { base: 'XAG', name: 'Silver', display: 'SI=F' },
+  XAG: { base: 'XAG', name: 'Silver', display: 'SI=F' },
+  XAGUSD: { base: 'XAG', name: 'Silver', display: 'SI=F' },
+  'XAG-USD': { base: 'XAG', name: 'Silver', display: 'SI=F' },
+  'SI=F': { base: 'XAG', name: 'Silver', display: 'SI=F' },
+}
+
 function normalizeSymbol(raw: string) {
-  return raw.trim().toUpperCase().replace(/\s+/g, '')
+  return resolveInvestSymbol(raw)
 }
 
 function isCrypto(symbol: string) {
@@ -59,6 +75,34 @@ async function fetchCrypto(symbol: string): Promise<InvestQuote | null> {
       currency: 'USD',
       changePct: null,
       kind: 'crypto',
+      source: 'coinbase',
+      asOf: new Date().toISOString(),
+    }
+  } catch {
+    return null
+  }
+}
+
+async function fetchMetal(symbol: string): Promise<InvestQuote | null> {
+  const key = normalizeSymbol(symbol)
+  const raw = symbol.trim().toUpperCase().replace(/\s+/g, '')
+  const mapped = METAL_MAP[key] || METAL_MAP[raw]
+  if (!mapped) return null
+  try {
+    const res = await fetch(`https://api.coinbase.com/v2/prices/${mapped.base}-USD/spot`, {
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) return null
+    const json = (await res.json()) as { data?: { amount?: string } }
+    const price = Number(json?.data?.amount)
+    if (!Number.isFinite(price) || price <= 0) return null
+    return {
+      symbol: mapped.display,
+      name: mapped.name,
+      price,
+      currency: 'USD',
+      changePct: null,
+      kind: 'metal',
       source: 'coinbase',
       asOf: new Date().toISOString(),
     }
@@ -102,10 +146,19 @@ async function fetchYahoo(symbol: string): Promise<InvestQuote | null> {
     const changePct =
       Number.isFinite(prev) && prev > 0 ? ((price - prev) / prev) * 100 : null
     const instrument = String(meta?.instrumentType || '').toUpperCase()
-    const kind: InvestQuote['kind'] =
-      instrument.includes('ETF') ? 'etf' : instrument.includes('CRYPTO') ? 'crypto' : 'stock'
+    const resolved = meta?.symbol || sym
+    let kind: InvestQuote['kind'] = 'stock'
+    if (instrument.includes('ETF')) kind = 'etf'
+    else if (instrument.includes('CRYPTO')) kind = 'crypto'
+    else if (
+      instrument.includes('FUTURE') ||
+      /\b(GOLD|SILVER|XAU|XAG)\b/i.test(String(meta?.shortName || meta?.longName || '')) ||
+      /^(GC|SI|HG)=F$/i.test(resolved)
+    ) {
+      kind = 'metal'
+    }
     return {
-      symbol: meta?.symbol || sym,
+      symbol: resolved,
       name: meta?.shortName || meta?.longName || null,
       price,
       currency: meta?.currency || 'USD',
@@ -180,11 +233,19 @@ const DEMO: Record<string, { price: number; name: string; kind: InvestQuote['kin
   BTC: { price: 85200, name: 'Bitcoin', kind: 'crypto' },
   'ETH-USD': { price: 2715, name: 'Ethereum', kind: 'crypto' },
   ETH: { price: 2715, name: 'Ethereum', kind: 'crypto' },
+  'GC=F': { price: 2350, name: 'Gold Futures', kind: 'metal' },
+  GOLD: { price: 2350, name: 'Gold Futures', kind: 'metal' },
+  'SI=F': { price: 28.5, name: 'Silver Futures', kind: 'metal' },
+  SILVER: { price: 28.5, name: 'Silver Futures', kind: 'metal' },
+  GLD: { price: 215, name: 'SPDR Gold Shares', kind: 'etf' },
 }
 
 export async function fetchQuote(symbol: string, allowDemo = true): Promise<InvestQuote | null> {
   const sym = normalizeSymbol(symbol)
   if (!sym) return null
+
+  const metal = await fetchMetal(sym)
+  if (metal) return metal
 
   if (isCrypto(sym) || CRYPTO_MAP[sym] || CRYPTO_MAP[`${sym}-USD`]) {
     const crypto = await fetchCrypto(sym)
