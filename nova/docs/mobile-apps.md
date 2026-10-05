@@ -100,3 +100,7 @@ npm start
 ## Server note
 
 `/api/google/connect?client=native` returns to `wahrly://settings?google=…` after Google Allow (web still uses Pages URL).
+
+## TestFlight notes
+
+Paste-ready **What to Test**, Free/Pro matrix, and screenshots: [`testflight-beta.md`](./testflight-beta.md).
