@@ -1,6 +1,18 @@
 # Wahrly — TestFlight (build 36 / 1.1.0)
 
-Готовый текст для App Store Connect → TestFlight → **Test Details / What to Test**, плюс скрины.
+Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
+
+---
+
+## Beta App Description (коротко)
+
+**RU**
+
+Wahrly — ассистент дня: задачи, Plan day, Google Calendar (только чтение), счета, даты, новости и AI. Pro — облачный чат, голос и Invest (введи «gold» — подтянется цена). Почту не читаем.
+
+**EN**
+
+Wahrly is a daily life assistant: tasks, Plan day, Google Calendar (readonly), bills, dates, news, and AI. Pro unlocks cloud chat, voice, and Invest (type “gold” for live price). No email access.
 
 ---
 
@@ -64,17 +76,7 @@ Feedback: device + iOS + what broke (screenshot helps).
 
 ---
 
-## Краткое описание приложения (для Test Information / Beta App Description)
-
-**RU:**  
-Wahrly — личный ассистент дня: задачи, план дня, календарь (Google readonly), счета, важные даты, новости и AI-чат. Pro открывает облачный AI, голос и портфель Invest (можно ввести «gold» — подтянется цена). Почту не читаем.
-
-**EN:**  
-Wahrly is a daily life assistant: tasks, Plan day, Google Calendar (readonly), bills, dates, news, and AI chat. Pro unlocks cloud AI, voice, and Invest (type “gold” for live price). No email access.
-
----
-
-## Free vs Pro (для тестеров)
+## Free vs Pro
 
 | | Free | Pro (демо-тумблер в Settings) |
 |--|:----:|:----:|
@@ -82,23 +84,45 @@ Wahrly is a daily life assistant: tasks, Plan day, Google Calendar (readonly), b
 | Calendar readonly | ✅ | ✅ |
 | Open loops, Plan day, morning/evening | ✅ | ✅ |
 | Local AI chat | ✅ | ✅ |
-| Cloud AI chat | ❌ | ✅ (до ~400/день) |
-| Voice | ❌ | ✅ (до ~200/день) |
+| Cloud AI chat | ❌ | ✅ (~400/день) |
+| Voice | ❌ | ✅ (~200/день) |
 | Invest + live quotes | ❌ | ✅ |
 | Weekly brief | ❌ | ✅ |
 
 ---
 
-## Скриншоты
+## Скриншоты (iPhone viewport)
 
-Папка: `docs/testflight-screens/` (и копии в артефактах агента).
+Сняты с веб-демо (Pages), для TestFlight notes и внутренней презентации. Для витрины App Store лучше переснять с реального iPhone (6.7").
 
-Рекомендуемый набор для ASC / заметки тестерам:
-1. Home — план дня  
-2. Tasks — неделя  
-3. Invest — портфель / добавление gold  
-4. Settings — Google + Pro  
-5. Chat  
-6. Bills или Dates  
+| # | Экран | Файл |
+|---|--------|------|
+| 1 | Home | [01-home.png](./testflight-screens/01-home.png) |
+| 2 | Tasks | [02-tasks.png](./testflight-screens/02-tasks.png) |
+| 3 | Invest (Pro gate) | [03-invest.png](./testflight-screens/03-invest.png) |
+| 4 | Settings (Pro + языки + Google) | [04-settings.png](./testflight-screens/04-settings.png) |
+| 5 | Chat | [05-chat.png](./testflight-screens/05-chat.png) |
+| 6 | Bills | [06-bills.png](./testflight-screens/06-bills.png) |
 
-> Для витрины App Store нужны размеры 6.7" / 6.5" и т.д. Эти скрины — для TestFlight notes и внутренней презентации; при публикации в Store можно переснять с iPhone.
+### Preview
+
+![Home](./testflight-screens/01-home.png)
+
+![Tasks](./testflight-screens/02-tasks.png)
+
+![Invest](./testflight-screens/03-invest.png)
+
+![Settings](./testflight-screens/04-settings.png)
+
+![Chat](./testflight-screens/05-chat.png)
+
+![Bills](./testflight-screens/06-bills.png)
+
+---
+
+## Куда вставить в App Store Connect
+
+1. **Users and Access / TestFlight** → приложение Wahrly → build **36**  
+2. **Test Details** → *What to Test* → вставь блок RU или EN выше  
+3. *Beta App Description* → короткий абзац  
+4. Скрины из `testflight-screens/` можно приложить в письмо тестерам или во внутренний Notion/Telegram
