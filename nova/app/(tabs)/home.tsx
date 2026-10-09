@@ -23,6 +23,11 @@ import { AnalyticsEvents, track } from '../../lib/analytics'
 import { t as translate } from '../../lib/i18n'
 import { dateLocale } from '../../lib/dateLocale'
 import { parseHm } from '../../lib/notifications'
+import {
+  findNearestTask,
+  formatNearestTaskTime,
+  nearestTaskLabelKey,
+} from '../../lib/nearestTask'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
 import { isMonday } from '../../lib/weekRange'
@@ -197,6 +202,39 @@ export default function HomeScreen() {
 
   const tomorrowISO = () => format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
+  const nearest = useMemo(() => findNearestTask(tasks), [tasks])
+  const nearestWhen = nearest ? formatNearestTaskTime(nearest) : ''
+  const nearestLabel = nearest
+    ? nearestTaskLabelKey(nearest) === 'widget.next'
+      ? t('home.nextUp')
+      : nearestTaskLabelKey(nearest) === 'widget.tomorrow'
+        ? t('home.tomorrowLabel')
+        : t('home.upcomingLabel')
+    : t('home.nextUp')
+
+  const nextEvent = useMemo(() => {
+    const now = Date.now() - 10 * 60 * 1000
+    const timed = calendarEvents
+      .filter((e) => !e.allDay)
+      .map((e) => ({ e, start: new Date(e.start).getTime() }))
+      .filter((x) => !Number.isNaN(x.start) && x.start >= now)
+      .sort((a, b) => a.start - b.start)
+    if (timed[0]) return timed[0].e
+    return calendarEvents.find((e) => e.allDay) || null
+  }, [calendarEvents])
+
+  const nextEventWhen = useMemo(() => {
+    if (!nextEvent) return ''
+    if (nextEvent.allDay) return t('home.allDay')
+    try {
+      return format(new Date(nextEvent.start), 'HH:mm')
+    } catch {
+      return nextEvent.start.slice(11, 16) || ''
+    }
+  }, [nextEvent, t])
+
+  const hasUntimedToday = todayTasks.some((task) => !task.time)
+
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
@@ -244,6 +282,31 @@ export default function HomeScreen() {
             </Pressable>
           ) : null}
 
+          <View style={styles.nextCard}>
+            <Pressable
+              style={styles.nextMain}
+              onPress={() => {
+                if (nearest) setEditing(nearest)
+                else openPlanSheet()
+              }}
+              accessibilityRole="button"
+            >
+              <View style={styles.nextNode} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nextLabel}>{nearestLabel}</Text>
+                <Text style={styles.nextTitle} numberOfLines={2}>
+                  {nearest ? nearest.title : t('home.nextEmpty')}
+                </Text>
+              </View>
+              {nearestWhen ? <Text style={styles.nextWhen}>{nearestWhen}</Text> : null}
+            </Pressable>
+            {hasUntimedToday || !nearest ? (
+              <Pressable style={styles.nextPlanBtn} onPress={openPlanSheet} hitSlop={8}>
+                <Text style={styles.nextPlanText}>{t('home.nextPlanCta')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
           <DailyPlan
             tasks={todayTasks}
             events={calendarEvents}
@@ -257,9 +320,19 @@ export default function HomeScreen() {
           />
           <Text style={styles.editHint}>{t('home.editHint')}</Text>
 
-          <BillsBrief />
-
           <OpenLoopsBrief userId={userId} />
+
+          {userId ? (
+            <View style={styles.nextEventCard}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nextEventLabel}>{t('home.nextEvent')}</Text>
+                <Text style={styles.nextEventTitle} numberOfLines={2}>
+                  {nextEvent ? nextEvent.title : t('home.nextEventEmpty')}
+                </Text>
+              </View>
+              {nextEventWhen ? <Text style={styles.nextEventWhen}>{nextEventWhen}</Text> : null}
+            </View>
+          ) : null}
 
           <Pressable
             style={styles.googleToggle}
@@ -286,6 +359,8 @@ export default function HomeScreen() {
               onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
             />
           </View>
+
+          <BillsBrief />
 
           <HomeSection title={t('home.askWahrly')} emphasize>
             <Text style={styles.prompt}>
@@ -505,6 +580,90 @@ const styles = StyleSheet.create({
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
     fontSize: 13,
+  },
+  nextCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+  },
+  nextMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  nextNode: {
+    width: 12,
+    height: 12,
+    borderRadius: 99,
+    backgroundColor: colors.accentStrong,
+  },
+  nextLabel: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+  },
+  nextTitle: {
+    color: colors.text,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 16,
+    lineHeight: 21,
+    marginTop: 2,
+  },
+  nextWhen: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+  },
+  nextPlanBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  nextPlanText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+  },
+  nextEventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  nextEventLabel: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  nextEventTitle: {
+    color: colors.text,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 15,
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  nextEventWhen: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
   },
   editHint: {
     color: colors.textDim,

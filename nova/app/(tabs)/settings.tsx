@@ -322,9 +322,44 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
-            {!isPro ? (
-              <Text style={styles.rowSub}>{tr('pro.freeLimits')}</Text>
-            ) : null}
+            <View style={styles.compareHead}>
+              <Text style={[styles.compareCell, styles.compareFeature]} />
+              <Text style={[styles.compareCell, styles.compareCol]}>{tr('pro.compareFree')}</Text>
+              <Text style={[styles.compareCell, styles.compareCol]}>{tr('pro.comparePro')}</Text>
+            </View>
+            {(
+              [
+                { key: 'pro.rowTasks' as const, free: true, pro: true },
+                { key: 'pro.rowLocalAi' as const, free: true, pro: true },
+                { key: 'pro.rowCloudAi' as const, free: false, pro: true },
+                { key: 'pro.rowVoice' as const, free: false, pro: true },
+                { key: 'pro.rowInvest' as const, free: false, pro: true },
+                { key: 'pro.rowWeekly' as const, free: false, pro: true },
+              ] as const
+            ).map((row) => (
+              <View key={row.key} style={styles.compareRow}>
+                <Text style={[styles.compareCell, styles.compareFeature]}>{tr(row.key)}</Text>
+                <Text
+                  style={[
+                    styles.compareCell,
+                    styles.compareCol,
+                    row.free ? styles.compareYes : styles.compareNo,
+                  ]}
+                >
+                  {row.free ? tr('pro.yes') : tr('pro.no')}
+                </Text>
+                <Text
+                  style={[
+                    styles.compareCell,
+                    styles.compareCol,
+                    row.pro ? styles.compareYes : styles.compareNo,
+                  ]}
+                >
+                  {row.pro ? tr('pro.yes') : tr('pro.no')}
+                </Text>
+              </View>
+            ))}
+            {!isPro ? <Text style={styles.rowSub}>{tr('pro.freeLimits')}</Text> : null}
           </View>
 
           <View style={styles.card}>
@@ -869,6 +904,19 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   rowSub: { color: colors.textMuted, marginTop: 2, fontFamily: fonts.body, lineHeight: 18 },
+  compareHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  compareRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
+  compareCell: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
+  compareFeature: { flex: 1.4, color: colors.textMuted },
+  compareCol: { flex: 0.7, textAlign: 'center', color: colors.textDim },
+  compareYes: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
+  compareNo: { color: colors.textDim },
   presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     backgroundColor: colors.bgSoft,

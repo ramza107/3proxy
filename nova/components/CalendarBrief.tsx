@@ -127,7 +127,19 @@ export function CalendarBrief({ userId, enabled = true, onEvents }: Props) {
       ) : events.length === 0 ? (
         <Text style={styles.quiet}>{t('home.calendarEmpty')}</Text>
       ) : (
-        <Text style={styles.quiet}>{t('home.calendarOnSignal')}</Text>
+        <>
+          <View style={styles.list}>
+            {events.slice(0, 5).map((ev) => (
+              <View key={ev.id} style={styles.item}>
+                <Text style={styles.when}>{formatEventWhen(ev)}</Text>
+                <Text style={styles.itemTitle} numberOfLines={1}>
+                  {ev.title}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Text style={styles.quiet}>{t('home.calendarListHint')}</Text>
+        </>
       )}
     </HomeSection>
   )
