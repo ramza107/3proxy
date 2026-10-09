@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import { useRouter } from 'expo-router'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import {
@@ -244,11 +245,11 @@ export function AIInput({
           }
         >
           {transcribing ? (
-            <Text style={styles.micText}>✕</Text>
+            <Ionicons name="close" size={22} color={colors.danger} />
           ) : recording ? (
-            <Text style={styles.micText}>{t('ai.stop')}</Text>
+            <Ionicons name="stop" size={20} color={colors.textOnAccent} />
           ) : (
-            <Text style={styles.micText}>{t('ai.mic')}</Text>
+            <Ionicons name="mic" size={22} color={colors.text} />
           )}
         </Pressable>
         <Pressable
@@ -311,7 +312,6 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.danger,
   },
-  micText: { fontSize: 16, color: colors.text, fontFamily: fonts.bodyBold },
   send: {
     backgroundColor: colors.accent,
     borderRadius: radii.full,
