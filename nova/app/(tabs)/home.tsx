@@ -320,8 +320,6 @@ export default function HomeScreen() {
           />
           <Text style={styles.editHint}>{t('home.editHint')}</Text>
 
-          <OpenLoopsBrief userId={userId} />
-
           {userId ? (
             <View style={styles.nextEventCard}>
               <View style={{ flex: 1 }}>
@@ -333,6 +331,8 @@ export default function HomeScreen() {
               {nextEventWhen ? <Text style={styles.nextEventWhen}>{nextEventWhen}</Text> : null}
             </View>
           ) : null}
+
+          <OpenLoopsBrief userId={userId} />
 
           <Pressable
             style={styles.googleToggle}
