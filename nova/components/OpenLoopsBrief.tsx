@@ -98,6 +98,13 @@ export function OpenLoopsBrief({ userId }: Props) {
     setDraftKind('promise')
   }
 
+  const openComposer = (kind: LoopKind, titleSeed = '') => {
+    setDraftKind(kind)
+    setDraftTitle(titleSeed)
+    setDraftWho('')
+    setAdding(true)
+  }
+
   const saveManualLoop = () => {
     const uidUser = sessionUserId || userId
     if (!uidUser) return
@@ -120,19 +127,41 @@ export function OpenLoopsBrief({ userId }: Props) {
     resetDraft()
   }
 
+  const templates = [
+    { kind: 'promise' as const, label: t('home.loopTplOweReply'), seed: t('home.loopTplOweReply') },
+    { kind: 'promise' as const, label: t('home.loopTplOweSend'), seed: t('home.loopTplOweSend') },
+    {
+      kind: 'meeting' as const,
+      label: t('home.loopTplWaitDecision'),
+      seed: t('home.loopTplWaitDecision'),
+    },
+    {
+      kind: 'meeting' as const,
+      label: t('home.loopTplWaitReply'),
+      seed: t('home.loopTplWaitReply'),
+    },
+  ]
+
   return (
     <HomeSection
       title={t('home.openLoops')}
       meta={total ? t.tf('home.openCount', { n: total }) : t('home.clear')}
       action={
-        <Pressable
-          onPress={() => setAdding((v) => !v)}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={t('home.addLoop')}
-        >
-          <Text style={styles.refresh}>{adding ? t('home.close') : t('home.addLoop')}</Text>
-        </Pressable>
+        <View style={styles.actionRow}>
+          {total > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{total}</Text>
+            </View>
+          ) : null}
+          <Pressable
+            onPress={() => setAdding((v) => !v)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.addLoop')}
+          >
+            <Text style={styles.refresh}>{adding ? t('home.close') : t('home.addLoop')}</Text>
+          </Pressable>
+        </View>
       }
     >
       <Text style={styles.summary}>{t('home.loopsIntro')}</Text>
@@ -191,7 +220,20 @@ export function OpenLoopsBrief({ userId }: Props) {
       ) : null}
 
       {total === 0 && !adding ? (
-        <Text style={styles.quiet}>{t('home.loopsEmpty')}</Text>
+        <View style={styles.emptyBlock}>
+          <Text style={styles.quiet}>{t('home.loopsEmptyPrompt')}</Text>
+          <View style={styles.tplRow}>
+            {templates.map((tpl) => (
+              <Pressable
+                key={`${tpl.kind}-${tpl.label}`}
+                style={styles.tplChip}
+                onPress={() => openComposer(tpl.kind, tpl.seed)}
+              >
+                <Text style={styles.tplText}>{tpl.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
       ) : (
         <>
           {oweCount > 0 ? (
@@ -272,6 +314,19 @@ function TaskLoopRow({
 }
 
 const styles = StyleSheet.create({
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 12 },
   refresh: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   summary: {
     color: colors.textMuted,
@@ -281,6 +336,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   quiet: { color: colors.textDim, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  emptyBlock: { gap: 10 },
+  tplRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tplChip: {
+    backgroundColor: colors.bgSoft,
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tplText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
   composer: {
     gap: 8,
     paddingVertical: 8,

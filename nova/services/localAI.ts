@@ -190,6 +190,49 @@ function isRu(text: string) {
   return /[а-яё]/i.test(text)
 }
 
+function findTask(tasks: Task[], hint: string): Task | undefined {
+  const q = hint.toLowerCase().replace(/\s+/g, ' ').trim()
+  if (!q) return undefined
+  const open = tasks.filter((t) => !t.completed)
+  const direct = open.find((t) => t.title.toLowerCase().includes(q))
+  if (direct) return direct
+  const tokens = q.split(' ').filter((w) => w.length > 2)
+  if (!tokens.length) return undefined
+  return open.find((t) => {
+    const title = t.title.toLowerCase()
+    return tokens.some((tok) => title.includes(tok))
+  })
+}
+
+function isRescheduleIntent(lower: string) {
+  return (
+    /\b(move|reschedule|postpone|push|shift)\b/.test(lower) ||
+    /(перенес|передвинь|переставь|сдвинь|перекинь)/i.test(lower) ||
+    /\b(to|на)\s+(tomorrow|today|завтра|сегодня)\b/.test(lower)
+  )
+}
+
+function extractRescheduleHint(text: string, lower: string): string {
+  return text
+    .replace(
+      /\b(move|reschedule|postpone|push|shift|please|can you|the|task|to|at)\b/gi,
+      ' ',
+    )
+    .replace(
+      /(?:^|[^\p{L}])(перенес|перенеси|передвинь|переставь|сдвинь|перекинь|пожалуйста|задач[уыа]?|на|в)(?=[^\p{L}]|$)/giu,
+      ' ',
+    )
+    .replace(/\b(tomorrow|today|day after tomorrow)\b/gi, ' ')
+    .replace(/(?:^|[^\p{L}])(завтра|сегодня|послезавтра)(?=[^\p{L}]|$)/giu, ' ')
+    .replace(/(?:^|[^\p{L}])через\s+\d+\s+(день|дня|дней)(?=[^\p{L}]|$)/giu, ' ')
+    .replace(/\bin\s+\d+\s+days?\b/gi, ' ')
+    .replace(/\bat\s+\d{1,2}(?::\d{2})?\s*(am|pm)?\b/gi, ' ')
+    .replace(/(?:^|[^\p{L}])в\s+\d{1,2}(?::\d{2})?(?=[^\p{L}]|$)/giu, ' ')
+    .replace(/\b\d{1,2}:\d{2}\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || lower
+}
+
 /** Offline fallback when the AI server / OpenAI is unavailable. */
 export function clientLocalAI(
   message: string,
@@ -250,13 +293,46 @@ export function clientLocalAI(
     /finished|done|completed|i bought|i called/i.test(lower) ||
     /(сделал|сделала|купил|купила|позвонил|закончил|готово)\b/i.test(lower)
   ) {
-    const match = open.find((t) => lower.includes(t.title.toLowerCase().split(' ')[0]))
+    const hint = text
+      .replace(/^(i )?(finished|done|completed|bought|called|did)\s*/i, '')
+      .replace(/^(я\s+)?(сделал|сделала|купил|купила|позвонил|закончил|готово)\s*/i, '')
+      .replace(/\b(buying|the|a|an)\b/gi, '')
+      .trim()
+    const match = findTask(open, hint) || findTask(open, text)
     if (match) {
       return {
         reply: isRu(text)
           ? `Ок. «${match.title}» отмечена ✓`
           : `Nice. Marked "${match.title}" as completed ✓`,
         actions: [{ type: 'complete_task', task_id: match.id }],
+      }
+    }
+  }
+
+  // Reschedule: "move groceries to tomorrow" / "перенеси звонок на 15:00"
+  if (isRescheduleIntent(lower) && open.length) {
+    const date = parseDate(text, today)
+    const time = parseTime(text)
+    if (date || time) {
+      const hint = extractRescheduleHint(text, lower)
+      const match = findTask(open, hint) || (open.length === 1 ? open[0] : undefined)
+      if (match) {
+        const nextDate = date ?? match.date ?? today
+        const nextTime = time ?? match.time ?? null
+        const place = whereLabel(nextDate, today)
+        return {
+          reply: isRu(text)
+            ? `Перенёс «${match.title}» → ${place}${nextTime ? ` в ${nextTime}` : ''}.`
+            : `Moved “${match.title}” → ${place}${nextTime ? ` at ${nextTime}` : ''}.`,
+          actions: [
+            {
+              type: 'update_task',
+              task_id: match.id,
+              date: nextDate,
+              time: nextTime,
+            },
+          ],
+        }
       }
     }
   }
