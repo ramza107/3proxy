@@ -21,7 +21,8 @@ import { APP_LANGUAGES, type AppLanguage } from '../../lib/i18n'
 import { disconnectGoogle, fetchGoogleStatus, googleConnectUrl } from '../../lib/googleApi'
 import {
   ensureNotificationPermissions,
-  parseHm,
+  maskHm,
+  normalizeHm,
 } from '../../lib/notifications'
 import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { dateLocale } from '../../lib/dateLocale'
@@ -194,48 +195,58 @@ export default function SettingsScreen() {
   }
 
   const applyMorningTime = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '08:00' }))
+      setMorningTime(settings.morningBriefTime || '08:00')
       return
     }
-    setMorningTime(value)
-    updateSettings({ morningBriefTime: value })
+    setMorningTime(next)
+    updateSettings({ morningBriefTime: next })
   }
 
   const applyEveningTime = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '21:30' }))
+      setEveningTime(settings.eveningClearTime || '21:30')
       return
     }
-    setEveningTime(value)
-    updateSettings({ eveningClearTime: value })
+    setEveningTime(next)
+    updateSettings({ eveningClearTime: next })
   }
 
   const applyBillRemindTime = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
+      setBillRemindTime(settings.billRemindTime || '09:00')
       return
     }
-    setBillRemindTime(value)
-    updateSettings({ billRemindTime: value })
+    setBillRemindTime(next)
+    updateSettings({ billRemindTime: next })
   }
 
   const applyWorkStart = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
+      setWorkStart(settings.workdayStart || '09:00')
       return
     }
-    setWorkStart(value)
-    updateSettings({ workdayStart: value })
+    setWorkStart(next)
+    updateSettings({ workdayStart: next })
   }
 
   const applyWorkEnd = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '18:00' }))
+      setWorkEnd(settings.workdayEnd || '18:00')
       return
     }
-    setWorkEnd(value)
-    updateSettings({ workdayEnd: value })
+    setWorkEnd(next)
+    updateSettings({ workdayEnd: next })
   }
 
   const connectWithGoogle = async () => {
@@ -474,12 +485,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={morningTime}
-              onChangeText={setMorningTime}
+              onChangeText={(v) => setMorningTime(maskHm(v))}
               onEndEditing={() => applyMorningTime(morningTime)}
               placeholder="08:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -534,12 +546,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={eveningTime}
-              onChangeText={setEveningTime}
+              onChangeText={(v) => setEveningTime(maskHm(v))}
               onEndEditing={() => applyEveningTime(eveningTime)}
               placeholder="21:30"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -654,12 +667,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={billRemindTime}
-              onChangeText={setBillRemindTime}
+              onChangeText={(v) => setBillRemindTime(maskHm(v))}
               onEndEditing={() => applyBillRemindTime(billRemindTime)}
               placeholder="09:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -683,12 +697,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.start')}</Text>
             <TextInput
               value={workStart}
-              onChangeText={setWorkStart}
+              onChangeText={(v) => setWorkStart(maskHm(v))}
               onEndEditing={() => applyWorkStart(workStart)}
               placeholder="09:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -705,12 +720,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.end')}</Text>
             <TextInput
               value={workEnd}
-              onChangeText={setWorkEnd}
+              onChangeText={(v) => setWorkEnd(maskHm(v))}
               onEndEditing={() => applyWorkEnd(workEnd)}
               placeholder="18:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>

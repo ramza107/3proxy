@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
-import { parseHm } from '../lib/notifications'
+import { maskHm, normalizeHm } from '../lib/notifications'
 import { useT } from '../lib/useT'
 import type { Dow, Priority, Task, TaskRecurrence } from '../types'
 
@@ -101,7 +101,8 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
       setError(t('editor.titleEmpty'))
       return
     }
-    if (time && !parseHm(time)) {
+    const normalizedTime = time ? normalizeHm(time) : null
+    if (time && !normalizedTime) {
       setError(t('editor.timeFormat'))
       return
     }
@@ -117,7 +118,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
     onSave({
       title: nextTitle,
       date: date || null,
-      time: time || null,
+      time: normalizedTime,
       priority,
       recurrence,
     })
@@ -187,10 +188,12 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
             </View>
             <TextInput
               value={time}
-              onChangeText={setTime}
+              onChangeText={(v) => setTime(maskHm(v))}
               style={styles.input}
               placeholder="HH:MM"
               placeholderTextColor={colors.textDim}
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
 
