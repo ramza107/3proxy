@@ -41,6 +41,7 @@ Demo mode works in the browser without OpenAI/Supabase keys (local AI fallback +
 ## Installable iPhone & Android (EAS)
 
 One Expo project → native builds. Details: [`docs/mobile-apps.md`](docs/mobile-apps.md).
+TestFlight copy + screenshots: [`docs/testflight-beta.md`](docs/testflight-beta.md).
 
 Optional crash reporting + product analytics: [`docs/observability.md`](docs/observability.md) (Sentry + PostHog; off until you set keys).
 
