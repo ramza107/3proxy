@@ -7,6 +7,7 @@ import {
   nearestTaskLabelKey,
 } from './nearestTask'
 import { localISODate } from './localDate'
+import { canUseWidget } from './pro'
 import { tasksForDay, useNovaStore } from './store'
 
 /** Payload pushed into the iOS WahrlyToday widget. */
@@ -57,6 +58,24 @@ function buildSnapshot(): WidgetSnapshot {
   const nextBill = nextBillLine(lang)
   const emptyTitle = t(lang, 'widget.emptyTitle')
   const emptySub = t(lang, 'widget.emptySub')
+
+  // Home Screen widget is Pro — Free sees an upgrade card, not Next task.
+  if (!canUseWidget()) {
+    return {
+      label: 'WAHRLY',
+      time: '',
+      title: t(lang, 'widget.proTitle'),
+      subtitle: t(lang, 'widget.proSub'),
+      updatedAt: new Date().toISOString(),
+      deepLink: 'wahrly://settings',
+      greeting: 'Wahrly',
+      todayCount: openToday.length,
+      nextTask: t(lang, 'widget.proTitle'),
+      nextBill: '',
+      openInWahrly: t(lang, 'widget.open'),
+      emptyHeadline: t(lang, 'widget.proTitle'),
+    }
+  }
 
   if (!nearest) {
     const billTitle = nextBill ? nextBill.split(' · ')[0] : ''

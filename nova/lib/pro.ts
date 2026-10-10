@@ -1,4 +1,4 @@
-/** Wahrly Pro gates — Free is near-zero COGS; cloud AI / voice / invest are Pro-only. */
+/** Wahrly Pro gates — Free is near-zero COGS; autopilot features are Pro-only. */
 
 import { localISODate } from './localDate'
 import { useNovaStore } from './store'
@@ -22,6 +22,37 @@ export function isPro(): boolean {
 
 export function useIsPro(): boolean {
   return useNovaStore((s) => s.settings.isPro === true)
+}
+
+/**
+ * Hard split:
+ * Free = you run the day (tasks, local AI, calendar, news, manual loops/bills, simple evening).
+ * Pro = Wahrly runs the day with you (Plan day, smart morning, reminders, digest, widget, cloud AI…).
+ */
+
+/** Auto Plan day / arrange into free slots — Pro only. */
+export function canUsePlanDay(): boolean {
+  return isPro()
+}
+
+/** Smart morning brief (weather + Plan day shortcut) — Pro only. */
+export function canUseMorningBrief(): boolean {
+  return isPro()
+}
+
+/** Local push reminders for bills + promise loops — Pro only. */
+export function canUseReminders(): boolean {
+  return isPro()
+}
+
+/** Evening digest + reflection journal — Pro only. Free: simple done / tomorrow. */
+export function canUseEveningDigest(): boolean {
+  return isPro()
+}
+
+/** Home Screen widget (Next task) — Pro only. */
+export function canUseWidget(): boolean {
+  return isPro()
 }
 
 /** Weekly brief — Pro only. */

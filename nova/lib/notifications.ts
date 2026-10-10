@@ -176,7 +176,8 @@ export async function syncDailyRitualNotifications(
   let morningOk = false
   let eveningOk = false
 
-  if (settings.morningBriefEnabled) {
+  // Smart morning brief push — Pro only (hard Free/Pro split)
+  if (settings.morningBriefEnabled && settings.isPro === true) {
     const hm = parseHm(settings.morningBriefTime)
     if (hm) {
       await NotificationsMod.scheduleNotificationAsync({
@@ -269,7 +270,11 @@ export async function syncBillReminders(
     // ignore
   }
 
-  if (!settings.notificationsEnabled || settings.billRemindersEnabled === false) {
+  if (
+    !settings.notificationsEnabled ||
+    settings.billRemindersEnabled === false ||
+    settings.isPro !== true
+  ) {
     return { scheduled: 0 }
   }
 
@@ -379,7 +384,8 @@ export async function syncPromiseDueReminders(
 
   if (
     !settings.notificationsEnabled ||
-    settings.promiseRemindDayBefore === false
+    settings.promiseRemindDayBefore === false ||
+    settings.isPro !== true
   ) {
     return { scheduled: 0 }
   }

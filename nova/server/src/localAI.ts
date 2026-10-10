@@ -338,8 +338,8 @@ export function localAI(
   ) {
     return {
       reply: isRu(text)
-        ? 'Открой Home → Plan day — или скажи «разложи день» онлайн, и Wahrly разложит задачи по рабочим слотам.'
-        : 'Open Home and tap Plan day — or say “plan my day” again online so Wahrly packs tasks into your work hours.',
+        ? 'План дня — Wahrly Pro. Оформи подписку в Настройках, и Wahrly разложит задачи по слотам.'
+        : 'Plan day is Wahrly Pro — subscribe in Settings and Wahrly will pack tasks into free slots.',
       actions: [],
     }
   }

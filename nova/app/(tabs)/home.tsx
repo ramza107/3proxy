@@ -31,6 +31,7 @@ import {
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
 import { isMonday } from '../../lib/weekRange'
+import { canUseMorningBrief, canUsePlanDay, useIsPro } from '../../lib/pro'
 import { useT } from '../../lib/useT'
 import {
   deleteTask,
@@ -94,7 +95,7 @@ export default function HomeScreen() {
   const setForceWeeklyBrief = useNovaStore((s) => s.setForceWeeklyBrief)
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const userId = useNovaStore((s) => s.sessionUserId)
-  const isProUser = useNovaStore((s) => s.settings.isPro === true)
+  const isProUser = useIsPro()
   const [loading, setLoading] = useState(false)
   const [planning, setPlanning] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
@@ -115,12 +116,14 @@ export default function HomeScreen() {
     [tasks, day],
   )
 
-  const showMorningBrief = shouldOfferMorningBrief(
-    settings.morningBriefEnabled !== false,
-    settings.morningBriefTime || '08:00',
-    settings.lastMorningBriefDate ?? null,
-    forceMorningBrief,
-  )
+  const showMorningBrief =
+    canUseMorningBrief() &&
+    shouldOfferMorningBrief(
+      settings.morningBriefEnabled !== false,
+      settings.morningBriefTime || '08:00',
+      settings.lastMorningBriefDate ?? null,
+      forceMorningBrief,
+    )
 
   const showWeeklyBrief =
     !showMorningBrief &&
@@ -162,8 +165,19 @@ export default function HomeScreen() {
     }
   }
 
+  const requirePlanDayPro = () => {
+    Alert.alert(t('pro.title'), t('pro.planDayLocked'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('pro.upgrade'), onPress: () => router.push('/settings') },
+    ])
+  }
+
   /** Close any open Modal first — iOS won't reliably present a second sheet on top. */
   const openPlanSheet = () => {
+    if (!canUsePlanDay()) {
+      requirePlanDayPro()
+      return
+    }
     const hadModal = showMorningBrief || weekOpen || quickOpen
     if (showMorningBrief) dismissMorningBrief()
     if (weekOpen) dismissWeeklyBrief()
@@ -302,7 +316,7 @@ export default function HomeScreen() {
               </View>
               {nearestWhen ? <Text style={styles.nextWhen}>{nearestWhen}</Text> : null}
             </Pressable>
-            {hasUntimedToday || !nearest ? (
+            {isProUser && (hasUntimedToday || !nearest) ? (
               <Pressable style={styles.nextPlanBtn} onPress={openPlanSheet} hitSlop={8}>
                 <Text style={styles.nextPlanText}>{t('home.nextPlanCta')}</Text>
               </Pressable>
@@ -317,7 +331,7 @@ export default function HomeScreen() {
             workdayStart={dayWindow.start}
             workdayEnd={dayWindow.end}
             dayKind={dayWindow.kind}
-            onPlanDay={openPlanSheet}
+            onPlanDay={isProUser ? openPlanSheet : undefined}
             planning={planning}
           />
           <Text style={styles.editHint}>{t('home.editHint')}</Text>
@@ -474,14 +488,22 @@ export default function HomeScreen() {
         onOpenLife={() => router.push('/life')}
         onOpenSettings={() => router.push('/settings')}
         onOpenEvening={() => router.push('/evening')}
-        onOpenMorning={() => {
-          updateSettings({ lastMorningBriefDate: null })
-          setForceMorningBrief(true)
-        }}
-        onOpenWeekly={() => {
-          updateSettings({ lastWeeklyBriefDate: null })
-          setForceWeeklyBrief(true)
-        }}
+        onOpenMorning={
+          isProUser
+            ? () => {
+                updateSettings({ lastMorningBriefDate: null })
+                setForceMorningBrief(true)
+              }
+            : undefined
+        }
+        onOpenWeekly={
+          isProUser
+            ? () => {
+                updateSettings({ lastWeeklyBriefDate: null })
+                setForceWeeklyBrief(true)
+              }
+            : undefined
+        }
       />
 
       <TaskEditor

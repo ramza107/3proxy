@@ -18,6 +18,7 @@ import { colors, fonts, radii, spacing } from '../constants/theme'
 import { AnalyticsEvents, track } from '../lib/analytics'
 import { dateLocale } from '../lib/dateLocale'
 import { formatMoney, currentMonthKey, isPaidThisMonth } from '../lib/bills'
+import { canUseEveningDigest } from '../lib/pro'
 import { sortTasks, todayISO, useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../services/ai'
@@ -86,10 +87,10 @@ export default function EveningClearScreen() {
     })
   }, [bills, today])
 
-  const goReflect = () => setStep('reflect')
+  const proDigest = canUseEveningDigest()
 
   const finish = () => {
-    const note = reflection.trim()
+    const note = proDigest ? reflection.trim() : ''
     updateSettings({
       lastEveningClearDate: today,
       lastEveningReflection: note || null,
@@ -97,6 +98,14 @@ export default function EveningClearScreen() {
     })
     void track(AnalyticsEvents.eveningClearFinish)
     setStep('done')
+  }
+
+  const goReflect = () => {
+    if (!proDigest) {
+      finish()
+      return
+    }
+    setStep('reflect')
   }
 
   const onDone = async (task: Task) => {
@@ -310,8 +319,13 @@ export default function EveningClearScreen() {
                 </View>
               ) : null}
 
-              <SoftPressable style={styles.primary} onPress={goReflect}>
-                <Text style={styles.primaryText}>{t('common.continue')}</Text>
+              <SoftPressable
+                style={styles.primary}
+                onPress={proDigest ? goReflect : finish}
+              >
+                <Text style={styles.primaryText}>
+                  {proDigest ? t('common.continue') : t('evening.finish')}
+                </Text>
               </SoftPressable>
               <Pressable style={styles.link} onPress={() => setStep('today')}>
                 <Text style={styles.linkText}>{t('common.today')}</Text>
@@ -319,7 +333,7 @@ export default function EveningClearScreen() {
             </Animated.View>
           ) : null}
 
-          {step === 'reflect' ? (
+          {step === 'reflect' && proDigest ? (
             <Animated.View
               key="reflect"
               entering={FadeInDown.duration(380).springify().damping(18)}
@@ -356,7 +370,7 @@ export default function EveningClearScreen() {
                   : t('evening.clearSub')}
               </Text>
 
-              {doneToday.length || billsPaidToday.length ? (
+              {proDigest && (doneToday.length || billsPaidToday.length) ? (
                 <View style={styles.digest}>
                   <Text style={styles.digestTitle}>{t('evening.digestTitle')}</Text>
                   {doneToday.slice(0, 8).map((task) => (
@@ -377,7 +391,7 @@ export default function EveningClearScreen() {
                 </View>
               ) : null}
 
-              {reflection.trim() ? (
+              {proDigest && reflection.trim() ? (
                 <View style={styles.digest}>
                   <Text style={styles.digestTitle}>{t('evening.reflectSaved')}</Text>
                   <Text style={styles.digestLine}>{reflection.trim()}</Text>
