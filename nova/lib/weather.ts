@@ -150,19 +150,84 @@ export function weatherAccent(code?: number | null): string {
   }
 }
 
-async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
-  const q = city.trim()
-  if (!q) return null
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`
-  const res = await fetch(url)
-  if (!res.ok) return null
-  const data = (await res.json()) as {
-    results?: { latitude: number; longitude: number; name: string; country_code?: string }[]
+export type CityHit = {
+  name: string
+  countryCode: string
+  country: string
+  admin1?: string
+  lat: number
+  lon: number
+  /** Stored in settings.weatherCity — e.g. "Buenos Aires, AR" */
+  label: string
+}
+
+type GeocodeResult = {
+  latitude: number
+  longitude: number
+  name: string
+  country_code?: string
+  country?: string
+  admin1?: string
+}
+
+function cityLabel(hit: GeocodeResult): string {
+  return hit.country_code ? `${hit.name}, ${hit.country_code}` : hit.name
+}
+
+function toCityHit(hit: GeocodeResult): CityHit {
+  return {
+    name: hit.name,
+    countryCode: hit.country_code || '',
+    country: hit.country || hit.country_code || '',
+    admin1: hit.admin1,
+    lat: hit.latitude,
+    lon: hit.longitude,
+    label: cityLabel(hit),
   }
-  const hit = data.results?.[0]
-  if (!hit) return null
-  const place = hit.country_code ? `${hit.name}, ${hit.country_code}` : hit.name
-  return { lat: hit.latitude, lon: hit.longitude, name: place }
+}
+
+/** Parse optional ", XX" country suffix from a stored city label. */
+function parseCityQuery(raw: string): { name: string; countryCode: string | null } {
+  const q = raw.trim()
+  const m = q.match(/^(.*?),\s*([A-Za-z]{2})$/)
+  if (m) return { name: m[1].trim(), countryCode: m[2].toUpperCase() }
+  return { name: q, countryCode: null }
+}
+
+async function fetchGeocodeResults(
+  name: string,
+  count: number,
+  language = 'en',
+): Promise<GeocodeResult[]> {
+  const q = name.trim()
+  if (!q) return []
+  const url =
+    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}` +
+    `&count=${count}&language=${encodeURIComponent(language)}&format=json`
+  const res = await fetch(url)
+  if (!res.ok) return []
+  const data = (await res.json()) as { results?: GeocodeResult[] }
+  return data.results || []
+}
+
+/** Typeahead search for Settings city picker. */
+export async function searchCities(query: string, language = 'en'): Promise<CityHit[]> {
+  const { name } = parseCityQuery(query)
+  if (name.length < 2) return []
+  const results = await fetchGeocodeResults(name, 8, language)
+  return results.map(toCityHit)
+}
+
+async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
+  const { name, countryCode } = parseCityQuery(city)
+  if (!name) return null
+  const results = await fetchGeocodeResults(name, countryCode ? 8 : 1, 'en')
+  if (!results.length) return null
+  const hit =
+    (countryCode
+      ? results.find((r) => (r.country_code || '').toUpperCase() === countryCode)
+      : null) || results[0]
+  return { lat: hit.latitude, lon: hit.longitude, name: cityLabel(hit) }
 }
 
 async function coordsFromDevice(): Promise<{ lat: number; lon: number; name: string } | null> {

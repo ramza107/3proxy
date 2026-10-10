@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -31,6 +32,7 @@ import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import { useIsPro } from '../../lib/pro'
+import { searchCities, type CityHit } from '../../lib/weather'
 import { ProPaywall } from '../../components/ProPaywall'
 import { defaultTypicalWeek, type Dow, type WeekAnchor } from '../../types'
 
@@ -44,6 +46,16 @@ const BILL_LEAD_PRESETS = [0, 1, 3, 5, 7]
 const BILL_TIME_PRESETS = ['08:00', '09:00', '10:00', '12:00', '18:00']
 const WORK_START_PRESETS = ['08:00', '09:00', '10:00']
 const WORK_END_PRESETS = ['17:00', '18:00', '19:00', '20:00']
+const WEATHER_CITY_PRESETS = [
+  'Kyiv, UA',
+  'Warsaw, PL',
+  'Berlin, DE',
+  'London, GB',
+  'New York, US',
+  'Buenos Aires, AR',
+  'Istanbul, TR',
+  'Tbilisi, GE',
+]
 const ANCHOR_PRESET_KEYS = [
   { titleKey: 'settings.anchorDeepWork' as const, time: '09:30', durationMin: 90 },
   { titleKey: 'settings.anchorSport' as const, time: '19:00', durationMin: 60 },
@@ -77,6 +89,10 @@ export default function SettingsScreen() {
   const [googleConnected, setGoogleConnected] = useState(false)
   const [googleEmail, setGoogleEmail] = useState<string | null>(null)
   const [googleBusy, setGoogleBusy] = useState(false)
+  const [cityQuery, setCityQuery] = useState(settings.weatherCity || '')
+  const [cityHits, setCityHits] = useState<CityHit[]>([])
+  const [citySearching, setCitySearching] = useState(false)
+  const citySearchSeq = useRef(0)
 
   const refreshGoogle = useCallback(async () => {
     if (!userId) return
@@ -91,6 +107,51 @@ export default function SettingsScreen() {
       setGoogleEmail(null)
     }
   }, [userId])
+
+  useEffect(() => {
+    setCityQuery(settings.weatherCity || '')
+  }, [settings.weatherCity])
+
+  useEffect(() => {
+    const q = cityQuery.trim()
+    if (q.length < 2 || q === (settings.weatherCity || '').trim()) {
+      setCityHits([])
+      setCitySearching(false)
+      return
+    }
+    const seq = ++citySearchSeq.current
+    setCitySearching(true)
+    const timer = setTimeout(() => {
+      void searchCities(q, tr.language || 'en')
+        .then((hits) => {
+          if (seq !== citySearchSeq.current) return
+          setCityHits(hits)
+        })
+        .catch(() => {
+          if (seq !== citySearchSeq.current) return
+          setCityHits([])
+        })
+        .finally(() => {
+          if (seq !== citySearchSeq.current) return
+          setCitySearching(false)
+        })
+    }, 320)
+    return () => clearTimeout(timer)
+  }, [cityQuery, settings.weatherCity, tr.language])
+
+  const pickWeatherCity = (label: string) => {
+    setCityQuery(label)
+    setCityHits([])
+    setCitySearching(false)
+    updateSettings({ weatherCity: label })
+  }
+
+  const clearWeatherCity = () => {
+    setCityQuery('')
+    setCityHits([])
+    setCitySearching(false)
+    updateSettings({ weatherCity: '' })
+  }
 
   useEffect(() => {
     setMorningTime(settings.morningBriefTime || '08:00')
@@ -507,13 +568,67 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.label}>{tr('settings.weatherCity')}</Text>
             <TextInput
-              value={settings.weatherCity || ''}
-              onChangeText={(v) => updateSettings({ weatherCity: v })}
-              placeholder="Kyiv"
+              value={cityQuery}
+              onChangeText={setCityQuery}
+              placeholder={tr('settings.weatherSearchPh')}
               placeholderTextColor={colors.textDim}
               style={styles.input}
               autoCapitalize="words"
+              autoCorrect={false}
             />
+            {citySearching ? (
+              <View style={styles.cityStatus}>
+                <ActivityIndicator size="small" color={colors.accent} />
+                <Text style={styles.rowSub}>{tr('common.loading')}</Text>
+              </View>
+            ) : null}
+            {cityHits.length > 0 ? (
+              <View style={styles.cityList}>
+                <Text style={styles.rowSub}>{tr('settings.weatherPick')}</Text>
+                {cityHits.map((hit) => {
+                  const sub = [hit.admin1, hit.country || hit.countryCode].filter(Boolean).join(', ')
+                  const on = settings.weatherCity === hit.label
+                  return (
+                    <Pressable
+                      key={`${hit.label}-${hit.lat}-${hit.lon}`}
+                      style={[styles.cityRow, on && styles.cityRowOn]}
+                      onPress={() => pickWeatherCity(hit.label)}
+                    >
+                      <Text style={[styles.cityRowTitle, on && styles.cityRowTitleOn]}>
+                        {hit.name}
+                      </Text>
+                      {sub ? (
+                        <Text style={styles.cityRowSub}>{sub}</Text>
+                      ) : null}
+                    </Pressable>
+                  )
+                })}
+              </View>
+            ) : cityQuery.trim().length >= 2 &&
+              !citySearching &&
+              cityQuery.trim() !== (settings.weatherCity || '').trim() ? (
+              <Text style={styles.rowSub}>{tr('settings.weatherNoResults')}</Text>
+            ) : null}
+            <View style={styles.presets}>
+              {WEATHER_CITY_PRESETS.map((label) => {
+                const on = settings.weatherCity === label
+                const short = label.split(',')[0]
+                return (
+                  <Pressable
+                    key={label}
+                    style={[styles.chip, on && styles.chipOn]}
+                    onPress={() => pickWeatherCity(label)}
+                  >
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{short}</Text>
+                  </Pressable>
+                )
+              })}
+              {settings.weatherCity ? (
+                <Pressable style={styles.chip} onPress={clearWeatherCity}>
+                  <Text style={styles.chipText}>{tr('common.clear')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
             <Text style={styles.rowSub}>{tr('settings.weatherCityHint')}</Text>
             <Pressable
               style={styles.openRitual}
@@ -957,6 +1072,24 @@ const styles = StyleSheet.create({
   compareYes: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
   compareNo: { color: colors.textDim },
   presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  cityStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cityList: {
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bgElevated,
+    padding: 8,
+  },
+  cityRow: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: radii.sm,
+  },
+  cityRowOn: { backgroundColor: colors.accentSoft },
+  cityRowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  cityRowTitleOn: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
+  cityRowSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
   chip: {
     backgroundColor: colors.bgSoft,
     borderRadius: radii.full,
