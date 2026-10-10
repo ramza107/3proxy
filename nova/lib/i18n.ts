@@ -392,7 +392,7 @@ const ru: Dict = {
   'pro.freeChatHint':
     'В Free чат на устройстве (без облака). Pro — умный облачный чат и голос.',
   'home.nextUp': 'Дальше',
-  'home.nextEmpty': 'День свободен — запланируй или добавь задачу.',
+  'home.nextEmpty': 'День свободен — добавь задачу.',
   'home.nextPlanCta': 'План дня',
   'home.nextEvent': 'Следующее событие',
   'home.nextEventEmpty': 'Встреч сегодня больше нет',
