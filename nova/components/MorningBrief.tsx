@@ -30,6 +30,8 @@ type Props = {
   workdayStart: string
   workdayEnd: string
   weatherCity?: string | null
+  weatherLat?: number | null
+  weatherLon?: number | null
   planning?: boolean
   onPlanDay: () => void | Promise<void>
   onDismiss: () => void
@@ -207,6 +209,8 @@ export function MorningBrief({
   workdayStart,
   workdayEnd,
   weatherCity,
+  weatherLat,
+  weatherLon,
   planning,
   onPlanDay,
   onDismiss,
@@ -222,7 +226,9 @@ export function MorningBrief({
   useEffect(() => {
     let alive = true
     setWeatherLoading(true)
-    fetchWeatherBrief(weatherCity)
+    const coords =
+      weatherLat != null && weatherLon != null ? { lat: weatherLat, lon: weatherLon } : null
+    fetchWeatherBrief(weatherCity, coords)
       .then((w) => {
         if (alive) setWeather(w)
       })
@@ -232,7 +238,7 @@ export function MorningBrief({
     return () => {
       alive = false
     }
-  }, [weatherCity])
+  }, [weatherCity, weatherLat, weatherLon])
 
   const preview = tasks.slice(0, 4)
   const palette = weatherPalette(weather?.code)

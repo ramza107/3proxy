@@ -157,8 +157,11 @@ export type UserSettings = {
   morningBriefEnabled: boolean
   /** YYYY-MM-DD — last time Morning brief was dismissed / planned on Home */
   lastMorningBriefDate: string | null
-  /** City for Open-Meteo weather on morning brief (e.g. Kyiv) */
+  /** City for Open-Meteo weather on morning brief (e.g. Kyiv, UA) */
   weatherCity: string
+  /** Optional coords from city picker — preferred over re-geocoding the label */
+  weatherLat: number | null
+  weatherLon: number | null
   /** HH:MM — evening clear / prepare tomorrow */
   eveningClearTime: string
   eveningClearEnabled: boolean

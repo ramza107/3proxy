@@ -36,6 +36,8 @@ type Props = {
   onClose: () => void
   tasks: Task[]
   weatherCity?: string
+  weatherLat?: number | null
+  weatherLon?: number | null
   planning?: boolean
   onArrange: (skipTaskIds: string[]) => void | Promise<void>
   onMoveTomorrow: (task: Task) => void
@@ -338,6 +340,8 @@ export function PlanDaySheet({
   onClose,
   tasks,
   weatherCity,
+  weatherLat,
+  weatherLon,
   planning,
   onArrange,
   onMoveTomorrow,
@@ -393,7 +397,9 @@ export function PlanDaySheet({
     }
     let cancelled = false
     setWeatherLoading(true)
-    fetchWeatherBrief(weatherCity)
+    const coords =
+      weatherLat != null && weatherLon != null ? { lat: weatherLat, lon: weatherLon } : null
+    fetchWeatherBrief(weatherCity, coords)
       .then((w) => {
         if (!cancelled) setWeather(w)
       })
@@ -406,7 +412,7 @@ export function PlanDaySheet({
     return () => {
       cancelled = true
     }
-  }, [visible, weatherCity])
+  }, [visible, weatherCity, weatherLat, weatherLon])
 
   const bySlot = useMemo(() => {
     const map: Record<string, Task[]> = {}

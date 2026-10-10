@@ -74,6 +74,45 @@ export function formatHm(hour: number, minute: number) {
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
 }
 
+/** Mask free typing into HH:MM (digits only, auto-colon, soft hour/minute clamps). */
+export function maskHm(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 4)
+  if (!digits) return ''
+
+  const chars: string[] = []
+  for (const ch of digits) {
+    if (chars.length >= 4) break
+    const d = Number(ch)
+    if (chars.length === 0) {
+      // 3–9 as first keystroke → 0H (common time-field UX)
+      if (d > 2) chars.push('0', String(d))
+      else chars.push(String(d))
+      continue
+    }
+    if (chars.length === 1) {
+      chars.push(chars[0] === '2' && d > 3 ? '3' : String(d))
+      continue
+    }
+    if (chars.length === 2) {
+      chars.push(d > 5 ? '5' : String(d))
+      continue
+    }
+    chars.push(String(d))
+  }
+
+  const hour = chars.slice(0, 2).join('')
+  const minute = chars.slice(2).join('')
+  if (chars.length <= 2) return hour
+  return `${hour}:${minute}`
+}
+
+/** Normalize a complete HH:MM string, or null if invalid. */
+export function normalizeHm(value: string): string | null {
+  const hm = parseHm(value.trim())
+  if (!hm) return null
+  return formatHm(hm.hour, hm.minute)
+}
+
 export async function scheduleTaskNotification(
   task: Task,
   enabled: boolean,

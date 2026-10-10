@@ -177,6 +177,8 @@ const defaultSettings: UserSettings = {
   morningBriefEnabled: true,
   lastMorningBriefDate: null,
   weatherCity: '',
+  weatherLat: null,
+  weatherLon: null,
   eveningClearTime: '21:30',
   eveningClearEnabled: true,
   lastEveningClearDate: null,

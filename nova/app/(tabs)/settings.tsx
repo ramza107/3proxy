@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as WebBrowser from 'expo-web-browser'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -21,7 +22,8 @@ import { APP_LANGUAGES, type AppLanguage } from '../../lib/i18n'
 import { disconnectGoogle, fetchGoogleStatus, googleConnectUrl } from '../../lib/googleApi'
 import {
   ensureNotificationPermissions,
-  parseHm,
+  maskHm,
+  normalizeHm,
 } from '../../lib/notifications'
 import { DOW_LABELS, normalizeTypicalWeek } from '../../lib/scheduleDay'
 import { dateLocale } from '../../lib/dateLocale'
@@ -30,6 +32,7 @@ import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import { useIsPro } from '../../lib/pro'
+import { searchCities, type CityHit } from '../../lib/weather'
 import { ProPaywall } from '../../components/ProPaywall'
 import { defaultTypicalWeek, type Dow, type WeekAnchor } from '../../types'
 
@@ -43,6 +46,16 @@ const BILL_LEAD_PRESETS = [0, 1, 3, 5, 7]
 const BILL_TIME_PRESETS = ['08:00', '09:00', '10:00', '12:00', '18:00']
 const WORK_START_PRESETS = ['08:00', '09:00', '10:00']
 const WORK_END_PRESETS = ['17:00', '18:00', '19:00', '20:00']
+const WEATHER_CITY_PRESETS = [
+  'Kyiv, UA',
+  'Warsaw, PL',
+  'Berlin, DE',
+  'London, GB',
+  'New York, US',
+  'Buenos Aires, AR',
+  'Istanbul, TR',
+  'Tbilisi, GE',
+]
 const ANCHOR_PRESET_KEYS = [
   { titleKey: 'settings.anchorDeepWork' as const, time: '09:30', durationMin: 90 },
   { titleKey: 'settings.anchorSport' as const, time: '19:00', durationMin: 60 },
@@ -76,6 +89,10 @@ export default function SettingsScreen() {
   const [googleConnected, setGoogleConnected] = useState(false)
   const [googleEmail, setGoogleEmail] = useState<string | null>(null)
   const [googleBusy, setGoogleBusy] = useState(false)
+  const [cityQuery, setCityQuery] = useState(settings.weatherCity || '')
+  const [cityHits, setCityHits] = useState<CityHit[]>([])
+  const [citySearching, setCitySearching] = useState(false)
+  const citySearchSeq = useRef(0)
 
   const refreshGoogle = useCallback(async () => {
     if (!userId) return
@@ -90,6 +107,55 @@ export default function SettingsScreen() {
       setGoogleEmail(null)
     }
   }, [userId])
+
+  useEffect(() => {
+    setCityQuery(settings.weatherCity || '')
+  }, [settings.weatherCity])
+
+  useEffect(() => {
+    const q = cityQuery.trim()
+    if (q.length < 2 || q === (settings.weatherCity || '').trim()) {
+      setCityHits([])
+      setCitySearching(false)
+      return
+    }
+    const seq = ++citySearchSeq.current
+    setCitySearching(true)
+    const timer = setTimeout(() => {
+      void searchCities(q, tr.language || 'en')
+        .then((hits) => {
+          if (seq !== citySearchSeq.current) return
+          setCityHits(hits)
+        })
+        .catch(() => {
+          if (seq !== citySearchSeq.current) return
+          setCityHits([])
+        })
+        .finally(() => {
+          if (seq !== citySearchSeq.current) return
+          setCitySearching(false)
+        })
+    }, 320)
+    return () => clearTimeout(timer)
+  }, [cityQuery, settings.weatherCity, tr.language])
+
+  const pickWeatherCity = (label: string, coords?: { lat: number; lon: number } | null) => {
+    setCityQuery(label)
+    setCityHits([])
+    setCitySearching(false)
+    updateSettings({
+      weatherCity: label,
+      weatherLat: coords?.lat ?? null,
+      weatherLon: coords?.lon ?? null,
+    })
+  }
+
+  const clearWeatherCity = () => {
+    setCityQuery('')
+    setCityHits([])
+    setCitySearching(false)
+    updateSettings({ weatherCity: '', weatherLat: null, weatherLon: null })
+  }
 
   useEffect(() => {
     setMorningTime(settings.morningBriefTime || '08:00')
@@ -194,48 +260,58 @@ export default function SettingsScreen() {
   }
 
   const applyMorningTime = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '08:00' }))
+      setMorningTime(settings.morningBriefTime || '08:00')
       return
     }
-    setMorningTime(value)
-    updateSettings({ morningBriefTime: value })
+    setMorningTime(next)
+    updateSettings({ morningBriefTime: next })
   }
 
   const applyEveningTime = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '21:30' }))
+      setEveningTime(settings.eveningClearTime || '21:30')
       return
     }
-    setEveningTime(value)
-    updateSettings({ eveningClearTime: value })
+    setEveningTime(next)
+    updateSettings({ eveningClearTime: next })
   }
 
   const applyBillRemindTime = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
+      setBillRemindTime(settings.billRemindTime || '09:00')
       return
     }
-    setBillRemindTime(value)
-    updateSettings({ billRemindTime: value })
+    setBillRemindTime(next)
+    updateSettings({ billRemindTime: next })
   }
 
   const applyWorkStart = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
+      setWorkStart(settings.workdayStart || '09:00')
       return
     }
-    setWorkStart(value)
-    updateSettings({ workdayStart: value })
+    setWorkStart(next)
+    updateSettings({ workdayStart: next })
   }
 
   const applyWorkEnd = (value: string) => {
-    if (!parseHm(value)) {
+    const next = normalizeHm(value)
+    if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '18:00' }))
+      setWorkEnd(settings.workdayEnd || '18:00')
       return
     }
-    setWorkEnd(value)
-    updateSettings({ workdayEnd: value })
+    setWorkEnd(next)
+    updateSettings({ workdayEnd: next })
   }
 
   const connectWithGoogle = async () => {
@@ -474,12 +550,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={morningTime}
-              onChangeText={setMorningTime}
+              onChangeText={(v) => setMorningTime(maskHm(v))}
               onEndEditing={() => applyMorningTime(morningTime)}
               placeholder="08:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -495,13 +572,67 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.label}>{tr('settings.weatherCity')}</Text>
             <TextInput
-              value={settings.weatherCity || ''}
-              onChangeText={(v) => updateSettings({ weatherCity: v })}
-              placeholder="Kyiv"
+              value={cityQuery}
+              onChangeText={setCityQuery}
+              placeholder={tr('settings.weatherSearchPh')}
               placeholderTextColor={colors.textDim}
               style={styles.input}
               autoCapitalize="words"
+              autoCorrect={false}
             />
+            {citySearching ? (
+              <View style={styles.cityStatus}>
+                <ActivityIndicator size="small" color={colors.accent} />
+                <Text style={styles.rowSub}>{tr('common.loading')}</Text>
+              </View>
+            ) : null}
+            {cityHits.length > 0 ? (
+              <View style={styles.cityList}>
+                <Text style={styles.rowSub}>{tr('settings.weatherPick')}</Text>
+                {cityHits.map((hit) => {
+                  const sub = [hit.admin1, hit.country || hit.countryCode].filter(Boolean).join(', ')
+                  const on = settings.weatherCity === hit.label
+                  return (
+                    <Pressable
+                      key={`${hit.label}-${hit.lat}-${hit.lon}`}
+                      style={[styles.cityRow, on && styles.cityRowOn]}
+                      onPress={() => pickWeatherCity(hit.label, { lat: hit.lat, lon: hit.lon })}
+                    >
+                      <Text style={[styles.cityRowTitle, on && styles.cityRowTitleOn]}>
+                        {hit.name}
+                      </Text>
+                      {sub ? (
+                        <Text style={styles.cityRowSub}>{sub}</Text>
+                      ) : null}
+                    </Pressable>
+                  )
+                })}
+              </View>
+            ) : cityQuery.trim().length >= 2 &&
+              !citySearching &&
+              cityQuery.trim() !== (settings.weatherCity || '').trim() ? (
+              <Text style={styles.rowSub}>{tr('settings.weatherNoResults')}</Text>
+            ) : null}
+            <View style={styles.presets}>
+              {WEATHER_CITY_PRESETS.map((label) => {
+                const on = settings.weatherCity === label
+                const short = label.split(',')[0]
+                return (
+                  <Pressable
+                    key={label}
+                    style={[styles.chip, on && styles.chipOn]}
+                    onPress={() => pickWeatherCity(label)}
+                  >
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{short}</Text>
+                  </Pressable>
+                )
+              })}
+              {settings.weatherCity ? (
+                <Pressable style={styles.chip} onPress={clearWeatherCity}>
+                  <Text style={styles.chipText}>{tr('common.clear')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
             <Text style={styles.rowSub}>{tr('settings.weatherCityHint')}</Text>
             <Pressable
               style={styles.openRitual}
@@ -534,12 +665,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={eveningTime}
-              onChangeText={setEveningTime}
+              onChangeText={(v) => setEveningTime(maskHm(v))}
               onEndEditing={() => applyEveningTime(eveningTime)}
               placeholder="21:30"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -654,12 +786,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={billRemindTime}
-              onChangeText={setBillRemindTime}
+              onChangeText={(v) => setBillRemindTime(maskHm(v))}
               onEndEditing={() => applyBillRemindTime(billRemindTime)}
               placeholder="09:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -683,12 +816,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.start')}</Text>
             <TextInput
               value={workStart}
-              onChangeText={setWorkStart}
+              onChangeText={(v) => setWorkStart(maskHm(v))}
               onEndEditing={() => applyWorkStart(workStart)}
               placeholder="09:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -705,12 +839,13 @@ export default function SettingsScreen() {
             <Text style={styles.label}>{tr('settings.end')}</Text>
             <TextInput
               value={workEnd}
-              onChangeText={setWorkEnd}
+              onChangeText={(v) => setWorkEnd(maskHm(v))}
               onEndEditing={() => applyWorkEnd(workEnd)}
               placeholder="18:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              keyboardType="numbers-and-punctuation"
+              keyboardType="number-pad"
+              maxLength={5}
               autoCapitalize="none"
             />
             <View style={styles.presets}>
@@ -941,6 +1076,24 @@ const styles = StyleSheet.create({
   compareYes: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
   compareNo: { color: colors.textDim },
   presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  cityStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cityList: {
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bgElevated,
+    padding: 8,
+  },
+  cityRow: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: radii.sm,
+  },
+  cityRowOn: { backgroundColor: colors.accentSoft },
+  cityRowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  cityRowTitleOn: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
+  cityRowSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
   chip: {
     backgroundColor: colors.bgSoft,
     borderRadius: radii.full,
