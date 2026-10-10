@@ -29,6 +29,14 @@ export function BillsBrief() {
 
   const { byCur, count } = useMemo(() => dueTotalsByCurrency(bills), [bills])
   const upcoming = useMemo(() => upcomingUnpaidBills(bills, 14).slice(0, 4), [bills])
+  const dueNow = useMemo(
+    () =>
+      upcoming.filter((b) => {
+        const when = formatBillDueLabel(b)
+        return when === 'today' || when === 'overdue'
+      }),
+    [upcoming],
+  )
   const currencies = Object.keys(byCur)
 
   const onMarkPaid = (bill: Bill) => {
@@ -90,7 +98,33 @@ export function BillsBrief() {
         ))}
       </View>
 
-      {upcoming.map((bill) => {
+      {dueNow.length > 0 ? (
+        <View style={styles.dueNow}>
+          <Text style={styles.dueNowLabel}>{t('home.billsPayToday')}</Text>
+          {dueNow.map((bill) => (
+            <View key={`due-${bill.id}`} style={styles.dueNowRow}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.billTitle} numberOfLines={1}>
+                  {bill.title}
+                </Text>
+                <Text style={styles.billMeta} numberOfLines={1}>
+                  {formatMoney(bill.amount, bill.currency)} ·{' '}
+                  {formatBillDueLabel(bill) === 'overdue'
+                    ? t('home.billsOverdue')
+                    : t('common.today')}
+                </Text>
+              </View>
+              <Pressable style={styles.paidBtnLg} onPress={() => onMarkPaid(bill)} hitSlop={6}>
+                <Text style={styles.paidBtnText}>{t('home.billsMarkPaid')}</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {upcoming
+        .filter((bill) => !dueNow.some((d) => d.id === bill.id))
+        .map((bill) => {
         const due = format(effectiveDueDate(bill), 'MMM d', { locale })
         const when = formatBillDueLabel(bill)
         const whenLabel =
@@ -173,7 +207,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
+  paidBtnLg: {
+    backgroundColor: colors.bgDeep,
+    borderRadius: radii.full,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
   paidBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 12 },
+  dueNow: {
+    gap: 8,
+    paddingVertical: 8,
+    marginBottom: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  dueNowLabel: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  dueNowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   btn: {
     alignSelf: 'flex-start',
     backgroundColor: colors.bgDeep,

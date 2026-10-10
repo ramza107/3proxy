@@ -183,9 +183,20 @@ function RootLayout() {
       import('../lib/widgetSync')
         .then((m) => m.refreshWidgetSnapshot())
         .catch(() => undefined)
+      import('../lib/iap')
+        .then((m) => m.syncProEntitlement())
+        .catch(() => undefined)
     })
     return () => sub.remove()
   }, [hydrated, sessionUserId, onboardingComplete])
+
+  // Best-effort Pro entitlement sync after hydrate (native only).
+  useEffect(() => {
+    if (!hydrated || !sessionUserId) return
+    import('../lib/iap')
+      .then((m) => m.syncProEntitlement())
+      .catch(() => undefined)
+  }, [hydrated, sessionUserId])
 
   // Evening Clear / Morning brief / Bills notification → open ritual or bills
   useEffect(() => {

@@ -23,7 +23,7 @@ import { useT } from '../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../services/ai'
 import type { Task } from '../types'
 
-type Step = 'today' | 'tomorrow' | 'done'
+type Step = 'today' | 'tomorrow' | 'reflect' | 'done'
 
 function tomorrowISO() {
   return format(addDays(new Date(), 1), 'yyyy-MM-dd')
@@ -45,6 +45,7 @@ export default function EveningClearScreen() {
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const [step, setStep] = useState<Step>('today')
   const [draft, setDraft] = useState('')
+  const [reflection, setReflection] = useState('')
   const [movedCount, setMovedCount] = useState(0)
   const [doneCount, setDoneCount] = useState(0)
 
@@ -85,8 +86,15 @@ export default function EveningClearScreen() {
     })
   }, [bills, today])
 
+  const goReflect = () => setStep('reflect')
+
   const finish = () => {
-    updateSettings({ lastEveningClearDate: today })
+    const note = reflection.trim()
+    updateSettings({
+      lastEveningClearDate: today,
+      lastEveningReflection: note || null,
+      lastEveningReflectionDate: note ? today : null,
+    })
     void track(AnalyticsEvents.eveningClearFinish)
     setStep('done')
   }
@@ -129,7 +137,8 @@ export default function EveningClearScreen() {
     setStep('tomorrow')
   }
 
-  const stepIndex = step === 'today' ? 0 : step === 'tomorrow' ? 1 : 2
+  const stepIndex =
+    step === 'today' ? 0 : step === 'tomorrow' ? 1 : step === 'reflect' ? 2 : 3
 
   return (
     <Screen>
@@ -139,7 +148,7 @@ export default function EveningClearScreen() {
             <Text style={styles.back}>{t('common.close')}</Text>
           </Pressable>
           <View style={styles.dots}>
-            {[0, 1, 2].map((i) => (
+            {[0, 1, 2, 3].map((i) => (
               <View key={i} style={[styles.dot, i <= stepIndex && styles.dotOn]} />
             ))}
           </View>
@@ -148,7 +157,9 @@ export default function EveningClearScreen() {
               ? t('evening.stepToday')
               : step === 'tomorrow'
                 ? t('evening.stepTomorrow')
-                : t('common.done')}
+                : step === 'reflect'
+                  ? t('evening.stepReflect')
+                  : t('common.done')}
           </Text>
         </View>
 
@@ -299,11 +310,36 @@ export default function EveningClearScreen() {
                 </View>
               ) : null}
 
-              <SoftPressable style={styles.primary} onPress={finish}>
-                <Text style={styles.primaryText}>{t('evening.finish')}</Text>
+              <SoftPressable style={styles.primary} onPress={goReflect}>
+                <Text style={styles.primaryText}>{t('common.continue')}</Text>
               </SoftPressable>
               <Pressable style={styles.link} onPress={() => setStep('today')}>
                 <Text style={styles.linkText}>{t('common.today')}</Text>
+              </Pressable>
+            </Animated.View>
+          ) : null}
+
+          {step === 'reflect' ? (
+            <Animated.View
+              key="reflect"
+              entering={FadeInDown.duration(380).springify().damping(18)}
+              style={styles.block}
+            >
+              <Text style={styles.lead}>{t('evening.reflectPrompt')}</Text>
+              <TextInput
+                value={reflection}
+                onChangeText={setReflection}
+                placeholder={t('evening.reflectPh')}
+                placeholderTextColor={colors.textDim}
+                style={[styles.input, styles.reflectInput]}
+                multiline
+                autoFocus
+              />
+              <SoftPressable style={styles.primary} onPress={finish}>
+                <Text style={styles.primaryText}>{t('evening.finish')}</Text>
+              </SoftPressable>
+              <Pressable style={styles.link} onPress={finish} hitSlop={8}>
+                <Text style={styles.linkText}>{t('evening.reflectSkip')}</Text>
               </Pressable>
             </Animated.View>
           ) : null}
@@ -338,6 +374,13 @@ export default function EveningClearScreen() {
                       ✓ {bill.title} · {formatMoney(bill.amount, bill.currency)}
                     </Text>
                   ))}
+                </View>
+              ) : null}
+
+              {reflection.trim() ? (
+                <View style={styles.digest}>
+                  <Text style={styles.digestTitle}>{t('evening.reflectSaved')}</Text>
+                  <Text style={styles.digestLine}>{reflection.trim()}</Text>
                 </View>
               ) : null}
 
@@ -541,6 +584,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontFamily: fonts.body,
     fontSize: 16,
+  },
+  reflectInput: {
+    flex: undefined,
+    minHeight: 96,
+    textAlignVertical: 'top',
   },
   addBtn: {
     backgroundColor: colors.bgDeep,

@@ -129,6 +129,10 @@ export default function TasksScreen() {
     () => sortTasks(tasks.filter((t) => !t.completed && !t.date)),
     [tasks],
   )
+  const repeating = useMemo(
+    () => sortTasks(tasks.filter((t) => !t.completed && !!t.recurrence)),
+    [tasks],
+  )
   const overdue = useMemo(
     () =>
       sortTasks(
@@ -260,6 +264,24 @@ export default function TasksScreen() {
               {overdue.map((task) => (
                 <TaskCard
                   key={task.id}
+                  task={task}
+                  onToggle={() => toggleTaskCompleted(task)}
+                  onPress={() => setEditing(task)}
+                  onPostpone={() => postpone(task)}
+                  onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
+                />
+              ))}
+            </HomeSection>
+          ) : null}
+
+          {repeating.length > 0 && !focusDay ? (
+            <HomeSection
+              title={t('tasks.repeating')}
+              meta={t.tf('tasks.repeatingMeta', { n: repeating.length })}
+            >
+              {repeating.map((task) => (
+                <TaskCard
+                  key={`rep-${task.id}`}
                   task={task}
                   onToggle={() => toggleTaskCompleted(task)}
                   onPress={() => setEditing(task)}

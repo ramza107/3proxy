@@ -265,7 +265,7 @@ export default function WeekScreen() {
 
   const goReady = (typicalWeek: typeof week) => {
     updateSettings({ typicalWeek: normalizeTypicalWeek(typicalWeek) })
-    router.push('/ready')
+    router.push('/firstValue')
   }
 
   const workDayNames = useMemo(

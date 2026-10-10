@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { InvestmentEditor } from '../../components/InvestmentEditor'
+import { ProPaywall } from '../../components/ProPaywall'
 import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
@@ -40,8 +41,6 @@ export default function InvestScreen() {
   const upsertInvestment = useNovaStore((s) => s.upsertInvestment)
   const removeInvestment = useNovaStore((s) => s.removeInvestment)
   const patchInvestmentQuotes = useNovaStore((s) => s.patchInvestmentQuotes)
-  const updateSettings = useNovaStore((s) => s.updateSettings)
-
   const [quotes, setQuotes] = useState<InvestQuote[]>([])
   const [loading, setLoading] = useState(false)
   const [demoQuotes, setDemoQuotes] = useState(false)
@@ -146,14 +145,7 @@ export default function InvestScreen() {
             <Animated.View style={[styles.lockOrb, heroPulse]} />
             <Text style={styles.lockTitle}>{t('invest.proTitle')}</Text>
             <Text style={styles.lockText}>{t('invest.proText')}</Text>
-            <SoftPressable
-              style={styles.lockBtn}
-              onPress={() => {
-                updateSettings({ isPro: true })
-              }}
-            >
-              <Text style={styles.lockBtnText}>{t('invest.enablePro')}</Text>
-            </SoftPressable>
+            <ProPaywall compact />
             <Pressable onPress={() => router.push('/settings')}>
               <Text style={styles.lockLink}>{t('invest.openSettings')}</Text>
             </Pressable>

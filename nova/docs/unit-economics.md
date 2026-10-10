@@ -7,7 +7,7 @@ Free is designed for **~$0–0.02 COGS / MAU**. All expensive usage is Pro-only.
 | Plan | Price | What you get |
 |------|------:|--------------|
 | **Free** | $0 | Tasks, calendar (readonly), news RSS, morning/evening local rituals, **on-device local chat** |
-| **Pro** | **$6.99 / mo** (target) | Cloud AI chat (400/day), voice (200/day), invest, weekly brief |
+| **Pro** | **$6.99 / mo** (StoreKit SKU `com.wahrly.assistant.pro.monthly`) | Cloud AI chat (400/day), voice (200/day), invest, weekly brief |
 
 Net after store cut ≈ **$5.00 / Pro / month**.
 

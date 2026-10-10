@@ -61,13 +61,14 @@ function buildSnapshot(): WidgetSnapshot {
   if (!nearest) {
     const billTitle = nextBill ? nextBill.split(' · ')[0] : ''
     return {
-      label: 'WAHRLY',
+      // Keep NEXT eyebrow so the widget matches Home’s next-action strip.
+      label: t(lang, 'widget.next'),
       time: '',
       title: billTitle || emptyTitle,
       subtitle: nextBill || emptySub,
       updatedAt: new Date().toISOString(),
-      deepLink: nextBill ? 'wahrly://bills' : 'wahrly://tasks',
-      greeting: 'Wahrly',
+      deepLink: nextBill ? 'wahrly://bills' : 'wahrly://home',
+      greeting: t(lang, 'widget.next'),
       todayCount: 0,
       nextTask: emptyTitle,
       nextBill,

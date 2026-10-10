@@ -192,6 +192,8 @@ const defaultSettings: UserSettings = {
   typicalWeek: defaultTypicalWeek(),
   newsInterests: defaultNewsInterests(),
   isPro: false,
+  lastEveningReflection: null,
+  lastEveningReflectionDate: null,
   voiceUsedDate: null,
   voiceUsedCount: 0,
   chatUsedDate: null,
