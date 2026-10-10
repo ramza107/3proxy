@@ -234,6 +234,8 @@ export default function HomeScreen() {
   }, [nextEvent, t])
 
   const hasUntimedToday = todayTasks.some((task) => !task.time)
+  /** One-focus Home: hide secondary blocks until the day has real work. */
+  const focusEmpty = todayTasks.length === 0 && calendarEvents.length === 0
 
   return (
     <Screen>
@@ -334,33 +336,50 @@ export default function HomeScreen() {
 
           <OpenLoopsBrief userId={userId} />
 
-          <Pressable
-            style={styles.googleToggle}
-            onPress={() => setGoogleOpen((v) => !v)}
-            accessibilityRole="button"
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.googleToggleTitle}>{t('home.googleToggle')}</Text>
-              <Text style={styles.googleToggleSub}>
-                {googleOpen ? t('home.googleHide') : t('home.googleCollapsed')}
-              </Text>
+          {focusEmpty ? (
+            /* Headless fetch so calendarEvents can exit one-focus mode. */
+            <View
+              style={styles.googleHidden}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <CalendarBrief
+                userId={userId}
+                onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
+              />
             </View>
-            <Text style={styles.googleChevron}>{googleOpen ? '▴' : '▾'}</Text>
-          </Pressable>
+          ) : (
+            <>
+              <Pressable
+                style={styles.googleToggle}
+                onPress={() => setGoogleOpen((v) => !v)}
+                accessibilityRole="button"
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.googleToggleTitle}>{t('home.googleToggle')}</Text>
+                  <Text style={styles.googleToggleSub}>
+                    {googleOpen ? t('home.googleHide') : t('home.googleCollapsed')}
+                  </Text>
+                </View>
+                <Text style={styles.googleChevron}>{googleOpen ? '▴' : '▾'}</Text>
+              </Pressable>
 
-          <View
-            style={[styles.googleBlock, !googleOpen && styles.googleHidden]}
-            pointerEvents={googleOpen ? 'auto' : 'none'}
-            accessibilityElementsHidden={!googleOpen}
-            importantForAccessibility={googleOpen ? 'yes' : 'no-hide-descendants'}
-          >
-            <CalendarBrief
-              userId={userId}
-              onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
-            />
-          </View>
+              <View
+                style={[styles.googleBlock, !googleOpen && styles.googleHidden]}
+                pointerEvents={googleOpen ? 'auto' : 'none'}
+                accessibilityElementsHidden={!googleOpen}
+                importantForAccessibility={googleOpen ? 'yes' : 'no-hide-descendants'}
+              >
+                <CalendarBrief
+                  userId={userId}
+                  onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
+                />
+              </View>
 
-          <BillsBrief />
+              <BillsBrief />
+            </>
+          )}
 
           <HomeSection title={t('home.askWahrly')} emphasize>
             <Text style={styles.prompt}>

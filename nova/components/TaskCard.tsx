@@ -80,6 +80,11 @@ export function TaskCard({
                 <Text style={styles.badgeText}>{t('tasks.overdue')}</Text>
               </View>
             ) : null}
+            {rec ? (
+              <View style={styles.recBadge}>
+                <Text style={styles.recBadgeText}>{t('tasks.repeatBadge')}</Text>
+              </View>
+            ) : null}
           </View>
           <Text style={styles.meta}>{metaParts.join(' · ')}</Text>
           {task.description ? (
@@ -168,6 +173,15 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeText: { color: colors.danger, fontFamily: fonts.bodyBold, fontSize: 10 },
+  recBadge: {
+    backgroundColor: colors.accentSoft,
+    borderRadius: radii.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  recBadgeText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 10 },
   meta: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.body },
   desc: { color: colors.textDim, fontSize: 13, fontFamily: fonts.body, lineHeight: 18, marginTop: 2 },
   dot: { width: 8, height: 8, borderRadius: 99, marginTop: 8 },

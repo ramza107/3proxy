@@ -30,6 +30,7 @@ import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import { useIsPro } from '../../lib/pro'
+import { ProPaywall } from '../../components/ProPaywall'
 import { defaultTypicalWeek, type Dow, type WeekAnchor } from '../../types'
 
 WebBrowser.maybeCompleteAuthSession()
@@ -316,12 +317,8 @@ export default function SettingsScreen() {
                 <Text style={styles.rowTitle}>{tr('pro.title')}</Text>
                 <Text style={styles.rowSub}>{tr('pro.sub')}</Text>
               </View>
-              <Switch
-                value={settings.isPro === true}
-                onValueChange={(v) => updateSettings({ isPro: v })}
-                trackColor={{ true: colors.accent, false: colors.bgSoft }}
-              />
             </View>
+            <ProPaywall />
             <View style={styles.compareHead}>
               <Text style={[styles.compareCell, styles.compareFeature]} />
               <Text style={[styles.compareCell, styles.compareCol]}>{tr('pro.compareFree')}</Text>

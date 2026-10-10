@@ -190,10 +190,14 @@ export type UserSettings = {
   /** Interest filters for the News tab (yesterday digest) */
   newsInterests: NewsInterest[]
   /**
-   * Wahrly Pro (demo toggle until StoreKit / RevenueCat).
-   * Unlocks weekly brief, invest, higher voice/chat fair-use.
+   * Wahrly Pro — unlocked via StoreKit / Play (expo-iap).
+   * Unlocks weekly brief, invest, cloud chat, voice.
    */
   isPro: boolean
+  /** Last evening reflection answer (local journal, one line) */
+  lastEveningReflection: string | null
+  /** YYYY-MM-DD when lastEveningReflection was saved */
+  lastEveningReflectionDate: string | null
   /** YYYY-MM-DD — day voice credits were last consumed */
   voiceUsedDate: string | null
   /** Voice transcripts used on voiceUsedDate */
