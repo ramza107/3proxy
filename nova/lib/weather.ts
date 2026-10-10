@@ -221,7 +221,12 @@ export async function searchCities(query: string, language = 'en'): Promise<City
 async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
   const { name, countryCode } = parseCityQuery(city)
   if (!name) return null
-  const results = await fetchGeocodeResults(name, countryCode ? 8 : 1, 'en')
+  const langs = /[\u0400-\u04FF]/.test(name) ? ['ru', 'uk', 'en'] : ['en', 'ru', 'uk', 'de', 'es']
+  let results: GeocodeResult[] = []
+  for (const lang of langs) {
+    results = await fetchGeocodeResults(name, countryCode ? 8 : 1, lang)
+    if (results.length) break
+  }
   if (!results.length) return null
   const hit =
     (countryCode
@@ -302,8 +307,15 @@ async function forecastAt(
 }
 
 /** Fetch today's weather for a city name, or device location as fallback. */
-export async function fetchWeatherBrief(city?: string | null): Promise<WeatherBrief | null> {
+export async function fetchWeatherBrief(
+  city?: string | null,
+  coords?: { lat: number; lon: number } | null,
+): Promise<WeatherBrief | null> {
   try {
+    if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lon)) {
+      const place = city?.trim() || 'Selected city'
+      return await forecastAt(coords.lat, coords.lon, place)
+    }
     const fromCity = city?.trim() ? await geocodeCity(city) : null
     const loc = fromCity || (await coordsFromDevice())
     if (!loc) return null

@@ -422,6 +422,8 @@ export default function HomeScreen() {
           workdayStart={dayWindow.start}
           workdayEnd={dayWindow.end}
           weatherCity={settings.weatherCity}
+          weatherLat={settings.weatherLat}
+          weatherLon={settings.weatherLon}
           planning={planning}
           onPlanDay={openPlanSheet}
           onDismiss={dismissMorningBrief}
@@ -449,6 +451,8 @@ export default function HomeScreen() {
         onClose={() => setPlanOpen(false)}
         tasks={todayTasks}
         weatherCity={settings.weatherCity}
+        weatherLat={settings.weatherLat}
+        weatherLon={settings.weatherLon}
         planning={planning}
         onArrange={onArrangeDay}
         onMoveTomorrow={(task) => {

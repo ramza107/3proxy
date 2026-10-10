@@ -139,18 +139,22 @@ export default function SettingsScreen() {
     return () => clearTimeout(timer)
   }, [cityQuery, settings.weatherCity, tr.language])
 
-  const pickWeatherCity = (label: string) => {
+  const pickWeatherCity = (label: string, coords?: { lat: number; lon: number } | null) => {
     setCityQuery(label)
     setCityHits([])
     setCitySearching(false)
-    updateSettings({ weatherCity: label })
+    updateSettings({
+      weatherCity: label,
+      weatherLat: coords?.lat ?? null,
+      weatherLon: coords?.lon ?? null,
+    })
   }
 
   const clearWeatherCity = () => {
     setCityQuery('')
     setCityHits([])
     setCitySearching(false)
-    updateSettings({ weatherCity: '' })
+    updateSettings({ weatherCity: '', weatherLat: null, weatherLon: null })
   }
 
   useEffect(() => {
@@ -592,7 +596,7 @@ export default function SettingsScreen() {
                     <Pressable
                       key={`${hit.label}-${hit.lat}-${hit.lon}`}
                       style={[styles.cityRow, on && styles.cityRowOn]}
-                      onPress={() => pickWeatherCity(hit.label)}
+                      onPress={() => pickWeatherCity(hit.label, { lat: hit.lat, lon: hit.lon })}
                     >
                       <Text style={[styles.cityRowTitle, on && styles.cityRowTitleOn]}>
                         {hit.name}
