@@ -122,12 +122,44 @@ function parseTime(text: string): string | null {
     return `${String(Number(twentyFour[1])).padStart(2, '0')}:${twentyFour[2]}`
   }
   const hourOnly =
-    text.match(/\bat\s+(\d{1,2})\b/i) || text.match(/(?:^|[^\p{L}])в\s+(\d{1,2})(?=[^\p{L}]|$)/iu)
+    text.match(/\bat\s+(\d{1,2})\b/i) ||
+    text.match(/(?:^|[^\p{L}])в\s+(\d{1,2})(?=[^\p{L}]|$)/iu)
   if (hourOnly) {
     const h = Number(hourOnly[1])
     if (h >= 0 && h <= 23) return `${String(h).padStart(2, '0')}:00`
   }
+  const soft = normalize(text)
+  if (/(?:^|[^\p{L}])утром(?=[^\p{L}]|$)/u.test(soft) || /\bin the morning\b/.test(soft)) {
+    return '09:00'
+  }
+  if (
+    /(?:^|[^\p{L}])(?:днём|днем)(?=[^\p{L}]|$)/u.test(soft) ||
+    /\bin the afternoon\b/.test(soft)
+  ) {
+    return '14:00'
+  }
+  if (/(?:^|[^\p{L}])вечером(?=[^\p{L}]|$)/u.test(soft) || /\bin the evening\b/.test(soft)) {
+    return '18:00'
+  }
   return null
+}
+
+const WEEKDAY_TOKEN =
+  'sunday|monday|tuesday|wednesday|thursday|friday|saturday|воскресенье|понедельник|вторник|среду|среда|четверг|пятницу|пятница|субботу|суббота'
+const WEEKDAY_RU =
+  'понедельник|вторник|среду|среда|четверг|пятницу|пятница|субботу|суббота|воскресенье'
+const WEEKDAY_EN = 'sunday|monday|tuesday|wednesday|thursday|friday|saturday'
+
+function localDow(isoDate: string): number {
+  return new Date(`${isoDate}T12:00:00`).getDay()
+}
+
+/** Next occurrence of weekday on/after today (JS: 0=Sun). `forceNext` skips today. */
+function onOrNextWeekday(today: string, target: number, forceNext = false): string {
+  const cur = localDow(today)
+  let delta = (target - cur + 7) % 7
+  if (forceNext && delta === 0) delta = 7
+  return addDays(today, delta)
 }
 
 function parseDate(text: string, today: string): string | null {
@@ -146,7 +178,39 @@ function parseDate(text: string, today: string): string | null {
     lower.match(/\bin\s+(\d+)\s+days?\b/) ||
     lower.match(/(?:^|[^\p{L}])через\s+(\d+)\s+(день|дня|дней)(?=[^\p{L}]|$)/u)
   if (inDays) return addDays(today, Number(inDays[1]))
+
+  // "каждый четверг" is recurrence — date comes from firstOccurrenceDate
+  if (/(?:^|[^\p{L}])кажд(?:ый|ую|ое)\s+/u.test(lower) || /\bevery\s+/.test(lower)) {
+    return null
+  }
+
+  const nextEn = lower.match(new RegExp(`\\bnext\\s+(${WEEKDAY_EN})\\b`))
+  if (nextEn) return onOrNextWeekday(today, WEEKDAY_MAP[nextEn[1]], true)
+
+  const onEn = lower.match(new RegExp(`\\b(?:on|this)\\s+(${WEEKDAY_EN})\\b`))
+  if (onEn) return onOrNextWeekday(today, WEEKDAY_MAP[onEn[1]])
+
+  const ruDay = lower.match(
+    new RegExp(`(?:^|[^\\p{L}])(?:в|во|на)\\s+(${WEEKDAY_RU})(?=[^\\p{L}]|$)`, 'u'),
+  )
+  if (ruDay) return onOrNextWeekday(today, WEEKDAY_MAP[ruDay[1]])
+
+  const bare = lower.match(new RegExp(`(?:^|[^\\p{L}])(${WEEKDAY_TOKEN})(?=[^\\p{L}]|$)`, 'u'))
+  if (bare) return onOrNextWeekday(today, WEEKDAY_MAP[bare[1]])
+
   return null
+}
+
+function stripWeekdayWords(title: string): string {
+  return title
+    .replace(new RegExp(`\\b(?:on|this|next)\\s+(${WEEKDAY_EN})\\b`, 'gi'), ' ')
+    .replace(
+      new RegExp(`(?:^|[^\\p{L}])(?:в|во|на)\\s+(${WEEKDAY_RU})(?=[^\\p{L}]|$)`, 'giu'),
+      ' ',
+    )
+    .replace(new RegExp(`(?:^|[^\\p{L}])(${WEEKDAY_TOKEN})(?=[^\\p{L}]|$)`, 'giu'), ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function isSmallTalk(text: string) {
@@ -180,6 +244,8 @@ function hasTaskIntent(text: string) {
     /(надо|нужно|должен|должна|купи|купить|позвони|убер|постира|забер|забр|приготов|напомни|завтра|сегодня|задач|через\s+\d+|кажд|ежеднев)/i.test(
       lower,
     ) ||
+    new RegExp(`(?:^|[^\\p{L}])(?:в|во|на)\\s+(${WEEKDAY_RU})(?=[^\\p{L}]|$)`, 'u').test(lower) ||
+    new RegExp(`\\b(?:on|this|next)\\s+(${WEEKDAY_EN})\\b`).test(lower) ||
     /\bevery\b|\bdaily\b/.test(lower)
   )
 }
@@ -217,9 +283,10 @@ function splitTasks(text: string): string[] {
         .replace(/\s+/g, ' ')
         .trim(),
     )
+    .map((p) => stripWeekdayWords(stripRecurrenceWords(p)))
     .filter((p) => p.length > 1)
 
-  return parts.length ? parts : [cleaned]
+  return parts.length ? parts : [stripWeekdayWords(stripRecurrenceWords(cleaned))]
 }
 
 function isRu(text: string) {
@@ -512,8 +579,10 @@ export function localAI(
       : date
     const actions = titles.map((title, index) => ({
       type: 'create_task' as const,
-      title: stripRecurrenceWords(
-        title.replace(/^to\s+/i, '').replace(/^(надо|нужно)\s+/i, ''),
+      title: stripWeekdayWords(
+        stripRecurrenceWords(
+          title.replace(/^to\s+/i, '').replace(/^(надо|нужно)\s+/i, ''),
+        ),
       ),
       date: resolvedDate,
       time: index === 0 ? time : null,
