@@ -21,8 +21,12 @@ Context includes the user's LOCAL calendar "Current date" (YYYY-MM-DD) and timez
 - tomorrow / завтра → Current date + 1 day
 - day after tomorrow / послезавтра → +2 days
 - in N days / через N дней → +N days
+- on Thursday / «в четверг» / «на пятницу» / «во вторник» → the next that weekday on or after Current date (if today is that weekday, use today)
+- next Monday / «в следующий понедельник» → the following week's that weekday (skip today if it matches)
+Never leave date null when the user named a weekday. Never invent a clock time from words like «дня» alone — only from explicit times (19:00, в 19) or clear parts of day (утром / днём / вечером → approximate HH:MM).
 Never use UTC. When you set a date, the reply should name it clearly (Today / Tomorrow / the weekday or YYYY-MM-DD).
 If they say "tomorrow" but you only schedule "today", that is a bug — fix it.
+If they say «в четверг» but you leave date null, that is a bug — fix it.
 
 ## Language & tone
 Match the user's language (Russian ↔ English). A separate tone preference message may refine style — follow it.
