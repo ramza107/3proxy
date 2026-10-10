@@ -2,6 +2,7 @@ import { Alert } from 'react-native'
 import { chatWithNova } from '../lib/api'
 import {
   canUseCloudChat,
+  canUsePlanDay,
   chatDailyLimit,
   consumeChatCredit,
   isPro,
@@ -380,6 +381,13 @@ export async function organizeMyDay(opts?: {
   const store = useNovaStore.getState()
   const userId = store.sessionUserId
   if (!userId) throw new Error('Not signed in')
+  if (!canUsePlanDay()) {
+    const reply =
+      store.settings.language === 'ru'
+        ? 'План дня — Wahrly Pro. Оформи подписку в Настройках.'
+        : 'Plan day is Wahrly Pro — subscribe in Settings.'
+    return { reply, actions: [], calendarCandidates: [] }
+  }
 
   const day = todayISO()
   let calendarBusy: { start: number; end: number; title: string }[] = []
@@ -445,7 +453,7 @@ export async function sendNovaMessage(message: string): Promise<AIChatResponse> 
 
   let response: AIChatResponse | OrganizeMyDayResult
 
-  // Smart day packer — local, free for everyone
+  // Smart day packer — Pro only (hard Free/Pro split)
   if (isOrganizeDayIntent(message)) {
     const planned = await organizeMyDay()
     store.addMessage({ role: 'assistant', content: planned.reply })

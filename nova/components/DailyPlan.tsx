@@ -294,7 +294,7 @@ export function DailyPlan({
         )}
 
         {suggestion ? <Text style={styles.hint}>{suggestion}</Text> : null}
-        {!suggestion && hasUntimed ? (
+        {!suggestion && hasUntimed && onPlanDay ? (
           <Text style={styles.hint}>{t('home.planHint')}</Text>
         ) : null}
       </HomeSection>

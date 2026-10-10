@@ -328,6 +328,12 @@ export default function SettingsScreen() {
               [
                 { key: 'pro.rowTasks' as const, free: true, pro: true },
                 { key: 'pro.rowLocalAi' as const, free: true, pro: true },
+                { key: 'pro.rowCalendarNews' as const, free: true, pro: true },
+                { key: 'pro.rowPlanDay' as const, free: false, pro: true },
+                { key: 'pro.rowMorning' as const, free: false, pro: true },
+                { key: 'pro.rowReminders' as const, free: false, pro: true },
+                { key: 'pro.rowEveningDigest' as const, free: false, pro: true },
+                { key: 'pro.rowWidget' as const, free: false, pro: true },
                 { key: 'pro.rowCloudAi' as const, free: false, pro: true },
                 { key: 'pro.rowVoice' as const, free: false, pro: true },
                 { key: 'pro.rowInvest' as const, free: false, pro: true },
@@ -449,11 +455,19 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.morningBrief')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.morningBriefSub')}</Text>
+                <Text style={styles.rowSub}>
+                  {isPro ? tr('settings.morningBriefSub') : tr('pro.featureLocked')}
+                </Text>
               </View>
               <Switch
-                value={settings.morningBriefEnabled}
-                onValueChange={(v) => updateSettings({ morningBriefEnabled: v })}
+                value={isPro && settings.morningBriefEnabled}
+                onValueChange={(v) => {
+                  if (!isPro) {
+                    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                    return
+                  }
+                  updateSettings({ morningBriefEnabled: v })
+                }}
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
@@ -492,6 +506,10 @@ export default function SettingsScreen() {
             <Pressable
               style={styles.openRitual}
               onPress={() => {
+                if (!isPro) {
+                  Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                  return
+                }
                 updateSettings({ lastMorningBriefDate: null })
                 setForceMorningBrief(true)
                 router.push('/home')
@@ -576,11 +594,19 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.billReminders')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.billRemindersSub')}</Text>
+                <Text style={styles.rowSub}>
+                  {isPro ? tr('settings.billRemindersSub') : tr('pro.featureLocked')}
+                </Text>
               </View>
               <Switch
-                value={settings.billRemindersEnabled !== false}
-                onValueChange={(v) => updateSettings({ billRemindersEnabled: v })}
+                value={isPro && settings.billRemindersEnabled !== false}
+                onValueChange={(v) => {
+                  if (!isPro) {
+                    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                    return
+                  }
+                  updateSettings({ billRemindersEnabled: v })
+                }}
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>

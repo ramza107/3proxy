@@ -1,15 +1,28 @@
 # Wahrly unit economics
 
-Free is designed for **~$0–0.02 COGS / MAU**. All expensive usage is Pro-only.
+Free is designed for **~$0–0.02 COGS / MAU**. Autopilot + expensive AI are Pro-only.
 
-## Plans
+## Hard Free / Pro split
 
-| Plan | Price | What you get |
-|------|------:|--------------|
-| **Free** | $0 | Tasks, calendar (readonly), news RSS, morning/evening local rituals, **on-device local chat** |
-| **Pro** | **$6.99 / mo** (StoreKit SKU `com.wahrly.assistant.pro.monthly`) | Cloud AI chat (400/day), voice (200/day), invest, weekly brief |
+| | **Free** | **Pro ($6.99/mo)** |
+|--|:--------:|:------------------:|
+| Tasks + local AI (add / move / done) | ✅ | ✅ |
+| Calendar (readonly) + News | ✅ | ✅ |
+| Manual open loops + bills tracker | ✅ | ✅ |
+| Simple evening close (done / tomorrow) | ✅ | ✅ |
+| **Plan day** auto slots | ❌ | ✅ |
+| Smart morning brief | ❌ | ✅ |
+| Bill + loop push reminders | ❌ | ✅ |
+| Evening digest + reflect | ❌ | ✅ |
+| Home Screen widget (Next) | ❌ | ✅ |
+| Cloud AI chat (400/day) | ❌ | ✅ |
+| Voice (200/day) | ❌ | ✅ |
+| Invest quotes | ❌ | ✅ |
+| Weekly brief | ❌ | ✅ |
 
-Net after store cut ≈ **$5.00 / Pro / month**.
+**Formula:** Free = you run the day. Pro = Wahrly runs it with you.
+
+SKU: `com.wahrly.assistant.pro.monthly`. Net after store cut ≈ **$5.00 / Pro / month**.
 
 ## Free cost model (~1–2¢)
 
@@ -17,12 +30,12 @@ Net after store cut ≈ **$5.00 / Pro / month**.
 |------|:-----:|-----------|
 | Cloud LLM chat | ❌ | Local AI only on device |
 | Whisper voice | ❌ | Pro only |
+| Plan day / morning / reminders | ❌ | Pro only (local CPU ok, but product gate) |
 | News RSS | ✅ | Shared cache, no AI |
 | Calendar list (readonly) | ✅ | Google quota, ~$0 |
 | Supabase row | ✅ | Tiny per idle user |
-| Hosting share | ✅ | Free barely hits AI server |
 
-**Target Free COGS: $0.01–0.02 / MAU / month** (DB + crumbs of hosting).
+**Target Free COGS: $0.01–0.02 / MAU / month**.
 
 ## Pro COGS (order of magnitude)
 
@@ -35,28 +48,4 @@ Net after store cut ≈ **$5.00 / Pro / month**.
 
 Contribution ≈ **$3.90–4.70 / Pro / month**.
 
-## Daily-use at 100k registered
-
-Assume **80k daily Free** + **4% Pro of MAU**. If MAU≈80k → Pro ≈ **3.2k**.
-
-| | |
-|--|--:|
-| Free COGS @ $0.02 | **$1.6k** |
-| Pro COGS @ $0.70 | **$2.2k** |
-| **Total COGS** | **~$3.8k** |
-| Pro revenue @ $5 net | **~$16k** |
-| **Gross margin** | **~$12k / month** |
-
-Even at heavy daily use, Free no longer sinks the business.
-
-## Code guards
-
-- Client: Free → `clientLocalAI` only; no mic Whisper
-- Server: `/api/ai/chat` requires `is_pro`; `/api/ai/transcribe` 402 without Pro
-- Calendar readonly works on Free (Google quota only)
-
-## Rule of thumb
-
-> **Free should be almost free to run. Pro pays for AI.**
-
-1 Pro @ $5 net covers **~250 Free MAU** at $0.02 — or the whole Free base is noise next to Pro COGS.
+> **Free should be almost free to run. Pro pays for AI and autopilot.**

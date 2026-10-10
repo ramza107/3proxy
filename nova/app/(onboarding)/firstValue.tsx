@@ -138,9 +138,9 @@ export default function FirstValueScreen() {
           <>
             <Text style={styles.kicker}>{t('onboarding.valueKicker')}</Text>
             <Text style={styles.title}>{t('onboarding.valuePlanTitle')}</Text>
-            <Text style={styles.body}>{t('onboarding.valuePlanSub')}</Text>
+            <Text style={styles.body}>{t('onboarding.valueHomeSub')}</Text>
             <Pressable style={styles.btn} onPress={() => finish(true)}>
-              <Text style={styles.btnText}>{t('onboarding.valuePlanCta')}</Text>
+              <Text style={styles.btnText}>{t('onboarding.valueHomeCta')}</Text>
             </Pressable>
             <Pressable onPress={() => finish(false)} hitSlop={8}>
               <Text style={styles.skip}>{t('onboarding.valuePlanSkip')}</Text>
