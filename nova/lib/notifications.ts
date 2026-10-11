@@ -16,6 +16,24 @@ const LIFE_PREFIX = 'wahrly-life-'
 function langOf(settings: UserSettings) {
   return settings.language || 'en'
 }
+
+function billsNotifBody(lang: string, title: string, daysLeft: number) {
+  if (daysLeft <= 0) return tf(lang, 'notif.billsBodyToday', { title })
+  if (daysLeft === 1) return tf(lang, 'notif.billsBodyTomorrow', { title })
+  return tf(lang, 'notif.billsBodyIn', { title, n: daysLeft })
+}
+
+function datesNotifBody(lang: string, title: string, daysLeft: number) {
+  if (daysLeft <= 0) return tf(lang, 'notif.datesBodyToday', { title })
+  if (daysLeft === 1) return tf(lang, 'notif.datesBodyTomorrow', { title })
+  return tf(lang, 'notif.datesBodyIn', { title, n: daysLeft })
+}
+
+function lifeNotifBody(lang: string, title: string, daysLeft: number) {
+  if (daysLeft <= 0) return tf(lang, 'notif.lifeBodyToday', { title })
+  if (daysLeft === 1) return tf(lang, 'notif.lifeBodyTomorrow', { title })
+  return tf(lang, 'notif.lifeBodyIn', { title, n: daysLeft })
+}
 async function getNotifications() {
   if (Platform.OS === 'web') return null
   if (!Notifications) {
@@ -361,19 +379,13 @@ export async function syncBillReminders(
       const dayIso = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}`
       const id = `${BILL_PREFIX}${bill.id}-${dayIso}`
       const daysLeft = Math.round((dueStart.getTime() - startOfLocalDay(when).getTime()) / 86400000)
-      const whenLabel =
-        daysLeft <= 0
-          ? t(lang, 'notif.billsDueToday')
-          : daysLeft === 1
-            ? t(lang, 'notif.billsDueTomorrow')
-            : tf(lang, 'notif.billsDueIn', { n: daysLeft })
 
       try {
         await NotificationsMod.scheduleNotificationAsync({
           content: {
             title: t(lang, 'notif.billsTitle'),
-            body: `${bill.title} ${whenLabel}`,
-        data: { kind: 'bill', billId: bill.id, ritualId: id, route: '/bills' },
+            body: billsNotifBody(lang, bill.title, daysLeft),
+            data: { kind: 'bill', billId: bill.id, ritualId: id, route: '/bills' },
           },
           trigger: {
             type: NotificationsMod.SchedulableTriggerInputTypes.DATE,
@@ -553,12 +565,6 @@ export async function syncImportantDateReminders(
       const daysLeft = Math.round(
         (dueStart.getTime() - startOfLocalDay(when).getTime()) / 86400000,
       )
-      const whenLabel =
-        daysLeft <= 0
-          ? t(lang, 'notif.datesToday')
-          : daysLeft === 1
-            ? t(lang, 'notif.datesTomorrow')
-            : tf(lang, 'notif.datesIn', { n: daysLeft })
       const who = date.person?.trim()
       const label = who ? `${date.title} · ${who}` : date.title
 
@@ -566,7 +572,7 @@ export async function syncImportantDateReminders(
         await NotificationsMod.scheduleNotificationAsync({
           content: {
             title: t(lang, 'notif.datesTitle'),
-            body: `${label} — ${whenLabel}`,
+            body: datesNotifBody(lang, label, daysLeft),
             data: {
               kind: 'important_date',
               dateId: date.id,
@@ -652,18 +658,12 @@ export async function syncLifeAdminReminders(
       const daysLeft = Math.round(
         (dueStart.getTime() - startOfLocalDay(when).getTime()) / 86400000,
       )
-      const whenLabel =
-        daysLeft <= 0
-          ? t(lang, 'notif.lifeExpiresToday')
-          : daysLeft === 1
-            ? t(lang, 'notif.lifeExpiresTomorrow')
-            : tf(lang, 'notif.lifeExpiresIn', { n: daysLeft })
 
       try {
         await NotificationsMod.scheduleNotificationAsync({
           content: {
             title: t(lang, 'notif.lifeTitle'),
-            body: `${item.title} — ${whenLabel}`,
+            body: lifeNotifBody(lang, item.title, daysLeft),
             data: {
               kind: 'life_admin',
               lifeId: item.id,
