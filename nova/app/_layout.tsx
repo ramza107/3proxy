@@ -1,14 +1,10 @@
-import {
-  SourceSerif4_600SemiBold,
-  SourceSerif4_600SemiBold_Italic,
-  useFonts as useSourceSerif,
-} from '@expo-google-fonts/source-serif-4'
-import {
-  SourceSans3_400Regular,
-  SourceSans3_500Medium,
-  SourceSans3_700Bold,
-  useFonts as useSourceSans,
-} from '@expo-google-fonts/source-sans-3'
+import { SourceSerif4_600SemiBold } from '@expo-google-fonts/source-serif-4/600SemiBold'
+import { SourceSerif4_600SemiBold_Italic } from '@expo-google-fonts/source-serif-4/600SemiBold_Italic'
+import { useFonts as useSourceSerif } from '@expo-google-fonts/source-serif-4/useFonts'
+import { SourceSans3_400Regular } from '@expo-google-fonts/source-sans-3/400Regular'
+import { SourceSans3_500Medium } from '@expo-google-fonts/source-sans-3/500Medium'
+import { SourceSans3_700Bold } from '@expo-google-fonts/source-sans-3/700Bold'
+import { useFonts as useSourceSans } from '@expo-google-fonts/source-sans-3/useFonts'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
