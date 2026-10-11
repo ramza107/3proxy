@@ -1,10 +1,9 @@
-name: Deploy Благовіст + NOVA to GitHub Pages
+name: Deploy Wahrly (NOVA) to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths:
-      - 'church-app/**'
       - 'nova/**'
       - '.github/workflows/deploy-github-pages.yml'
   workflow_dispatch:
@@ -27,20 +26,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            church-app/package-lock.json
-            nova/package-lock.json
+          cache-dependency-path: nova/package-lock.json
 
-      - name: Build church-app (Благовіст)
-        working-directory: church-app
-        env:
-          GITHUB_PAGES: 'true'
-          VITE_BASE: /3proxy/
-        run: |
-          npm ci
-          npm run build
-
-      - name: Build NOVA web demo
+      - name: Build Wahrly web
         working-directory: nova
         env:
           EXPO_PUBLIC_API_URL: https://threeproxy-x9bi.onrender.com
@@ -54,10 +42,16 @@ jobs:
 
       - name: Assemble site
         run: |
-          mkdir -p site
-          cp -R church-app/dist/. site/
           mkdir -p site/nova
           cp -R nova/dist/. site/nova/
+          # Keep /3proxy/nova URL stable; root redirects to Wahrly.
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8" />
+          <meta http-equiv="refresh" content="0; url=nova/" />
+          <title>Wahrly</title>
+          <p><a href="nova/">Open Wahrly</a></p>
+          HTML
 
       - uses: actions/upload-pages-artifact@v3
         with:
