@@ -68,12 +68,24 @@ Friends install **TestFlight** from the App Store, open the invite, then Install
 
 ### D. Later updates
 
+Version comes from **local** `app.json` / `app.config.js` (`eas.json` → `appVersionSource: "local"`):
+
+- `expo.version` — what users see (e.g. `1.1.0`)
+- `ios.buildNumber` — must increase every upload (e.g. `40` → `41`)
+
 ```bash
 git pull
+# optional: bump buildNumber in app.json + app.config.js if needed
 npm run build:ios:testflight
 ```
 
-Friends get an **Update** button in TestFlight.
+After the build finishes in [App Store Connect → TestFlight](https://appstoreconnect.apple.com):
+
+1. Open the new build under **Version 1.1.0**
+2. Add groups (**TE** / **OP**) — without this, phones will not see Update
+3. Wait until status is **Testing** (not only “Ready to Submit”)
+
+Friends get an **Update** button in TestFlight. Pull down to refresh the TestFlight app if it still shows the old build.
 
 ## Preview / internal (your device only)
 
