@@ -25,6 +25,9 @@ export default function TabsLayout() {
     <View style={{ flex: 1 }}>
       <Tabs
         initialRouteName="tasks"
+        // fade/shift + detachInactiveScreens can leave a tab blank on iOS
+        // (native activityState stuck at 0). Keep screens mounted.
+        detachInactiveScreens={false}
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
@@ -49,7 +52,6 @@ export default function TabsLayout() {
             fontWeight: '600',
             marginTop: 2,
           },
-          animation: 'fade',
         }}
       >
         <Tabs.Screen
