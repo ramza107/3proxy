@@ -67,10 +67,10 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="invest"
+          name="bills"
           options={{
-            title: t(language, 'tabs.invest'),
-            tabBarIcon: tabIcon('invest'),
+            title: t(language, 'tabs.bills'),
+            tabBarIcon: tabIcon('bills'),
           }}
         />
         <Tabs.Screen
@@ -87,6 +87,14 @@ export default function TabsLayout() {
             tabBarIcon: tabIcon('settings'),
           }}
         />
+        {/* Invest is Pro — keep off the primary bar so Free never opens into a paywall tab. */}
+        <Tabs.Screen
+          name="invest"
+          options={{
+            title: t(language, 'tabs.invest'),
+            href: null,
+          }}
+        />
         <Tabs.Screen
           name="life"
           options={{
@@ -98,13 +106,6 @@ export default function TabsLayout() {
           name="news"
           options={{
             title: t(language, 'tabs.news'),
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="bills"
-          options={{
-            title: t(language, 'tabs.bills'),
             href: null,
           }}
         />

@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (build 36 / 1.1.0)
+# Wahrly — TestFlight (build 41 / 1.1.0)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -8,38 +8,40 @@
 
 **RU**
 
-Wahrly — ассистент дня: задачи, Plan day, Google Calendar (только чтение), счета, даты, новости и AI. Pro — облачный чат, голос и Invest (введи «gold» — подтянется цена). Почту не читаем.
+Wahrly — ассистент дня: задачи, счета, Google Calendar (только чтение), даты, новости и локальный AI. Free закрывает день сам (Home + Evening Clear). Pro — Plan day, утренний brief, напоминания, виджет, облачный чат, голос и Invest. Почту не читаем.
 
 **EN**
 
-Wahrly is a daily life assistant: tasks, Plan day, Google Calendar (readonly), bills, dates, news, and AI. Pro unlocks cloud chat, voice, and Invest (type “gold” for live price). No email access.
+Wahrly is a daily life assistant: tasks, bills, Google Calendar (readonly), dates, news, and on-device AI. Free closes the day yourself (Home + Evening Clear). Pro unlocks Plan day, morning brief, reminders, widget, cloud chat, voice, and Invest. No email access.
 
 ---
 
 ## What to Test (RU) — вставить в TestFlight
 
 ```
-Wahrly 1.1.0 (build 36) — MVP life assistant
+Wahrly 1.1.0 (build 41) — MVP life assistant
 
 ЧТО ПРОВЕРИТЬ
-1) Onboarding / имя / язык (RU или EN).
+1) Onboarding / имя / язык (RU или EN) — финал ведёт на Home, не на Plan day.
 2) Tasks: создай задачу на сегодня, перенеси на завтра, отметь done.
-3) Home → Plan day: разложи задачи по слотам.
+3) Free Home: next-задача, таймлайн, Evening Clear. Кнопка Plan day — только Pro.
 4) Open loops: добавь «я должен» и «жду».
 5) Settings → Connect with Google: только Calendar (readonly). Почта НЕ читается.
    Если раньше подключал Gmail: Disconnect → Connect заново.
-6) Bills: добавь счёт, отметь paid.
-7) Dates / Life: важная дата и документ с сроком.
-8) News: интересы и лента «вчера».
-9) Free vs Pro (Settings → тумблер Pro, демо):
-   Free: задачи, календарь, ритуалы, локальный чат.
-   Pro: облачный AI, голос, Invest, weekly brief.
-10) Invest (Pro): добавь holding — набери «gold» или «bitcoin», выбери из списка, проверь live-цену.
-11) Пуши: morning / evening / bills (разрешить уведомления).
-12) Виджет «Next task» (опционально).
+6) Вкладки: Tasks · Home · Bills · Dates · Settings (Invest не в таб-баре).
+7) Bills: добавь счёт, отметь paid.
+8) Dates / Life: важная дата и документ с сроком.
+9) News: интересы и лента «вчера» (через Quick actions / Life).
+10) Free vs Pro (Settings → Pro / IAP или demo unlock):
+    Free: задачи, календарь, Bills, локальный чат, Evening Clear (простой).
+    Pro: Plan day, morning brief, reminders, виджет, cloud AI, голос, Invest, weekly brief.
+11) Invest (Pro): Quick actions → Invest — набери «gold» или «bitcoin», live-цена.
+12) Пуши: evening Free; morning / bills reminders — Pro. Разрешить уведомления.
+13) Виджет «Next task» — Pro.
 
 НЕ БАГ
 • Почта / Gmail отсутствуют намеренно (без CASA).
+• Plan day / Invest / виджет закрыты на Free — это hard split, не баг.
 • Иконка в старых пушах может быть старой до перезагрузки iPhone — на Home должна быть бирюзовая W.
 
 ОТЧЁТ
@@ -51,24 +53,26 @@ Wahrly 1.1.0 (build 36) — MVP life assistant
 ## What to Test (EN)
 
 ```
-Wahrly 1.1.0 (build 36) — MVP life assistant
+Wahrly 1.1.0 (build 41) — MVP life assistant
 
 PLEASE TRY
-1) Onboarding / name / language.
+1) Onboarding / name / language — ends on Home (not Plan day).
 2) Tasks: create, reschedule, complete.
-3) Home → Plan day.
+3) Free Home: next task, timeline, Evening Clear. Plan day CTA is Pro-only.
 4) Open loops: “I owe” + “Waiting”.
 5) Settings → Connect with Google — Calendar readonly only (no mail).
    If you connected Gmail before: Disconnect → Connect again.
-6) Bills / Dates / Life / News.
-7) Free vs Pro (Settings demo toggle):
-   Free = tasks, calendar, rituals, on-device chat.
-   Pro = cloud AI, voice, Invest, weekly brief.
-8) Invest (Pro): type “gold” or “bitcoin”, pick suggestion, confirm live price.
-9) Notifications + optional Home Screen widget.
+6) Tabs: Tasks · Home · Bills · Dates · Settings (Invest is off the tab bar).
+7) Bills / Dates / Life / News.
+8) Free vs Pro (Settings → Pro / IAP or demo unlock):
+   Free = tasks, calendar, bills, on-device chat, simple Evening Clear.
+   Pro = Plan day, morning brief, reminders, widget, cloud AI, voice, Invest, weekly brief.
+9) Invest (Pro): Quick actions → Invest — type “gold” or “bitcoin”, confirm live price.
+10) Notifications (evening Free; morning/bill reminders Pro) + optional Home Screen widget (Pro).
 
 NOT A BUG
 • No email/Gmail by design.
+• Plan day / Invest / widget locked on Free — intentional hard split.
 • Stale notification icons: reboot iPhone; Home icon should be teal W.
 
 Feedback: device + iOS + what broke (screenshot helps).
@@ -78,16 +82,26 @@ Feedback: device + iOS + what broke (screenshot helps).
 
 ## Free vs Pro
 
-| | Free | Pro (демо-тумблер в Settings) |
+Aligned with `lib/pro.ts` (hard split).
+
+| | Free | Pro |
 |--|:----:|:----:|
-| Tasks / Bills / Life / Dates / News | ✅ | ✅ |
+| Tasks / Bills / Dates / News / Life | ✅ | ✅ |
 | Calendar readonly | ✅ | ✅ |
-| Open loops, Plan day, morning/evening | ✅ | ✅ |
+| Open loops (manual) | ✅ | ✅ |
 | Local AI chat | ✅ | ✅ |
-| Cloud AI chat | ❌ | ✅ (~400/день) |
-| Voice | ❌ | ✅ (~200/день) |
+| Evening Clear (simple done / tomorrow) | ✅ | ✅ |
+| Plan day (auto slots) | ❌ | ✅ |
+| Smart morning brief | ❌ | ✅ |
+| Bill & loop reminders | ❌ | ✅ |
+| Evening digest + reflect | ❌ | ✅ |
+| Home Screen widget | ❌ | ✅ |
+| Cloud AI chat | ❌ | ✅ (~400/day) |
+| Voice | ❌ | ✅ (~200/day) |
 | Invest + live quotes | ❌ | ✅ |
 | Weekly brief | ❌ | ✅ |
+
+Primary tabs for everyone: **Tasks · Home · Bills · Dates · Settings**. Invest is Pro-only via Quick actions.
 
 ---
 
@@ -122,7 +136,7 @@ Feedback: device + iOS + what broke (screenshot helps).
 
 ## Куда вставить в App Store Connect
 
-1. **Users and Access / TestFlight** → приложение Wahrly → build **36**  
+1. **Users and Access / TestFlight** → приложение Wahrly → build **41**  
 2. **Test Details** → *What to Test* → вставь блок RU или EN выше  
 3. *Beta App Description* → короткий абзац  
 4. Скрины из `testflight-screens/` можно приложить в письмо тестерам или во внутренний Notion/Telegram
