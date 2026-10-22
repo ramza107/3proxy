@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Screen } from '../../components/Screen'
-import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
@@ -15,11 +15,10 @@ export default function ReadyScreen() {
   return (
     <Screen>
       <View style={styles.screen}>
+        <Text style={styles.brand}>{brand.name}</Text>
         <Text style={styles.title}>{t.tf('onboarding.readyTitle', { name })}</Text>
         <Text style={styles.body}>{t('onboarding.trySaying')}</Text>
-        <View style={styles.example}>
-          <Text style={styles.exampleText}>&quot;{t('onboarding.example')}&quot;</Text>
-        </View>
+        <Text style={styles.exampleText}>&quot;{t('onboarding.example')}&quot;</Text>
         <Pressable
           accessibilityRole="button"
           style={styles.btn}
@@ -43,6 +42,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.md,
   },
+  brand: {
+    color: colors.accentStrong,
+    fontSize: 15,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
   title: {
     color: colors.text,
     fontSize: 34,
@@ -51,19 +57,13 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   body: { color: colors.textMuted, fontSize: 16, fontFamily: fonts.body },
-  example: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radii.md,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-  },
   exampleText: {
     color: colors.accentStrong,
-    fontSize: 17,
-    lineHeight: 26,
+    fontSize: 18,
+    lineHeight: 28,
     fontFamily: fonts.brandItalic,
+    marginBottom: spacing.sm,
+    maxWidth: 340,
   },
   btn: {
     backgroundColor: colors.accent,
@@ -71,8 +71,6 @@ const styles = StyleSheet.create({
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    // @ts-expect-error web-only
-    cursor: 'pointer',
   },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 17 },
 })

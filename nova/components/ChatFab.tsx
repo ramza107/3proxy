@@ -80,11 +80,12 @@ const styles = StyleSheet.create({
     borderRadius: FAB_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accentStrong,
+    // Same ink as Home/Bills “+” — one FAB language with the W mark.
+    backgroundColor: colors.bgDeep,
     shadowColor: '#0F2A32',
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
 })

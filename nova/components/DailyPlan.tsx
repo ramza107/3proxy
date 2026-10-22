@@ -114,14 +114,8 @@ export function DailyPlan({
         title={t('home.today')}
         emphasize
         meta={[
-          dayKind === 'light' ? t('home.lightDay') : null,
-          `${workdayStart}–${workdayEnd}`,
+          dayKind === 'light' ? t('home.lightDay') : `${workdayStart}–${workdayEnd}`,
           openCount ? t.tf('home.openCount', { n: openCount }) : t('home.clear'),
-          eventCount
-            ? eventCount === 1
-              ? t.tf('home.eventOne', { n: 1 })
-              : t.tf('home.eventsCount', { n: eventCount })
-            : null,
         ]
           .filter(Boolean)
           .join(' · ')}
@@ -180,8 +174,8 @@ export function DailyPlan({
                     styles.freeRow,
                     {
                       minHeight: Math.min(
-                        120,
-                        Math.max(36, Math.round((slot.end - slot.start) * 0.55)),
+                        72,
+                        Math.max(28, Math.round((slot.end - slot.start) * 0.4)),
                       ),
                     },
                   ]}
@@ -190,11 +184,9 @@ export function DailyPlan({
                     <View style={styles.nodeFree} />
                   </View>
                   <Text style={styles.timeCol}>{minutesToHm(slot.start)}</Text>
-                  <View style={styles.freeBlock}>
-                    <Text style={styles.freeText}>
-                      {t.tf('home.freeMin', { n: Math.max(0, slot.end - slot.start) })}
-                    </Text>
-                  </View>
+                  <Text style={styles.freeText}>
+                    {t.tf('home.freeMin', { n: Math.max(0, slot.end - slot.start) })}
+                  </Text>
                 </Animated.View>
               ) : slot.kind === 'event' ? (
                 <Animated.View
@@ -294,9 +286,6 @@ export function DailyPlan({
         )}
 
         {suggestion ? <Text style={styles.hint}>{suggestion}</Text> : null}
-        {!suggestion && hasUntimed && onPlanDay ? (
-          <Text style={styles.hint}>{t('home.planHint')}</Text>
-        ) : null}
       </HomeSection>
     </Animated.View>
   )
@@ -330,8 +319,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 8,
-    minHeight: 44,
+    paddingVertical: 6,
+    minHeight: 40,
   },
   rowBody: {
     flex: 1,
@@ -373,21 +362,13 @@ const styles = StyleSheet.create({
   },
   timeDash: { textAlign: 'center' },
   freeRow: {
-    alignItems: 'stretch',
-  },
-  freeBlock: {
-    flex: 1,
-    backgroundColor: colors.accentSoft,
-    borderRadius: radii.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(15,110,102,0.14)',
+    alignItems: 'center',
+    opacity: 0.85,
   },
   freeText: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyMedium,
+    flex: 1,
+    color: colors.textDim,
+    fontFamily: fonts.body,
     fontSize: 13,
     fontVariant: ['tabular-nums'],
   },

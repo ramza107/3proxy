@@ -254,10 +254,10 @@ export default function EveningClearScreen() {
                           <SoftPressable style={styles.actionDone} onPress={() => onDone(task)}>
                             <Text style={styles.actionDoneText}>{t('evening.done')}</Text>
                           </SoftPressable>
-                          <Pressable style={styles.action} onPress={() => onTomorrow(task)}>
-                            <Text style={styles.actionText}>{t('evening.tomorrow')}</Text>
+                          <Pressable onPress={() => onTomorrow(task)} hitSlop={8}>
+                            <Text style={styles.actionLink}>{t('evening.tomorrow')}</Text>
                           </Pressable>
-                          <Pressable style={styles.actionGhost} onPress={() => onDrop(task)}>
+                          <Pressable onPress={() => onDrop(task)} hitSlop={8}>
                             <Text style={styles.actionGhostText}>{t('evening.drop')}</Text>
                           </Pressable>
                         </View>
@@ -528,20 +528,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  list: { gap: 10 },
+  list: { gap: 4 },
   row: {
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: 14,
-    gap: 12,
+    backgroundColor: 'transparent',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    paddingVertical: 14,
+    gap: 10,
   },
   rowBody: { gap: 3 },
   rowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 16 },
   rowMeta: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 13 },
   undated: { color: colors.warning, fontFamily: fonts.body, fontSize: 12 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 14 },
   actionDone: {
     backgroundColor: colors.accent,
     borderRadius: radii.full,
@@ -549,18 +548,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   actionDoneText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
-  action: {
-    backgroundColor: colors.bgSoft,
-    borderRadius: radii.full,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  actionText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  actionGhost: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+  actionLink: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
   },
   actionGhostText: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   empty: {

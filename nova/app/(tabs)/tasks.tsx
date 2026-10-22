@@ -183,13 +183,19 @@ export default function TasksScreen() {
           <Text style={styles.kicker}>{t('tasks.kicker')}</Text>
           <Text style={styles.title}>{t('tasks.title')}</Text>
           <Text style={styles.sub}>{t('tasks.sub')}</Text>
-        </View>
-
-        <View style={styles.statsRow}>
-          <Stat label={t('tasks.statOpen')} value={stats.open} />
-          <Stat label={t('tasks.statOverdue')} value={stats.overdue} hot={stats.overdue > 0} />
-          <Stat label={t('tasks.statWeek')} value={stats.week} />
-          <Stat label={t('tasks.statTimed')} value={stats.timed} />
+          <Text style={styles.statsLine}>
+            <Text style={styles.statsStrong}>{stats.open}</Text>
+            {` ${t('tasks.statOpen').toLowerCase()}`}
+            {' · '}
+            <Text style={stats.overdue > 0 ? styles.statsHot : styles.statsStrong}>{stats.overdue}</Text>
+            {` ${t('tasks.statOverdue').toLowerCase()}`}
+            {' · '}
+            <Text style={styles.statsStrong}>{stats.week}</Text>
+            {` ${t('tasks.statWeek').toLowerCase()}`}
+            {' · '}
+            <Text style={styles.statsStrong}>{stats.timed}</Text>
+            {` ${t('tasks.statTimed').toLowerCase()}`}
+          </Text>
         </View>
 
         <View style={styles.weekStripOuter}>
@@ -398,22 +404,13 @@ export default function TasksScreen() {
   )
 }
 
-function Stat({ label, value, hot }: { label: string; value: number; hot?: boolean }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={[styles.statValue, hot && styles.statHot]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   header: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     gap: 4,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   kicker: {
     color: colors.accentStrong,
@@ -424,76 +421,63 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 34,
+    fontSize: 32,
     fontFamily: fonts.brand,
     letterSpacing: -0.8,
   },
   sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: 8,
-    marginBottom: 12,
-  },
-  stat: {
-    flex: 1,
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    gap: 2,
-  },
-  statValue: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 18,
-    fontVariant: ['tabular-nums'],
-    textAlign: 'center',
-  },
-  statHot: { color: colors.danger },
-  statLabel: {
+  statsLine: {
     color: colors.textDim,
     fontFamily: fonts.body,
-    fontSize: 11,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  statsStrong: {
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontVariant: ['tabular-nums'],
+  },
+  statsHot: {
+    color: colors.danger,
+    fontFamily: fonts.bodyBold,
+    fontVariant: ['tabular-nums'],
   },
   // Keep the strip out of the flex squeeze: list ScrollView takes remaining height,
   // strip never shrinks — otherwise RN Web clips the chip count digits.
   weekStripOuter: {
-    height: 120,
-    minHeight: 120,
-    maxHeight: 120,
+    height: 96,
+    minHeight: 96,
+    maxHeight: 96,
     flexGrow: 0,
     flexShrink: 0,
-    marginBottom: 8,
+    marginBottom: 4,
     overflow: 'visible',
   },
   weekStripScroll: {
     flexGrow: 0,
     flexShrink: 0,
-    height: 120,
-    minHeight: 120,
+    height: 96,
+    minHeight: 96,
   },
   weekStrip: {
     paddingHorizontal: spacing.lg,
-    gap: 8,
+    gap: 6,
     alignItems: 'center',
-    height: 120,
-    paddingVertical: 8,
+    height: 96,
+    paddingVertical: 6,
   },
   dayChip: {
-    width: 76,
-    height: 104,
-    minHeight: 104,
-    paddingTop: 10,
-    paddingBottom: 12,
-    paddingHorizontal: 6,
+    width: 64,
+    height: 84,
+    minHeight: 84,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 4,
     borderRadius: radii.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexShrink: 0,
@@ -501,13 +485,14 @@ const styles = StyleSheet.create({
   dayChipOn: {
     backgroundColor: colors.accentSoft,
     borderColor: colors.accent,
+    borderWidth: 1.5,
   },
   dayChipLabel: {
     color: colors.textMuted,
     fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    lineHeight: 16,
-    height: 16,
+    fontSize: 11,
+    lineHeight: 14,
+    height: 14,
     textAlign: 'center',
     width: '100%',
   },
@@ -516,8 +501,8 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 10,
-    lineHeight: 14,
-    height: 14,
+    lineHeight: 12,
+    height: 12,
     textAlign: 'center',
     width: '100%',
   },
@@ -525,9 +510,9 @@ const styles = StyleSheet.create({
   dayChipCount: {
     color: colors.textDim,
     fontFamily: fonts.bodyBold,
-    fontSize: 15,
-    lineHeight: 22,
-    height: 22,
+    fontSize: 14,
+    lineHeight: 18,
+    height: 18,
     textAlign: 'center',
     width: '100%',
     fontVariant: ['tabular-nums'],
@@ -542,43 +527,43 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    gap: spacing.md,
+    gap: spacing.sm,
     paddingBottom: 140,
   },
   dayEmpty: {
     color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   anchorRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     opacity: 0.85,
   },
   anchorNode: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 9,
     borderRadius: 99,
     borderWidth: 1.5,
     borderColor: colors.signalMuted,
-    marginTop: 5,
+    marginTop: 4,
     marginLeft: 2,
   },
   anchorTitle: {
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
-    fontSize: 15,
+    fontSize: 14,
   },
   anchorMeta: {
     color: colors.textDim,
     fontFamily: fonts.body,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
   },
   empty: {
     paddingVertical: spacing.lg,

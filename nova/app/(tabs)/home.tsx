@@ -18,7 +18,7 @@ import { WeeklyBrief } from '../../components/WeeklyBrief'
 import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { TaskEditor } from '../../components/TaskEditor'
-import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
+import { brand, colors, fonts, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
 import { t as translate } from '../../lib/i18n'
 import { dateLocale } from '../../lib/dateLocale'
@@ -231,28 +231,6 @@ export default function HomeScreen() {
         : t('home.upcomingLabel')
     : t('home.nextUp')
 
-  const nextEvent = useMemo(() => {
-    const now = Date.now() - 10 * 60 * 1000
-    const timed = calendarEvents
-      .filter((e) => !e.allDay)
-      .map((e) => ({ e, start: new Date(e.start).getTime() }))
-      .filter((x) => !Number.isNaN(x.start) && x.start >= now)
-      .sort((a, b) => a.start - b.start)
-    if (timed[0]) return timed[0].e
-    return calendarEvents.find((e) => e.allDay) || null
-  }, [calendarEvents])
-
-  const nextEventWhen = useMemo(() => {
-    if (!nextEvent) return ''
-    if (nextEvent.allDay) return t('home.allDay')
-    try {
-      return format(new Date(nextEvent.start), 'HH:mm')
-    } catch {
-      return nextEvent.start.slice(11, 16) || ''
-    }
-  }, [nextEvent, t])
-
-  const hasUntimedToday = todayTasks.some((task) => !task.time)
   /** One-focus Home: hide secondary blocks until the day has real work. */
   const focusEmpty = todayTasks.length === 0 && calendarEvents.length === 0
 
@@ -303,31 +281,24 @@ export default function HomeScreen() {
             </Pressable>
           ) : null}
 
-          <View style={styles.nextCard}>
-            <Pressable
-              style={styles.nextMain}
-              onPress={() => {
-                if (nearest) setEditing(nearest)
-                else if (isProUser) openPlanSheet()
-                else router.push('/tasks')
-              }}
-              accessibilityRole="button"
-            >
-              <View style={styles.nextNode} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.nextLabel}>{nearestLabel}</Text>
-                <Text style={styles.nextTitle} numberOfLines={2}>
-                  {nearest ? nearest.title : t('home.nextEmpty')}
-                </Text>
-              </View>
-              {nearestWhen ? <Text style={styles.nextWhen}>{nearestWhen}</Text> : null}
-            </Pressable>
-            {isProUser && (hasUntimedToday || !nearest) ? (
-              <Pressable style={styles.nextPlanBtn} onPress={openPlanSheet} hitSlop={8}>
-                <Text style={styles.nextPlanText}>{t('home.nextPlanCta')}</Text>
-              </Pressable>
-            ) : null}
-          </View>
+          <Pressable
+            style={styles.nextCard}
+            onPress={() => {
+              if (nearest) setEditing(nearest)
+              else if (isProUser) openPlanSheet()
+              else router.push('/tasks')
+            }}
+            accessibilityRole="button"
+          >
+            <View style={styles.nextNode} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.nextLabel}>{nearestLabel}</Text>
+              <Text style={styles.nextTitle} numberOfLines={2}>
+                {nearest ? nearest.title : t('home.nextEmpty')}
+              </Text>
+            </View>
+            {nearestWhen ? <Text style={styles.nextWhen}>{nearestWhen}</Text> : null}
+          </Pressable>
 
           <DailyPlan
             tasks={todayTasks}
@@ -340,19 +311,6 @@ export default function HomeScreen() {
             onPlanDay={isProUser ? openPlanSheet : undefined}
             planning={planning}
           />
-          <Text style={styles.editHint}>{t('home.editHint')}</Text>
-
-          {userId ? (
-            <View style={styles.nextEventCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.nextEventLabel}>{t('home.nextEvent')}</Text>
-                <Text style={styles.nextEventTitle} numberOfLines={2}>
-                  {nextEvent ? nextEvent.title : t('home.nextEventEmpty')}
-                </Text>
-              </View>
-              {nextEventWhen ? <Text style={styles.nextEventWhen}>{nextEventWhen}</Text> : null}
-            </View>
-          ) : null}
 
           <OpenLoopsBrief userId={userId} />
 
@@ -603,16 +561,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   eveningNode: {
-    width: 12,
-    height: 12,
+    width: 10,
+    height: 10,
     borderRadius: 99,
     backgroundColor: colors.accent,
   },
@@ -635,19 +590,10 @@ const styles = StyleSheet.create({
   nextCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-  },
-  nextMain: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.accent,
   },
   nextNode: {
     width: 12,
@@ -664,9 +610,10 @@ const styles = StyleSheet.create({
   },
   nextTitle: {
     color: colors.text,
-    fontFamily: fonts.bodyMedium,
-    fontSize: 16,
-    lineHeight: 21,
+    fontFamily: fonts.brand,
+    fontSize: 22,
+    lineHeight: 28,
+    letterSpacing: -0.4,
     marginTop: 2,
   },
   nextWhen: {
@@ -674,71 +621,16 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 14,
   },
-  nextPlanBtn: {
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    borderRadius: radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  nextPlanText: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-  },
-  nextEventCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  nextEventLabel: {
-    color: colors.textDim,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  nextEventTitle: {
-    color: colors.text,
-    fontFamily: fonts.bodyMedium,
-    fontSize: 15,
-    lineHeight: 20,
-    marginTop: 2,
-  },
-  nextEventWhen: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-  },
-  editHint: {
-    color: colors.textDim,
-    fontFamily: fonts.body,
-    fontSize: 12,
-    marginTop: -8,
-    marginBottom: 2,
-    paddingHorizontal: 4,
-  },
   googleToggle: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   googleToggleTitle: {
-    color: colors.text,
+    color: colors.textMuted,
     fontFamily: fonts.bodyBold,
-    fontSize: 14,
+    fontSize: 13,
   },
   googleToggleSub: {
     color: colors.textDim,
@@ -749,7 +641,7 @@ const styles = StyleSheet.create({
   googleChevron: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
-    fontSize: 16,
+    fontSize: 14,
   },
   googleBlock: { gap: spacing.md },
   googleHidden: {

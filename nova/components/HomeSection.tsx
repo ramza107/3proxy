@@ -12,12 +12,12 @@ type Props = {
 }
 
 /**
- * Home content card — Spectrum-style block on the mist field.
- * Soft mint-white surface, rounded corners, quiet shadow. Teal accents unchanged.
+ * Home block on the mist field.
+ * Emphasized sections keep a soft surface; secondary ones stay open (less dashboard).
  */
 export function HomeSection({ title, meta, action, children, emphasize }: Props) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.block, emphasize && styles.blockEmph]}>
       <View style={styles.head}>
         <View style={styles.headText}>
           <Text style={emphasize ? styles.titleLg : styles.title}>{title}</Text>
@@ -25,36 +25,37 @@ export function HomeSection({ title, meta, action, children, emphasize }: Props)
         </View>
         {action ? <View style={styles.action}>{action}</View> : null}
       </View>
-      <View style={styles.divider} />
+      {emphasize ? <View style={styles.divider} /> : null}
       <View style={styles.body}>{children}</View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.bgCardSolid,
+  block: {
+    backgroundColor: 'transparent',
     borderRadius: radii.lg,
+    paddingHorizontal: 2,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  blockEmph: {
+    backgroundColor: colors.bgCardSolid,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    gap: spacing.sm,
     ...Platform.select({
       ios: {
         shadowColor: '#0F2A32',
-        shadowOpacity: 0.07,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 3 },
-      },
-      android: { elevation: 2 },
-      default: {
-        shadowColor: '#0F2A32',
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.05,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 2 },
       },
+      android: { elevation: 1 },
+      default: {},
     }),
   },
   head: {
@@ -66,15 +67,16 @@ const styles = StyleSheet.create({
   headText: { flex: 1, gap: 3 },
   titleLg: {
     color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 18,
-    letterSpacing: -0.3,
+    fontFamily: fonts.brand,
+    fontSize: 20,
+    letterSpacing: -0.4,
   },
   title: {
-    color: colors.text,
+    color: colors.textMuted,
     fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    letterSpacing: -0.2,
+    fontSize: 13,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   meta: {
     color: colors.textDim,

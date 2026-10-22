@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Screen } from '../../components/Screen'
-import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { getSupabase, isSupabaseConfigured } from '../../lib/supabase'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
@@ -28,6 +28,7 @@ export default function NameScreen() {
   return (
     <Screen>
       <View style={styles.screen}>
+        <Text style={styles.brand}>{brand.name}</Text>
         <Text style={styles.title}>{t('onboarding.nameTitle')}</Text>
         <Text style={styles.sub}>{t('onboarding.nameSub')}</Text>
         <TextInput
@@ -51,7 +52,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.xl,
     justifyContent: 'center',
-    gap: spacing.lg,
+    gap: spacing.md,
+  },
+  brand: {
+    color: colors.accentStrong,
+    fontSize: 15,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.2,
+    marginBottom: 2,
   },
   title: {
     color: colors.text,
@@ -63,19 +71,21 @@ const styles = StyleSheet.create({
   sub: {
     color: colors.textMuted,
     fontSize: 16,
+    lineHeight: 22,
     fontFamily: fonts.body,
-    marginTop: -8,
+    marginTop: -4,
   },
   input: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.md,
     color: colors.text,
     paddingHorizontal: 16,
     paddingVertical: 16,
     fontSize: 18,
     fontFamily: fonts.body,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
+    marginTop: 4,
   },
   btn: {
     backgroundColor: colors.accent,
@@ -83,8 +93,7 @@ const styles = StyleSheet.create({
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    // @ts-expect-error web-only
-    cursor: 'pointer',
+    marginTop: 4,
   },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 17 },
 })
