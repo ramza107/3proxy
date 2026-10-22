@@ -96,7 +96,6 @@ Aligned with `lib/pro.ts` (hard split).
 | Plan day (auto slots) | ❌ | ✅ |
 | Smart morning brief | ❌ | ✅ |
 | Bill & loop reminders | ❌ | ✅ |
-| Evening digest + reflect | ❌ | ✅ |
 | Home Screen widget | ❌ | ✅ |
 | Cloud AI chat | ❌ | ✅ (~400/day) |
 | Voice | ❌ | ✅ (~200/day) |
