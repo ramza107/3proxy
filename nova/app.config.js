@@ -28,7 +28,7 @@ module.exports = ({ config }) => {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
       // Higher than last TestFlight (41).
-      buildNumber: '42',
+      buildNumber: '43',
       // Temporarily off: provisioning profile lacks Sign In with Apple.
       // Re-enable after regenerating profiles with Apple Developer login.
       usesAppleSignIn: false,

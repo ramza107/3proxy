@@ -20,7 +20,7 @@
         "NSMicrophoneUsageDescription": "Wahrly uses the microphone so you can dictate tasks and reminders.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "42"
+      "buildNumber": "43"
     },
     "android": {
       "adaptiveIcon": {
