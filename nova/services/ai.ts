@@ -382,10 +382,18 @@ export async function organizeMyDay(opts?: {
   const userId = store.sessionUserId
   if (!userId) throw new Error('Not signed in')
   if (!canUsePlanDay()) {
+    const day = todayISO()
+    const untimed = store.tasks.filter(
+      (task) => !task.completed && (task.date === day || !task.date) && !task.time,
+    ).length
     const reply =
       store.settings.language === 'ru'
-        ? 'План дня — Wahrly Pro. Оформи подписку в Настройках.'
-        : 'Plan day is Wahrly Pro — subscribe in Settings.'
+        ? untimed > 0
+          ? `У тебя ${untimed} задач без времени. Авто-раскладка «План дня» — Wahrly Pro (Настройки). Пока поставь слот вручную в Tasks.`
+          : 'Авто-раскладка «План дня» — Wahrly Pro. Оформи подписку в Настройках — Wahrly разложит задачи по свободным окнам.'
+        : untimed > 0
+          ? `You have ${untimed} untimed tasks. Auto Plan day is Wahrly Pro (Settings). For now set a time in Tasks.`
+          : 'Auto Plan day is Wahrly Pro — subscribe in Settings and Wahrly will pack tasks into free slots.'
     return { reply, actions: [], calendarCandidates: [] }
   }
 

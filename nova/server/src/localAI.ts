@@ -362,8 +362,20 @@ export function localAI(
   ) {
     return {
       reply: /[а-яё]/i.test(text)
-        ? 'Wahrly не читает почту. Могу помочь с задачами, календарём и планом дня — или добавь «я должен / жду» вручную в Open loops на Home.'
-        : 'Wahrly does not read email. I can help with tasks, calendar, and Plan day — or add an I owe / Waiting loop on Home.',
+        ? 'Wahrly не читает почту. Могу помочь с задачами, календарём и счетами — или добавь «я должен / жду» вручную в Open loops на Home.'
+        : 'Wahrly does not read email. I can help with tasks, calendar, and bills — or add an I owe / Waiting loop on Home.',
+      actions: [],
+    }
+  }
+
+  if (
+    /(разлож|спланиру|организуй).{0,20}день/i.test(lower) ||
+    /\b(plan|organize|schedule)\b.{0,20}\b(day|today)\b/i.test(lower)
+  ) {
+    return {
+      reply: isRu(text)
+        ? 'Авто-раскладка «План дня» — Wahrly Pro. Пока поставь время вручную в Tasks или закрой день через Evening Clear. Pro — в Настройках.'
+        : 'Auto Plan day is Wahrly Pro. For now set a time in Tasks, or close the day with Evening Clear. Subscribe in Settings.',
       actions: [],
     }
   }
@@ -387,26 +399,22 @@ export function localAI(
       .map((t, i) => `${i + 1}. ${t.title}${t.time ? ` — ${t.time}` : ''}`)
       .join('\n')
     const firstTimed = todayTasks.find((t) => t.time)
+    const untimed = todayTasks.filter((t) => !t.time).length
+    const tip = isRu(text)
+      ? firstTimed
+        ? `\nСначала лучше «${firstTimed.title}» — там время.`
+        : untimed
+          ? `\nБез времени: ${untimed}. Поставь слот в Tasks или закрой день через Evening Clear.`
+          : ''
+      : firstTimed
+        ? `\n${firstTimed.title} is time-sensitive, so I'd do that first.`
+        : untimed
+          ? `\n${untimed} without a time — set a slot in Tasks, or close the day with Evening Clear.`
+          : ''
     return {
       reply: isRu(text)
-        ? `На сегодня ${todayTasks.length}:\n${lines}${
-            firstTimed ? `\nСначала лучше «${firstTimed.title}» — там время.` : ''
-          }\n\nСкажи «разложи день», чтобы расставить по слотам.`
-        : `You have ${todayTasks.length} thing${todayTasks.length > 1 ? 's' : ''} today:\n${lines}${
-            firstTimed ? `\n${firstTimed.title} is time-sensitive, so I'd do that first.` : ''
-          }\n\nSay “plan my day” to auto-fill free slots.`,
-      actions: [],
-    }
-  }
-
-  if (
-    /(разлож|спланиру|организуй).{0,20}день/i.test(lower) ||
-    /\b(plan|organize|schedule)\b.{0,20}\b(day|today)\b/i.test(lower)
-  ) {
-    return {
-      reply: isRu(text)
-        ? 'План дня — Wahrly Pro. Оформи подписку в Настройках, и Wahrly разложит задачи по слотам.'
-        : 'Plan day is Wahrly Pro — subscribe in Settings and Wahrly will pack tasks into free slots.',
+        ? `На сегодня ${todayTasks.length}:\n${lines}${tip}`
+        : `You have ${todayTasks.length} thing${todayTasks.length > 1 ? 's' : ''} today:\n${lines}${tip}`,
       actions: [],
     }
   }

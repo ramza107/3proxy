@@ -191,9 +191,12 @@ async function cancelByIdentifier(identifier: string) {
 function morningBody(tasks: Task[], settings: UserSettings) {
   const lang = langOf(settings)
   const today = tasksForDay(tasks, todayISO())
-  const planHint = `\n${t(lang, 'notif.morningPlan')}`
+  const openHint = `\n${t(
+    lang,
+    settings.isPro ? 'notif.morningPlan' : 'notif.morningOpen',
+  )}`
   if (!today.length) {
-    return `${t(lang, 'notif.morningClear')}${planHint}`
+    return `${t(lang, 'notif.morningClear')}${openHint}`
   }
   const preview = today
     .slice(0, 4)
@@ -201,7 +204,17 @@ function morningBody(tasks: Task[], settings: UserSettings) {
     .join('\n')
   const more =
     today.length > 4 ? `\n${tf(lang, 'notif.morningMore', { n: today.length - 4 })}` : ''
-  return `${t(lang, 'notif.morningList')}\n${preview}${more}${planHint}`
+  return `${t(lang, 'notif.morningList')}\n${preview}${more}${openHint}`
+}
+
+function eveningBody(tasks: Task[], settings: UserSettings) {
+  const lang = langOf(settings)
+  const open = tasksForDay(tasks, todayISO()).filter((task) => !task.completed)
+  if (!open.length) return t(lang, 'notif.eveningClear')
+  if (open.length === 1) {
+    return tf(lang, 'notif.eveningOne', { title: open[0].title })
+  }
+  return tf(lang, 'notif.eveningList', { n: open.length })
 }
 
 export async function syncDailyRitualNotifications(
@@ -265,7 +278,7 @@ export async function syncDailyRitualNotifications(
       await NotificationsMod.scheduleNotificationAsync({
         content: {
           title: t(lang, 'notif.eveningTitle'),
-          body: t(lang, 'notif.eveningBody'),
+          body: eveningBody(tasks, settings),
           data: { ritualId: EVENING_ID_KEY, kind: 'evening', route: '/evening' },
         },
         trigger: {

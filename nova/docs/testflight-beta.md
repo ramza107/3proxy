@@ -25,7 +25,7 @@ Wahrly 1.1.0 (build 41) — MVP life assistant
 1) Onboarding / имя / язык (RU или EN) — финал ведёт на Home, не на Plan day.
 2) Tasks: создай задачу на сегодня, перенеси на завтра, отметь done.
 3) Free Home: next-задача, таймлайн, Evening Clear. Кнопка Plan day — только Pro.
-4) Open loops: добавь «я должен» и «жду».
+4) Open loops: добавь «я должен» и «жду» (можно с optional due).
 5) Settings → Connect with Google: только Calendar (readonly). Почта НЕ читается.
    Если раньше подключал Gmail: Disconnect → Connect заново.
 6) Вкладки: Tasks · Home · Bills · Dates · Settings (Invest не в таб-баре).
@@ -59,7 +59,7 @@ PLEASE TRY
 1) Onboarding / name / language — ends on Home (not Plan day).
 2) Tasks: create, reschedule, complete.
 3) Free Home: next task, timeline, Evening Clear. Plan day CTA is Pro-only.
-4) Open loops: “I owe” + “Waiting”.
+4) Open loops: “I owe” + “Waiting” (optional due date ok).
 5) Settings → Connect with Google — Calendar readonly only (no mail).
    If you connected Gmail before: Disconnect → Connect again.
 6) Tabs: Tasks · Home · Bills · Dates · Settings (Invest is off the tab bar).
@@ -90,7 +90,9 @@ Aligned with `lib/pro.ts` (hard split).
 | Calendar readonly | ✅ | ✅ |
 | Open loops (manual) | ✅ | ✅ |
 | Local AI chat | ✅ | ✅ |
-| Evening Clear (simple done / tomorrow) | ✅ | ✅ |
+| Evening Clear (simple done / tomorrow + closed-today lite) | ✅ | ✅ |
+| Evening digest reflect journal | ❌ | ✅ |
+| Open loop optional due date | ✅ | ✅ |
 | Plan day (auto slots) | ❌ | ✅ |
 | Smart morning brief | ❌ | ✅ |
 | Bill & loop reminders | ❌ | ✅ |

@@ -328,8 +328,20 @@ export function clientLocalAI(
   ) {
     return {
       reply: /[а-яё]/i.test(text)
-        ? 'Wahrly не читает почту. Могу помочь с задачами, календарём и планом дня — или добавь «я должен / жду» вручную в Open loops на Home.'
-        : 'Wahrly does not read email. I can help with tasks, calendar, and Plan day — or add an I owe / Waiting loop on Home.',
+        ? 'Wahrly не читает почту. Могу помочь с задачами, календарём и счетами — или добавь «я должен / жду» вручную в Open loops на Home.'
+        : 'Wahrly does not read email. I can help with tasks, calendar, and bills — or add an I owe / Waiting loop on Home.',
+      actions: [],
+    }
+  }
+
+  if (
+    /(разлож|спланиру|организуй).{0,20}день/i.test(lower) ||
+    /\b(plan|organize|schedule)\b.{0,20}\b(day|today)\b/i.test(lower)
+  ) {
+    return {
+      reply: isRu(text)
+        ? 'Авто-раскладка «План дня» — Wahrly Pro. Пока поставь время вручную в Tasks или закрой день через Evening Clear.'
+        : 'Auto Plan day is Wahrly Pro. For now set a time in Tasks, or close the day with Evening Clear.',
       actions: [],
     }
   }

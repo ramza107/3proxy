@@ -1,3 +1,4 @@
+import { addDays, format } from 'date-fns'
 import { useMemo, useState } from 'react'
 import {
   Alert,
@@ -9,7 +10,7 @@ import {
   View,
 } from 'react-native'
 import { colors, fonts, radii } from '../constants/theme'
-import { useNovaStore } from '../lib/store'
+import { todayISO, useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
 import type { Task } from '../types'
 import { HomeSection } from './HomeSection'
@@ -37,6 +38,8 @@ export function OpenLoopsBrief({ userId }: Props) {
   const [draftKind, setDraftKind] = useState<LoopKind>('promise')
   const [draftTitle, setDraftTitle] = useState('')
   const [draftWho, setDraftWho] = useState('')
+  /** Optional due — Free value; also feeds Pro day-before promise reminders. */
+  const [draftDate, setDraftDate] = useState<string | null>(null)
 
   const isSnoozed = (id: string) => {
     const until = snoozedLoops[id]
@@ -96,14 +99,28 @@ export function OpenLoopsBrief({ userId }: Props) {
     setDraftTitle('')
     setDraftWho('')
     setDraftKind('promise')
+    setDraftDate(null)
   }
 
   const openComposer = (kind: LoopKind, titleSeed = '') => {
     setDraftKind(kind)
     setDraftTitle(titleSeed)
     setDraftWho('')
+    setDraftDate(null)
     setAdding(true)
   }
+
+  const dueChoices = useMemo(() => {
+    const today = todayISO()
+    const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
+    const in3 = format(addDays(new Date(), 3), 'yyyy-MM-dd')
+    return [
+      { key: 'none', label: t('home.loopDueNone'), value: null as string | null },
+      { key: 'today', label: t('common.today'), value: today },
+      { key: 'tomorrow', label: t('common.tomorrow'), value: tomorrow },
+      { key: 'soon', label: t('home.loopDueSoon'), value: in3 },
+    ]
+  }, [t])
 
   const saveManualLoop = () => {
     const uidUser = sessionUserId || userId
@@ -119,6 +136,7 @@ export function OpenLoopsBrief({ userId }: Props) {
           : `${who}: ${title}`
     createTaskLocal({
       title: labeled,
+      date: draftDate,
       priority: 'high',
       userId: uidUser,
       sourceKind: draftKind,
@@ -204,6 +222,21 @@ export function OpenLoopsBrief({ userId }: Props) {
             placeholderTextColor={colors.textDim}
             style={styles.input}
           />
+          <Text style={styles.composerHint}>{t('home.loopDueHint')}</Text>
+          <View style={styles.dueRow}>
+            {dueChoices.map((choice) => {
+              const on = draftDate === choice.value
+              return (
+                <Pressable
+                  key={choice.key}
+                  style={[styles.kindChip, on && styles.kindChipOn]}
+                  onPress={() => setDraftDate(choice.value)}
+                >
+                  <Text style={[styles.kindText, on && styles.kindTextOn]}>{choice.label}</Text>
+                </Pressable>
+              )
+            })}
+          </View>
           <View style={styles.actions}>
             <Pressable
               style={[styles.addBtn, !draftTitle.trim() && styles.addBtnOff]}
@@ -354,6 +387,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   kindRow: { flexDirection: 'row', gap: 8 },
+  dueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   kindChip: {
     paddingHorizontal: 12,
     paddingVertical: 7,
