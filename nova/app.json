@@ -19,7 +19,8 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Wahrly uses the microphone so you can dictate tasks and reminders.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "42"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,12 +30,21 @@
         "backgroundColor": "#0F6E66"
       },
       "package": "com.wahrly.assistant",
-      "permissions": ["RECORD_AUDIO"],
+      "permissions": [
+        "RECORD_AUDIO"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
-          "category": ["BROWSABLE", "DEFAULT"],
-          "data": [{ "scheme": "wahrly" }]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "wahrly"
+            }
+          ]
         }
       ]
     },
