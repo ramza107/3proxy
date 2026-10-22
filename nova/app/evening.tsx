@@ -1,7 +1,7 @@
 import { addDays, format } from 'date-fns'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Pressable,
   ScrollView,
@@ -18,6 +18,7 @@ import { colors, fonts, radii, spacing } from '../constants/theme'
 import { AnalyticsEvents, track } from '../lib/analytics'
 import { dateLocale } from '../lib/dateLocale'
 import { formatMoney, currentMonthKey, isPaidThisMonth } from '../lib/bills'
+import { ensureNotificationPermissions } from '../lib/notifications'
 import { canUseEveningDigest } from '../lib/pro'
 import { sortTasks, todayISO, useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
@@ -89,6 +90,11 @@ export default function EveningClearScreen() {
 
   const proDigest = canUseEveningDigest()
 
+  useEffect(() => {
+    // High-intent: user opened Evening Clear — ask once if OS still undecided.
+    void ensureNotificationPermissions()
+  }, [])
+
   const finish = () => {
     const note = proDigest ? reflection.trim() : ''
     updateSettings({
@@ -146,8 +152,20 @@ export default function EveningClearScreen() {
     setStep('tomorrow')
   }
 
-  const stepIndex =
-    step === 'today' ? 0 : step === 'tomorrow' ? 1 : step === 'reflect' ? 2 : 3
+  const stepCount = proDigest ? 4 : 3
+  const stepIndex = proDigest
+    ? step === 'today'
+      ? 0
+      : step === 'tomorrow'
+        ? 1
+        : step === 'reflect'
+          ? 2
+          : 3
+    : step === 'today'
+      ? 0
+      : step === 'tomorrow'
+        ? 1
+        : 2
 
   return (
     <Screen>
@@ -157,7 +175,7 @@ export default function EveningClearScreen() {
             <Text style={styles.back}>{t('common.close')}</Text>
           </Pressable>
           <View style={styles.dots}>
-            {[0, 1, 2, 3].map((i) => (
+            {Array.from({ length: stepCount }, (_, i) => (
               <View key={i} style={[styles.dot, i <= stepIndex && styles.dotOn]} />
             ))}
           </View>
@@ -370,10 +388,10 @@ export default function EveningClearScreen() {
                   : t('evening.clearSub')}
               </Text>
 
-              {proDigest && (doneToday.length || billsPaidToday.length) ? (
+              {doneToday.length || billsPaidToday.length ? (
                 <View style={styles.digest}>
                   <Text style={styles.digestTitle}>{t('evening.digestTitle')}</Text>
-                  {doneToday.slice(0, 8).map((task) => (
+                  {doneToday.slice(0, proDigest ? 8 : 5).map((task) => (
                     <Text key={task.id} style={styles.digestLine} numberOfLines={1}>
                       ✓ {task.title}
                       {task.sourceKind === 'promise'
@@ -383,7 +401,7 @@ export default function EveningClearScreen() {
                           : ''}
                     </Text>
                   ))}
-                  {billsPaidToday.map((bill) => (
+                  {billsPaidToday.slice(0, proDigest ? 99 : 3).map((bill) => (
                     <Text key={bill.id} style={styles.digestLine} numberOfLines={1}>
                       ✓ {bill.title} · {formatMoney(bill.amount, bill.currency)}
                     </Text>
@@ -396,6 +414,16 @@ export default function EveningClearScreen() {
                   <Text style={styles.digestTitle}>{t('evening.reflectSaved')}</Text>
                   <Text style={styles.digestLine}>{reflection.trim()}</Text>
                 </View>
+              ) : null}
+
+              {!proDigest ? (
+                <Pressable
+                  style={styles.link}
+                  onPress={() => router.push('/settings')}
+                  hitSlop={8}
+                >
+                  <Text style={styles.linkText}>{t('evening.reflectProTease')}</Text>
+                </Pressable>
               ) : null}
 
               <SoftPressable style={styles.primary} onPress={() => router.replace('/tasks')}>

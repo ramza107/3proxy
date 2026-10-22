@@ -166,9 +166,14 @@ export default function HomeScreen() {
   }
 
   const requirePlanDayPro = () => {
-    Alert.alert(t('pro.title'), t('pro.planDayLocked'), [
+    const untimed = todayTasks.filter((task) => !task.time).length
+    const body =
+      untimed > 0
+        ? t.tf('pro.planDayUpsell', { n: untimed })
+        : t('pro.planDayUpsellEmpty')
+    Alert.alert(t('pro.title'), body, [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('pro.upgrade'), onPress: () => router.push('/settings') },
+      { text: t('pro.subscribe'), onPress: () => router.push('/settings') },
     ])
   }
 
@@ -303,7 +308,8 @@ export default function HomeScreen() {
               style={styles.nextMain}
               onPress={() => {
                 if (nearest) setEditing(nearest)
-                else openPlanSheet()
+                else if (isProUser) openPlanSheet()
+                else router.push('/tasks')
               }}
               accessibilityRole="button"
             >

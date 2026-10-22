@@ -174,6 +174,14 @@ const en: Dict = {
   'pro.upgrade': 'Open Settings',
   'pro.upgradeBody': 'Subscribe to Wahrly Pro to unlock this.',
   'pro.planDayLocked': 'Plan day auto-arrange is Wahrly Pro.',
+  'pro.planDayUpsell':
+    'You have {n} untimed tasks. Pro packs them into free gaps around your calendar.',
+  'pro.planDayUpsellEmpty':
+    'Pro Plan day auto-fills free slots when your day fills up — subscribe in Settings.',
+  'evening.reflectProTease': 'Want a one-line journal? That’s Wahrly Pro → Settings',
+  'home.loopDueNone': 'No date',
+  'home.loopDueSoon': 'In 3 days',
+  'home.loopDueHint': 'Optional due — helps Evening Clear (and Pro reminders).',
   'home.billsPayToday': 'Pay today',
   'tasks.repeating': 'Repeating',
   'tasks.repeatingMeta': '{n} repeating',
@@ -376,6 +384,14 @@ const ru: Dict = {
   'pro.upgrade': 'В настройки',
   'pro.upgradeBody': 'Оформи Wahrly Pro, чтобы открыть это.',
   'pro.planDayLocked': 'Авто-раскладка «План дня» — Wahrly Pro.',
+  'pro.planDayUpsell':
+    'У тебя {n} задач без времени. Pro раскладывает их по свободным окнам календаря.',
+  'pro.planDayUpsellEmpty':
+    'Pro Plan day сам заполняет свободные слоты — оформи подписку в Настройках.',
+  'evening.reflectProTease': 'Однострочный дневник? Это Wahrly Pro → Настройки',
+  'home.loopDueNone': 'Без даты',
+  'home.loopDueSoon': 'Через 3 дня',
+  'home.loopDueHint': 'Срок по желанию — для Evening Clear (и Pro-напоминаний).',
   'home.billsPayToday': 'Оплатить сегодня',
   'tasks.repeating': 'Повторяющиеся',
   'tasks.repeatingMeta': '{n} повторяющихся',

@@ -1,9 +1,11 @@
+import { addDays, format } from 'date-fns'
 import { useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
+import { ensureNotificationPermissions } from '../../lib/notifications'
 import { todayISO, useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 
@@ -23,9 +25,11 @@ export default function FirstValueScreen() {
   const [taskTitle, setTaskTitle] = useState('')
   const [loopTitle, setLoopTitle] = useState('')
   const [loopWho, setLoopWho] = useState('')
+  const [loopDate, setLoopDate] = useState<string | null>(null)
 
   const uid = userId || 'local'
   const today = todayISO()
+  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd')
   const stepIndex = step === 'task' ? 0 : step === 'loop' ? 1 : 2
 
   const placeholders = useMemo(
@@ -55,6 +59,7 @@ export default function FirstValueScreen() {
       const labeled = who ? `${title} → ${who}` : title
       createTaskLocal({
         title: labeled,
+        date: loopDate,
         priority: 'high',
         userId: uid,
         sourceKind: 'promise',
@@ -67,6 +72,8 @@ export default function FirstValueScreen() {
   const finish = (openHome: boolean) => {
     updateSettings({ onboardingComplete: true })
     void track(AnalyticsEvents.onboardingComplete)
+    // High-intent end of first value — evening reminder needs OS permission.
+    void ensureNotificationPermissions()
     router.replace(openHome ? '/home' : '/ready')
   }
 
@@ -123,6 +130,29 @@ export default function FirstValueScreen() {
               placeholderTextColor={colors.textDim}
               style={styles.input}
             />
+            <Text style={styles.dueHint}>{t('home.loopDueHint')}</Text>
+            <View style={styles.dueRow}>
+              {(
+                [
+                  { key: 'none', label: t('home.loopDueNone'), value: null as string | null },
+                  { key: 'today', label: t('common.today'), value: today },
+                  { key: 'tomorrow', label: t('common.tomorrow'), value: tomorrow },
+                ] as const
+              ).map((choice) => {
+                const on = loopDate === choice.value
+                return (
+                  <Pressable
+                    key={choice.key}
+                    style={[styles.dueChip, on && styles.dueChipOn]}
+                    onPress={() => setLoopDate(choice.value)}
+                  >
+                    <Text style={[styles.dueChipText, on && styles.dueChipTextOn]}>
+                      {choice.label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
             <Pressable style={styles.btn} onPress={saveLoop}>
               <Text style={styles.btnText}>
                 {loopTitle.trim() ? t('home.addLoop') : t('common.continue')}
@@ -198,6 +228,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  dueHint: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  dueRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  dueChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.full,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+  },
+  dueChipOn: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accent,
+  },
+  dueChipText: { color: colors.textMuted, fontFamily: fonts.bodyBold, fontSize: 13 },
+  dueChipTextOn: { color: colors.accentStrong },
   btn: {
     backgroundColor: colors.accent,
     borderRadius: radii.full,
