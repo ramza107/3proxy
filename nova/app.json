@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wahrly.assistant",
-      "buildNumber": "41",
+      "buildNumber": "43",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Wahrly uses the microphone so you can dictate tasks and reminders.",
         "ITSAppUsesNonExemptEncryption": false
