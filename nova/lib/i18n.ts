@@ -144,7 +144,7 @@ const en: Dict = {
   'pro.title': 'Wahrly Pro',
   'pro.sub': 'Autopilot for your day — Plan day, smart brief, cloud AI, voice, invest',
   'pro.freeLimits':
-    'Free: you run the day. Pro: Wahrly runs it with you (Plan day, reminders, widget, cloud AI).',
+    'Free: you run the day (tasks, calendar, local chat, Evening Clear). Pro: Plan day, morning brief, reminders, widget, cloud AI & voice.',
   'pro.compareFree': 'Free',
   'pro.comparePro': 'Pro',
   'pro.rowTasks': 'Tasks & manual loops / bills',
@@ -346,7 +346,7 @@ const ru: Dict = {
   'pro.title': 'Wahrly Pro',
   'pro.sub': 'Автопилот дня — Plan day, утренний brief, облачный AI, голос, инвестиции',
   'pro.freeLimits':
-    'Free: ты ведёшь день. Pro: Wahrly ведёт его с тобой (Plan day, напоминания, виджет, облачный AI).',
+    'Free: ты ведёшь день (задачи, календарь, локальный чат, Evening Clear). Pro: Plan day, утренний brief, напоминания, виджет, облачный AI и голос.',
   'pro.compareFree': 'Free',
   'pro.comparePro': 'Pro',
   'pro.rowTasks': 'Задачи и ручные loops / bills',
