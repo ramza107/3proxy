@@ -54,8 +54,8 @@ export function TabBarIcon({ name, focused, color }: Props) {
   }))
 
   const glowStyle = useAnimatedStyle(() => ({
-    opacity: glow.value * 0.9,
-    transform: [{ scale: 0.85 + glow.value * 0.15 }],
+    opacity: glow.value * 0.55,
+    transform: [{ scale: 0.9 + glow.value * 0.1 }],
   }))
 
   return (

@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import { BrandMark } from '../../components/BrandMark'
 import { Screen } from '../../components/Screen'
 import { SocialAuthButtons } from '../../components/SocialAuthButtons'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
@@ -66,6 +67,7 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.hero}>
+          <BrandMark size={48} />
           <Text style={styles.brand}>{brand.name}</Text>
           <Text style={styles.tagline}>{t('auth.tagline')}</Text>
           <Text style={styles.sub}>{t('onboarding.welcomeSub')}</Text>
@@ -147,31 +149,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.lg,
   },
-  hero: { gap: 10, marginBottom: 4 },
+  hero: { gap: 8, marginBottom: 4 },
   brand: {
-    color: colors.text,
-    fontSize: 56,
-    lineHeight: 60,
+    color: colors.accentStrong,
+    fontSize: 52,
+    lineHeight: 56,
     fontFamily: fonts.brand,
-    letterSpacing: -1,
+    letterSpacing: -1.1,
+    marginTop: 2,
   },
   tagline: {
-    color: colors.accentStrong,
+    color: colors.text,
     fontSize: 18,
     fontFamily: fonts.brandItalic,
   },
   sub: {
     color: colors.textMuted,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     fontFamily: fonts.body,
     maxWidth: 320,
   },
   card: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.lg,
     padding: spacing.lg,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     gap: 10,
   },

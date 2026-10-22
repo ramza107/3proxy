@@ -3,7 +3,6 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { LinearGradient } from 'expo-linear-gradient'
 import Animated, {
   Easing,
-  FadeIn,
   FadeInDown,
   FadeInRight,
   useAnimatedStyle,
@@ -191,15 +190,6 @@ const art = StyleSheet.create({
   },
 })
 
-function StatChip({ label, value, delay }: { label: string; value: string; delay: number }) {
-  return (
-    <Animated.View entering={FadeIn.delay(delay).duration(380)} style={styles.chip}>
-      <Text style={styles.chipLabel}>{label}</Text>
-      <Text style={styles.chipValue}>{value}</Text>
-    </Animated.View>
-  )
-}
-
 /**
  * First-open morning strip: weather + today's open tasks + Plan day.
  * Shown once per day until dismissed / planned.
@@ -299,18 +289,15 @@ export function MorningBrief({
                 <WeatherArt code={weather.code} />
               </View>
 
-              <View style={styles.stats}>
-                <StatChip label="Feels" value={`${weather.feelsC}°`} delay={220} />
-                {weather.humidity != null ? (
-                  <StatChip label="Humidity" value={`${weather.humidity}%`} delay={280} />
-                ) : null}
-                {weather.windKmh != null ? (
-                  <StatChip label="Wind" value={`${weather.windKmh} km/h`} delay={340} />
-                ) : null}
-                {weather.precipChance != null ? (
-                  <StatChip label="Rain" value={`${weather.precipChance}%`} delay={400} />
-                ) : null}
-              </View>
+              <Text style={styles.weatherSecondary}>
+                {[
+                  `Feels ${weather.feelsC}°`,
+                  weather.humidity != null ? `${weather.humidity}% humidity` : null,
+                  weather.precipChance != null ? `${weather.precipChance}% rain` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
             </>
           ) : (
             <Text style={styles.weatherMuted}>
@@ -461,31 +448,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
     maxWidth: 220,
   },
-  stats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 14,
-  },
-  chip: {
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderRadius: radii.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    minWidth: 72,
-  },
-  chipLabel: {
-    color: colors.textDim,
+  weatherSecondary: {
+    color: colors.textMuted,
     fontFamily: fonts.body,
-    fontSize: 10,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  chipValue: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    marginTop: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 12,
   },
   weatherMuted: {
     color: colors.textMuted,

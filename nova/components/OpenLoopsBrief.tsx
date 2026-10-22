@@ -165,24 +165,17 @@ export function OpenLoopsBrief({ userId }: Props) {
       title={t('home.openLoops')}
       meta={total ? t.tf('home.openCount', { n: total }) : t('home.clear')}
       action={
-        <View style={styles.actionRow}>
-          {total > 0 ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{total}</Text>
-            </View>
-          ) : null}
-          <Pressable
-            onPress={() => setAdding((v) => !v)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('home.addLoop')}
-          >
-            <Text style={styles.refresh}>{adding ? t('home.close') : t('home.addLoop')}</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          onPress={() => setAdding((v) => !v)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('home.addLoop')}
+        >
+          <Text style={styles.refresh}>{adding ? t('home.close') : t('home.addLoop')}</Text>
+        </Pressable>
       }
     >
-      <Text style={styles.summary}>{t('home.loopsIntro')}</Text>
+      {total === 0 ? <Text style={styles.summary}>{t('home.loopsIntro')}</Text> : null}
 
       {adding ? (
         <View style={styles.composer}>
@@ -347,19 +340,6 @@ function TaskLoopRow({
 }
 
 const styles = StyleSheet.create({
-  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  badge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    paddingHorizontal: 6,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 12 },
   refresh: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
   summary: {
     color: colors.textMuted,
