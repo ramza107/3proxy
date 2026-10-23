@@ -105,6 +105,13 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="shopping"
+          options={{
+            title: t(language, 'tabs.shopping'),
+            href: null,
+          }}
+        />
+        <Tabs.Screen
           name="news"
           options={{
             title: t(language, 'tabs.news'),

@@ -15,6 +15,8 @@ import type {
   LifeAdminKind,
   Priority,
   Reminder,
+  ShoppingItem,
+  ShoppingUnit,
   Task,
   TaskRecurrence,
   UserSettings,
@@ -62,6 +64,7 @@ type NovaState = {
   lifeAdmin: LifeAdminItem[]
   bodyEntries: BodyEntry[]
   importantDates: ImportantDate[]
+  shopping: ShoppingItem[]
   investments: InvestmentHolding[]
   reminders: Reminder[]
   messages: ChatMessage[]
@@ -119,6 +122,15 @@ type NovaState = {
     remindEnabled?: boolean
     remindLeadDays?: number
   }) => ImportantDate
+  upsertShoppingItem: (item: ShoppingItem) => void
+  removeShoppingItem: (id: string) => void
+  toggleShoppingBought: (id: string) => void
+  clearBoughtShopping: () => void
+  createShoppingLocal: (input: {
+    title: string
+    amount?: number | null
+    unit?: ShoppingUnit | null
+  }) => ShoppingItem
   upsertInvestment: (holding: InvestmentHolding) => void
   removeInvestment: (id: string) => void
   createInvestmentLocal: (input: {
@@ -215,6 +227,7 @@ export const useNovaStore = create<NovaState>()(
       lifeAdmin: [],
       bodyEntries: [],
       importantDates: [],
+      shopping: [],
       investments: [],
       reminders: [],
       messages: [],
@@ -244,6 +257,7 @@ export const useNovaStore = create<NovaState>()(
           lifeAdmin: [],
           bodyEntries: [],
           importantDates: [],
+          shopping: [],
           investments: [],
           reminders: [],
           messages: [],
@@ -383,6 +397,52 @@ export const useNovaStore = create<NovaState>()(
       },
       removeImportantDate: (id) =>
         set({ importantDates: get().importantDates.filter((x) => x.id !== id) }),
+      upsertShoppingItem: (item) => {
+        const existing = get().shopping
+        const idx = existing.findIndex((x) => x.id === item.id)
+        if (idx >= 0) {
+          const next = [...existing]
+          next[idx] = item
+          set({ shopping: next })
+        } else {
+          set({ shopping: [item, ...existing] })
+        }
+      },
+      removeShoppingItem: (id) =>
+        set({ shopping: get().shopping.filter((x) => x.id !== id) }),
+      toggleShoppingBought: (id) => {
+        const now = new Date().toISOString()
+        set({
+          shopping: get().shopping.map((item) => {
+            if (item.id !== id) return item
+            const bought = !item.bought
+            return {
+              ...item,
+              bought,
+              boughtAt: bought ? now : null,
+              updated_at: now,
+            }
+          }),
+        })
+      },
+      clearBoughtShopping: () =>
+        set({ shopping: get().shopping.filter((item) => !item.bought) }),
+      createShoppingLocal: ({ title, amount = null, unit = null }) => {
+        const now = new Date().toISOString()
+        const raw = amount == null || !Number.isFinite(amount) ? null : Number(amount)
+        const item: ShoppingItem = {
+          id: uid('shop'),
+          title: title.trim() || 'Item',
+          amount: raw != null && raw > 0 ? raw : null,
+          unit: raw != null && raw > 0 ? unit || 'pcs' : null,
+          bought: false,
+          boughtAt: null,
+          created_at: now,
+          updated_at: now,
+        }
+        set({ shopping: [item, ...get().shopping] })
+        return item
+      },
       createImportantDateLocal: ({
         title,
         kind = 'birthday',
@@ -596,6 +656,7 @@ export const useNovaStore = create<NovaState>()(
         lifeAdmin: s.lifeAdmin,
         bodyEntries: s.bodyEntries,
         importantDates: s.importantDates,
+        shopping: s.shopping,
         investments: s.investments,
         reminders: s.reminders,
         messages: s.messages,
@@ -627,6 +688,7 @@ export const useNovaStore = create<NovaState>()(
           state.importantDates = Array.isArray(state.importantDates)
             ? state.importantDates
             : []
+          state.shopping = Array.isArray(state.shopping) ? state.shopping : []
           state.investments = Array.isArray(state.investments) ? state.investments : []
           state.dismissedPromiseIds = Array.isArray(state.dismissedPromiseIds)
             ? state.dismissedPromiseIds

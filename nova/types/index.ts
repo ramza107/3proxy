@@ -384,6 +384,23 @@ export type ImportantDate = {
   updated_at: string
 }
 
+/** Shopping list — in-store checklist with optional amount + unit */
+export const SHOPPING_UNITS = ['pcs', 'kg', 'g', 'l', 'ml'] as const
+
+export type ShoppingUnit = (typeof SHOPPING_UNITS)[number]
+
+export type ShoppingItem = {
+  id: string
+  title: string
+  /** How much — null means just the item name */
+  amount: number | null
+  unit: ShoppingUnit | null
+  bought: boolean
+  boughtAt: string | null
+  created_at: string
+  updated_at: string
+}
+
 /** Invest (Pro) — track holdings with live price + P&L */
 export const INVEST_ASSET_KINDS = ['stock', 'etf', 'crypto', 'metal', 'other'] as const
 
