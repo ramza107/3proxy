@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (build 44 / 1.1.0)
+# Wahrly — TestFlight (build 45 / 1.1.0)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -19,7 +19,7 @@ Wahrly is a daily life assistant: tasks, bills, Google Calendar (readonly), date
 ## What to Test (RU) — вставить в TestFlight
 
 ```
-Wahrly 1.1.0 (build 44) — MVP life assistant
+Wahrly 1.1.0 (build 45) — MVP life assistant
 
 ЧТО ПРОВЕРИТЬ
 1) Onboarding / имя / язык (RU или EN) — финал ведёт на Home, не на Plan day.
@@ -55,7 +55,7 @@ Wahrly 1.1.0 (build 44) — MVP life assistant
 ## What to Test (EN)
 
 ```
-Wahrly 1.1.0 (build 44) — MVP life assistant
+Wahrly 1.1.0 (build 45) — MVP life assistant
 
 PLEASE TRY
 1) Onboarding / name / language — ends on Home (not Plan day).
