@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (build 43 / 1.1.0)
+# Wahrly — TestFlight (build 45 / 1.1.0)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -19,7 +19,7 @@ Wahrly is a daily life assistant: tasks, bills, Google Calendar (readonly), date
 ## What to Test (RU) — вставить в TestFlight
 
 ```
-Wahrly 1.1.0 (build 43) — MVP life assistant
+Wahrly 1.1.0 (build 45) — MVP life assistant
 
 ЧТО ПРОВЕРИТЬ
 1) Onboarding / имя / язык (RU или EN) — финал ведёт на Home, не на Plan day.
@@ -31,13 +31,15 @@ Wahrly 1.1.0 (build 43) — MVP life assistant
 6) Вкладки: Tasks · Home · Bills · Dates · Settings (Invest не в таб-баре).
 7) Bills: добавь счёт, отметь paid.
 8) Dates / Life: важная дата и документ с сроком.
-9) News: интересы и лента «вчера» (через Quick actions / Life).
-10) Free vs Pro (Settings → Pro / IAP или demo unlock):
-    Free: задачи, календарь, Bills, локальный чат, Evening Clear (простой).
+9) Shopping (Free): Home → ⋯ → Shopping — список, кол-во/вес, отметить купленное.
+10) News: интересы и лента «вчера» (через Quick actions / Life).
+11) Free vs Pro (Settings → Pro / IAP или demo unlock):
+    Free: задачи, календарь, Bills, локальный чат, Evening Clear (простой), Shopping.
     Pro: Plan day, morning brief, reminders, виджет, cloud AI, голос, Invest, weekly brief.
-11) Invest (Pro): Quick actions → Invest — набери «gold» или «bitcoin», live-цена.
-12) Пуши: evening Free; morning / bills reminders — Pro. Разрешить уведомления.
-13) Виджет «Next task» — Pro.
+12) Invest (Pro): Quick actions → Invest — набери «gold» или «bitcoin», live-цена.
+13) Пуши: evening Free; morning / bills reminders — Pro. Разрешить уведомления.
+14) Виджет «Next task» (Pro) — на Lock Screen должен читаться на тёмных обоях,
+    длинные названия не обрезаются в одну строку с временем.
 
 НЕ БАГ
 • Почта / Gmail отсутствуют намеренно (без CASA).
@@ -53,7 +55,7 @@ Wahrly 1.1.0 (build 43) — MVP life assistant
 ## What to Test (EN)
 
 ```
-Wahrly 1.1.0 (build 43) — MVP life assistant
+Wahrly 1.1.0 (build 45) — MVP life assistant
 
 PLEASE TRY
 1) Onboarding / name / language — ends on Home (not Plan day).
@@ -64,11 +66,14 @@ PLEASE TRY
    If you connected Gmail before: Disconnect → Connect again.
 6) Tabs: Tasks · Home · Bills · Dates · Settings (Invest is off the tab bar).
 7) Bills / Dates / Life / News.
-8) Free vs Pro (Settings → Pro / IAP or demo unlock):
-   Free = tasks, calendar, bills, on-device chat, simple Evening Clear.
+8) Shopping (Free): Home → ⋯ → Shopping — list, qty/weight, check off bought.
+9) Free vs Pro (Settings → Pro / IAP or demo unlock):
+   Free = tasks, calendar, bills, on-device chat, simple Evening Clear, Shopping.
    Pro = Plan day, morning brief, reminders, widget, cloud AI, voice, Invest, weekly brief.
-9) Invest (Pro): Quick actions → Invest — type “gold” or “bitcoin”, confirm live price.
-10) Notifications (evening Free; morning/bill reminders Pro) + optional Home Screen widget (Pro).
+10) Invest (Pro): Quick actions → Invest — type “gold” or “bitcoin”, confirm live price.
+11) Notifications (evening Free; morning/bill reminders Pro).
+12) Lock Screen / Home “Next task” widget (Pro) — readable on dark wallpaper;
+    long titles should wrap, not cut off next to the time.
 
 NOT A BUG
 • No email/Gmail by design.
