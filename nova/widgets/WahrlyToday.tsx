@@ -1,8 +1,10 @@
 import { Text, VStack } from '@expo/ui/swift-ui'
 import {
+  allowsTightening,
   containerBackground,
   font,
   foregroundStyle,
+  minimumScaleFactor,
   padding,
   lineLimit,
   widgetURL,
@@ -74,44 +76,48 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
     )
   }
 
-  // Lock Screen rectangular: compact, system vibrancy (no mint plate).
+  // Lock Screen rectangular: time + title on separate lines so the title
+  // can wrap (combining "15:00 Meeting with…" was truncating names).
+  // Skip label/subtitle here — vertical space is tiny under the clock.
   if (isAccessory) {
-    const line = time ? `${time}  ${title}` : title
     return (
       <VStack
         spacing={2}
         alignment="leading"
-        modifiers={[padding({ all: 4 }), widgetURL(link)]}
+        modifiers={[padding({ all: 2 }), widgetURL(link)]}
       >
-        <Text
-          modifiers={[
-            font({ size: 11, weight: 'semibold' }),
-            foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
-            lineLimit(1),
-          ]}
-        >
-          {label}
-        </Text>
-        <Text
-          modifiers={[
-            font({ size: 15, weight: 'bold', design: 'rounded' }),
-            foregroundStyle({ type: 'hierarchical', style: 'primary' }),
-            lineLimit(2),
-          ]}
-        >
-          {line}
-        </Text>
-        {subtitle ? (
+        {time ? (
           <Text
             modifiers={[
-              font({ size: 12, weight: 'medium' }),
-              foregroundStyle({ type: 'hierarchical', style: 'tertiary' }),
+              font({ size: 13, weight: 'bold', design: 'rounded' }),
+              foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
               lineLimit(1),
             ]}
           >
-            {subtitle}
+            {time}
           </Text>
-        ) : null}
+        ) : (
+          <Text
+            modifiers={[
+              font({ size: 11, weight: 'semibold' }),
+              foregroundStyle({ type: 'hierarchical', style: 'secondary' }),
+              lineLimit(1),
+            ]}
+          >
+            {label}
+          </Text>
+        )}
+        <Text
+          modifiers={[
+            font({ size: 15, weight: 'semibold' }),
+            foregroundStyle({ type: 'hierarchical', style: 'primary' }),
+            lineLimit(2),
+            minimumScaleFactor(0.8),
+            allowsTightening(true),
+          ]}
+        >
+          {title}
+        </Text>
       </VStack>
     )
   }
@@ -155,6 +161,8 @@ function WahrlyTodayWidget(props: WahrlyTodayProps, env: WidgetEnvironment) {
             font({ size: 14, weight: 'medium' }),
             foregroundStyle(ink),
             lineLimit(3),
+            minimumScaleFactor(0.85),
+            allowsTightening(true),
           ]}
         >
           {title}
