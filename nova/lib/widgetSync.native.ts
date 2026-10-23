@@ -106,7 +106,7 @@ function buildSnapshot(): WidgetSnapshot {
           ? nextBill || t(lang, 'widget.today')
           : nextBill || ''
       : nearest.date
-        ? nearest.date
+        ? shortWidgetDate(nearest.date)
         : t(lang, 'widget.noDate')
 
   return {
@@ -124,6 +124,32 @@ function buildSnapshot(): WidgetSnapshot {
     nextBill,
     openInWahrly: t(lang, 'widget.open'),
     emptyHeadline: t(lang, 'widget.soon'),
+  }
+}
+
+/** "2026-10-23" → "Oct 23" — ISO dates are unreadable on Lock Screen. */
+function shortWidgetDate(iso: string): string {
+  try {
+    const [, m, d] = iso.split('-')
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ]
+    const mi = Number(m) - 1
+    if (!d || mi < 0 || mi > 11) return iso
+    return `${months[mi]} ${Number(d)}`
+  } catch {
+    return iso
   }
 }
 
