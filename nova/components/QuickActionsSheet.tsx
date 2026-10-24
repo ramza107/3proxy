@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { colors, fonts, spacing } from '../constants/theme'
+import { colors, fonts, radii, spacing } from '../constants/theme'
 import { useT } from '../lib/useT'
 import { BottomSheet } from './BottomSheet'
 
@@ -21,7 +21,18 @@ type Props = {
   onOpenWeekly?: () => void
 }
 
-/** Floating “more” menu — rituals and destinations without another tab. */
+type ActionItem = {
+  key: string
+  label: string
+  sub: string
+  onPress: () => void
+  disabled?: boolean
+}
+
+/**
+ * App-wide destinations + rituals — opened from the labeled Menu control on Home.
+ * Grouped so the sheet reads as a map of the product, not a mystery list.
+ */
 export function QuickActionsSheet({
   visible,
   onClose,
@@ -45,84 +56,129 @@ export function QuickActionsSheet({
     setTimeout(fn, 80)
   }
 
+  const day: ActionItem[] = [
+    {
+      key: 'plan',
+      label: planning ? t('home.planning') : t('home.planDay'),
+      sub: t('quick.packGaps'),
+      onPress: () => run(onPlanDay),
+      disabled: !!planning,
+    },
+  ]
+  if (onOpenMorning) {
+    day.push({
+      key: 'morning',
+      label: t('quick.morning'),
+      sub: t('quick.morningSub'),
+      onPress: () => run(onOpenMorning),
+    })
+  }
+  if (onOpenWeekly) {
+    day.push({
+      key: 'weekly',
+      label: t('quick.weekly'),
+      sub: t('quick.weeklySub'),
+      onPress: () => run(onOpenWeekly),
+    })
+  }
+  if (showEvening && onOpenEvening) {
+    day.push({
+      key: 'evening',
+      label: t('home.eveningClear'),
+      sub: t('quick.eveningSub'),
+      onPress: () => run(onOpenEvening),
+    })
+  }
+
+  const tools: ActionItem[] = [
+    {
+      key: 'tasks',
+      label: t('quick.tasks'),
+      sub: t('quick.tasksSub'),
+      onPress: () => run(onOpenTasks),
+    },
+  ]
+  if (onOpenBills) {
+    tools.push({
+      key: 'bills',
+      label: t('quick.bills'),
+      sub: t('quick.billsSub'),
+      onPress: () => run(onOpenBills),
+    })
+  }
+  if (onOpenShopping) {
+    tools.push({
+      key: 'shopping',
+      label: t('quick.shopping'),
+      sub: t('quick.shoppingSub'),
+      onPress: () => run(onOpenShopping),
+    })
+  }
+  if (onOpenLife) {
+    tools.push({
+      key: 'life',
+      label: t('quick.life'),
+      sub: t('quick.lifeSub'),
+      onPress: () => run(onOpenLife),
+    })
+  }
+  if (onOpenInvest) {
+    tools.push({
+      key: 'invest',
+      label: t('quick.invest'),
+      sub: t('quick.investSub'),
+      onPress: () => run(onOpenInvest),
+    })
+  }
+
+  const app: ActionItem[] = [
+    {
+      key: 'chat',
+      label: t('quick.chat'),
+      sub: t('quick.chatSub'),
+      onPress: () => run(onOpenChat),
+    },
+    {
+      key: 'settings',
+      label: t('tabs.settings'),
+      sub: t('quick.settingsSub'),
+      onPress: () => run(onOpenSettings),
+    },
+  ]
+
   return (
-    <BottomSheet visible={visible} onClose={onClose} title={t('quick.title')} scroll={false}>
-      <View style={styles.list}>
-        <Action
-          label={planning ? t('home.planning') : t('home.planDay')}
-          sub={t('quick.packGaps')}
-          onPress={() => run(onPlanDay)}
-          disabled={!!planning}
-        />
-        <Action
-          label={t('quick.chat')}
-          sub={t('quick.chatSub')}
-          onPress={() => run(onOpenChat)}
-        />
-        <Action
-          label={t('quick.tasks')}
-          sub={t('quick.tasksSub')}
-          onPress={() => run(onOpenTasks)}
-        />
-        {onOpenBills ? (
-          <Action
-            label={t('quick.bills')}
-            sub={t('quick.billsSub')}
-            onPress={() => run(onOpenBills)}
-          />
-        ) : null}
-        {onOpenInvest ? (
-          <Action
-            label={t('quick.invest')}
-            sub={t('quick.investSub')}
-            onPress={() => run(onOpenInvest)}
-          />
-        ) : null}
-        {onOpenLife ? (
-          <Action
-            label={t('quick.life')}
-            sub={t('quick.lifeSub')}
-            onPress={() => run(onOpenLife)}
-          />
-        ) : null}
-        {onOpenShopping ? (
-          <Action
-            label={t('quick.shopping')}
-            sub={t('quick.shoppingSub')}
-            onPress={() => run(onOpenShopping)}
-          />
-        ) : null}
-        {onOpenMorning ? (
-          <Action
-            label={t('quick.morning')}
-            sub={t('quick.morningSub')}
-            onPress={() => run(onOpenMorning)}
-          />
-        ) : null}
-        {onOpenWeekly ? (
-          <Action
-            label={t('quick.weekly')}
-            sub={t('quick.weeklySub')}
-            onPress={() => run(onOpenWeekly)}
-          />
-        ) : null}
-        {showEvening && onOpenEvening ? (
-          <Action
-            label={t('home.eveningClear')}
-            sub={t('quick.eveningSub')}
-            onPress={() => run(onOpenEvening)}
-          />
-        ) : null}
-        <Action
-          label={t('tabs.settings')}
-          sub={t('quick.settingsSub')}
-          onPress={() => run(onOpenSettings)}
-        />
-      </View>
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      title={t('quick.title')}
+      subtitle={t('quick.subtitle')}
+      scroll
+    >
+      <Section title={t('quick.sectionDay')} items={day} />
+      <Section title={t('quick.sectionTools')} items={tools} />
+      <Section title={t('quick.sectionApp')} items={app} />
       <Pressable onPress={onClose} style={styles.cancel}>
         <Text style={styles.cancelText}>{t('home.close')}</Text>
       </Pressable>
     </BottomSheet>
+  )
+}
+
+function Section({ title, items }: { title: string; items: ActionItem[] }) {
+  if (items.length === 0) return null
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {items.map((item) => (
+        <Action
+          key={item.key}
+          label={item.label}
+          sub={item.sub}
+          onPress={item.onPress}
+          disabled={item.disabled}
+        />
+      ))}
+    </View>
   )
 }
 
@@ -142,8 +198,8 @@ function Action({
       style={[styles.row, disabled && styles.disabled]}
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
     >
-      <View style={styles.node} />
       <View style={{ flex: 1 }}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.sub}>{sub}</Text>
@@ -154,25 +210,33 @@ function Action({
 }
 
 const styles = StyleSheet.create({
-  list: { gap: 2 },
+  section: { marginBottom: spacing.md },
+  sectionTitle: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+    marginTop: 4,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 14,
+    paddingVertical: 13,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   disabled: { opacity: 0.45 },
-  node: {
-    width: 10,
-    height: 10,
-    borderRadius: 99,
-    backgroundColor: colors.signal,
-  },
   label: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   sub: { color: colors.textDim, fontFamily: fonts.body, fontSize: 13, marginTop: 2 },
   chev: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 16 },
-  cancel: { alignItems: 'center', paddingVertical: spacing.md, marginTop: 4 },
+  cancel: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginTop: 4,
+    borderRadius: radii.full,
+  },
   cancelText: { color: colors.textMuted, fontFamily: fonts.bodyMedium },
 })
