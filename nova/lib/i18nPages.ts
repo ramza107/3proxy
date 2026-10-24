@@ -235,7 +235,9 @@ export const enPages: Dict = {
   'quick.sectionTools': 'Tools',
   'quick.sectionApp': 'App',
   'quick.toolsRow': 'All tools',
-  'quick.toolsRowSub': 'Shopping, Life, Invest, rituals, settings…',
+  'quick.toolsRowSub': 'Bills, Dates, Shopping, Life, Invest…',
+  'quick.dates': 'Dates',
+  'quick.datesSub': 'Birthdays and holidays',
   'quick.openMenu': 'Open',
 
   'shopping.kicker': 'At the store',
@@ -818,7 +820,9 @@ export const ruPages: Dict = {
   'quick.sectionTools': 'Инструменты',
   'quick.sectionApp': 'Приложение',
   'quick.toolsRow': 'Все разделы',
-  'quick.toolsRowSub': 'Покупки, Жизнь, Invest, ритуалы, настройки…',
+  'quick.toolsRowSub': 'Счета, Даты, Покупки, Жизнь, Invest…',
+  'quick.dates': 'Даты',
+  'quick.datesSub': 'Дни рождения и праздники',
   'quick.openMenu': 'Открыть',
 
   'shopping.kicker': 'В магазине',
@@ -1571,7 +1575,9 @@ export const ukPages: Dict = {
   'quick.sectionTools': 'Інструменти',
   'quick.sectionApp': 'Застосунок',
   'quick.toolsRow': 'Усі розділи',
-  'quick.toolsRowSub': 'Покупки, Життя, Invest, ритуали, налаштування…',
+  'quick.toolsRowSub': 'Рахунки, Дати, Покупки, Життя, Invest…',
+  'quick.dates': 'Дати',
+  'quick.datesSub': 'Дні народження й свята',
   'quick.openMenu': 'Відкрити',
 
   'shopping.kicker': 'У магазині',

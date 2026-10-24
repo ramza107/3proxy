@@ -469,6 +469,7 @@ export default function HomeScreen() {
         onOpenChat={() => router.push('/chat')}
         onOpenTasks={() => router.push('/tasks')}
         onOpenBills={() => router.push('/bills')}
+        onOpenDates={() => router.push('/dates')}
         onOpenInvest={isProUser ? () => router.push('/invest') : undefined}
         onOpenLife={() => router.push('/life')}
         onOpenShopping={() => router.push('/shopping')}

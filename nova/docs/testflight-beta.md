@@ -28,7 +28,7 @@ Wahrly 1.1.0 (build 45) — MVP life assistant
 4) Open loops: добавь «я должен» и «жду» (можно с optional due).
 5) Settings → Connect with Google: только Calendar (readonly). Почта НЕ читается.
    Если раньше подключал Gmail: Disconnect → Connect заново.
-6) Вкладки: Tasks · Home · Bills · Dates · Settings (Invest не в таб-баре).
+6) Вкладки: Tasks · Home · Settings. Bills / Dates / Shopping / Life — Home → Меню.
 7) Bills: добавь счёт, отметь paid.
 8) Dates / Life: важная дата и документ с сроком.
 9) Shopping (Free): Home → ⋯ → Shopping — список, кол-во/вес, отметить купленное.
@@ -64,7 +64,7 @@ PLEASE TRY
 4) Open loops: “I owe” + “Waiting” (optional due date ok).
 5) Settings → Connect with Google — Calendar readonly only (no mail).
    If you connected Gmail before: Disconnect → Connect again.
-6) Tabs: Tasks · Home · Bills · Dates · Settings (Invest is off the tab bar).
+6) Tabs: Tasks · Home · Settings. Bills / Dates / Shopping / Life — Home → Menu.
 7) Bills / Dates / Life / News.
 8) Shopping (Free): Home → ⋯ → Shopping — list, qty/weight, check off bought.
 9) Free vs Pro (Settings → Pro / IAP or demo unlock):
@@ -107,7 +107,7 @@ Aligned with `lib/pro.ts` (hard split).
 | Invest + live quotes | ❌ | ✅ |
 | Weekly brief | ❌ | ✅ |
 
-Primary tabs for everyone: **Tasks · Home · Bills · Dates · Settings**. Invest is Pro-only via Quick actions.
+Primary tabs: **Tasks · Home · Settings**. Bills, Dates, Shopping, Life (and Pro Invest) open from Home → Menu.
 
 ---
 

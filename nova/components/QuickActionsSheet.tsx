@@ -12,6 +12,7 @@ type Props = {
   onOpenChat: () => void
   onOpenTasks: () => void
   onOpenBills?: () => void
+  onOpenDates?: () => void
   onOpenLife?: () => void
   onOpenShopping?: () => void
   onOpenInvest?: () => void
@@ -42,6 +43,7 @@ export function QuickActionsSheet({
   onOpenChat,
   onOpenTasks,
   onOpenBills,
+  onOpenDates,
   onOpenLife,
   onOpenShopping,
   onOpenInvest,
@@ -104,6 +106,14 @@ export function QuickActionsSheet({
       label: t('quick.bills'),
       sub: t('quick.billsSub'),
       onPress: () => run(onOpenBills),
+    })
+  }
+  if (onOpenDates) {
+    tools.push({
+      key: 'dates',
+      label: t('quick.dates'),
+      sub: t('quick.datesSub'),
+      onPress: () => run(onOpenDates),
     })
   }
   if (onOpenShopping) {

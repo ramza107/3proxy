@@ -69,24 +69,25 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="settings"
+          options={{
+            title: t(language, 'tabs.settings'),
+            tabBarIcon: tabIcon('settings'),
+          }}
+        />
+        {/* Everything else lives in Home → Menu (All tools). Keep routes mounted. */}
+        <Tabs.Screen
           name="bills"
           options={{
             title: t(language, 'tabs.bills'),
-            tabBarIcon: tabIcon('bills'),
+            href: null,
           }}
         />
         <Tabs.Screen
           name="dates"
           options={{
             title: t(language, 'tabs.dates'),
-            tabBarIcon: tabIcon('dates'),
-          }}
-        />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: t(language, 'tabs.settings'),
-            tabBarIcon: tabIcon('settings'),
+            href: null,
           }}
         />
         {/* Invest is Pro — keep off the primary bar so Free never opens into a paywall tab. */}
