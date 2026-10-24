@@ -131,6 +131,12 @@ type NovaState = {
     amount?: number | null
     unit?: ShoppingUnit | null
   }) => ShoppingItem
+  /** Add a title, or bump amount if the same open item already exists. */
+  addShoppingQuick: (input: {
+    title: string
+    amount?: number | null
+    unit?: ShoppingUnit | null
+  }) => ShoppingItem
   upsertInvestment: (holding: InvestmentHolding) => void
   removeInvestment: (id: string) => void
   createInvestmentLocal: (input: {
@@ -442,6 +448,36 @@ export const useNovaStore = create<NovaState>()(
         }
         set({ shopping: [item, ...get().shopping] })
         return item
+      },
+      addShoppingQuick: ({ title, amount = null, unit = null }) => {
+        const name = title.trim()
+        const key = name.toLowerCase()
+        const existing = get().shopping.find((x) => !x.bought && x.title.trim().toLowerCase() === key)
+        if (existing) {
+          const now = new Date().toISOString()
+          const bump =
+            amount != null && Number.isFinite(amount) && amount > 0
+              ? amount
+              : existing.amount != null
+                ? 1
+                : null
+          const nextAmount =
+            bump == null
+              ? existing.amount
+              : (existing.amount != null ? existing.amount : 0) + bump
+          const next: ShoppingItem = {
+            ...existing,
+            amount: nextAmount != null && nextAmount > 0 ? nextAmount : existing.amount,
+            unit:
+              nextAmount != null && nextAmount > 0
+                ? unit || existing.unit || 'pcs'
+                : existing.unit,
+            updated_at: now,
+          }
+          get().upsertShoppingItem(next)
+          return next
+        }
+        return get().createShoppingLocal({ title: name, amount, unit })
       },
       createImportantDateLocal: ({
         title,
