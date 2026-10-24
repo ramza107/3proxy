@@ -135,7 +135,8 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     marginBottom: 0,
   },
-  done: { opacity: 0.5 },
+  /** Soften done rows without washing into the painting backdrop. */
+  done: { opacity: 0.78 },
   overdueCard: {
     borderBottomColor: 'rgba(196,69,74,0.25)',
   },
