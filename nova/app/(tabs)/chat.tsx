@@ -11,11 +11,13 @@ import {
   View,
 } from 'react-native'
 import { Screen } from '../../components/Screen'
+import { ScreenHeader } from '../../components/ScreenHeader'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { ChatBubble } from '../../components/ChatBubble'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { addLocalDays, localISODate } from '../../lib/localDate'
+import { useIsPro } from '../../lib/pro'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import { sendNovaMessage } from '../../services/ai'
@@ -88,6 +90,7 @@ function describeWhere(action: AIAction): SavedItem | null {
 export default function ChatScreen() {
   const t = useT()
   const router = useRouter()
+  const isPro = useIsPro()
   const messages = useNovaStore((s) => s.messages)
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const [loading, setLoading] = useState(false)
@@ -118,12 +121,10 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={8}
       >
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{brand.name}</Text>
-              <Text style={styles.sub}>{brand.tagline}</Text>
-            </View>
+        <ScreenHeader
+          title={brand.name}
+          sub={isPro ? brand.tagline : t('pro.freeChatHint')}
+          trailing={
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('chat.done')}
@@ -132,8 +133,8 @@ export default function ChatScreen() {
             >
               <Text style={styles.doneText}>{t('chat.done')}</Text>
             </Pressable>
-          </View>
-        </View>
+          }
+        />
 
         <FlatList
           ref={listRef}
@@ -214,7 +215,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexGrow: 1 },
-  empty: { gap: 12, paddingTop: 24 },
+  empty: {
+    gap: 12,
+    paddingTop: 8,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
   emptyTitle: { color: colors.text, fontSize: 22, fontFamily: fonts.bodyBold },
   emptyText: { color: colors.textMuted, lineHeight: 22, marginBottom: 8, fontFamily: fonts.body },
   chip: {
@@ -222,7 +232,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'transparent',
+    backgroundColor: colors.bgElevated,
   },
   chipText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium },
   savedCard: {
@@ -233,6 +243,10 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.md,
     paddingVertical: spacing.sm,
     gap: 6,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   savedLabel: {
     color: colors.accentStrong,

@@ -14,10 +14,12 @@ import { useFocusEffect } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { BrandMark } from '../../components/BrandMark'
+import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { fetchYesterdayNews } from '../../lib/newsApi'
+import { useIsPro } from '../../lib/pro'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import {
@@ -67,6 +69,7 @@ function formatStoryTime(iso: string, language: string) {
 
 export default function NewsScreen() {
   const t = useT()
+  const isPro = useIsPro()
   const settings = useNovaStore((s) => s.settings)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const interests = useMemo(
@@ -128,6 +131,18 @@ export default function NewsScreen() {
       next = [...interests, key]
     }
     updateSettings({ newsInterests: normalizeNewsInterests(next) })
+  }
+
+  if (!isPro) {
+    return (
+      <ProSpaceLock
+        kicker={t('news.kicker')}
+        title={t('news.title')}
+        sub={t('news.sub')}
+        lockTitle={t('pro.spaceLockTitle')}
+        lockText={t('pro.spaceLockNews')}
+      />
+    )
   }
 
   return (

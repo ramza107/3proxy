@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ImportantDateEditor } from '../../components/ImportantDateEditor'
 import { Screen } from '../../components/Screen'
+import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
@@ -33,22 +34,18 @@ export default function DatesScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{t('dates.kicker')}</Text>
-          <Text style={styles.title}>{t('dates.title')}</Text>
-          <Text style={styles.sub}>{t('dates.sub')}</Text>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{upcoming.length}</Text>
-            <Text style={styles.statLabel}>{t('dates.soon')}</Text>
+        <ScreenHeader kicker={t('dates.kicker')} title={t('dates.title')} sub={t('dates.sub')}>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{upcoming.length}</Text>
+              <Text style={styles.statLabel}>{t('dates.soon')}</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{sorted.length}</Text>
+              <Text style={styles.statLabel}>{t('dates.total')}</Text>
+            </View>
           </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{sorted.length}</Text>
-            <Text style={styles.statLabel}>{t('dates.total')}</Text>
-          </View>
-        </View>
+        </ScreenHeader>
 
         <ScrollView
           contentContainerStyle={styles.list}
@@ -215,9 +212,7 @@ const styles = StyleSheet.create({
   sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
     gap: 8,
-    marginBottom: 8,
   },
   stat: {
     flex: 1,
@@ -231,7 +226,16 @@ const styles = StyleSheet.create({
   statValue: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 20 },
   statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 8 },
-  section: { marginTop: 10, gap: 2 },
+  section: {
+    marginTop: 4,
+    gap: 2,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   sectionHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -243,7 +247,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   sectionCount: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 13 },
-  empty: { paddingVertical: spacing.lg, gap: 8 },
+  empty: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    gap: 8,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   row: {

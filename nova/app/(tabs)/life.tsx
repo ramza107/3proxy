@@ -4,11 +4,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BodyEntryEditor } from '../../components/BodyEntryEditor'
 import { LifeAdminEditor } from '../../components/LifeAdminEditor'
+import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
+import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { daysUntilExpiry, sortLifeAdmin } from '../../lib/lifeDates'
+import { useIsPro } from '../../lib/pro'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import type { BodyEntry, LifeAdminItem } from '../../types'
@@ -17,6 +20,7 @@ type Segment = 'admin' | 'body'
 
 export default function LifeScreen() {
   const t = useT()
+  const isPro = useIsPro()
   const lifeAdmin = useNovaStore((s) => s.lifeAdmin)
   const bodyEntries = useNovaStore((s) => s.bodyEntries)
   const createLifeAdminLocal = useNovaStore((s) => s.createLifeAdminLocal)
@@ -57,29 +61,37 @@ export default function LifeScreen() {
     }
   }
 
+  if (!isPro) {
+    return (
+      <ProSpaceLock
+        kicker={t('life.kicker')}
+        title={t('life.title')}
+        sub={t('life.sub')}
+        lockTitle={t('pro.spaceLockTitle')}
+        lockText={t('pro.spaceLockLife')}
+      />
+    )
+  }
+
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{t('life.kicker')}</Text>
-          <Text style={styles.title}>{t('life.title')}</Text>
-          <Text style={styles.sub}>{t('life.sub')}</Text>
-        </View>
-
-        <View style={styles.segRow}>
-          <SegChip
-            label={t('life.tabAdmin')}
-            active={segment === 'admin'}
-            badge={soonCount > 0 ? String(soonCount) : undefined}
-            onPress={() => setSegment('admin')}
-          />
-          <SegChip
-            label={t('life.tabBody')}
-            active={segment === 'body'}
-            badge={sortedBody.length ? String(sortedBody.length) : undefined}
-            onPress={() => setSegment('body')}
-          />
-        </View>
+        <ScreenHeader kicker={t('life.kicker')} title={t('life.title')} sub={t('life.sub')}>
+          <View style={styles.segRow}>
+            <SegChip
+              label={t('life.tabAdmin')}
+              active={segment === 'admin'}
+              badge={soonCount > 0 ? String(soonCount) : undefined}
+              onPress={() => setSegment('admin')}
+            />
+            <SegChip
+              label={t('life.tabBody')}
+              active={segment === 'body'}
+              badge={sortedBody.length ? String(sortedBody.length) : undefined}
+              onPress={() => setSegment('body')}
+            />
+          </View>
+        </ScreenHeader>
 
         <ScrollView
           contentContainerStyle={styles.list}
@@ -307,9 +319,7 @@ const styles = StyleSheet.create({
   sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   segRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
     gap: 8,
-    marginBottom: 8,
   },
   seg: {
     flexDirection: 'row',

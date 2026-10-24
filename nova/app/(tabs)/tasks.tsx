@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
+import { ScreenHeader } from '../../components/ScreenHeader'
 import { HomeSection } from '../../components/HomeSection'
 import { TaskCard } from '../../components/TaskCard'
 import { TaskEditor } from '../../components/TaskEditor'
@@ -180,26 +181,21 @@ export default function TasksScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{t('tasks.kicker')}</Text>
-          <Text style={styles.title}>{t('tasks.title')}</Text>
-          <View style={styles.headerCopy}>
-            <Text style={styles.sub}>{t('tasks.sub')}</Text>
-            <Text style={styles.statsLine}>
-              <Text style={styles.statsStrong}>{stats.open}</Text>
-              {` ${t('tasks.statOpen').toLowerCase()}`}
-              {' · '}
-              <Text style={stats.overdue > 0 ? styles.statsHot : styles.statsStrong}>{stats.overdue}</Text>
-              {` ${t('tasks.statOverdue').toLowerCase()}`}
-              {' · '}
-              <Text style={styles.statsStrong}>{stats.week}</Text>
-              {` ${t('tasks.statWeek').toLowerCase()}`}
-              {' · '}
-              <Text style={styles.statsStrong}>{stats.timed}</Text>
-              {` ${t('tasks.statTimed').toLowerCase()}`}
-            </Text>
-          </View>
-        </View>
+        <ScreenHeader kicker={t('tasks.kicker')} title={t('tasks.title')} sub={t('tasks.sub')}>
+          <Text style={styles.statsLine}>
+            <Text style={styles.statsStrong}>{stats.open}</Text>
+            {` ${t('tasks.statOpen').toLowerCase()}`}
+            {' · '}
+            <Text style={stats.overdue > 0 ? styles.statsHot : styles.statsStrong}>{stats.overdue}</Text>
+            {` ${t('tasks.statOverdue').toLowerCase()}`}
+            {' · '}
+            <Text style={styles.statsStrong}>{stats.week}</Text>
+            {` ${t('tasks.statWeek').toLowerCase()}`}
+            {' · '}
+            <Text style={styles.statsStrong}>{stats.timed}</Text>
+            {` ${t('tasks.statTimed').toLowerCase()}`}
+          </Text>
+        </ScreenHeader>
 
         <View style={styles.weekStripOuter}>
           <ScrollView
