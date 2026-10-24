@@ -312,15 +312,6 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <LinearGradient
-        colors={['#C9DCE3', '#E4EEF1', '#F2F7F8']}
-        locations={[0, 0.42, 1]}
-        start={{ x: 0.05, y: 0 }}
-        end={{ x: 0.95, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.orbA} pointerEvents="none" />
-      <View style={styles.orbB} pointerEvents="none" />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView
           style={styles.scroll}
@@ -475,24 +466,6 @@ function toneLabel(tone: Tone) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
-  orbA: {
-    position: 'absolute',
-    top: -80,
-    right: -60,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: 'rgba(15,110,102,0.14)',
-  },
-  orbB: {
-    position: 'absolute',
-    top: 220,
-    left: -90,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(15,42,50,0.06)',
-  },
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
