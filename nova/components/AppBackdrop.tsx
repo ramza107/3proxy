@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     height: 120,
   },
   veil: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(247,250,250,0.18)',
   },
 })

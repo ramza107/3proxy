@@ -23,7 +23,7 @@ export function Screen({ children, style, plain }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   plainWash: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: colors.bg,
   },
   content: { flex: 1 },
