@@ -74,7 +74,9 @@ const styles = StyleSheet.create({
   stretchInner: {
     alignSelf: 'stretch',
     width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: '100%',
+    flexGrow: 1,
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
   },
 })
