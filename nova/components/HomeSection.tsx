@@ -12,8 +12,8 @@ type Props = {
 }
 
 /**
- * Home block on the mist field.
- * Emphasized sections keep a soft surface; secondary ones stay open (less dashboard).
+ * Content block on the painting field.
+ * Soft solid surface so titles/meta never wash into the backdrop.
  */
 export function HomeSection({ title, meta, action, children, emphasize }: Props) {
   return (
@@ -33,28 +33,27 @@ export function HomeSection({ title, meta, action, children, emphasize }: Props)
 
 const styles = StyleSheet.create({
   block: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(250,252,251,0.94)',
     borderRadius: radii.lg,
-    paddingHorizontal: 2,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm + 2,
+    paddingBottom: spacing.sm + 2,
     gap: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   blockEmph: {
     backgroundColor: colors.bgCardSolid,
-    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
     ...Platform.select({
       ios: {
         shadowColor: '#0F2A32',
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 3 },
       },
-      android: { elevation: 1 },
+      android: { elevation: 2 },
       default: {},
     }),
   },
@@ -72,14 +71,14 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   title: {
-    color: colors.textMuted,
+    color: colors.text,
     fontFamily: fonts.bodyBold,
     fontSize: 13,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
   meta: {
-    color: colors.textDim,
+    color: colors.textMuted,
     fontFamily: fonts.body,
     fontSize: 12,
     lineHeight: 16,

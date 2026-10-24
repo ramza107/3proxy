@@ -182,20 +182,22 @@ export default function TasksScreen() {
         <View style={styles.header}>
           <Text style={styles.kicker}>{t('tasks.kicker')}</Text>
           <Text style={styles.title}>{t('tasks.title')}</Text>
-          <Text style={styles.sub}>{t('tasks.sub')}</Text>
-          <Text style={styles.statsLine}>
-            <Text style={styles.statsStrong}>{stats.open}</Text>
-            {` ${t('tasks.statOpen').toLowerCase()}`}
-            {' · '}
-            <Text style={stats.overdue > 0 ? styles.statsHot : styles.statsStrong}>{stats.overdue}</Text>
-            {` ${t('tasks.statOverdue').toLowerCase()}`}
-            {' · '}
-            <Text style={styles.statsStrong}>{stats.week}</Text>
-            {` ${t('tasks.statWeek').toLowerCase()}`}
-            {' · '}
-            <Text style={styles.statsStrong}>{stats.timed}</Text>
-            {` ${t('tasks.statTimed').toLowerCase()}`}
-          </Text>
+          <View style={styles.headerCopy}>
+            <Text style={styles.sub}>{t('tasks.sub')}</Text>
+            <Text style={styles.statsLine}>
+              <Text style={styles.statsStrong}>{stats.open}</Text>
+              {` ${t('tasks.statOpen').toLowerCase()}`}
+              {' · '}
+              <Text style={stats.overdue > 0 ? styles.statsHot : styles.statsStrong}>{stats.overdue}</Text>
+              {` ${t('tasks.statOverdue').toLowerCase()}`}
+              {' · '}
+              <Text style={styles.statsStrong}>{stats.week}</Text>
+              {` ${t('tasks.statWeek').toLowerCase()}`}
+              {' · '}
+              <Text style={styles.statsStrong}>{stats.timed}</Text>
+              {` ${t('tasks.statTimed').toLowerCase()}`}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.weekStripOuter}>
@@ -260,6 +262,7 @@ export default function TasksScreen() {
               </Pressable>
             </View>
           ) : null}
+          {/* empty + day sections sit on solid surfaces so copy never washes into the painting */}
 
           {overdue.length > 0 && !focusDay ? (
             <HomeSection
@@ -409,7 +412,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    gap: 4,
+    gap: 6,
     marginBottom: 8,
   },
   kicker: {
@@ -425,7 +428,16 @@ const styles = StyleSheet.create({
     fontFamily: fonts.brand,
     letterSpacing: -0.8,
   },
-  sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  headerCopy: {
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  sub: { color: colors.text, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   statsLine: {
     color: colors.textMuted,
     fontFamily: fonts.body,
@@ -476,8 +488,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: radii.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: 'transparent',
+    borderColor: colors.borderStrong,
+    backgroundColor: 'rgba(250,252,251,0.88)',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexShrink: 0,
@@ -488,7 +500,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   dayChipLabel: {
-    color: colors.textMuted,
+    color: colors.text,
     fontFamily: fonts.bodyBold,
     fontSize: 11,
     lineHeight: 14,
@@ -498,7 +510,7 @@ const styles = StyleSheet.create({
   },
   dayChipLabelOn: { color: colors.accentStrong },
   dayChipSub: {
-    color: colors.textDim,
+    color: colors.textMuted,
     fontFamily: fonts.body,
     fontSize: 10,
     lineHeight: 12,
@@ -508,7 +520,7 @@ const styles = StyleSheet.create({
   },
   dayChipSubOn: { color: colors.accentStrong },
   dayChipCount: {
-    color: colors.textDim,
+    color: colors.text,
     fontFamily: fonts.bodyBold,
     fontSize: 14,
     lineHeight: 18,
@@ -531,8 +543,8 @@ const styles = StyleSheet.create({
     paddingBottom: 140,
   },
   dayEmpty: {
-    color: colors.textDim,
-    fontFamily: fonts.body,
+    color: colors.textMuted,
+    fontFamily: fonts.bodyMedium,
     fontSize: 13,
     paddingVertical: 2,
   },
@@ -566,9 +578,14 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   empty: {
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     gap: 8,
     marginBottom: 8,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   emptyTitle: {
     color: colors.text,
