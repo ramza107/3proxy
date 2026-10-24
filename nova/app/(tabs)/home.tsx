@@ -18,7 +18,7 @@ import { WeeklyBrief } from '../../components/WeeklyBrief'
 import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
 import { TaskEditor } from '../../components/TaskEditor'
-import { brand, colors, fonts, spacing } from '../../constants/theme'
+import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
 import { t as translate } from '../../lib/i18n'
 import { dateLocale } from '../../lib/dateLocale'
@@ -253,12 +253,12 @@ export default function HomeScreen() {
             </View>
             <Pressable
               onPress={() => setQuickOpen(true)}
-              hitSlop={10}
+              hitSlop={8}
               style={styles.menuBtn}
               accessibilityRole="button"
               accessibilityLabel={t('quick.title')}
             >
-              <Text style={styles.menuBtnText}>···</Text>
+              <Text style={styles.menuBtnText}>{t('quick.menuBtn')}</Text>
             </Pressable>
           </View>
           <Text style={styles.hello}>
@@ -267,6 +267,19 @@ export default function HomeScreen() {
           <Text style={styles.date}>
             {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
           </Text>
+
+          <Pressable
+            style={styles.toolsRow}
+            onPress={() => setQuickOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('quick.title')}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toolsTitle}>{t('quick.toolsRow')}</Text>
+              <Text style={styles.toolsSub}>{t('quick.toolsRowSub')}</Text>
+            </View>
+            <Text style={styles.toolsCta}>{t('quick.openMenu')}</Text>
+          </Pressable>
 
           {showEveningClear ? (
             <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
@@ -371,7 +384,11 @@ export default function HomeScreen() {
         </ScrollView>
 
         <SoftPressable style={styles.fab} onPress={() => setQuickOpen(true)}>
-          <Text style={styles.fabText}>+</Text>
+          <View style={styles.fabBars} pointerEvents="none">
+            <View style={styles.fabBar} />
+            <View style={[styles.fabBar, styles.fabBarMid]} />
+            <View style={styles.fabBar} />
+          </View>
         </SoftPressable>
       </SafeAreaView>
 
@@ -529,21 +546,44 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   menuBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    minHeight: 34,
+    paddingHorizontal: 14,
+    borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bgCardSolid,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    backgroundColor: colors.bgDeep,
   },
   menuBtnText: {
-    color: colors.accentStrong,
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+  toolsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  toolsTitle: {
+    color: colors.text,
     fontFamily: fonts.bodyBold,
     fontSize: 16,
-    marginTop: -5,
-    letterSpacing: 1,
+  },
+  toolsSub: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  toolsCta: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
   },
   hello: {
     color: colors.text,
@@ -676,10 +716,12 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 40,
   },
-  fabText: {
-    color: colors.textOnAccent,
-    fontFamily: fonts.bodyBold,
-    fontSize: 28,
-    marginTop: -2,
+  fabBars: { gap: 5, alignItems: 'center' },
+  fabBar: {
+    width: 18,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: colors.textOnAccent,
   },
+  fabBarMid: { width: 14 },
 })
