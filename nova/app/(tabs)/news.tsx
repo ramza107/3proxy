@@ -1,7 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   View,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
+import * as WebBrowser from 'expo-web-browser'
 import { useFocusEffect } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
@@ -40,7 +40,7 @@ const INTEREST_KEYS: Record<NewsInterest, string> = {
   health: 'news.interestHealth',
 }
 
-function openExternal(url: string) {
+async function openExternal(url: string) {
   const target = (url || '').trim()
   if (!target || !/^https?:\/\//i.test(target)) return
   try {
@@ -53,7 +53,14 @@ function openExternal(url: string) {
     window.open(target, '_blank', 'noopener,noreferrer')
     return
   }
-  Linking.openURL(target).catch(() => undefined)
+  try {
+    await WebBrowser.openBrowserAsync(target, {
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+      controlsColor: colors.accentStrong,
+    })
+  } catch {
+    // ignore — user dismissed or OS blocked
+  }
 }
 
 function formatStoryTime(iso: string, language: string) {
@@ -107,9 +114,21 @@ export default function NewsScreen() {
     }, [load]),
   )
 
+  const interestsKey = interests.join(',')
+  const skipInterestReload = useRef(true)
+  // Interests can change while focused — reload without leaving the screen.
+  useEffect(() => {
+    if (skipInterestReload.current) {
+      skipInterestReload.current = false
+      return
+    }
+    load(false).catch(() => undefined)
+  }, [interestsKey, load])
+
   const sections = useMemo(() => {
     if (!digest?.items.length) return [] as { interest: NewsInterest; items: NewsItem[] }[]
-    const order = digest.interests.length ? digest.interests : interests
+    // Prefer the user's current chip selection; fall back to digest order.
+    const order = interests.length ? interests : digest.interests
     return order
       .map((interest) => ({
         interest,
@@ -455,7 +474,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-    backgroundColor: 'rgba(245,248,250,0.55)',
+    backgroundColor: 'rgba(250,252,251,0.94)',
   },
   topicRow: {
     paddingHorizontal: spacing.lg,
@@ -486,7 +505,12 @@ const styles = StyleSheet.create({
   lead: {
     marginTop: spacing.lg,
     marginHorizontal: spacing.lg,
-    paddingVertical: 4,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   leadRow: {
     flexDirection: 'row',
@@ -519,8 +543,8 @@ const styles = StyleSheet.create({
   leadTitle: {
     color: colors.text,
     fontFamily: fonts.brand,
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 34,
     letterSpacing: -0.7,
   },
   leadFoot: {
@@ -541,21 +565,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   section: {
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    gap: 14,
+    marginTop: spacing.lg,
+    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: 8,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
     gap: 12,
+    marginBottom: 4,
   },
   sectionTitle: {
     color: colors.text,
     fontFamily: fonts.brand,
-    fontSize: 26,
-    letterSpacing: -0.5,
+    fontSize: 22,
+    letterSpacing: -0.4,
   },
   sectionCount: {
     color: colors.textDim,
@@ -634,7 +666,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     marginHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
     gap: 8,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   emptyTitle: {
     color: colors.text,
