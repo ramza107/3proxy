@@ -76,6 +76,8 @@ type Tile = {
   onPress: () => void
   tone: Tone
   disabled?: boolean
+  /** Visible but gated — Free users see what Pro unlocks. */
+  proLocked?: boolean
 }
 
 /**
@@ -161,6 +163,13 @@ export default function HomeScreen() {
     ])
   }
 
+  const requireProFeature = (body?: string) => {
+    Alert.alert(t('pro.title'), body || t('pro.upgradeBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('pro.subscribe'), onPress: () => router.push('/settings') },
+    ])
+  }
+
   const openPlanSheet = () => {
     if (!canUsePlanDay()) {
       requirePlanDayPro()
@@ -225,6 +234,7 @@ export default function HomeScreen() {
       onPress: openPlanSheet,
       tone: 'mist',
       disabled: planning,
+      proLocked: !isProUser,
     },
     {
       key: 'bills',
@@ -261,37 +271,51 @@ export default function HomeScreen() {
       onPress: () => router.push('/news'),
       tone: 'mist',
     },
-  ]
-
-  if (isProUser) {
-    tiles.push({
+    {
       key: 'invest',
       icon: 'invest',
       label: t('quick.invest'),
-      onPress: () => router.push('/invest'),
+      onPress: () => {
+        if (!isProUser) {
+          requireProFeature(t('invest.proText'))
+          return
+        }
+        router.push('/invest')
+      },
       tone: 'soft',
-    })
-    tiles.push({
+      proLocked: !isProUser,
+    },
+    {
       key: 'morning',
       icon: 'morning',
       label: t('quick.morning'),
       onPress: () => {
+        if (!isProUser) {
+          requireProFeature()
+          return
+        }
         updateSettings({ lastMorningBriefDate: null })
         setForceMorningBrief(true)
       },
       tone: 'teal',
-    })
-    tiles.push({
+      proLocked: !isProUser,
+    },
+    {
       key: 'weekly',
       icon: 'weekly',
       label: t('quick.weekly'),
       onPress: () => {
+        if (!isProUser) {
+          requireProFeature()
+          return
+        }
         updateSettings({ lastWeeklyBriefDate: null })
         setForceWeeklyBrief(true)
       },
       tone: 'mist',
-    })
-  }
+      proLocked: !isProUser,
+    },
+  ]
 
   if (showEveningClear) {
     tiles.push({
@@ -346,7 +370,11 @@ export default function HomeScreen() {
                 style={styles.tileWrap}
               >
                 <SoftPressable
-                  style={[styles.tileShell, tile.disabled && styles.tileDisabled]}
+                  style={[
+                    styles.tileShell,
+                    tile.disabled && styles.tileDisabled,
+                    tile.proLocked && styles.tileProLocked,
+                  ]}
                   onPress={tile.onPress}
                   disabled={tile.disabled}
                   stretch
@@ -358,14 +386,46 @@ export default function HomeScreen() {
                     style={styles.tile}
                   >
                     <View style={styles.tileFill}>
-                      <View style={styles.iconSlot}>
-                        <BrushIcon
-                          name={tile.icon}
-                          size={34}
-                          color={tile.tone === 'ink' ? colors.textOnAccent : colors.accentStrong}
-                        />
+                      <View style={styles.tileTop}>
+                        <View style={styles.iconSlot}>
+                          <BrushIcon
+                            name={tile.icon}
+                            size={34}
+                            color={
+                              tile.proLocked
+                                ? colors.textMuted
+                                : tile.tone === 'ink'
+                                  ? colors.textOnAccent
+                                  : colors.accentStrong
+                            }
+                          />
+                        </View>
+                        {tile.proLocked ? (
+                          <View
+                            style={[
+                              styles.proBadge,
+                              tile.tone === 'ink' && styles.proBadgeOnInk,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.proBadgeText,
+                                tile.tone === 'ink' && styles.proBadgeTextOnInk,
+                              ]}
+                            >
+                              {t('pro.badge')}
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
-                      <Text style={[styles.tileLabel, toneLabel(tile.tone)]} numberOfLines={2}>
+                      <Text
+                        style={[
+                          styles.tileLabel,
+                          toneLabel(tile.tone),
+                          tile.proLocked && styles.tileLabelLocked,
+                        ]}
+                        numberOfLines={2}
+                      >
                         {tile.label}
                       </Text>
                     </View>
@@ -550,6 +610,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tileDisabled: { opacity: 0.45 },
+  tileProLocked: { opacity: 0.72 },
   tileFill: {
     flex: 1,
     width: '100%',
@@ -558,14 +619,46 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     zIndex: 1,
   },
+  tileTop: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   iconSlot: {
     marginTop: 2,
+  },
+  proBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15,42,50,0.1)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,42,50,0.14)',
+  },
+  proBadgeOnInk: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderColor: 'rgba(255,255,255,0.28)',
+  },
+  proBadgeText: {
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  proBadgeTextOnInk: {
+    color: colors.textOnAccent,
   },
   tileLabel: {
     fontFamily: fonts.bodyBold,
     fontSize: 17,
     lineHeight: 22,
     letterSpacing: -0.2,
+  },
+  tileLabelLocked: {
+    color: colors.textDim,
   },
   labelOnInk: { color: colors.textOnAccent },
   labelOnLight: { color: colors.text },

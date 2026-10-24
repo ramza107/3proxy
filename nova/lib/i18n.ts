@@ -144,6 +144,7 @@ const en: Dict = {
   'home.snoozeWeek': '1 week',
   'evening.digestTitle': 'Closed today',
   'pro.title': 'Wahrly Pro',
+  'pro.badge': 'Pro',
   'pro.sub': 'Let Wahrly run the day — Plan day, morning brief, cloud AI, voice, invest',
   'pro.freeLimits':
     'Free: you run the day (tasks, calendar, local chat, Evening Clear). Pro: Plan day, morning brief, reminders, widget, cloud AI & voice.',
@@ -357,6 +358,7 @@ const ru: Dict = {
   'home.snoozeWeek': 'Неделя',
   'evening.digestTitle': 'Закрыто за сегодня',
   'pro.title': 'Wahrly Pro',
+  'pro.badge': 'Pro',
   'pro.sub': 'Wahrly ведёт день — план дня, утренний обзор, облачный AI, голос, инвестиции',
   'pro.freeLimits':
     'Free: ты ведёшь день (задачи, календарь, локальный чат, вечерний обзор). Pro: план дня, утренний обзор, напоминания, виджет, облачный AI и голос.',
