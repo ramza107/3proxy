@@ -54,14 +54,14 @@ PLEASE TRY
 1) Onboarding → Home (not Plan day).
 2) Home: tiles show icon + label again (not empty pills).
 3) Tasks: week rail readable on mist; create / reschedule / done; Clear done.
-3) Free: Tasks + Dates + on-device chat. Home tiles for Bills / Shopping / Life /
+4) Free: Tasks + Dates + on-device chat. Home tiles for Bills / Shopping / Life /
    News / Invest / Evening show Pro lock.
-4) Unlock Pro: Bills, Shopping progress bar, News Open + Refresh on error,
+5) Unlock Pro: Bills, Shopping progress bar, News Open + Refresh on error,
    Life, Invest, Evening Clear.
-5) “+” FABs clear the capsule tab bar.
-6) Settings → Google Calendar readonly only (no mail).
-7) Chat chips match UI language; composer clears the capsule.
-8) Next-task widget (Pro) readable on dark wallpaper.
+6) “+” FABs clear the capsule tab bar.
+7) Settings → Google Calendar readonly only (no mail).
+8) Chat chips match UI language; composer clears the capsule.
+9) Next-task widget (Pro) readable on dark wallpaper.
 
 NOT A BUG
 • Narrow Free tier is intentional.
@@ -127,7 +127,7 @@ Primary tabs: **Tasks · Home · Settings**. Other spaces open from Home → Men
 
 ## App Store Connect checklist
 
-1. Дождись статуса **Testing** у build 49 (не только Processing / Ready to Submit)
+1. Дождись статуса **Testing** у build 50 (не только Processing / Ready to Submit)
 2. **Test Details** → *What to Test* → вставь блок RU или EN выше
 3. Добавь группы (**TE** / **OP**) — без этого Update на телефоне не появится
 4. Скрины из `testflight-screens/` можно приложить в письмо тестерам или во внутренний Notion/Telegram
