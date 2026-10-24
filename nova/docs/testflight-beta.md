@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (build 49 / 1.1.0)
+# Wahrly — TestFlight (build 50 / 1.1.0)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -19,19 +19,20 @@ Wahrly is a daily life assistant. Free: tasks, dates, and on-device chat. Pro: b
 ## What to Test (RU) — вставить в TestFlight
 
 ```
-Wahrly 1.1.0 (build 49) — tabs polish + Free/Pro hard split
+Wahrly 1.1.0 (build 50) — fix Home tiles + tabs polish
 
 ЧТО ПРОВЕРИТЬ
 1) Onboarding / имя / язык — финал на Home (не Plan day).
-2) Tasks: неделя-рейл читается на mist; создай / перенеси / done; Clear done.
-3) Free: Tasks + Dates + локальный чат. Home-плитки Bills / Shopping / Life /
+2) Home: плитки снова с иконкой + подписью (не пустые «таблетки»).
+3) Tasks: неделя-рейл читается на mist; создай / перенеси / done; Clear done.
+4) Free: Tasks + Dates + локальный чат. Home-плитки Bills / Shopping / Life /
    News / Invest / Evening — Pro lock.
-4) Pro unlock (Settings): открой Bills, Shopping (progress bar), News (Open + Refresh
+5) Pro unlock (Settings): открой Bills, Shopping (progress bar), News (Open + Refresh
    при ошибке), Life, Invest, Evening Clear.
-5) FAB «+» на Bills / Dates / Life / Shopping / Invest — над капсулой табов.
-6) Settings → Google: только Calendar readonly. Почта НЕ читается.
-7) Chat: чипы на языке UI; поле ввода не под капсулой.
-8) Виджет Next task (Pro) — читается на тёмных обоях.
+6) FAB «+» на Bills / Dates / Life / Shopping / Invest — над капсулой табов.
+7) Settings → Google: только Calendar readonly. Почта НЕ читается.
+8) Chat: чипы на языке UI; поле ввода не под капсулой.
+9) Виджет Next task (Pro) — читается на тёмных обоях.
 
 НЕ БАГ
 • Free узкий намеренно (Tasks / Dates / local chat).
@@ -47,11 +48,12 @@ Wahrly 1.1.0 (build 49) — tabs polish + Free/Pro hard split
 ## What to Test (EN)
 
 ```
-Wahrly 1.1.0 (build 49) — tabs polish + Free/Pro hard split
+Wahrly 1.1.0 (build 50) — fix Home tiles + tabs polish
 
 PLEASE TRY
 1) Onboarding → Home (not Plan day).
-2) Tasks: week rail readable on mist; create / reschedule / done; Clear done.
+2) Home: tiles show icon + label again (not empty pills).
+3) Tasks: week rail readable on mist; create / reschedule / done; Clear done.
 3) Free: Tasks + Dates + on-device chat. Home tiles for Bills / Shopping / Life /
    News / Invest / Evening show Pro lock.
 4) Unlock Pro: Bills, Shopping progress bar, News Open + Refresh on error,
