@@ -1,32 +1,21 @@
 import { format, addDays } from 'date-fns'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { AIInput } from '../../components/AIInput'
 import { BottomSheet } from '../../components/BottomSheet'
 import { BrandMark } from '../../components/BrandMark'
-import { CalendarBrief } from '../../components/CalendarBrief'
-import { DailyPlan } from '../../components/DailyPlan'
-import { HomeSection } from '../../components/HomeSection'
 import { MorningBrief } from '../../components/MorningBrief'
-import { BillsBrief } from '../../components/BillsBrief'
-import { OpenLoopsBrief } from '../../components/OpenLoopsBrief'
 import { PlanDaySheet } from '../../components/PlanDaySheet'
-import { QuickActionsSheet } from '../../components/QuickActionsSheet'
+import { SoftPressable } from '../../components/SoftPressable'
 import { WeeklyBrief } from '../../components/WeeklyBrief'
 import { Screen } from '../../components/Screen'
-import { TaskEditor } from '../../components/TaskEditor'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
 import { t as translate } from '../../lib/i18n'
 import { dateLocale } from '../../lib/dateLocale'
 import { parseHm } from '../../lib/notifications'
-import {
-  findNearestTask,
-  formatNearestTaskTime,
-  nearestTaskLabelKey,
-} from '../../lib/nearestTask'
 import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { resolveDayWindow } from '../../lib/scheduleDay'
 import { isMonday } from '../../lib/weekRange'
@@ -36,13 +25,9 @@ import {
   deleteTask,
   organizeMyDay,
   refreshTasks,
-  sendNovaMessage,
-  toggleTaskCompleted,
   undoLastPlanDay,
   updateTaskFields,
 } from '../../services/ai'
-import type { Task } from '../../types'
-import type { CalendarEvent } from '../../types'
 
 function greetingKey() {
   const h = new Date().getHours()
@@ -61,7 +46,7 @@ function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) 
 }
 
 /** Morning brief: after brief time (or from 5:00), until noon, once per day.
- *  `force` bypasses the clock (Settings / Quick actions). */
+ *  `force` bypasses the clock (Settings / menu tile). */
 function shouldOfferMorningBrief(
   enabled: boolean,
   briefTime: string,
@@ -80,6 +65,21 @@ function shouldOfferMorningBrief(
   return nowMin >= startMin
 }
 
+type Tone = 'ink' | 'mist' | 'teal' | 'soft'
+
+type Tile = {
+  key: string
+  mark: string
+  label: string
+  onPress: () => void
+  tone: Tone
+  disabled?: boolean
+}
+
+/**
+ * Home is the product map: hero Wahrly + square tiles for every space.
+ * Timeline / briefs live on Tasks and modal rituals — not dumped here.
+ */
 export default function HomeScreen() {
   const router = useRouter()
   const t = useT()
@@ -95,14 +95,9 @@ export default function HomeScreen() {
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const userId = useNovaStore((s) => s.sessionUserId)
   const isProUser = useIsPro()
-  const [loading, setLoading] = useState(false)
   const [planning, setPlanning] = useState(false)
   const [planOpen, setPlanOpen] = useState(false)
   const [weekOpen, setWeekOpen] = useState(false)
-  const [quickOpen, setQuickOpen] = useState(false)
-  const [googleOpen, setGoogleOpen] = useState(false)
-  const [editing, setEditing] = useState<Task | null>(null)
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
 
   useEffect(() => {
     if (userId) refreshTasks(userId).catch(() => undefined)
@@ -111,7 +106,7 @@ export default function HomeScreen() {
   const day = todayISO()
   const dayWindow = useMemo(() => resolveDayWindow(settings, day), [settings, day])
   const todayTasks = useMemo(
-    () => sortTasks(tasks.filter((t) => !t.completed && (t.date === day || !t.date))),
+    () => sortTasks(tasks.filter((x) => !x.completed && (x.date === day || !x.date))),
     [tasks, day],
   )
 
@@ -152,18 +147,6 @@ export default function HomeScreen() {
     if (showWeeklyBrief || forceWeeklyBrief) setWeekOpen(true)
   }, [showWeeklyBrief, forceWeeklyBrief])
 
-  const onSend = async (text: string) => {
-    setLoading(true)
-    try {
-      await sendNovaMessage(text)
-      router.push('/chat')
-    } catch (e) {
-      Alert.alert(brand.name, e instanceof Error ? e.message : 'Could not reach AI server')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const requirePlanDayPro = () => {
     const untimed = todayTasks.filter((task) => !task.time).length
     const body =
@@ -176,16 +159,14 @@ export default function HomeScreen() {
     ])
   }
 
-  /** Close any open Modal first — iOS won't reliably present a second sheet on top. */
   const openPlanSheet = () => {
     if (!canUsePlanDay()) {
       requirePlanDayPro()
       return
     }
-    const hadModal = showMorningBrief || weekOpen || quickOpen
+    const hadModal = showMorningBrief || weekOpen
     if (showMorningBrief) dismissMorningBrief()
     if (weekOpen) dismissWeeklyBrief()
-    if (quickOpen) setQuickOpen(false)
     if (hadModal) {
       setTimeout(() => setPlanOpen(true), 280)
     } else {
@@ -220,153 +201,163 @@ export default function HomeScreen() {
 
   const tomorrowISO = () => format(addDays(new Date(), 1), 'yyyy-MM-dd')
 
-  const nearest = useMemo(() => findNearestTask(tasks), [tasks])
-  const nearestWhen = nearest ? formatNearestTaskTime(nearest) : ''
-  const nearestLabel = nearest
-    ? nearestTaskLabelKey(nearest) === 'widget.next'
-      ? t('home.nextUp')
-      : nearestTaskLabelKey(nearest) === 'widget.tomorrow'
-        ? t('home.tomorrowLabel')
-        : t('home.upcomingLabel')
-    : t('home.nextUp')
+  const tiles: Tile[] = [
+    {
+      key: 'tasks',
+      mark: 'T',
+      label: t('tabs.tasks'),
+      onPress: () => router.push('/tasks'),
+      tone: 'ink',
+    },
+    {
+      key: 'chat',
+      mark: 'C',
+      label: t('tabs.chat'),
+      onPress: () => router.push('/chat'),
+      tone: 'teal',
+    },
+    {
+      key: 'plan',
+      mark: 'P',
+      label: planning ? t('home.planning') : t('home.planDay'),
+      onPress: openPlanSheet,
+      tone: 'mist',
+      disabled: planning,
+    },
+    {
+      key: 'bills',
+      mark: 'B',
+      label: t('quick.bills'),
+      onPress: () => router.push('/bills'),
+      tone: 'soft',
+    },
+    {
+      key: 'dates',
+      mark: 'D',
+      label: t('quick.dates'),
+      onPress: () => router.push('/dates'),
+      tone: 'mist',
+    },
+    {
+      key: 'shopping',
+      mark: 'S',
+      label: t('quick.shopping'),
+      onPress: () => router.push('/shopping'),
+      tone: 'soft',
+    },
+    {
+      key: 'life',
+      mark: 'L',
+      label: t('quick.life'),
+      onPress: () => router.push('/life'),
+      tone: 'teal',
+    },
+    {
+      key: 'news',
+      mark: 'N',
+      label: t('tabs.news'),
+      onPress: () => router.push('/news'),
+      tone: 'mist',
+    },
+  ]
 
-  /** One-focus Home: hide secondary blocks until the day has real work. */
-  const focusEmpty = todayTasks.length === 0 && calendarEvents.length === 0
+  if (isProUser) {
+    tiles.push({
+      key: 'invest',
+      mark: 'I',
+      label: t('quick.invest'),
+      onPress: () => router.push('/invest'),
+      tone: 'soft',
+    })
+    tiles.push({
+      key: 'morning',
+      mark: 'M',
+      label: t('quick.morning'),
+      onPress: () => {
+        updateSettings({ lastMorningBriefDate: null })
+        setForceMorningBrief(true)
+      },
+      tone: 'teal',
+    })
+    tiles.push({
+      key: 'weekly',
+      mark: 'W',
+      label: t('quick.weekly'),
+      onPress: () => {
+        updateSettings({ lastWeeklyBriefDate: null })
+        setForceWeeklyBrief(true)
+      },
+      tone: 'mist',
+    })
+  }
+
+  if (showEveningClear) {
+    tiles.push({
+      key: 'evening',
+      mark: 'E',
+      label: t('home.eveningClear'),
+      onPress: () => router.push('/evening'),
+      tone: 'ink',
+    })
+  }
+
+  tiles.push({
+    key: 'settings',
+    mark: '·',
+    label: t('tabs.settings'),
+    onPress: () => router.push('/settings'),
+    tone: 'soft',
+  })
 
   return (
     <Screen>
+      <LinearGradient
+        colors={['#D7E4E9', colors.bg, '#EAF2F4']}
+        locations={[0, 0.45, 1]}
+        start={{ x: 0.1, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          nestedScrollEnabled
         >
-          <View style={styles.topBar}>
-            <View style={styles.brandLockup}>
-              <BrandMark size={28} color={colors.accentStrong} />
-              <Text style={styles.brandWord} numberOfLines={1}>
-                {brand.name}
-              </Text>
-            </View>
-            <Pressable
-              onPress={() => setQuickOpen(true)}
-              hitSlop={8}
-              style={styles.menuBtn}
-              accessibilityRole="button"
-              accessibilityLabel={t('quick.title')}
-            >
-              <Text style={styles.menuBtnText}>{t('quick.menuBtn')}</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.hello}>
-            {translate(language, greetingKey())}, {name}
-          </Text>
-          <Text style={styles.date}>
-            {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
-          </Text>
-
-          {showEveningClear ? (
-            <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
-              <View style={styles.eveningNode} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.eveningTitle}>{t('home.eveningClear')}</Text>
-                <Text style={styles.eveningSub}>
-                  {t('home.closeToday')} · {todayTasks.length} {t('home.openShort')}
-                </Text>
-              </View>
-              <Text style={styles.eveningCta}>{t('home.open')}</Text>
-            </Pressable>
-          ) : null}
-
-          <Pressable
-            style={styles.nextCard}
-            onPress={() => {
-              if (nearest) setEditing(nearest)
-              else if (isProUser) openPlanSheet()
-              else router.push('/tasks')
-            }}
-            accessibilityRole="button"
-          >
-            <View style={styles.nextNode} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.nextLabel}>{nearestLabel}</Text>
-              <Text style={styles.nextTitle} numberOfLines={2}>
-                {nearest ? nearest.title : t('home.nextEmpty')}
-              </Text>
-            </View>
-            {nearestWhen ? <Text style={styles.nextWhen}>{nearestWhen}</Text> : null}
-          </Pressable>
-
-          <DailyPlan
-            tasks={todayTasks}
-            events={calendarEvents}
-            onToggle={(task) => toggleTaskCompleted(task)}
-            onEdit={(task) => setEditing(task)}
-            workdayStart={dayWindow.start}
-            workdayEnd={dayWindow.end}
-            dayKind={dayWindow.kind}
-            onPlanDay={isProUser ? openPlanSheet : undefined}
-            planning={planning}
-          />
-
-          <OpenLoopsBrief userId={userId} />
-
-          {focusEmpty ? (
-            /* Headless fetch so calendarEvents can exit one-focus mode. */
-            <View
-              style={styles.googleHidden}
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              <CalendarBrief
-                userId={userId}
-                onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
-              />
-            </View>
-          ) : (
-            <>
-              <Pressable
-                style={styles.googleToggle}
-                onPress={() => setGoogleOpen((v) => !v)}
-                accessibilityRole="button"
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.googleToggleTitle}>{t('home.googleToggle')}</Text>
-                  <Text style={styles.googleToggleSub}>
-                    {googleOpen ? t('home.googleHide') : t('home.googleCollapsed')}
-                  </Text>
-                </View>
-                <Text style={styles.googleChevron}>{googleOpen ? '▴' : '▾'}</Text>
-              </Pressable>
-
-              <View
-                style={[styles.googleBlock, !googleOpen && styles.googleHidden]}
-                pointerEvents={googleOpen ? 'auto' : 'none'}
-                accessibilityElementsHidden={!googleOpen}
-                importantForAccessibility={googleOpen ? 'yes' : 'no-hide-descendants'}
-              >
-                <CalendarBrief
-                  userId={userId}
-                  onEvents={(ev) => setCalendarEvents(ev.filter((e) => e.calendar !== 'demo'))}
-                />
-              </View>
-
-              <BillsBrief />
-            </>
-          )}
-
-          <HomeSection title={t('home.askWahrly')} emphasize>
-            <Text style={styles.prompt}>
-              {isProUser ? t('home.askPrompt') : t('pro.freeChatHint')}
+          <View style={styles.hero}>
+            <BrandMark size={44} color={colors.accentStrong} />
+            <Text style={styles.brandWord} accessibilityRole="header">
+              {brand.name}
             </Text>
-            <AIInput loading={loading} onSend={onSend} />
-            <Pressable style={styles.ask} onPress={() => router.push('/chat')}>
-              <Text style={styles.askText}>{t('home.openChat')}</Text>
-            </Pressable>
-          </HomeSection>
+            <Text style={styles.hello}>
+              {translate(language, greetingKey())}, {name}
+            </Text>
+            <Text style={styles.date}>
+              {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
+            </Text>
+            <Text style={styles.tagline}>{t('home.menuTagline')}</Text>
+          </View>
+
+          <View style={styles.grid}>
+            {tiles.map((tile) => (
+              <View key={tile.key} style={styles.tileWrap}>
+                <SoftPressable
+                  style={[styles.tile, toneStyle(tile.tone), tile.disabled && styles.tileDisabled]}
+                  onPress={tile.onPress}
+                  disabled={tile.disabled}
+                  stretch
+                >
+                  <View style={styles.tileFill}>
+                    <Text style={[styles.tileMark, toneMark(tile.tone)]}>{tile.mark}</Text>
+                    <Text style={[styles.tileLabel, toneLabel(tile.tone)]} numberOfLines={2}>
+                      {tile.label}
+                    </Text>
+                  </View>
+                </SoftPressable>
+              </View>
+            ))}
+          </View>
         </ScrollView>
       </SafeAreaView>
 
@@ -393,7 +384,6 @@ export default function HomeScreen() {
         <WeeklyBrief
           onClose={dismissWeeklyBrief}
           onPlanDay={openPlanSheet}
-
           onOpenTasks={() => {
             dismissWeeklyBrief()
             router.push('/tasks')
@@ -437,217 +427,137 @@ export default function HomeScreen() {
           })
         }}
       />
-
-      <QuickActionsSheet
-        visible={quickOpen}
-        onClose={() => setQuickOpen(false)}
-        planning={planning}
-        showEvening={showEveningClear}
-        onPlanDay={openPlanSheet}
-        onOpenBills={() => router.push('/bills')}
-        onOpenDates={() => router.push('/dates')}
-        onOpenInvest={isProUser ? () => router.push('/invest') : undefined}
-        onOpenLife={() => router.push('/life')}
-        onOpenShopping={() => router.push('/shopping')}
-        onOpenNews={() => router.push('/news')}
-        onOpenEvening={() => router.push('/evening')}
-        onOpenMorning={
-          isProUser
-            ? () => {
-                updateSettings({ lastMorningBriefDate: null })
-                setForceMorningBrief(true)
-              }
-            : undefined
-        }
-        onOpenWeekly={
-          isProUser
-            ? () => {
-                updateSettings({ lastWeeklyBriefDate: null })
-                setForceWeeklyBrief(true)
-              }
-            : undefined
-        }
-      />
-
-      <TaskEditor
-        task={editing}
-        visible={!!editing}
-        onClose={() => setEditing(null)}
-        onSave={(patch) => {
-          if (editing) updateTaskFields(editing, patch)
-        }}
-        onComplete={() => {
-          if (editing) {
-            toggleTaskCompleted(editing)
-            setEditing(null)
-          }
-        }}
-        onDelete={() => {
-          if (editing) deleteTask(editing.id)
-          setEditing(null)
-        }}
-      />
     </Screen>
   )
+}
+
+function toneStyle(tone: Tone) {
+  switch (tone) {
+    case 'ink':
+      return styles.tileInk
+    case 'teal':
+      return styles.tileTeal
+    case 'soft':
+      return styles.tileSoft
+    default:
+      return styles.tileMist
+  }
+}
+
+function toneMark(tone: Tone) {
+  return tone === 'ink' ? styles.markOnInk : styles.markOnLight
+}
+
+function toneLabel(tone: Tone) {
+  return tone === 'ink' ? styles.labelOnInk : styles.labelOnLight
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
   content: {
-    padding: spacing.lg,
-    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: 140,
+    gap: spacing.lg,
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 520 : undefined,
     alignSelf: 'center',
     flexGrow: 1,
   },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-  brandLockup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 1,
+  hero: {
+    alignItems: 'flex-start',
+    gap: 6,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
   brandWord: {
     color: colors.accentStrong,
     fontFamily: fonts.brand,
-    fontSize: 24,
-    letterSpacing: -0.5,
-    lineHeight: 28,
-  },
-  menuBtn: {
-    minHeight: 34,
-    paddingHorizontal: 14,
-    borderRadius: radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bgDeep,
-  },
-  menuBtnText: {
-    color: colors.textOnAccent,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    letterSpacing: 0.2,
+    fontSize: 48,
+    letterSpacing: -1.4,
+    lineHeight: 52,
+    marginTop: 10,
   },
   hello: {
     color: colors.text,
-    fontSize: 22,
+    fontSize: 18,
     fontFamily: fonts.bodyMedium,
-    letterSpacing: -0.35,
-    marginTop: 14,
+    letterSpacing: -0.2,
+    marginTop: 10,
   },
   date: {
     color: colors.textDim,
     fontSize: 14,
     fontFamily: fonts.body,
-    marginBottom: 2,
   },
-  eveningCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  eveningNode: {
-    width: 10,
-    height: 10,
-    borderRadius: 99,
-    backgroundColor: colors.accent,
-  },
-  eveningTitle: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 15,
-  },
-  eveningSub: {
-    color: colors.textDim,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    marginTop: 1,
-  },
-  eveningCta: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-  },
-  nextCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.accent,
-  },
-  nextNode: {
-    width: 12,
-    height: 12,
-    borderRadius: 99,
-    backgroundColor: colors.accentStrong,
-  },
-  nextLabel: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-  },
-  nextTitle: {
-    color: colors.text,
-    fontFamily: fonts.brand,
-    fontSize: 22,
-    lineHeight: 28,
-    letterSpacing: -0.4,
-    marginTop: 2,
-  },
-  nextWhen: {
-    color: colors.textDim,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-  },
-  googleToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 8,
-  },
-  googleToggleTitle: {
+  tagline: {
     color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-  },
-  googleToggleSub: {
-    color: colors.textDim,
     fontFamily: fonts.body,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 15,
+    lineHeight: 21,
+    marginTop: 8,
+    maxWidth: 320,
   },
-  googleChevron: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  googleBlock: { gap: spacing.md },
-  googleHidden: {
-    height: 0,
+  tileWrap: {
+    width: '47.5%',
+    flexGrow: 1,
+    minWidth: '42%',
+    maxWidth: '48.5%',
+    aspectRatio: 1,
+  },
+  tile: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    borderRadius: radii.lg,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
     overflow: 'hidden',
-    opacity: 0,
-    margin: 0,
-    padding: 0,
   },
-  prompt: { color: colors.textMuted, fontSize: 14, fontFamily: fonts.bodyMedium },
-  ask: { alignSelf: 'flex-start', marginTop: 2 },
-  askText: {
-    color: colors.accentStrong,
+  tileInk: {
+    backgroundColor: colors.bgDeep,
+    borderColor: 'rgba(15,42,50,0.35)',
+  },
+  tileTeal: {
+    backgroundColor: colors.accentSoft,
+    borderColor: 'rgba(15,110,102,0.22)',
+  },
+  tileMist: {
+    backgroundColor: colors.bgElevated,
+    borderColor: colors.border,
+  },
+  tileSoft: {
+    backgroundColor: colors.bgCardSolid,
+    borderColor: colors.border,
+  },
+  tileDisabled: { opacity: 0.45 },
+  tileFill: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  tileMark: {
+    fontFamily: fonts.brand,
+    fontSize: 36,
+    lineHeight: 40,
+    letterSpacing: -0.8,
+  },
+  markOnInk: { color: colors.textOnAccent },
+  markOnLight: { color: colors.accentStrong },
+  tileLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: 14,
+    fontSize: 16,
+    lineHeight: 21,
   },
+  labelOnInk: { color: colors.textOnAccent },
+  labelOnLight: { color: colors.text },
 })

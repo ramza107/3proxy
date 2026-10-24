@@ -30,8 +30,9 @@ export function ChatFab() {
   const scale = useSharedValue(1)
 
   const onChat = pathname.includes('/chat')
+  /** Home is the launcher grid — Chat is a tile; no floating mark. */
+  const onHome = pathname.includes('/home') || pathname.endsWith('/(tabs)') || pathname === '/'
   const hasLocalFab =
-    pathname.includes('/home') ||
     pathname.includes('/bills') ||
     pathname.includes('/life') ||
     pathname.includes('/dates') ||
@@ -41,7 +42,7 @@ export function ChatFab() {
     transform: [{ scale: scale.value }],
   }))
 
-  if (onChat) return null
+  if (onChat || onHome) return null
 
   // Same corner as “+”; stack above it when both are present
   let bottom = Math.max(insets.bottom, 8) + TAB_BAR_BAND
