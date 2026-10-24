@@ -1,10 +1,9 @@
-import { LinearGradient } from 'expo-linear-gradient'
 import { Image, StyleSheet, View } from 'react-native'
 import { colors } from '../constants/theme'
 
 /**
- * Shared field — painterly cool mist landscape behind every Screen.
- * Light veil keeps UI text readable on the darker paint.
+ * Shared field — painterly cool mist landscape, full strength.
+ * No mist veil: the painting reads clearly behind the UI.
  */
 export function AppBackdrop() {
   return (
@@ -14,18 +13,6 @@ export function AppBackdrop() {
         style={styles.painting}
         resizeMode="cover"
         accessibilityIgnoresInvertColors
-      />
-      {/* Soft mist veil so tiles and type stay clear */}
-      <LinearGradient
-        colors={[
-          'rgba(242,247,248,0.42)',
-          'rgba(228,238,241,0.55)',
-          'rgba(244,248,249,0.72)',
-        ]}
-        locations={[0, 0.45, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
       />
     </View>
   )
