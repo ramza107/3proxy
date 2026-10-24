@@ -3,7 +3,7 @@ import { colors } from '../constants/theme'
 
 /**
  * Shared field — painterly cool mist landscape, full strength.
- * No mist veil: the painting reads clearly behind the UI.
+ * Readability comes from text surfaces, not a backdrop wash.
  */
 export function AppBackdrop() {
   return (
