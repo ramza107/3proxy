@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   },
   sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   statsLine: {
-    color: colors.textDim,
+    color: colors.textMuted,
     fontFamily: fonts.body,
     fontSize: 13,
     lineHeight: 18,
