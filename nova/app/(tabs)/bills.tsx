@@ -4,9 +4,12 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BillEditor } from '../../components/BillEditor'
+import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
+import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
+import { useIsPro } from '../../lib/pro'
 import {
   currentMonthKey,
   formatMoney,
@@ -22,6 +25,7 @@ import type { Bill } from '../../types'
 
 export default function BillsScreen() {
   const t = useT()
+  const isPro = useIsPro()
   const { billId } = useLocalSearchParams<{ billId?: string }>()
   const bills = useNovaStore((s) => s.bills)
   const upsertBill = useNovaStore((s) => s.upsertBill)
@@ -75,37 +79,43 @@ export default function BillsScreen() {
     setEditing(null)
   }
 
+  if (!isPro) {
+    return (
+      <ProSpaceLock
+        kicker={t('bills.kicker')}
+        title={t('bills.title')}
+        sub={t('bills.emptyText')}
+        lockTitle={t('pro.spaceLockTitle')}
+        lockText={t('pro.spaceLockBills')}
+      />
+    )
+  }
+
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{t('bills.kicker')}</Text>
-          <Text style={styles.title}>{t('bills.title')}</Text>
-          <Text style={styles.sub}>
-            Recurring payments for {monthLabel} — mark paid when you send them
-          </Text>
-        </View>
-
-        <View style={styles.statsRow}>
-          {Object.keys(totals).length === 0 ? (
-            <View style={styles.statWide}>
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>{t('bills.emptyTitle')}</Text>
-            </View>
-          ) : (
-            Object.entries(totals).map(([cur, tot]) => (
-              <View key={cur} style={styles.stat}>
-                <Text style={styles.statValue} numberOfLines={1}>
-                  {formatMoney(tot.due, cur)}
-                </Text>
-                <Text style={styles.statLabel}>Due · {cur}</Text>
-                <Text style={styles.statSub}>
-                  Paid {formatMoney(tot.paid, cur)} / {formatMoney(tot.all, cur)}
-                </Text>
+        <ScreenHeader kicker={t('bills.kicker')} title={t('bills.title')} sub={monthLabel}>
+          <View style={styles.statsRow}>
+            {Object.keys(totals).length === 0 ? (
+              <View style={styles.statWide}>
+                <Text style={styles.statValue}>0</Text>
+                <Text style={styles.statLabel}>{t('bills.emptyTitle')}</Text>
               </View>
-            ))
-          )}
-        </View>
+            ) : (
+              Object.entries(totals).map(([cur, tot]) => (
+                <View key={cur} style={styles.stat}>
+                  <Text style={styles.statValue} numberOfLines={1}>
+                    {formatMoney(tot.due, cur)}
+                  </Text>
+                  <Text style={styles.statLabel}>Due · {cur}</Text>
+                  <Text style={styles.statSub}>
+                    Paid {formatMoney(tot.paid, cur)} / {formatMoney(tot.all, cur)}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
+        </ScreenHeader>
 
         <ScrollView
           contentContainerStyle={styles.list}
@@ -332,9 +342,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: spacing.lg,
     gap: 8,
-    marginBottom: 8,
   },
   stat: {
     flexGrow: 1,

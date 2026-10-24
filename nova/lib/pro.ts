@@ -1,4 +1,4 @@
-/** Wahrly Pro gates — Free is near-zero COGS; autopilot features are Pro-only. */
+/** Wahrly Pro gates — Free is intentionally small; spaces + autopilot are Pro. */
 
 import { localISODate } from './localDate'
 import { useNovaStore } from './store'
@@ -26,9 +26,46 @@ export function useIsPro(): boolean {
 
 /**
  * Hard split:
- * Free = you run the day (tasks, local AI, calendar, news, manual loops/bills, simple evening).
- * Pro = Wahrly runs the day with you (Plan day, smart morning, reminders, digest, widget, cloud AI…).
+ * Free = Tasks + Dates + minimal on-device chat (+ Settings / Home map).
+ * Pro = Bills, Shopping, Life, News, Invest, Plan day, morning/weekly/evening,
+ *       reminders, widget, cloud AI, voice.
  */
+
+/** Free forever — core agenda. */
+export function canUseTasks(): boolean {
+  return true
+}
+
+/** Free forever — birthdays & holidays. */
+export function canUseDates(): boolean {
+  return true
+}
+
+/** Free forever — on-device chat only (see canUseCloudChat). */
+export function canUseLocalChat(): boolean {
+  return true
+}
+
+export function canUseBills(): boolean {
+  return isPro()
+}
+
+export function canUseShopping(): boolean {
+  return isPro()
+}
+
+export function canUseLife(): boolean {
+  return isPro()
+}
+
+export function canUseNews(): boolean {
+  return isPro()
+}
+
+/** Evening Clear ritual — Pro. */
+export function canUseEveningClear(): boolean {
+  return isPro()
+}
 
 /** Auto Plan day / arrange into free slots — Pro only. */
 export function canUsePlanDay(): boolean {
@@ -45,7 +82,7 @@ export function canUseReminders(): boolean {
   return isPro()
 }
 
-/** Evening digest + reflection journal — Pro only. Free: simple done / tomorrow. */
+/** Evening digest + reflection journal — Pro only. */
 export function canUseEveningDigest(): boolean {
   return isPro()
 }

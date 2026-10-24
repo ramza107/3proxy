@@ -38,15 +38,6 @@ function greetingKey() {
   return 'home.goodEvening'
 }
 
-function shouldOfferEveningClear(eveningTime: string, lastClear: string | null) {
-  const today = todayISO()
-  if (lastClear === today) return false
-  const hm = parseHm(eveningTime)
-  const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
-  const startMin = hm ? Math.max(18 * 60, hm.hour * 60 + hm.minute - 120) : 18 * 60
-  return nowMin >= startMin
-}
-
 /** Morning brief: after brief time (or from 5:00), until noon, once per day.
  *  `force` bypasses the clock (Settings / menu tile). */
 function shouldOfferMorningBrief(
@@ -131,10 +122,6 @@ export default function HomeScreen() {
         isMonday(day) &&
         settings.lastWeeklyBriefDate !== day &&
         shouldOfferMorningBrief(true, settings.morningBriefTime || '08:00', null, false)))
-
-  const showEveningClear =
-    settings.eveningClearEnabled !== false &&
-    shouldOfferEveningClear(settings.eveningClearTime || '21:30', settings.lastEveningClearDate)
 
   const dismissMorningBrief = () => {
     setForceMorningBrief(false)
@@ -237,13 +224,6 @@ export default function HomeScreen() {
       proLocked: !isProUser,
     },
     {
-      key: 'bills',
-      icon: 'bills',
-      label: t('quick.bills'),
-      onPress: () => router.push('/bills'),
-      tone: 'soft',
-    },
-    {
       key: 'dates',
       icon: 'dates',
       label: t('quick.dates'),
@@ -251,25 +231,60 @@ export default function HomeScreen() {
       tone: 'mist',
     },
     {
+      key: 'bills',
+      icon: 'bills',
+      label: t('quick.bills'),
+      onPress: () => {
+        if (!isProUser) {
+          requireProFeature()
+          return
+        }
+        router.push('/bills')
+      },
+      tone: 'soft',
+      proLocked: !isProUser,
+    },
+    {
       key: 'shopping',
       icon: 'shopping',
       label: t('quick.shopping'),
-      onPress: () => router.push('/shopping'),
+      onPress: () => {
+        if (!isProUser) {
+          requireProFeature()
+          return
+        }
+        router.push('/shopping')
+      },
       tone: 'soft',
+      proLocked: !isProUser,
     },
     {
       key: 'life',
       icon: 'life',
       label: t('quick.life'),
-      onPress: () => router.push('/life'),
+      onPress: () => {
+        if (!isProUser) {
+          requireProFeature()
+          return
+        }
+        router.push('/life')
+      },
       tone: 'teal',
+      proLocked: !isProUser,
     },
     {
       key: 'news',
       icon: 'news',
       label: t('tabs.news'),
-      onPress: () => router.push('/news'),
+      onPress: () => {
+        if (!isProUser) {
+          requireProFeature()
+          return
+        }
+        router.push('/news')
+      },
       tone: 'mist',
+      proLocked: !isProUser,
     },
     {
       key: 'invest',
@@ -315,25 +330,28 @@ export default function HomeScreen() {
       tone: 'mist',
       proLocked: !isProUser,
     },
-  ]
-
-  if (showEveningClear) {
-    tiles.push({
+    {
       key: 'evening',
       icon: 'evening',
       label: t('home.eveningClear'),
-      onPress: () => router.push('/evening'),
+      onPress: () => {
+        if (!isProUser) {
+          requireProFeature()
+          return
+        }
+        router.push('/evening')
+      },
       tone: 'ink',
-    })
-  }
-
-  tiles.push({
-    key: 'settings',
-    icon: 'settings',
-    label: t('tabs.settings'),
-    onPress: () => router.push('/settings'),
-    tone: 'soft',
-  })
+      proLocked: !isProUser,
+    },
+    {
+      key: 'settings',
+      icon: 'settings',
+      label: t('tabs.settings'),
+      onPress: () => router.push('/settings'),
+      tone: 'soft',
+    },
+  ]
 
   return (
     <Screen>
@@ -351,12 +369,14 @@ export default function HomeScreen() {
             <Text style={styles.brandWord} accessibilityRole="header">
               {brand.name}
             </Text>
-            <Text style={styles.hello}>
-              {translate(language, greetingKey())}, {name}
-            </Text>
-            <Text style={styles.date}>
-              {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
-            </Text>
+            <View style={styles.helloPanel}>
+              <Text style={styles.hello}>
+                {translate(language, greetingKey())}, {name}
+              </Text>
+              <Text style={styles.date}>
+                {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
+              </Text>
+            </View>
           </Animated.View>
 
           <View style={styles.grid}>
@@ -560,18 +580,27 @@ const styles = StyleSheet.create({
     lineHeight: 58,
     marginTop: 14,
   },
+  helloPanel: {
+    marginTop: 14,
+    alignSelf: 'stretch',
+    backgroundColor: 'rgba(250,252,251,0.92)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 3,
+  },
   hello: {
     color: colors.text,
     fontSize: 17,
     fontFamily: fonts.bodyMedium,
     letterSpacing: -0.15,
-    marginTop: 14,
   },
   date: {
     color: colors.textDim,
     fontSize: 13,
     fontFamily: fonts.body,
-    marginTop: 3,
     letterSpacing: 0.2,
     textTransform: 'capitalize',
   },

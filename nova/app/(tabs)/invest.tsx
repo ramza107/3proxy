@@ -1,5 +1,4 @@
 import { format } from 'date-fns'
-import { useRouter } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
@@ -10,18 +9,12 @@ import {
   Text,
   View,
 } from 'react-native'
-import Animated, {
-  FadeInDown,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { InvestmentEditor } from '../../components/InvestmentEditor'
-import { ProPaywall } from '../../components/ProPaywall'
+import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
+import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
@@ -34,7 +27,6 @@ import type { InvestQuote, InvestmentHolding } from '../../types'
 
 export default function InvestScreen() {
   const t = useT()
-  const router = useRouter()
   const isPro = useIsPro()
   const investments = useNovaStore((s) => s.investments)
   const createInvestmentLocal = useNovaStore((s) => s.createInvestmentLocal)
@@ -122,36 +114,15 @@ export default function InvestScreen() {
     refreshQuotes().catch(() => undefined)
   }, [isPro, symbolsKey, refreshQuotes])
 
-  const pulse = useSharedValue(1)
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withSequence(withTiming(1.04, { duration: 900 }), withTiming(1, { duration: 900 })),
-      -1,
-      false,
-    )
-  }, [pulse])
-  const heroPulse = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }))
-
   if (!isPro) {
     return (
-      <Screen>
-        <SafeAreaView style={styles.safe} edges={['top']}>
-          <View style={styles.header}>
-            <Text style={styles.kicker}>{t('invest.kicker')}</Text>
-            <Text style={styles.title}>{t('invest.title')}</Text>
-            <Text style={styles.sub}>{t('invest.sub')}</Text>
-          </View>
-          <View style={styles.lockCard}>
-            <Animated.View style={[styles.lockOrb, heroPulse]} />
-            <Text style={styles.lockTitle}>{t('invest.proTitle')}</Text>
-            <Text style={styles.lockText}>{t('invest.proText')}</Text>
-            <ProPaywall compact />
-            <Pressable onPress={() => router.push('/settings')}>
-              <Text style={styles.lockLink}>{t('invest.openSettings')}</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
-      </Screen>
+      <ProSpaceLock
+        kicker={t('invest.kicker')}
+        title={t('invest.title')}
+        sub={t('invest.sub')}
+        lockTitle={t('invest.proTitle')}
+        lockText={t('invest.proText')}
+      />
     )
   }
 
@@ -160,16 +131,16 @@ export default function InvestScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{t('invest.kicker')}</Text>
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>{t('invest.title')}</Text>
+        <ScreenHeader
+          kicker={t('invest.kicker')}
+          title={t('invest.title')}
+          sub={t('invest.sub')}
+          trailing={
             <View style={styles.proPill}>
               <Text style={styles.proPillText}>PRO</Text>
             </View>
-          </View>
-          <Text style={styles.sub}>{t('invest.sub')}</Text>
-        </View>
+          }
+        />
 
         <Animated.View entering={FadeInDown.duration(420)} style={styles.hero}>
           <Text style={styles.heroLabel}>{t('invest.portfolio')}</Text>

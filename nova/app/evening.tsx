@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { ProSpaceLock } from '../components/ProSpaceLock'
 import { Screen } from '../components/Screen'
 import { SoftPressable } from '../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../constants/theme'
@@ -19,7 +20,7 @@ import { AnalyticsEvents, track } from '../lib/analytics'
 import { dateLocale } from '../lib/dateLocale'
 import { formatMoney, currentMonthKey, isPaidThisMonth } from '../lib/bills'
 import { ensureNotificationPermissions } from '../lib/notifications'
-import { canUseEveningDigest } from '../lib/pro'
+import { canUseEveningClear, canUseEveningDigest } from '../lib/pro'
 import { sortTasks, todayISO, useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../services/ai'
@@ -89,11 +90,13 @@ export default function EveningClearScreen() {
   }, [bills, today])
 
   const proDigest = canUseEveningDigest()
+  const eveningAllowed = canUseEveningClear()
 
   useEffect(() => {
     // High-intent: user opened Evening Clear — ask once if OS still undecided.
+    if (!eveningAllowed) return
     void ensureNotificationPermissions()
-  }, [])
+  }, [eveningAllowed])
 
   const finish = () => {
     const note = proDigest ? reflection.trim() : ''
@@ -166,6 +169,18 @@ export default function EveningClearScreen() {
       : step === 'tomorrow'
         ? 1
         : 2
+
+  if (!eveningAllowed) {
+    return (
+      <ProSpaceLock
+        kicker={t('home.eveningClear')}
+        title={t('evening.title')}
+        sub={t('evening.sub')}
+        lockTitle={t('pro.spaceLockTitle')}
+        lockText={t('pro.spaceLockEvening')}
+      />
+    )
+  }
 
   return (
     <Screen>

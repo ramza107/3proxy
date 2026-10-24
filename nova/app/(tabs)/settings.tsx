@@ -382,7 +382,7 @@ export default function SettingsScreen() {
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.header}>
+          <View style={styles.headerPanel}>
             <Text style={styles.title}>{tr('settings.title')}</Text>
             <Text style={styles.sub}>{email || tr('settings.localDemo')}</Text>
           </View>
@@ -403,17 +403,18 @@ export default function SettingsScreen() {
             {(
               [
                 { key: 'pro.rowTasks' as const, free: true, pro: true },
+                { key: 'pro.rowDates' as const, free: true, pro: true },
                 { key: 'pro.rowLocalAi' as const, free: true, pro: true },
-                { key: 'pro.rowCalendarNews' as const, free: true, pro: true },
+                { key: 'pro.rowSpaces' as const, free: false, pro: true },
                 { key: 'pro.rowPlanDay' as const, free: false, pro: true },
                 { key: 'pro.rowMorning' as const, free: false, pro: true },
-                { key: 'pro.rowReminders' as const, free: false, pro: true },
+                { key: 'pro.rowWeekly' as const, free: false, pro: true },
                 { key: 'pro.rowEveningDigest' as const, free: false, pro: true },
+                { key: 'pro.rowReminders' as const, free: false, pro: true },
                 { key: 'pro.rowWidget' as const, free: false, pro: true },
                 { key: 'pro.rowCloudAi' as const, free: false, pro: true },
                 { key: 'pro.rowVoice' as const, free: false, pro: true },
                 { key: 'pro.rowInvest' as const, free: false, pro: true },
-                { key: 'pro.rowWeekly' as const, free: false, pro: true },
               ] as const
             ).map((row) => (
               <View key={row.key} style={styles.compareRow}>
@@ -1004,7 +1005,16 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 140 },
-  header: { gap: 4, marginBottom: 4 },
+  headerPanel: {
+    gap: 4,
+    marginBottom: 4,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
   sub: { color: colors.textMuted, fontFamily: fonts.body },
   card: {

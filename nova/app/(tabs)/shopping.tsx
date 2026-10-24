@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ShoppingItemEditor } from '../../components/ShoppingItemEditor'
 import { SoftPressable } from '../../components/SoftPressable'
@@ -19,12 +20,14 @@ import {
   seedLabelKey,
   type ShoppingAisleId,
 } from '../../lib/shoppingCatalog'
+import { useIsPro } from '../../lib/pro'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import type { ShoppingItem } from '../../types'
 
 export default function ShoppingScreen() {
   const t = useT()
+  const isPro = useIsPro()
   const shopping = useNovaStore((s) => s.shopping)
   const addShoppingQuick = useNovaStore((s) => s.addShoppingQuick)
   const createShoppingLocal = useNovaStore((s) => s.createShoppingLocal)
@@ -82,6 +85,18 @@ export default function ShoppingScreen() {
   const total = open.length + bought.length
   const progress =
     total > 0 ? t.tf('shopping.progress', { bought: bought.length, total }) : null
+
+  if (!isPro) {
+    return (
+      <ProSpaceLock
+        kicker={t('shopping.kicker')}
+        title={t('shopping.title')}
+        sub={t('shopping.sub')}
+        lockTitle={t('pro.spaceLockTitle')}
+        lockText={t('pro.spaceLockShopping')}
+      />
+    )
+  }
 
   return (
     <Screen>
