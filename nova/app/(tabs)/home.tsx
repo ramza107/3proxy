@@ -327,19 +327,6 @@ export default function HomeScreen() {
 
           <OpenLoopsBrief userId={userId} />
 
-          <Pressable
-            style={styles.toolsRow}
-            onPress={() => setQuickOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('quick.title')}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toolsTitle}>{t('quick.toolsRow')}</Text>
-              <Text style={styles.toolsSub}>{t('quick.toolsRowSub')}</Text>
-            </View>
-            <Text style={styles.toolsCta}>{t('quick.openMenu')}</Text>
-          </Pressable>
-
           {focusEmpty ? (
             /* Headless fetch so calendarEvents can exit one-focus mode. */
             <View
