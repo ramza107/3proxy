@@ -1,7 +1,7 @@
 import { addDays, format, parseISO } from 'date-fns'
 import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { HomeSection } from '../../components/HomeSection'
@@ -71,6 +71,7 @@ export default function TasksScreen() {
   const settings = useNovaStore((s) => s.settings)
   const userId = useNovaStore((s) => s.sessionUserId) || 'local'
   const setTasks = useNovaStore((s) => s.setTasks)
+  const clearCompletedTasks = useNovaStore((s) => s.clearCompletedTasks)
   const [editing, setEditing] = useState<Task | null>(null)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
@@ -367,21 +368,80 @@ export default function TasksScreen() {
             </HomeSection>
           ) : null}
 
-          <Pressable style={styles.doneToggle} onPress={() => setShowDone((v) => !v)}>
-            <Text style={styles.doneToggleText}>
-              {showDone ? t('tasks.hideDone') : t('tasks.showDone')} ({stats.done})
-            </Text>
-          </Pressable>
-          {showDone
-            ? completed.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onToggle={() => toggleTaskCompleted(task)}
-                  onPress={() => setEditing(task)}
-                />
-              ))
-            : null}
+          {stats.done > 0 ? (
+            showDone ? (
+              <HomeSection
+                title={t('tasks.completed')}
+                meta={t.tf('tasks.doneMeta', { n: stats.done })}
+                action={
+                  <View style={styles.doneActions}>
+                    <Pressable
+                      onPress={() => {
+                        Alert.alert(t('tasks.clearDoneTitle'), t.tf('tasks.clearDoneBody', { n: stats.done }), [
+                          { text: t('common.cancel'), style: 'cancel' },
+                          {
+                            text: t('tasks.clearDoneConfirm'),
+                            style: 'destructive',
+                            onPress: () => {
+                              clearCompletedTasks()
+                              setShowDone(false)
+                            },
+                          },
+                        ])
+                      }}
+                      hitSlop={8}
+                    >
+                      <Text style={styles.clearDone}>{t('tasks.clearDone')}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => setShowDone(false)} hitSlop={8}>
+                      <Text style={styles.hideDone}>{t('tasks.hideDone')}</Text>
+                    </Pressable>
+                  </View>
+                }
+              >
+                {completed.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onToggle={() => toggleTaskCompleted(task)}
+                    onPress={() => setEditing(task)}
+                  />
+                ))}
+                {stats.done > completed.length ? (
+                  <Text style={styles.doneMore}>
+                    +{stats.done - completed.length}
+                  </Text>
+                ) : null}
+              </HomeSection>
+            ) : (
+              <View style={styles.doneToggle}>
+                <Pressable
+                  style={styles.doneToggleShow}
+                  onPress={() => setShowDone(true)}
+                  hitSlop={6}
+                >
+                  <Text style={styles.doneToggleText}>
+                    {t('tasks.showDone')} · {stats.done}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    Alert.alert(t('tasks.clearDoneTitle'), t.tf('tasks.clearDoneBody', { n: stats.done }), [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      {
+                        text: t('tasks.clearDoneConfirm'),
+                        style: 'destructive',
+                        onPress: () => clearCompletedTasks(),
+                      },
+                    ])
+                  }}
+                  hitSlop={8}
+                >
+                  <Text style={styles.clearDone}>{t('tasks.clearDone')}</Text>
+                </Pressable>
+              </View>
+            )
+          ) : null}
         </ScrollView>
 
         <TaskEditor
@@ -613,15 +673,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   doneToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    alignItems: 'center',
-    alignSelf: 'center',
     backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.full,
+    borderRadius: radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     marginTop: 4,
+  },
+  doneToggleShow: { flex: 1 },
+  doneActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  clearDone: {
+    color: colors.danger,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
+  hideDone: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
+  doneMore: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    paddingTop: 4,
   },
   doneToggleText: {
     color: colors.accentStrong,

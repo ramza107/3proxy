@@ -86,6 +86,8 @@ type NovaState = {
   setTasks: (tasks: Task[]) => void
   upsertTask: (task: Task) => void
   removeTask: (id: string) => void
+  /** Drop every completed task from the local list. */
+  clearCompletedTasks: () => number
   setBills: (bills: Bill[]) => void
   upsertBill: (bill: Bill) => void
   removeBill: (id: string) => void
@@ -291,6 +293,13 @@ export const useNovaStore = create<NovaState>()(
         }
       },
       removeTask: (id) => set({ tasks: get().tasks.filter((t) => t.id !== id) }),
+      clearCompletedTasks: () => {
+        const before = get().tasks
+        const next = before.filter((t) => !t.completed)
+        const removed = before.length - next.length
+        if (removed > 0) set({ tasks: next })
+        return removed
+      },
       setBills: (bills) => set({ bills }),
       upsertBill: (bill) => {
         const existing = get().bills
