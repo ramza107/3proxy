@@ -47,7 +47,7 @@ export function CapsuleTabBar({ state, descriptors, navigation }: BottomTabBarPr
                   ? options.title
                   : route.name
             const iconName = ROUTE_ICON[route.name] || 'home'
-            const color = focused ? colors.accentStrong : colors.textDim
+            const color = focused ? colors.accentStrong : colors.textMuted
 
             const onPress = () => {
               const event = navigation.emit({
@@ -105,14 +105,14 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
-    backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(250,252,251,0.88)',
+    backgroundColor: Platform.OS === 'ios' ? 'rgba(250,252,251,0.72)' : 'rgba(250,252,251,0.94)',
   },
   webFrost: {
-    backgroundColor: 'rgba(250,252,251,0.82)',
+    backgroundColor: 'rgba(250,252,251,0.92)',
   },
   frostTint: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(232,242,244,0.28)',
+    backgroundColor: 'rgba(245,249,250,0.42)',
   },
   row: {
     flexDirection: 'row',
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontFamily: fonts.bodyMedium,
-    color: colors.textDim,
+    color: colors.textMuted,
     letterSpacing: 0.1,
   },
   labelActive: {

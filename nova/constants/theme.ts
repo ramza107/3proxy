@@ -10,8 +10,9 @@ export const colors = {
   border: 'rgba(15,42,50,0.10)',
   borderStrong: 'rgba(15,42,50,0.18)',
   text: '#12252C',
-  textMuted: '#5A717A',
-  textDim: '#7E929A',
+  /** Slightly deeper for contrast on painterly backdrop */
+  textMuted: '#4A616A',
+  textDim: '#5E737B',
   textOnAccent: '#F7FBFA',
   accent: '#0F6E66',
   accentSoft: 'rgba(15,110,102,0.12)',
