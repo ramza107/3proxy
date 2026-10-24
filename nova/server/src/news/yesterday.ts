@@ -109,6 +109,7 @@ function stripTags(s: string) {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
+    .replace(/&apos;/gi, "'")
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, ' ')
     .trim()

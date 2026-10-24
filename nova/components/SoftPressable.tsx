@@ -72,10 +72,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stretchInner: {
+    // Width only — never height/flexGrow 100%. That swallowed ScrollView
+    // children on News (one ghost lead, rest unreachable).
     alignSelf: 'stretch',
     width: '100%',
-    height: '100%',
-    flexGrow: 1,
     alignItems: 'stretch',
     justifyContent: 'flex-start',
   },

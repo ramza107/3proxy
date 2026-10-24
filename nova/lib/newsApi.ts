@@ -85,15 +85,31 @@ export async function fetchYesterdayNews(params: {
   return fetchLiveRssDigest(interests, language, timeZone)
 }
 
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&apos;/gi, "'")
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#34;/g, '"')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#(\d+);/g, (_, n) => {
+      const code = Number(n)
+      return Number.isFinite(code) ? String.fromCharCode(code) : _
+    })
+}
+
 function normalizeItem(raw: Partial<NewsItem> & { url?: string; title?: string }): NewsItem | null {
-  const title = (raw.title || '').trim()
+  const title = decodeEntities((raw.title || '').trim())
   const url = cleanArticleUrl((raw.url || '').trim())
   if (!title || !isArticleUrl(url)) return null
   return {
     id: raw.id || hashId(`${raw.interest || 'world'}|${url}|${title}`),
     title: title.slice(0, 200),
     url,
-    source: (raw.source || 'News').trim() || 'News',
+    source: decodeEntities((raw.source || 'News').trim()) || 'News',
     interest: (raw.interest as NewsInterest) || 'world',
     publishedAt: raw.publishedAt || new Date().toISOString(),
   }
