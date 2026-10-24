@@ -10,6 +10,7 @@ import { BrandMark } from '../../components/BrandMark'
 import { MorningBrief } from '../../components/MorningBrief'
 import { PlanDaySheet } from '../../components/PlanDaySheet'
 import { SoftPressable } from '../../components/SoftPressable'
+import { BrushIcon, type BrushIconName } from '../../components/BrushIcon'
 import { WeeklyBrief } from '../../components/WeeklyBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
@@ -70,7 +71,7 @@ type Tone = 'ink' | 'mist' | 'teal' | 'soft'
 
 type Tile = {
   key: string
-  mark: string
+  icon: BrushIconName
   label: string
   onPress: () => void
   tone: Tone
@@ -205,21 +206,21 @@ export default function HomeScreen() {
   const tiles: Tile[] = [
     {
       key: 'tasks',
-      mark: 'T',
+      icon: 'tasks',
       label: t('tabs.tasks'),
       onPress: () => router.push('/tasks'),
       tone: 'ink',
     },
     {
       key: 'chat',
-      mark: 'C',
+      icon: 'chat',
       label: t('tabs.chat'),
       onPress: () => router.push('/chat'),
       tone: 'teal',
     },
     {
       key: 'plan',
-      mark: 'P',
+      icon: 'plan',
       label: planning ? t('home.planning') : t('home.planDay'),
       onPress: openPlanSheet,
       tone: 'mist',
@@ -227,35 +228,35 @@ export default function HomeScreen() {
     },
     {
       key: 'bills',
-      mark: 'B',
+      icon: 'bills',
       label: t('quick.bills'),
       onPress: () => router.push('/bills'),
       tone: 'soft',
     },
     {
       key: 'dates',
-      mark: 'D',
+      icon: 'dates',
       label: t('quick.dates'),
       onPress: () => router.push('/dates'),
       tone: 'mist',
     },
     {
       key: 'shopping',
-      mark: 'S',
+      icon: 'shopping',
       label: t('quick.shopping'),
       onPress: () => router.push('/shopping'),
       tone: 'soft',
     },
     {
       key: 'life',
-      mark: 'L',
+      icon: 'life',
       label: t('quick.life'),
       onPress: () => router.push('/life'),
       tone: 'teal',
     },
     {
       key: 'news',
-      mark: 'N',
+      icon: 'news',
       label: t('tabs.news'),
       onPress: () => router.push('/news'),
       tone: 'mist',
@@ -265,14 +266,14 @@ export default function HomeScreen() {
   if (isProUser) {
     tiles.push({
       key: 'invest',
-      mark: 'I',
+      icon: 'invest',
       label: t('quick.invest'),
       onPress: () => router.push('/invest'),
       tone: 'soft',
     })
     tiles.push({
       key: 'morning',
-      mark: 'M',
+      icon: 'morning',
       label: t('quick.morning'),
       onPress: () => {
         updateSettings({ lastMorningBriefDate: null })
@@ -282,7 +283,7 @@ export default function HomeScreen() {
     })
     tiles.push({
       key: 'weekly',
-      mark: 'W',
+      icon: 'weekly',
       label: t('quick.weekly'),
       onPress: () => {
         updateSettings({ lastWeeklyBriefDate: null })
@@ -295,7 +296,7 @@ export default function HomeScreen() {
   if (showEveningClear) {
     tiles.push({
       key: 'evening',
-      mark: 'E',
+      icon: 'evening',
       label: t('home.eveningClear'),
       onPress: () => router.push('/evening'),
       tone: 'ink',
@@ -304,7 +305,7 @@ export default function HomeScreen() {
 
   tiles.push({
     key: 'settings',
-    mark: '◎',
+    icon: 'settings',
     label: t('tabs.settings'),
     onPress: () => router.push('/settings'),
     tone: 'soft',
@@ -356,10 +357,14 @@ export default function HomeScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.tile}
                   >
-                    <Text style={[styles.tileWatermark, toneWash(tile.tone)]} pointerEvents="none">
-                      {tile.mark}
-                    </Text>
                     <View style={styles.tileFill}>
+                      <View style={styles.iconSlot}>
+                        <BrushIcon
+                          name={tile.icon}
+                          size={34}
+                          color={tile.tone === 'ink' ? colors.textOnAccent : colors.accentStrong}
+                        />
+                      </View>
                       <Text style={[styles.tileLabel, toneLabel(tile.tone)]} numberOfLines={2}>
                         {tile.label}
                       </Text>
@@ -455,10 +460,6 @@ function toneGradient(tone: Tone): [string, string] {
   }
 }
 
-function toneWash(tone: Tone) {
-  return tone === 'ink' ? styles.washOnInk : styles.washOnLight
-}
-
 function toneLabel(tone: Tone) {
   return tone === 'ink' ? styles.labelOnInk : styles.labelOnLight
 }
@@ -549,24 +550,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tileDisabled: { opacity: 0.45 },
-  tileWatermark: {
-    position: 'absolute',
-    right: 4,
-    bottom: 36,
-    fontFamily: fonts.brand,
-    fontSize: 72,
-    lineHeight: 72,
-    letterSpacing: -2,
-  },
-  washOnInk: { color: 'rgba(247,251,250,0.10)' },
-  washOnLight: { color: 'rgba(10,87,81,0.08)' },
   tileFill: {
     flex: 1,
     width: '100%',
     height: '100%',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
     zIndex: 1,
+  },
+  iconSlot: {
+    marginTop: 2,
   },
   tileLabel: {
     fontFamily: fonts.bodyBold,
