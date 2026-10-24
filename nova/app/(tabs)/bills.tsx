@@ -2,12 +2,13 @@ import { format } from 'date-fns'
 import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BillEditor } from '../../components/BillEditor'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
+import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { useIsPro } from '../../lib/pro'
 import {
@@ -25,6 +26,7 @@ import type { Bill } from '../../types'
 
 export default function BillsScreen() {
   const t = useT()
+  const insets = useSafeAreaInsets()
   const isPro = useIsPro()
   const { billId } = useLocalSearchParams<{ billId?: string }>()
   const bills = useNovaStore((s) => s.bills)
@@ -126,9 +128,14 @@ export default function BillsScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{t('bills.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('bills.emptyText')}</Text>
-              <Pressable style={styles.sampleBtn} onPress={fillSamples}>
-                <Text style={styles.sampleBtnText}>{t('bills.addSample')}</Text>
-              </Pressable>
+              <View style={styles.emptyActions}>
+                <Pressable style={styles.sampleBtn} onPress={openCreate}>
+                  <Text style={styles.sampleBtnText}>{t('bills.add')}</Text>
+                </Pressable>
+                <Pressable style={styles.sampleBtnGhost} onPress={fillSamples}>
+                  <Text style={styles.sampleBtnGhostText}>{t('bills.addSample')}</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
@@ -196,7 +203,7 @@ export default function BillsScreen() {
           ) : null}
         </ScrollView>
 
-        <SoftPressable style={styles.fab} onPress={openCreate}>
+        <SoftPressable style={[styles.fab, { bottom: localFabBottom(insets.bottom), right: FAB_RIGHT, width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2 }]} onPress={openCreate}>
           <Text style={styles.fabText}>+</Text>
         </SoftPressable>
 
@@ -367,7 +374,16 @@ const styles = StyleSheet.create({
   statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   statSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 11, marginTop: 2 },
   list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 8 },
-  section: { marginTop: 10, gap: 4 },
+  section: {
+    marginTop: 4,
+    gap: 4,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   sectionHead: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -413,12 +429,25 @@ const styles = StyleSheet.create({
   },
   payBtn: { alignSelf: 'flex-start', marginLeft: 22, paddingVertical: 4, paddingHorizontal: 4 },
   payBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
-  empty: { paddingVertical: spacing.lg, gap: 8 },
+  empty: {
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    gap: 8,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
-  sampleBtn: {
-    alignSelf: 'flex-start',
+  emptyActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 4,
+  },
+  sampleBtn: {
     borderWidth: 1.5,
     borderColor: colors.accent,
     borderRadius: radii.full,
@@ -428,10 +457,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sampleBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
+  sampleBtnGhost: {
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sampleBtnGhostText: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 13,
+  },
   fab: {
     position: 'absolute',
     right: 22,
-    bottom: 18,
+    bottom: 96, // overridden at runtime via localFabBottom
     width: 54,
     height: 54,
     borderRadius: 27,

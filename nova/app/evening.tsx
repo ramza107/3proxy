@@ -186,7 +186,7 @@ export default function EveningClearScreen() {
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
             <Text style={styles.back}>{t('common.close')}</Text>
           </Pressable>
           <View style={styles.dots}>
@@ -458,9 +458,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
     gap: 10,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  backBtn: {
+    paddingVertical: 2,
+    paddingHorizontal: 2,
   },
   back: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 15 },
   dots: { flexDirection: 'row', gap: 6, flex: 1, justifyContent: 'center' },
@@ -543,11 +553,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  list: { gap: 4 },
+  list: { gap: 8 },
   row: {
-    backgroundColor: 'transparent',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
     paddingVertical: 14,
     gap: 10,
   },
@@ -571,7 +583,7 @@ const styles = StyleSheet.create({
   actionGhostText: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
   empty: {
     backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: spacing.md,

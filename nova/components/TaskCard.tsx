@@ -96,11 +96,8 @@ export function TaskCard({
         <View style={[styles.dot, { backgroundColor: colors[task.priority] }]} />
       </View>
 
-      {!task.completed ? (
+      {!task.completed && (onPostpone || onMoveTomorrow) ? (
         <View style={styles.actions}>
-          <Pressable onPress={onPress} style={styles.actionBtn} hitSlop={6} accessibilityRole="button">
-            <Text style={styles.actionText}>{t('common.edit')}</Text>
-          </Pressable>
           {onPostpone ? (
             <Pressable onPress={onPostpone} style={styles.actionBtn} hitSlop={6}>
               <Text style={styles.actionText}>{t('tasks.plusOneDay')}</Text>
@@ -136,7 +133,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   /** Soften done rows without washing into the painting backdrop. */
-  done: { opacity: 0.78 },
+  done: { opacity: 0.85 },
   overdueCard: {
     borderBottomColor: 'rgba(196,69,74,0.25)',
   },

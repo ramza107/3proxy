@@ -146,18 +146,10 @@ export default function ChatScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{t.tf('chat.emptyTitle', { name })}</Text>
               <Text style={styles.emptyText}>{t('chat.emptyText')}</Text>
-              <Pressable
-                style={styles.chip}
-                onPress={() => onSend('Remind me to call Mom tomorrow at 7 PM')}
-              >
+              <Pressable style={styles.chip} onPress={() => onSend(t('chat.chipRemind'))}>
                 <Text style={styles.chipText}>{t('chat.chipRemind')}</Text>
               </Pressable>
-              <Pressable
-                style={styles.chip}
-                onPress={() =>
-                  onSend('I need to clean my apartment, buy food and do laundry tomorrow')
-                }
-              >
+              <Pressable style={styles.chip} onPress={() => onSend(t('chat.chipOrganize'))}>
                 <Text style={styles.chipText}>{t('chat.chipOrganize')}</Text>
               </Pressable>
             </View>
@@ -217,20 +209,20 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexGrow: 1 },
   empty: {
     gap: 12,
-    paddingTop: 8,
+    paddingTop: 12,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
-    backgroundColor: 'rgba(250,252,251,0.94)',
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
-  emptyTitle: { color: colors.text, fontSize: 22, fontFamily: fonts.bodyBold },
-  emptyText: { color: colors.textMuted, lineHeight: 22, marginBottom: 8, fontFamily: fonts.body },
+  emptyTitle: { color: colors.text, fontSize: 22, fontFamily: fonts.brand, letterSpacing: -0.3 },
+  emptyText: { color: colors.textMuted, lineHeight: 22, marginBottom: 4, fontFamily: fonts.body },
   chip: {
     borderRadius: radii.md,
     padding: 14,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     backgroundColor: colors.bgElevated,
   },
@@ -243,7 +235,7 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.md,
     paddingVertical: spacing.sm,
     gap: 6,
-    backgroundColor: 'rgba(250,252,251,0.94)',
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
@@ -269,5 +261,9 @@ const styles = StyleSheet.create({
     cursor: 'pointer',
   },
   savedBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
-  inputWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+  inputWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md + 88,
+    paddingTop: 4,
+  },
 })
