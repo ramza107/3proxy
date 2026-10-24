@@ -262,7 +262,6 @@ export default function TasksScreen() {
               </Pressable>
             </View>
           ) : null}
-          {/* empty + day sections sit on solid surfaces so copy never washes into the painting */}
 
           {overdue.length > 0 && !focusDay ? (
             <HomeSection
@@ -614,12 +613,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   doneToggle: {
-    paddingVertical: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    marginTop: 4,
   },
   doneToggleText: {
     color: colors.accentStrong,
-    fontFamily: fonts.bodyMedium,
+    fontFamily: fonts.bodyBold,
     fontSize: 14,
   },
 })
