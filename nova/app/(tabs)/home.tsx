@@ -363,13 +363,13 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeIn.duration(480)} style={styles.hero}>
-            <View style={styles.markGlow}>
-              <BrandMark size={40} color={colors.accentStrong} />
-            </View>
-            <Text style={styles.brandWord} accessibilityRole="header">
-              {brand.name}
-            </Text>
-            <View style={styles.helloPanel}>
+            <View style={styles.heroPanel}>
+              <View style={styles.markGlow}>
+                <BrandMark size={40} color={colors.accentStrong} />
+              </View>
+              <Text style={styles.brandWord} accessibilityRole="header">
+                {brand.name}
+              </Text>
               <Text style={styles.hello}>
                 {translate(language, greetingKey())}, {name}
               </Text>
@@ -568,34 +568,35 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: colors.accentSoft,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(15,42,50,0.08)',
+    borderColor: 'rgba(15,110,102,0.18)',
+  },
+  heroPanel: {
+    alignSelf: 'stretch',
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    gap: 4,
   },
   brandWord: {
     color: colors.bgDeep,
     fontFamily: fonts.brand,
-    fontSize: 56,
-    letterSpacing: -1.8,
-    lineHeight: 58,
-    marginTop: 14,
-  },
-  helloPanel: {
-    marginTop: 14,
-    alignSelf: 'stretch',
-    backgroundColor: 'rgba(250,252,251,0.92)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 3,
+    fontSize: 48,
+    letterSpacing: -1.6,
+    lineHeight: 52,
+    marginTop: 10,
   },
   hello: {
     color: colors.text,
     fontSize: 17,
     fontFamily: fonts.bodyMedium,
     letterSpacing: -0.15,
+    marginTop: 8,
   },
   date: {
     color: colors.textDim,

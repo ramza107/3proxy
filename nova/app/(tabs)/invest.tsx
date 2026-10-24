@@ -10,12 +10,13 @@ import {
   View,
 } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InvestmentEditor } from '../../components/InvestmentEditor'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
+import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { holdingPnL, normalizeInvestSymbol, portfolioSummary } from '../../lib/invest'
@@ -27,6 +28,7 @@ import type { InvestQuote, InvestmentHolding } from '../../types'
 
 export default function InvestScreen() {
   const t = useT()
+  const insets = useSafeAreaInsets()
   const isPro = useIsPro()
   const investments = useNovaStore((s) => s.investments)
   const createInvestmentLocal = useNovaStore((s) => s.createInvestmentLocal)
@@ -131,16 +133,7 @@ export default function InvestScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader
-          kicker={t('invest.kicker')}
-          title={t('invest.title')}
-          sub={t('invest.sub')}
-          trailing={
-            <View style={styles.proPill}>
-              <Text style={styles.proPillText}>PRO</Text>
-            </View>
-          }
-        />
+        <ScreenHeader kicker={t('invest.kicker')} title={t('invest.title')} sub={t('invest.sub')} />
 
         <Animated.View entering={FadeInDown.duration(420)} style={styles.hero}>
           <Text style={styles.heroLabel}>{t('invest.portfolio')}</Text>
@@ -204,17 +197,19 @@ export default function InvestScreen() {
               </Pressable>
             </View>
           ) : (
-            rows.map((row, i) => (
-              <Animated.View key={row.holding.id} entering={FadeInDown.delay(i * 50).duration(320)}>
-                <HoldingRow
-                  row={row}
-                  onPress={() => {
-                    setCreating(false)
-                    setEditing(row.holding)
-                  }}
-                />
-              </Animated.View>
-            ))
+            <View style={styles.panel}>
+              {rows.map((row, i) => (
+                <Animated.View key={row.holding.id} entering={FadeInDown.delay(i * 50).duration(320)}>
+                  <HoldingRow
+                    row={row}
+                    onPress={() => {
+                      setCreating(false)
+                      setEditing(row.holding)
+                    }}
+                  />
+                </Animated.View>
+              ))}
+            </View>
           )}
           {loading && investments.length > 0 ? (
             <View style={styles.loadingRow}>
@@ -225,7 +220,7 @@ export default function InvestScreen() {
         </ScrollView>
 
         <SoftPressable
-          style={styles.fab}
+          style={[styles.fab, { bottom: localFabBottom(insets.bottom), right: FAB_RIGHT, width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2 }]}
           onPress={() => {
             setCreating(true)
             setEditing(null)
@@ -390,8 +385,24 @@ const styles = StyleSheet.create({
   },
   gain: { color: '#6EE7B7' },
   loss: { color: '#FCA5A5' },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 2 },
-  empty: { paddingVertical: spacing.lg, gap: 8 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 10 },
+  panel: {
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  empty: {
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    gap: 8,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   sampleBtn: {
@@ -438,7 +449,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 22,
-    bottom: 18,
+    bottom: 96, // overridden at runtime via localFabBottom
     width: 54,
     height: 54,
     borderRadius: 27,

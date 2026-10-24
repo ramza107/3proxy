@@ -243,11 +243,30 @@ export default function NewsScreen() {
           {loading && !digest ? (
             <ActivityIndicator color={colors.accent} style={{ marginTop: 36 }} />
           ) : error ? (
-            <Text style={styles.error}>{error}</Text>
+            <Animated.View entering={FadeInDown.delay(80).duration(360)} style={styles.errorPanel}>
+              <Text style={styles.errorTitle}>{t('news.loadError')}</Text>
+              <Text style={styles.error}>{error}</Text>
+              <Pressable
+                style={styles.retryBtn}
+                onPress={() => load(true)}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text style={styles.retryBtnText}>{t('home.refresh')}</Text>
+              </Pressable>
+            </Animated.View>
           ) : !sections.length ? (
             <Animated.View entering={FadeInDown.delay(100).duration(380)} style={styles.empty}>
               <Text style={styles.emptyTitle}>{t('news.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('news.emptyText')}</Text>
+              <Pressable
+                style={styles.retryBtn}
+                onPress={() => load(true)}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text style={styles.retryBtnText}>{t('home.refresh')}</Text>
+              </Pressable>
             </Animated.View>
           ) : (
             <>
@@ -474,7 +493,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-    backgroundColor: 'rgba(250,252,251,0.94)',
+    backgroundColor: colors.bgCardSolid,
   },
   topicRow: {
     paddingHorizontal: spacing.lg,
@@ -668,7 +687,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
     gap: 8,
-    backgroundColor: 'rgba(250,252,251,0.94)',
+    backgroundColor: colors.bgCardSolid,
     borderRadius: radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
@@ -685,11 +704,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  errorPanel: {
+    marginTop: spacing.xl,
+    marginHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    gap: 8,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  errorTitle: {
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+  },
   error: {
     color: colors.danger,
     fontFamily: fonts.body,
-    marginTop: spacing.lg,
-    marginHorizontal: spacing.lg,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  retryBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    borderRadius: radii.full,
+    paddingHorizontal: 14,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryBtnText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
   },
   demoNote: {
     color: colors.textDim,

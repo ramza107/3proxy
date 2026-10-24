@@ -7,11 +7,12 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ShoppingItemEditor } from '../../components/ShoppingItemEditor'
 import { SoftPressable } from '../../components/SoftPressable'
+import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import {
   SHOPPING_AISLES,
@@ -27,6 +28,7 @@ import type { ShoppingItem } from '../../types'
 
 export default function ShoppingScreen() {
   const t = useT()
+  const insets = useSafeAreaInsets()
   const isPro = useIsPro()
   const shopping = useNovaStore((s) => s.shopping)
   const addShoppingQuick = useNovaStore((s) => s.addShoppingQuick)
@@ -141,16 +143,20 @@ export default function ShoppingScreen() {
                 <Text style={styles.statValue}>{bought.length}</Text>
                 <Text style={styles.statLabel}>{t('shopping.bought')}</Text>
               </View>
-              {progress ? (
-                <>
-                  <View style={styles.statDivider} />
-                  <View style={styles.stat}>
-                    <Text style={styles.statValueSm}>{progress}</Text>
-                    <Text style={styles.statLabel}> </Text>
-                  </View>
-                </>
-              ) : null}
             </View>
+            {total > 0 && progress ? (
+              <View style={styles.progressBlock}>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${Math.round((bought.length / total) * 100)}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.progressLabel}>{progress}</Text>
+              </View>
+            ) : null}
           </View>
 
           {shopping.length === 0 ? (
@@ -270,7 +276,7 @@ export default function ShoppingScreen() {
         </ScrollView>
 
         <SoftPressable
-          style={styles.fab}
+          style={[styles.fab, { bottom: localFabBottom(insets.bottom), right: FAB_RIGHT, width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2 }]}
           onPress={() => {
             setCreating(true)
             setEditing(null)
@@ -437,13 +443,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontVariant: ['tabular-nums'],
   },
-  statValueSm: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
+  statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 11 },
+  progressBlock: {
+    marginTop: 12,
+    gap: 6,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.bgSoft,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: colors.accent,
+  },
+  progressLabel: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
     fontVariant: ['tabular-nums'],
   },
-  statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 11 },
   emptyPanel: { ...panel, gap: 6 },
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
@@ -520,7 +541,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 22,
-    bottom: 18,
+    bottom: 96, // overridden at runtime via localFabBottom
     width: 54,
     height: 54,
     borderRadius: 27,

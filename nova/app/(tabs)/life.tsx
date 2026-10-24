@@ -1,13 +1,14 @@
 import { format } from 'date-fns'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BodyEntryEditor } from '../../components/BodyEntryEditor'
 import { LifeAdminEditor } from '../../components/LifeAdminEditor'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
+import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { daysUntilExpiry, sortLifeAdmin } from '../../lib/lifeDates'
@@ -20,6 +21,7 @@ type Segment = 'admin' | 'body'
 
 export default function LifeScreen() {
   const t = useT()
+  const insets = useSafeAreaInsets()
   const isPro = useIsPro()
   const lifeAdmin = useNovaStore((s) => s.lifeAdmin)
   const bodyEntries = useNovaStore((s) => s.bodyEntries)
@@ -103,39 +105,49 @@ export default function LifeScreen() {
               <View style={styles.empty}>
                 <Text style={styles.emptyTitle}>{t('life.emptyTitle')}</Text>
                 <Text style={styles.emptyText}>{t('life.emptyText')}</Text>
+                <Pressable style={styles.sampleBtn} onPress={openCreate}>
+                  <Text style={styles.sampleBtnText}>{t('life.newItem')}</Text>
+                </Pressable>
               </View>
             ) : (
-              sortedLife.map((item) => (
-                <LifeRow
-                  key={item.id}
-                  item={item}
-                  onPress={() => {
-                    setCreatingLife(false)
-                    setEditingLife(item)
-                  }}
-                />
-              ))
+              <View style={styles.panel}>
+                {sortedLife.map((item) => (
+                  <LifeRow
+                    key={item.id}
+                    item={item}
+                    onPress={() => {
+                      setCreatingLife(false)
+                      setEditingLife(item)
+                    }}
+                  />
+                ))}
+              </View>
             )
           ) : sortedBody.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{t('body.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('body.emptyText')}</Text>
+              <Pressable style={styles.sampleBtn} onPress={openCreate}>
+                <Text style={styles.sampleBtnText}>{t('body.newEntry')}</Text>
+              </Pressable>
             </View>
           ) : (
-            sortedBody.map((entry) => (
-              <BodyRow
-                key={entry.id}
-                entry={entry}
-                onPress={() => {
-                  setCreatingBody(false)
-                  setEditingBody(entry)
-                }}
-              />
-            ))
+            <View style={styles.panel}>
+              {sortedBody.map((entry) => (
+                <BodyRow
+                  key={entry.id}
+                  entry={entry}
+                  onPress={() => {
+                    setCreatingBody(false)
+                    setEditingBody(entry)
+                  }}
+                />
+              ))}
+            </View>
           )}
         </ScrollView>
 
-        <SoftPressable style={styles.fab} onPress={openCreate}>
+        <SoftPressable style={[styles.fab, { bottom: localFabBottom(insets.bottom), right: FAB_RIGHT, width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2 }]} onPress={openCreate}>
           <Text style={styles.fabText}>+</Text>
         </SoftPressable>
 
@@ -347,8 +359,40 @@ const styles = StyleSheet.create({
   badgeOn: { backgroundColor: colors.accent },
   badgeText: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 11 },
   badgeTextOn: { color: colors.textOnAccent },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 4 },
-  empty: { paddingVertical: spacing.lg, gap: 8 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 10 },
+  panel: {
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  empty: {
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.md,
+    gap: 8,
+    backgroundColor: 'rgba(250,252,251,0.94)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  sampleBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    borderRadius: radii.full,
+    paddingHorizontal: 14,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sampleBtnText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+  },
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   row: {
@@ -375,7 +419,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 22,
-    bottom: 18,
+    bottom: 96, // overridden at runtime via localFabBottom
     width: 54,
     height: 54,
     borderRadius: 27,

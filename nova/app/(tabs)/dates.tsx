@@ -1,11 +1,12 @@
 import { format } from 'date-fns'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ImportantDateEditor } from '../../components/ImportantDateEditor'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
+import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import {
@@ -19,6 +20,7 @@ import type { ImportantDate } from '../../types'
 
 export default function DatesScreen() {
   const t = useT()
+  const insets = useSafeAreaInsets()
   const importantDates = useNovaStore((s) => s.importantDates)
   const createImportantDateLocal = useNovaStore((s) => s.createImportantDateLocal)
   const upsertImportantDate = useNovaStore((s) => s.upsertImportantDate)
@@ -56,6 +58,15 @@ export default function DatesScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{t('dates.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('dates.emptyText')}</Text>
+              <Pressable
+                style={styles.sampleBtn}
+                onPress={() => {
+                  setCreating(true)
+                  setEditing(null)
+                }}
+              >
+                <Text style={styles.sampleBtnText}>{t('dates.newDate')}</Text>
+              </Pressable>
             </View>
           ) : null}
 
@@ -91,7 +102,7 @@ export default function DatesScreen() {
         </ScrollView>
 
         <SoftPressable
-          style={styles.fab}
+          style={[styles.fab, { bottom: localFabBottom(insets.bottom), right: FAB_RIGHT, width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2 }]}
           onPress={() => {
             setCreating(true)
             setEditing(null)
@@ -258,6 +269,22 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
+  sampleBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    borderRadius: radii.full,
+    paddingHorizontal: 14,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sampleBtnText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -281,7 +308,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 22,
-    bottom: 18,
+    bottom: 96, // overridden at runtime via localFabBottom
     width: 54,
     height: 54,
     borderRadius: 27,

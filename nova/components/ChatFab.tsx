@@ -19,7 +19,12 @@ export const FAB_SCROLL_INSET = 120
 
 const FAB_GAP = 12
 /** Floating capsule + home-indicator — keep in sync with CapsuleTabBar. */
-const TAB_BAR_BAND = 96
+export const TAB_BAR_BAND = 96
+
+/** Bottom offset for local “+” FABs above the capsule tab bar. */
+export function localFabBottom(safeBottom: number) {
+  return Math.max(safeBottom, 8) + TAB_BAR_BAND
+}
 
 /** Compact icon Chat FAB — sits above local “+” on Home/Bills, alone elsewhere. */
 export function ChatFab() {

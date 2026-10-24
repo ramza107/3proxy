@@ -1018,10 +1018,10 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
   sub: { color: colors.textMuted, fontFamily: fonts.body },
   card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radii.md,
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
     padding: spacing.md,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     gap: 10,
   },

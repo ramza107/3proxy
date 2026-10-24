@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 8,
   },
   assistant: {
-    backgroundColor: colors.bgCard,
+    backgroundColor: colors.bgCardSolid,
     borderWidth: 1,
     borderColor: colors.border,
     borderBottomLeftRadius: 8,
