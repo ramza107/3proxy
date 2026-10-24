@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router'
-import { type ColorValue, Platform, StyleSheet, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { type ColorValue, View } from 'react-native'
+import { CapsuleTabBar } from '../../components/CapsuleTabBar'
 import { ChatFab } from '../../components/ChatFab'
 import { TabBarIcon, type TabIconName } from '../../components/TabBarIcon'
-import { colors, fonts } from '../../constants/theme'
+import { colors } from '../../constants/theme'
 import { t } from '../../lib/i18n'
 import { useNovaStore } from '../../lib/store'
 
@@ -15,11 +15,6 @@ function tabIcon(name: TabIconName) {
 
 export default function TabsLayout() {
   const language = useNovaStore((s) => s.settings.language)
-  const insets = useSafeAreaInsets()
-  // Expo Router defaults the tab bar to 49px unless `height` is set — too short for
-  // real icons + labels. Height includes padding (RN box model).
-  const bottomPad = Math.max(insets.bottom, Platform.OS === 'web' ? 16 : 8)
-  const tabBarHeight = 64 + bottomPad
 
   return (
     <View style={{ flex: 1 }}>
@@ -28,30 +23,13 @@ export default function TabsLayout() {
         // fade/shift + detachInactiveScreens can leave a tab blank on iOS
         // (native activityState stuck at 0). Keep screens mounted.
         detachInactiveScreens={false}
+        tabBar={(props) => <CapsuleTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          tabBarStyle: {
-            backgroundColor: colors.bgCardSolid,
-            borderTopColor: colors.border,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            height: tabBarHeight,
-            paddingBottom: bottomPad,
-            paddingTop: 8,
-            elevation: 4,
-            shadowColor: '#0F2A32',
-            shadowOpacity: 0.05,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: -2 },
-          },
-          tabBarActiveTintColor: colors.bgDeep,
+          // Host bar is transparent — CapsuleTabBar floats above content.
+          tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0 },
+          tabBarActiveTintColor: colors.accentStrong,
           tabBarInactiveTintColor: colors.textDim,
-          tabBarLabelPosition: 'below-icon',
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontFamily: fonts.bodyMedium,
-            fontWeight: '600',
-            marginTop: 2,
-          },
         }}
       >
         <Tabs.Screen
@@ -75,7 +53,7 @@ export default function TabsLayout() {
             tabBarIcon: tabIcon('settings'),
           }}
         />
-        {/* Everything else lives in Home → Menu (All tools). Keep routes mounted. */}
+        {/* Everything else lives in Home → Menu. Keep routes mounted. */}
         <Tabs.Screen
           name="bills"
           options={{

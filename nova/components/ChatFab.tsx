@@ -18,8 +18,8 @@ export const FAB_RIGHT = 22
 export const FAB_SCROLL_INSET = 120
 
 const FAB_GAP = 12
-/** Tab bar band above home-indicator — keep in sync with tabs `_layout` height (~80 on web). */
-const TAB_BAR_BAND = 84
+/** Floating capsule + home-indicator — keep in sync with CapsuleTabBar. */
+const TAB_BAR_BAND = 96
 
 /** Compact icon Chat FAB — sits above local “+” on Home/Bills, alone elsewhere. */
 export function ChatFab() {
