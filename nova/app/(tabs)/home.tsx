@@ -369,9 +369,6 @@ export default function HomeScreen() {
                       {tile.mark}
                     </Text>
                     <View style={styles.tileFill}>
-                      <View style={[styles.markChip, toneChip(tile.tone)]}>
-                        <Text style={[styles.tileMark, toneMark(tile.tone)]}>{tile.mark}</Text>
-                      </View>
                       <Text style={[styles.tileLabel, toneLabel(tile.tone)]} numberOfLines={2}>
                         {tile.label}
                       </Text>
@@ -467,16 +464,8 @@ function toneGradient(tone: Tone): [string, string] {
   }
 }
 
-function toneChip(tone: Tone) {
-  return tone === 'ink' ? styles.chipOnInk : styles.chipOnLight
-}
-
 function toneWash(tone: Tone) {
   return tone === 'ink' ? styles.washOnInk : styles.washOnLight
-}
-
-function toneMark(tone: Tone) {
-  return tone === 'ink' ? styles.markOnInk : styles.markOnLight
 }
 
 function toneLabel(tone: Tone) {
@@ -605,24 +594,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     zIndex: 1,
   },
-  markChip: {
-    minWidth: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  chipOnInk: { backgroundColor: 'rgba(247,251,250,0.14)' },
-  chipOnLight: { backgroundColor: 'rgba(15,42,50,0.06)' },
-  tileMark: {
-    fontFamily: fonts.brand,
-    fontSize: 20,
-    lineHeight: 24,
-    letterSpacing: -0.4,
-  },
-  markOnInk: { color: colors.textOnAccent },
-  markOnLight: { color: colors.accentStrong },
   tileLabel: {
     fontFamily: fonts.bodyBold,
     fontSize: 17,
