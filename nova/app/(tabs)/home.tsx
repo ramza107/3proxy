@@ -16,7 +16,6 @@ import { PlanDaySheet } from '../../components/PlanDaySheet'
 import { QuickActionsSheet } from '../../components/QuickActionsSheet'
 import { WeeklyBrief } from '../../components/WeeklyBrief'
 import { Screen } from '../../components/Screen'
-import { SoftPressable } from '../../components/SoftPressable'
 import { TaskEditor } from '../../components/TaskEditor'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
@@ -268,19 +267,6 @@ export default function HomeScreen() {
             {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
           </Text>
 
-          <Pressable
-            style={styles.toolsRow}
-            onPress={() => setQuickOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('quick.title')}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toolsTitle}>{t('quick.toolsRow')}</Text>
-              <Text style={styles.toolsSub}>{t('quick.toolsRowSub')}</Text>
-            </View>
-            <Text style={styles.toolsCta}>{t('quick.openMenu')}</Text>
-          </Pressable>
-
           {showEveningClear ? (
             <Pressable style={styles.eveningCard} onPress={() => router.push('/evening')}>
               <View style={styles.eveningNode} />
@@ -382,14 +368,6 @@ export default function HomeScreen() {
             </Pressable>
           </HomeSection>
         </ScrollView>
-
-        <SoftPressable style={styles.fab} onPress={() => setQuickOpen(true)}>
-          <View style={styles.fabBars} pointerEvents="none">
-            <View style={styles.fabBar} />
-            <View style={[styles.fabBar, styles.fabBarMid]} />
-            <View style={styles.fabBar} />
-          </View>
-        </SoftPressable>
       </SafeAreaView>
 
       <BottomSheet
@@ -466,14 +444,12 @@ export default function HomeScreen() {
         planning={planning}
         showEvening={showEveningClear}
         onPlanDay={openPlanSheet}
-        onOpenChat={() => router.push('/chat')}
-        onOpenTasks={() => router.push('/tasks')}
         onOpenBills={() => router.push('/bills')}
         onOpenDates={() => router.push('/dates')}
         onOpenInvest={isProUser ? () => router.push('/invest') : undefined}
         onOpenLife={() => router.push('/life')}
         onOpenShopping={() => router.push('/shopping')}
-        onOpenSettings={() => router.push('/settings')}
+        onOpenNews={() => router.push('/news')}
         onOpenEvening={() => router.push('/evening')}
         onOpenMorning={
           isProUser
@@ -559,32 +535,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13,
     letterSpacing: 0.2,
-  },
-  toolsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  toolsTitle: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
-  },
-  toolsSub: {
-    color: colors.textDim,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    marginTop: 2,
-    lineHeight: 18,
-  },
-  toolsCta: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
   },
   hello: {
     color: colors.text,
@@ -700,29 +650,4 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 14,
   },
-  fab: {
-    position: 'absolute',
-    right: 22,
-    bottom: 18,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: colors.bgDeep,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0F2A32',
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-    zIndex: 40,
-  },
-  fabBars: { gap: 5, alignItems: 'center' },
-  fabBar: {
-    width: 18,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: colors.textOnAccent,
-  },
-  fabBarMid: { width: 14 },
 })
