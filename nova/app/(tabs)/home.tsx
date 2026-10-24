@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native'
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BottomSheet } from '../../components/BottomSheet'
 import { BrandMark } from '../../components/BrandMark'
@@ -303,7 +304,7 @@ export default function HomeScreen() {
 
   tiles.push({
     key: 'settings',
-    mark: '·',
+    mark: '◎',
     label: t('tabs.settings'),
     onPress: () => router.push('/settings'),
     tone: 'soft',
@@ -312,12 +313,14 @@ export default function HomeScreen() {
   return (
     <Screen>
       <LinearGradient
-        colors={['#D7E4E9', colors.bg, '#EAF2F4']}
-        locations={[0, 0.45, 1]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
+        colors={['#C9DCE3', '#E4EEF1', '#F2F7F8']}
+        locations={[0, 0.42, 1]}
+        start={{ x: 0.05, y: 0 }}
+        end={{ x: 0.95, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+      <View style={styles.orbA} pointerEvents="none" />
+      <View style={styles.orbB} pointerEvents="none" />
       <SafeAreaView style={styles.safe} edges={['top']}>
         <ScrollView
           style={styles.scroll}
@@ -325,8 +328,10 @@ export default function HomeScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.hero}>
-            <BrandMark size={44} color={colors.accentStrong} />
+          <Animated.View entering={FadeIn.duration(480)} style={styles.hero}>
+            <View style={styles.markGlow}>
+              <BrandMark size={40} color={colors.accentStrong} />
+            </View>
             <Text style={styles.brandWord} accessibilityRole="header">
               {brand.name}
             </Text>
@@ -336,26 +341,44 @@ export default function HomeScreen() {
             <Text style={styles.date}>
               {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
             </Text>
-            <Text style={styles.tagline}>{t('home.menuTagline')}</Text>
-          </View>
+          </Animated.View>
 
           <View style={styles.grid}>
-            {tiles.map((tile) => (
-              <View key={tile.key} style={styles.tileWrap}>
+            {tiles.map((tile, i) => (
+              <Animated.View
+                key={tile.key}
+                entering={FadeInDown.delay(60 + Math.min(i, 8) * 45)
+                  .duration(380)
+                  .springify()
+                  .damping(18)}
+                style={styles.tileWrap}
+              >
                 <SoftPressable
-                  style={[styles.tile, toneStyle(tile.tone), tile.disabled && styles.tileDisabled]}
+                  style={[styles.tileShell, tile.disabled && styles.tileDisabled]}
                   onPress={tile.onPress}
                   disabled={tile.disabled}
                   stretch
                 >
-                  <View style={styles.tileFill}>
-                    <Text style={[styles.tileMark, toneMark(tile.tone)]}>{tile.mark}</Text>
-                    <Text style={[styles.tileLabel, toneLabel(tile.tone)]} numberOfLines={2}>
-                      {tile.label}
+                  <LinearGradient
+                    colors={toneGradient(tile.tone)}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.tile}
+                  >
+                    <Text style={[styles.tileWatermark, toneWash(tile.tone)]} pointerEvents="none">
+                      {tile.mark}
                     </Text>
-                  </View>
+                    <View style={styles.tileFill}>
+                      <View style={[styles.markChip, toneChip(tile.tone)]}>
+                        <Text style={[styles.tileMark, toneMark(tile.tone)]}>{tile.mark}</Text>
+                      </View>
+                      <Text style={[styles.tileLabel, toneLabel(tile.tone)]} numberOfLines={2}>
+                        {tile.label}
+                      </Text>
+                    </View>
+                  </LinearGradient>
                 </SoftPressable>
-              </View>
+              </Animated.View>
             ))}
           </View>
         </ScrollView>
@@ -431,17 +454,25 @@ export default function HomeScreen() {
   )
 }
 
-function toneStyle(tone: Tone) {
+function toneGradient(tone: Tone): [string, string] {
   switch (tone) {
     case 'ink':
-      return styles.tileInk
+      return ['#163842', '#0A5751']
     case 'teal':
-      return styles.tileTeal
+      return ['#D7EDE9', '#B9DFD8']
     case 'soft':
-      return styles.tileSoft
+      return ['#FFFFFF', '#F3F7F8']
     default:
-      return styles.tileMist
+      return ['#F7FBFC', '#E4EEF1']
   }
+}
+
+function toneChip(tone: Tone) {
+  return tone === 'ink' ? styles.chipOnInk : styles.chipOnLight
+}
+
+function toneWash(tone: Tone) {
+  return tone === 'ink' ? styles.washOnInk : styles.washOnLight
 }
 
 function toneMark(tone: Tone) {
@@ -455,11 +486,29 @@ function toneLabel(tone: Tone) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flex: 1 },
+  orbA: {
+    position: 'absolute',
+    top: -80,
+    right: -60,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(15,110,102,0.14)',
+  },
+  orbB: {
+    position: 'absolute',
+    top: 220,
+    left: -90,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(15,42,50,0.06)',
+  },
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: 140,
-    gap: spacing.lg,
+    gap: spacing.xl,
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 520 : undefined,
     alignSelf: 'center',
@@ -467,96 +516,118 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: 'flex-start',
-    gap: 6,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingTop: 12,
+    paddingBottom: 2,
+  },
+  markGlow: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,42,50,0.08)',
   },
   brandWord: {
-    color: colors.accentStrong,
+    color: colors.bgDeep,
     fontFamily: fonts.brand,
-    fontSize: 48,
-    letterSpacing: -1.4,
-    lineHeight: 52,
-    marginTop: 10,
+    fontSize: 56,
+    letterSpacing: -1.8,
+    lineHeight: 58,
+    marginTop: 14,
   },
   hello: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: fonts.bodyMedium,
-    letterSpacing: -0.2,
-    marginTop: 10,
+    letterSpacing: -0.15,
+    marginTop: 14,
   },
   date: {
     color: colors.textDim,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: fonts.body,
-  },
-  tagline: {
-    color: colors.textMuted,
-    fontFamily: fonts.body,
-    fontSize: 15,
-    lineHeight: 21,
-    marginTop: 8,
-    maxWidth: 320,
+    marginTop: 3,
+    letterSpacing: 0.2,
+    textTransform: 'capitalize',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 14,
   },
   tileWrap: {
-    width: '47.5%',
+    width: '47%',
     flexGrow: 1,
     minWidth: '42%',
     maxWidth: '48.5%',
     aspectRatio: 1,
   },
+  tileShell: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    borderRadius: radii.xl,
+    shadowColor: '#0F2A32',
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
   tile: {
     flex: 1,
     width: '100%',
     height: '100%',
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: 'rgba(15,42,50,0.08)',
     overflow: 'hidden',
   },
-  tileInk: {
-    backgroundColor: colors.bgDeep,
-    borderColor: 'rgba(15,42,50,0.35)',
-  },
-  tileTeal: {
-    backgroundColor: colors.accentSoft,
-    borderColor: 'rgba(15,110,102,0.22)',
-  },
-  tileMist: {
-    backgroundColor: colors.bgElevated,
-    borderColor: colors.border,
-  },
-  tileSoft: {
-    backgroundColor: colors.bgCardSolid,
-    borderColor: colors.border,
-  },
   tileDisabled: { opacity: 0.45 },
+  tileWatermark: {
+    position: 'absolute',
+    right: -6,
+    top: -10,
+    fontFamily: fonts.brand,
+    fontSize: 92,
+    lineHeight: 92,
+    letterSpacing: -3,
+  },
+  washOnInk: { color: 'rgba(247,251,250,0.10)' },
+  washOnLight: { color: 'rgba(10,87,81,0.08)' },
   tileFill: {
     flex: 1,
     width: '100%',
     height: '100%',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    zIndex: 1,
   },
+  markChip: {
+    minWidth: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  chipOnInk: { backgroundColor: 'rgba(247,251,250,0.14)' },
+  chipOnLight: { backgroundColor: 'rgba(15,42,50,0.06)' },
   tileMark: {
     fontFamily: fonts.brand,
-    fontSize: 36,
-    lineHeight: 40,
-    letterSpacing: -0.8,
+    fontSize: 20,
+    lineHeight: 24,
+    letterSpacing: -0.4,
   },
   markOnInk: { color: colors.textOnAccent },
   markOnLight: { color: colors.accentStrong },
   tileLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: 16,
-    lineHeight: 21,
+    fontSize: 17,
+    lineHeight: 22,
+    letterSpacing: -0.2,
   },
   labelOnInk: { color: colors.textOnAccent },
   labelOnLight: { color: colors.text },
