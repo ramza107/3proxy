@@ -1,10 +1,24 @@
 import { useMemo, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { ShoppingItemEditor } from '../../components/ShoppingItemEditor'
 import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
+import {
+  SHOPPING_AISLES,
+  SHOPPING_SEEDS,
+  aisleLabelKey,
+  seedLabelKey,
+  type ShoppingAisleId,
+} from '../../lib/shoppingCatalog'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import type { ShoppingItem } from '../../types'
@@ -12,6 +26,7 @@ import type { ShoppingItem } from '../../types'
 export default function ShoppingScreen() {
   const t = useT()
   const shopping = useNovaStore((s) => s.shopping)
+  const addShoppingQuick = useNovaStore((s) => s.addShoppingQuick)
   const createShoppingLocal = useNovaStore((s) => s.createShoppingLocal)
   const upsertShoppingItem = useNovaStore((s) => s.upsertShoppingItem)
   const removeShoppingItem = useNovaStore((s) => s.removeShoppingItem)
@@ -20,64 +35,118 @@ export default function ShoppingScreen() {
 
   const [editing, setEditing] = useState<ShoppingItem | null>(null)
   const [creating, setCreating] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [aisle, setAisle] = useState<ShoppingAisleId>('dairy')
 
   const open = useMemo(
     () => shopping.filter((i) => !i.bought).sort((a, b) => b.created_at.localeCompare(a.created_at)),
     [shopping],
   )
   const bought = useMemo(
-    () => shopping.filter((i) => i.bought).sort((a, b) => (b.boughtAt || '').localeCompare(a.boughtAt || '')),
+    () =>
+      shopping
+        .filter((i) => i.bought)
+        .sort((a, b) => (b.boughtAt || '').localeCompare(a.boughtAt || '')),
     [shopping],
   )
+
+  const openTitles = useMemo(
+    () => new Set(open.map((i) => i.title.trim().toLowerCase())),
+    [open],
+  )
+
+  const recent = useMemo(() => {
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const item of [...shopping].sort((a, b) =>
+      (b.boughtAt || b.updated_at).localeCompare(a.boughtAt || a.updated_at),
+    )) {
+      const key = item.title.trim().toLowerCase()
+      if (!key || seen.has(key) || openTitles.has(key)) continue
+      seen.add(key)
+      out.push(item.title.trim())
+      if (out.length >= 8) break
+    }
+    return out
+  }, [shopping, openTitles])
+
+  const seeds = useMemo(() => SHOPPING_SEEDS.filter((s) => s.aisle === aisle), [aisle])
+
+  const submitDraft = () => {
+    const title = draft.trim()
+    if (!title) return
+    addShoppingQuick({ title })
+    setDraft('')
+  }
+
+  const total = open.length + bought.length
+  const progress =
+    total > 0 ? t.tf('shopping.progress', { bought: bought.length, total }) : null
 
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{t('shopping.kicker')}</Text>
-          <Text style={styles.title}>{t('shopping.title')}</Text>
-          <Text style={styles.sub}>{t('shopping.sub')}</Text>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{open.length}</Text>
-            <Text style={styles.statLabel}>{t('shopping.toBuy')}</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{bought.length}</Text>
-            <Text style={styles.statLabel}>{t('shopping.bought')}</Text>
-          </View>
-        </View>
-
         <ScrollView
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.headerPanel}>
+            <Text style={styles.kicker}>{t('shopping.kicker')}</Text>
+            <Text style={styles.title}>{t('shopping.title')}</Text>
+            <Text style={styles.sub}>{t('shopping.sub')}</Text>
+
+            <View style={styles.composer}>
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                placeholder={t('shopping.composerPh')}
+                placeholderTextColor={colors.textDim}
+                style={styles.composerInput}
+                returnKeyType="done"
+                onSubmitEditing={submitDraft}
+                blurOnSubmit={false}
+              />
+              <SoftPressable
+                style={[styles.composerBtn, !draft.trim() && styles.composerBtnOff]}
+                onPress={submitDraft}
+                disabled={!draft.trim()}
+              >
+                <Text style={styles.composerBtnText}>{t('shopping.add')}</Text>
+              </SoftPressable>
+            </View>
+
+            <View style={styles.statsRow}>
+              <View style={styles.stat}>
+                <Text style={styles.statValue}>{open.length}</Text>
+                <Text style={styles.statLabel}>{t('shopping.toBuy')}</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.stat}>
+                <Text style={styles.statValue}>{bought.length}</Text>
+                <Text style={styles.statLabel}>{t('shopping.bought')}</Text>
+              </View>
+              {progress ? (
+                <>
+                  <View style={styles.statDivider} />
+                  <View style={styles.stat}>
+                    <Text style={styles.statValueSm}>{progress}</Text>
+                    <Text style={styles.statLabel}> </Text>
+                  </View>
+                </>
+              ) : null}
+            </View>
+          </View>
+
           {shopping.length === 0 ? (
-            <View style={styles.empty}>
+            <View style={styles.emptyPanel}>
               <Text style={styles.emptyTitle}>{t('shopping.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('shopping.emptyText')}</Text>
-              <View style={styles.tplRow}>
-                {(['milk', 'bread', 'eggs', 'coffee'] as const).map((key) => {
-                  const seed = t(`shopping.seed.${key}`)
-                  return (
-                    <Pressable
-                      key={key}
-                      style={styles.tplChip}
-                      onPress={() => createShoppingLocal({ title: seed, amount: 1, unit: 'pcs' })}
-                    >
-                      <Text style={styles.tplText}>+ {seed}</Text>
-                    </Pressable>
-                  )
-                })}
-              </View>
             </View>
           ) : null}
 
           {open.length > 0 ? (
-            <View style={styles.section}>
+            <View style={styles.panel}>
               <Text style={styles.sectionTitle}>
                 {t('shopping.toBuy')} · {open.length}
               </Text>
@@ -96,7 +165,7 @@ export default function ShoppingScreen() {
           ) : null}
 
           {bought.length > 0 ? (
-            <View style={styles.section}>
+            <View style={styles.panel}>
               <View style={styles.sectionHead}>
                 <Text style={styles.sectionTitle}>
                   {t('shopping.bought')} · {bought.length}
@@ -118,6 +187,71 @@ export default function ShoppingScreen() {
               ))}
             </View>
           ) : null}
+
+          {recent.length > 0 ? (
+            <View style={styles.panel}>
+              <Text style={styles.sectionTitle}>{t('shopping.recent')}</Text>
+              <View style={styles.chipWrap}>
+                {recent.map((title) => (
+                  <Pressable
+                    key={title}
+                    style={styles.chip}
+                    onPress={() => addShoppingQuick({ title })}
+                  >
+                    <Text style={styles.chipText}>+ {title}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          <View style={styles.panel}>
+            <Text style={styles.sectionTitle}>{t('shopping.aisles')}</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.aisleRow}
+            >
+              {SHOPPING_AISLES.map((id) => {
+                const on = aisle === id
+                return (
+                  <Pressable
+                    key={id}
+                    style={[styles.aisleChip, on && styles.aisleChipOn]}
+                    onPress={() => setAisle(id)}
+                  >
+                    <Text style={[styles.aisleText, on && styles.aisleTextOn]}>
+                      {t(aisleLabelKey(id))}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+
+            <View style={styles.chipWrap}>
+              {seeds.map((seed) => {
+                const label = t(seedLabelKey(seed.key))
+                const onList = openTitles.has(label.toLowerCase())
+                return (
+                  <Pressable
+                    key={seed.key}
+                    style={[styles.chip, onList && styles.chipOnList]}
+                    onPress={() =>
+                      addShoppingQuick({
+                        title: label,
+                        amount: seed.amount ?? null,
+                        unit: seed.unit ?? null,
+                      })
+                    }
+                  >
+                    <Text style={[styles.chipText, onList && styles.chipTextOnList]}>
+                      {onList ? `✓ ${label}` : `+ ${label}`}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
         </ScrollView>
 
         <SoftPressable
@@ -202,13 +336,27 @@ function ShoppingRow({
   )
 }
 
+const panel = {
+  backgroundColor: 'rgba(250,252,251,0.94)',
+  borderRadius: radii.lg,
+  borderWidth: StyleSheet.hairlineWidth,
+  borderColor: colors.border,
+  paddingHorizontal: spacing.md,
+  paddingVertical: spacing.md,
+} as const
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  header: {
+  list: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    gap: 4,
-    marginBottom: 10,
+    gap: spacing.md,
+    paddingBottom: 140,
+  },
+  headerPanel: {
+    ...panel,
+    backgroundColor: colors.bgCardSolid,
+    gap: 6,
   },
   kicker: {
     color: colors.accentStrong,
@@ -224,52 +372,72 @@ const styles = StyleSheet.create({
     letterSpacing: -0.8,
   },
   sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+  },
+  composerInput: {
+    flex: 1,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radii.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  composerBtn: {
+    backgroundColor: colors.bgDeep,
+    borderRadius: radii.full,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  composerBtnOff: { opacity: 0.4 },
+  composerBtnText: {
+    color: colors.textOnAccent,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
+  },
   statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    gap: 8,
-    marginBottom: 8,
-  },
-  stat: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
     alignItems: 'center',
-    gap: 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  stat: { flex: 1, alignItems: 'center', gap: 2 },
+  statDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    backgroundColor: colors.border,
   },
   statValue: {
     color: colors.text,
     fontFamily: fonts.bodyBold,
-    fontSize: 18,
+    fontSize: 20,
+    fontVariant: ['tabular-nums'],
+  },
+  statValueSm: {
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontSize: 14,
     fontVariant: ['tabular-nums'],
   },
   statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 11 },
-  list: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    gap: spacing.md,
-    paddingBottom: 140,
-  },
-  empty: { gap: 8, paddingVertical: spacing.md },
+  emptyPanel: { ...panel, gap: 6 },
   emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
-  tplRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
-  tplChip: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  tplText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  section: { gap: 0 },
+  panel: { ...panel, gap: 8 },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    gap: 12,
   },
   sectionTitle: {
     color: colors.textMuted,
@@ -277,9 +445,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    marginBottom: 4,
   },
   clearBought: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  aisleRow: { gap: 8, paddingVertical: 2 },
+  aisleChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radii.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.bgElevated,
+  },
+  aisleChipOn: {
+    backgroundColor: colors.bgDeep,
+    borderColor: colors.bgDeep,
+  },
+  aisleText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  aisleTextOn: { color: colors.textOnAccent },
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    borderRadius: radii.full,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: colors.bgElevated,
+  },
+  chipOnList: {
+    backgroundColor: 'rgba(15,42,50,0.06)',
+    borderColor: 'transparent',
+  },
+  chipText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  chipTextOnList: { color: colors.textDim },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
