@@ -2,10 +2,12 @@ import { addDays, format, parseISO } from 'date-fns'
 import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { HomeSection } from '../../components/HomeSection'
+import { SoftPressable } from '../../components/SoftPressable'
 import { TaskCard } from '../../components/TaskCard'
 import { TaskEditor } from '../../components/TaskEditor'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
@@ -67,16 +69,26 @@ function sampleWeekTasks(userId: string, today: string): Task[] {
 
 export default function TasksScreen() {
   const t = useT()
+  const insets = useSafeAreaInsets()
   const { taskId } = useLocalSearchParams<{ taskId?: string }>()
   const tasks = useNovaStore((s) => s.tasks)
   const settings = useNovaStore((s) => s.settings)
   const userId = useNovaStore((s) => s.sessionUserId) || 'local'
   const setTasks = useNovaStore((s) => s.setTasks)
+  const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const clearCompletedTasks = useNovaStore((s) => s.clearCompletedTasks)
   const [editing, setEditing] = useState<Task | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [createDate, setCreateDate] = useState<string | null>(null)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
   const listRef = useRef<ScrollView>(null)
+
+  const openCreate = (date: string | null = focusDay || todayISO()) => {
+    setEditing(null)
+    setCreateDate(date)
+    setCreating(true)
+  }
 
   // Each day chip should open from the top — don't keep the previous day's scroll.
   useEffect(() => {
@@ -342,6 +354,15 @@ export default function TasksScreen() {
               {day.tasks.length === 0 && day.anchors.length === 0 ? (
                 <Text style={styles.dayEmpty}>{t('tasks.freeDay')}</Text>
               ) : null}
+
+              <Pressable
+                style={styles.addDayBtn}
+                onPress={() => openCreate(day.iso)}
+                accessibilityRole="button"
+                hitSlop={6}
+              >
+                <Text style={styles.addDayBtnText}>+ {t('tasks.addTask')}</Text>
+              </Pressable>
             </HomeSection>
             )
           })}
@@ -440,11 +461,45 @@ export default function TasksScreen() {
           ) : null}
         </ScrollView>
 
+        <SoftPressable
+          style={[
+            styles.fab,
+            {
+              bottom: localFabBottom(insets.bottom),
+              right: FAB_RIGHT,
+              width: FAB_SIZE,
+              height: FAB_SIZE,
+              borderRadius: FAB_SIZE / 2,
+            },
+          ]}
+          onPress={() => openCreate(focusDay || todayISO())}
+          accessibilityRole="button"
+        >
+          <Text style={styles.fabText}>+</Text>
+        </SoftPressable>
+
         <TaskEditor
           task={editing}
-          visible={!!editing}
-          onClose={() => setEditing(null)}
+          creating={creating}
+          initialDate={createDate}
+          visible={creating || !!editing}
+          onClose={() => {
+            setCreating(false)
+            setEditing(null)
+            setCreateDate(null)
+          }}
           onSave={(patch) => {
+            if (creating) {
+              createTaskLocal({
+                title: patch.title || 'Task',
+                date: patch.date ?? createDate,
+                time: patch.time ?? null,
+                priority: patch.priority || 'medium',
+                recurrence: patch.recurrence ?? null,
+                userId,
+              })
+              return
+            }
             if (editing) updateTaskFields(editing, patch)
           }}
           onComplete={() => {
@@ -607,6 +662,41 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
     paddingVertical: 2,
+  },
+  addDayBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    borderRadius: radii.full,
+    paddingHorizontal: 14,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addDayBtnText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 13,
+  },
+  fab: {
+    position: 'absolute',
+    right: 22,
+    bottom: 96,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: colors.bgDeep,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    zIndex: 40,
+  },
+  fabText: {
+    color: colors.textOnAccent,
+    fontSize: 28,
+    fontFamily: fonts.bodyBold,
+    marginTop: -2,
   },
   anchorRow: {
     flexDirection: 'row',

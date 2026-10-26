@@ -38,6 +38,7 @@ export function ChatFab() {
   /** Home is the launcher grid — Chat is a tile; no floating mark. */
   const onHome = pathname.includes('/home') || pathname.endsWith('/(tabs)') || pathname === '/'
   const hasLocalFab =
+    pathname.includes('/tasks') ||
     pathname.includes('/bills') ||
     pathname.includes('/life') ||
     pathname.includes('/dates') ||

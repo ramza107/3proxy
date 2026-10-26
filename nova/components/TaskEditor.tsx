@@ -17,12 +17,15 @@ import type { Dow, Priority, Task, TaskRecurrence } from '../types'
 type Props = {
   task: Task | null
   visible: boolean
+  /** Open as “New task” with optional prefilled date (focused day). */
+  creating?: boolean
+  initialDate?: string | null
   onClose: () => void
   onSave: (
     patch: Partial<Pick<Task, 'title' | 'date' | 'time' | 'priority' | 'recurrence'>>,
   ) => void
-  onComplete: () => void
-  onDelete: () => void
+  onComplete?: () => void
+  onDelete?: () => void
 }
 
 const PRIORITIES: Priority[] = ['high', 'medium', 'low']
@@ -39,8 +42,18 @@ function plusDays(n: number) {
   return format(addDays(new Date(), n), 'yyyy-MM-dd')
 }
 
-export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelete }: Props) {
+export function TaskEditor({
+  task,
+  visible,
+  creating = false,
+  initialDate = null,
+  onClose,
+  onSave,
+  onComplete,
+  onDelete,
+}: Props) {
   const t = useT()
+  const isCreate = creating || !task
   const DOW_SHORT: { key: Dow; label: string }[] = [
     { key: 1, label: t('editor.dowMon') },
     { key: 2, label: t('editor.dowTue') },
@@ -61,22 +74,31 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
   const [canDismiss, setCanDismiss] = useState(false)
 
   useEffect(() => {
-    if (!task) return
-    setTitle(task.title)
-    setDate(task.date || '')
-    setTime(task.time || '')
-    setPriority(task.priority)
-    if (task.recurrence?.freq === 'daily') {
-      setRecFreq('daily')
-      setRecDays(task.recurrence.days || [1, 2, 3, 4, 5])
-    } else if (task.recurrence?.freq === 'weekly') {
-      setRecFreq('weekly')
-      setRecDays(task.recurrence.days?.length ? task.recurrence.days : [1])
+    if (!visible) return
+    if (task && !creating) {
+      setTitle(task.title)
+      setDate(task.date || '')
+      setTime(task.time || '')
+      setPriority(task.priority)
+      if (task.recurrence?.freq === 'daily') {
+        setRecFreq('daily')
+        setRecDays(task.recurrence.days || [1, 2, 3, 4, 5])
+      } else if (task.recurrence?.freq === 'weekly') {
+        setRecFreq('weekly')
+        setRecDays(task.recurrence.days?.length ? task.recurrence.days : [1])
+      } else {
+        setRecFreq('none')
+      }
     } else {
+      setTitle('')
+      setDate(initialDate || '')
+      setTime('')
+      setPriority('medium')
       setRecFreq('none')
+      setRecDays([1, 2, 3, 4, 5])
     }
     setError('')
-  }, [task])
+  }, [visible, task, creating, initialDate])
 
   useEffect(() => {
     if (!visible) {
@@ -88,7 +110,8 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
     return () => clearTimeout(timer)
   }, [visible])
 
-  if (!task) return null
+  if (!visible) return null
+  if (!isCreate && !task) return null
 
   const dismiss = () => {
     if (!canDismiss) return
@@ -131,7 +154,7 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
         <Pressable style={StyleSheet.absoluteFill} onPress={dismiss} accessibilityLabel="Close editor" />
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.heading}>{t('editor.editTask')}</Text>
+          <Text style={styles.heading}>{isCreate ? t('editor.newTask') : t('editor.editTask')}</Text>
 
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Text style={styles.label}>{t('editor.title')}</Text>
@@ -254,60 +277,68 @@ export function TaskEditor({ task, visible, onClose, onSave, onComplete, onDelet
               <Text style={styles.hint}>{t('editor.recurrenceHint')}</Text>
             ) : null}
 
-            <Text style={styles.label}>{t('editor.quickMove')}</Text>
-            <View style={styles.row}>
-              <Pressable
-                style={styles.action}
-                onPress={() => {
-                  onSave({ date: today() })
-                  onClose()
-                }}
-              >
-                <Text style={styles.actionText}>→ {t('common.today')}</Text>
-              </Pressable>
-              <Pressable
-                style={styles.action}
-                onPress={() => {
-                  onSave({ date: tomorrow() })
-                  onClose()
-                }}
-              >
-                <Text style={styles.actionText}>→ {t('common.tomorrow')}</Text>
-              </Pressable>
-              <Pressable
-                style={styles.action}
-                onPress={() => {
-                  const base = task.date ? parseISO(task.date) : new Date()
-                  onSave({ date: format(addDays(base, 1), 'yyyy-MM-dd') })
-                  onClose()
-                }}
-              >
-                <Text style={styles.actionText}>{t('editor.postpone1')}</Text>
-              </Pressable>
-            </View>
+            {!isCreate && task ? (
+              <>
+                <Text style={styles.label}>{t('editor.quickMove')}</Text>
+                <View style={styles.row}>
+                  <Pressable
+                    style={styles.action}
+                    onPress={() => {
+                      onSave({ date: today() })
+                      onClose()
+                    }}
+                  >
+                    <Text style={styles.actionText}>→ {t('common.today')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.action}
+                    onPress={() => {
+                      onSave({ date: tomorrow() })
+                      onClose()
+                    }}
+                  >
+                    <Text style={styles.actionText}>→ {t('common.tomorrow')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.action}
+                    onPress={() => {
+                      const base = task.date ? parseISO(task.date) : new Date()
+                      onSave({ date: format(addDays(base, 1), 'yyyy-MM-dd') })
+                      onClose()
+                    }}
+                  >
+                    <Text style={styles.actionText}>{t('editor.postpone1')}</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Pressable style={styles.save} onPress={save}>
-              <Text style={styles.saveText}>{t('editor.saveChanges')}</Text>
+              <Text style={styles.saveText}>
+                {isCreate ? t('editor.create') : t('editor.saveChanges')}
+              </Text>
             </Pressable>
 
-            <View style={styles.footerRow}>
-              <Pressable style={styles.secondary} onPress={onComplete}>
-                <Text style={styles.secondaryText}>
-                  {task.completed ? t('editor.markActive') : t('editor.complete')}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={styles.danger}
-                onPress={() => {
-                  onDelete()
-                  onClose()
-                }}
-              >
-                <Text style={styles.dangerText}>{t('common.delete')}</Text>
-              </Pressable>
-            </View>
+            {!isCreate && task && onComplete && onDelete ? (
+              <View style={styles.footerRow}>
+                <Pressable style={styles.secondary} onPress={onComplete}>
+                  <Text style={styles.secondaryText}>
+                    {task.completed ? t('editor.markActive') : t('editor.complete')}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={styles.danger}
+                  onPress={() => {
+                    onDelete()
+                    onClose()
+                  }}
+                >
+                  <Text style={styles.dangerText}>{t('common.delete')}</Text>
+                </Pressable>
+              </View>
+            ) : null}
 
             <Pressable onPress={onClose} style={styles.cancel}>
               <Text style={styles.cancelText}>{t('common.close')}</Text>
