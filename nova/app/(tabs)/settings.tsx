@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
-import { APP_LANGUAGES, type AppLanguage } from '../../lib/i18n'
+import { SHIPPED_LANGUAGES, type AppLanguage } from '../../lib/i18n'
 import { disconnectGoogle, fetchGoogleStatus, googleConnectUrl } from '../../lib/googleApi'
 import {
   ensureNotificationPermissions,
@@ -455,26 +455,28 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.card}>
-            <Text style={styles.rowTitle}>{tr('settings.language')}</Text>
-            <Text style={styles.rowSub}>{tr('settings.languageSub')}</Text>
-            <View style={styles.langWrap}>
-              {APP_LANGUAGES.map((lang) => {
-                const on = settings.language === lang.code
-                return (
-                  <Pressable
-                    key={lang.code}
-                    style={[styles.langChip, on && styles.langChipOn]}
-                    onPress={() => updateSettings({ language: lang.code as AppLanguage })}
-                  >
-                    <Text style={[styles.langChipText, on && styles.langChipTextOn]}>
-                      {lang.native}
-                    </Text>
-                  </Pressable>
-                )
-              })}
+          {SHIPPED_LANGUAGES.length > 1 ? (
+            <View style={styles.card}>
+              <Text style={styles.rowTitle}>{tr('settings.language')}</Text>
+              <Text style={styles.rowSub}>{tr('settings.languageSub')}</Text>
+              <View style={styles.langWrap}>
+                {SHIPPED_LANGUAGES.map((lang) => {
+                  const on = settings.language === lang.code
+                  return (
+                    <Pressable
+                      key={lang.code}
+                      style={[styles.langChip, on && styles.langChipOn]}
+                      onPress={() => updateSettings({ language: lang.code as AppLanguage })}
+                    >
+                      <Text style={[styles.langChipText, on && styles.langChipTextOn]}>
+                        {lang.native}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </View>
             </View>
-          </View>
+          ) : null}
 
           <View style={styles.card}>
             <Text style={styles.rowTitle}>{tr('settings.google')}</Text>

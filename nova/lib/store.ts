@@ -23,7 +23,7 @@ import type {
 } from '../types'
 import { guessKind, normalizeInvestSymbol } from './invest'
 import { defaultNewsInterests, defaultTypicalWeek, normalizeNewsInterests } from '../types'
-import { deviceLanguageFallback, isAppLanguage } from './i18n'
+import { deviceLanguageFallback, isShippedLanguage } from './i18n'
 import { localISODate, localISOMonth } from './localDate'
 
 const ssrSafeStorage = {
@@ -277,7 +277,17 @@ export const useNovaStore = create<NovaState>()(
           forceWeeklyBrief: false,
           settings: defaultSettings,
         }),
-      updateSettings: (patch) => set({ settings: { ...get().settings, ...patch } }),
+      updateSettings: (patch) =>
+        set({
+          settings: {
+            ...get().settings,
+            ...patch,
+            // Clamp UI locale to shipped languages (catalogs for others stay in-repo).
+            ...(patch.language != null && !isShippedLanguage(patch.language)
+              ? { language: deviceLanguageFallback() }
+              : null),
+          },
+        }),
       setForceMorningBrief: (v) => set({ forceMorningBrief: v }),
       setForceWeeklyBrief: (v) => set({ forceWeeklyBrief: v }),
       setTasks: (tasks) => set({ tasks }),
@@ -712,7 +722,8 @@ export const useNovaStore = create<NovaState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.settings = { ...defaultSettings, ...state.settings }
-          if (!isAppLanguage(state.settings.language)) {
+          // Force shipped locale (English-only for now). Other catalogs stay in-repo.
+          if (!isShippedLanguage(state.settings.language)) {
             state.settings.language = deviceLanguageFallback()
           }
           state.settings.typicalWeek = {
