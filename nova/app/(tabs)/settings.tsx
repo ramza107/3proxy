@@ -344,10 +344,10 @@ export default function SettingsScreen() {
         if (q === 'connected') {
           await refreshGoogle()
           void track(AnalyticsEvents.googleConnect)
-          Alert.alert('Google connected', 'Wahrly can read Calendar (readonly).')
+          Alert.alert('Calendar linked', 'Wahrly can read Google Calendar (readonly). Gmail is never accessed.')
           router.replace('/settings')
         } else if (q === 'error') {
-          Alert.alert('Google', 'Could not connect. Try Connect with Google again.')
+          Alert.alert('Google Calendar', 'Could not connect. Try Connect Google Calendar again.')
         }
       }
     } finally {
@@ -506,11 +506,9 @@ export default function SettingsScreen() {
                     {googleBusy ? tr('settings.connecting') : tr('home.connectGoogle')}
                   </Text>
                 </Pressable>
-                <Text style={styles.hint}>
-                  {oauthReady
-                    ? tr('settings.googleHint')
-                    : tr('settings.oauthSetupHint')}
-                </Text>
+                {!oauthReady ? (
+                  <Text style={styles.hint}>{tr('settings.oauthSetupHint')}</Text>
+                ) : null}
               </>
             )}
 

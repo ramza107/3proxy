@@ -508,11 +508,12 @@ export const enPages: Dict = {
   'evening.reflectSkip': 'Skip reflection',
   'evening.reflectSaved': 'Today’s note',
 
-  'settings.googleHint': 'One Allow connects Google Calendar (read-only). You can disconnect anytime.',
-  'settings.disconnect': 'Disconnect',
-  'settings.connecting': 'Opening Google…',
-  'settings.connectedAs': 'Connected · {email}',
-  'settings.notConnected': 'Not connected',
+  'settings.googleHint':
+    'Read-only calendar access — events on Home and Plan day. Wahrly never reads Gmail.',
+  'settings.disconnect': 'Disconnect calendar',
+  'settings.connecting': 'Opening Google Calendar…',
+  'settings.connectedAs': 'Calendar linked · {email}',
+  'settings.notConnected': 'Calendar not linked',
   'settings.morningBrief': 'Morning brief',
   'settings.eveningClear': 'Evening Clear',
   'settings.weeklyBrief': 'Weekly brief',
