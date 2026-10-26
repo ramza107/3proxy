@@ -98,8 +98,8 @@ const en: Dict = {
   'home.open': 'Open ›',
   'home.calendar': 'Calendar',
   'home.yesterday': 'Yesterday',
-  'home.connectGoogle': 'Connect with Google',
-  'home.reconnectGoogle': 'Reconnect Google',
+  'home.connectGoogle': 'Connect Google Calendar',
+  'home.reconnectGoogle': 'Reconnect Calendar',
   'home.refresh': 'Refresh',
   'home.scan': 'Scan',
 
@@ -260,7 +260,7 @@ const en: Dict = {
   'settings.saveName': 'Save name',
   'settings.language': 'Language',
   'settings.languageSub': 'App interface — all screens and tabs.',
-  'settings.google': 'Google',
+  'settings.google': 'Google Calendar',
   'settings.signOut': 'Sign out',
 }
 
