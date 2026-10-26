@@ -506,11 +506,9 @@ export default function SettingsScreen() {
                     {googleBusy ? tr('settings.connecting') : tr('home.connectGoogle')}
                   </Text>
                 </Pressable>
-                <Text style={styles.hint}>
-                  {oauthReady
-                    ? tr('settings.googleHint')
-                    : tr('settings.oauthSetupHint')}
-                </Text>
+                {!oauthReady ? (
+                  <Text style={styles.hint}>{tr('settings.oauthSetupHint')}</Text>
+                ) : null}
               </>
             )}
 
