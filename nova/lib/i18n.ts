@@ -1,4 +1,7 @@
-/** Lightweight UI i18n — 10 languages, no heavy deps. */
+/**
+ * Lightweight UI i18n — catalogs for 10 languages stay in-repo for later polish.
+ * Only shipped languages are selectable / active in the app build.
+ */
 
 import { pagesFor } from './i18nPages'
 
@@ -17,8 +20,29 @@ export const APP_LANGUAGES = [
 
 export type AppLanguage = (typeof APP_LANGUAGES)[number]['code']
 
+/**
+ * Languages exposed in Settings / used as the active UI locale.
+ * Keep non-English catalogs in APP_LANGUAGES + i18nPages — just not shipped yet.
+ */
+export const SHIPPED_LANGUAGE_CODES = ['en'] as const satisfies readonly AppLanguage[]
+
+export type ShippedLanguage = (typeof SHIPPED_LANGUAGE_CODES)[number]
+
+export const SHIPPED_LANGUAGES = APP_LANGUAGES.filter((l) =>
+  (SHIPPED_LANGUAGE_CODES as readonly string[]).includes(l.code),
+)
+
 export function isAppLanguage(v: unknown): v is AppLanguage {
   return typeof v === 'string' && APP_LANGUAGES.some((l) => l.code === v)
+}
+
+export function isShippedLanguage(v: unknown): v is ShippedLanguage {
+  return typeof v === 'string' && (SHIPPED_LANGUAGE_CODES as readonly string[]).includes(v)
+}
+
+/** Active UI language — always a shipped code (today: English only). */
+export function resolveUiLanguage(v: unknown): ShippedLanguage {
+  return isShippedLanguage(v) ? v : 'en'
 }
 
 type Dict = Record<string, string>
@@ -1320,7 +1344,7 @@ const catalogsWithPages: Record<AppLanguage, Dict> = {
 }
 
 export function t(lang: AppLanguage | string | undefined | null, key: string): string {
-  const code = isAppLanguage(lang) ? lang : 'en'
+  const code = resolveUiLanguage(lang)
   return catalogsWithPages[code][key] || catalogsWithPages.en[key] || key
 }
 
@@ -1337,22 +1361,17 @@ export function tf(
   return out
 }
 
+/**
+ * Default UI language for new installs / invalid prefs.
+ * Device locale is ignored until more languages are shipped.
+ */
 export function deviceLanguageFallback(): AppLanguage {
-  try {
-    const raw =
-      (typeof Intl !== 'undefined' && Intl.DateTimeFormat().resolvedOptions().locale) || 'en'
-    const base = raw.toLowerCase().split('-')[0]
-    if (isAppLanguage(base)) return base
-    if (base === 'nb' || base === 'nn') return 'en'
-  } catch {
-    // ignore
-  }
   return 'en'
 }
 
 /** date-fns locale code for formatting weekdays/months. */
 export function dateFnsLocaleCode(lang: AppLanguage | string | undefined | null): string {
-  const code = isAppLanguage(lang) ? lang : 'en'
+  const code = resolveUiLanguage(lang)
   if (code === 'zh') return 'zhCN'
   if (code === 'pt') return 'ptBR'
   return code
