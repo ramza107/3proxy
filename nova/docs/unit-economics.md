@@ -1,15 +1,20 @@
 # Wahrly unit economics
 
-Free is designed for **~$0–0.02 COGS / MAU**. Autopilot + expensive AI are Pro-only.
+Free is designed for **~$0–0.02 COGS / MAU**. Spaces + autopilot + expensive AI are Pro-only.
+
+Aligned with `lib/pro.ts`.
 
 ## Hard Free / Pro split
 
 | | **Free** | **Pro ($6.99/mo)** |
 |--|:--------:|:------------------:|
-| Tasks + local AI (add / move / done) | ✅ | ✅ |
-| Calendar (readonly) + News | ✅ | ✅ |
-| Manual open loops + bills tracker | ✅ | ✅ |
-| Simple evening close (done / tomorrow) | ✅ | ✅ |
+| Tasks | ✅ | ✅ |
+| Dates | ✅ | ✅ |
+| Local AI chat (on-device) | ✅ | ✅ |
+| Home / Settings | ✅ | ✅ |
+| Google Calendar (readonly) | ✅ | ✅ |
+| Bills / Shopping / Life / News | ❌ | ✅ |
+| Evening Clear | ❌ | ✅ |
 | **Plan day** auto slots | ❌ | ✅ |
 | Smart morning brief | ❌ | ✅ |
 | Bill + loop push reminders | ❌ | ✅ |
@@ -20,7 +25,7 @@ Free is designed for **~$0–0.02 COGS / MAU**. Autopilot + expensive AI are Pro
 | Invest quotes | ❌ | ✅ |
 | Weekly brief | ❌ | ✅ |
 
-**Formula:** Free = you run the day. Pro = Wahrly runs it with you.
+**Formula:** Free = Tasks + Dates + local chat. Pro = spaces + autopilot + cloud AI.
 
 SKU: `com.wahrly.assistant.pro.monthly`. Net after store cut ≈ **$5.00 / Pro / month**.
 
@@ -30,8 +35,8 @@ SKU: `com.wahrly.assistant.pro.monthly`. Net after store cut ≈ **$5.00 / Pro /
 |------|:-----:|-----------|
 | Cloud LLM chat | ❌ | Local AI only on device |
 | Whisper voice | ❌ | Pro only |
-| Plan day / morning / reminders | ❌ | Pro only (local CPU ok, but product gate) |
-| News RSS | ✅ | Shared cache, no AI |
+| News / Bills / Shopping / Life | ❌ | Pro spaces (zero Free COGS) |
+| Plan day / morning / reminders / evening | ❌ | Pro only |
 | Calendar list (readonly) | ✅ | Google quota, ~$0 |
 | Supabase row | ✅ | Tiny per idle user |
 
@@ -48,4 +53,4 @@ SKU: `com.wahrly.assistant.pro.monthly`. Net after store cut ≈ **$5.00 / Pro /
 
 Contribution ≈ **$3.90–4.70 / Pro / month**.
 
-> **Free should be almost free to run. Pro pays for AI and autopilot.**
+> **Free should be almost free to run. Pro pays for AI, spaces, and autopilot.**

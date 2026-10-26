@@ -14,14 +14,19 @@ type Props = {
   hitSlop?: number
   /** Stretch children full width (lists / editorial rows). Default centers for buttons. */
   stretch?: boolean
+  /**
+   * Also fill parent height (Home launcher tiles). Do NOT use inside vertical
+   * ScrollView rows — height:100% / flexGrow swallowed News digest pans.
+   */
+  fill?: boolean
 }
 
 /**
  * Soft scale on press — presence without bounce noise.
  *
- * Important: do NOT put `flex: 1` on the inner view. That expands the touch
- * target in parent flex layouts and can swallow ScrollView pans on iOS
- * (Home stopped scrolling; Plan day looked dead).
+ * Important: do NOT put `flex: 1` on the inner view by default. That expands the
+ * touch target in parent flex layouts and can swallow ScrollView pans on iOS
+ * (Home stopped scrolling; Plan day looked dead; News trapped the lead card).
  */
 export function SoftPressable({
   children,
@@ -30,15 +35,24 @@ export function SoftPressable({
   style,
   hitSlop,
   stretch,
+  fill,
 }: Props) {
   const scale = useSharedValue(1)
   const anim = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
 
+  const fillBox = Boolean(fill)
+  const stretchBox = Boolean(stretch || fill)
+
   return (
     <Pressable
-      style={[styles.base, stretch && styles.stretch, style]}
+      style={[
+        styles.base,
+        stretchBox && styles.stretch,
+        fill && styles.fillPressable,
+        style,
+      ]}
       onPress={onPress}
       disabled={disabled}
       hitSlop={hitSlop}
@@ -50,7 +64,10 @@ export function SoftPressable({
       }}
     >
       <Animated.View
-        style={[stretch ? styles.stretchInner : styles.inner, anim]}
+        style={[
+          fillBox ? styles.fillInner : stretchBox ? styles.stretchInner : styles.inner,
+          anim,
+        ]}
         pointerEvents="none"
       >
         {children}
@@ -67,6 +84,10 @@ const styles = StyleSheet.create({
   stretch: {
     alignSelf: 'stretch',
   },
+  fillPressable: {
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+  },
   inner: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -76,6 +97,14 @@ const styles = StyleSheet.create({
     // children on News (one ghost lead, rest unreachable).
     alignSelf: 'stretch',
     width: '100%',
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+  },
+  fillInner: {
+    alignSelf: 'stretch',
+    width: '100%',
+    height: '100%',
+    flexGrow: 1,
     alignItems: 'stretch',
     justifyContent: 'flex-start',
   },

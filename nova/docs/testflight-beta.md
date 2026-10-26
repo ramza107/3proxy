@@ -1,6 +1,8 @@
-# Wahrly — TestFlight (build 45 / 1.1.0)
+# Wahrly — TestFlight (build 50 / 1.1.0)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
+
+Aligned with `lib/pro.ts` and `docs/unit-economics.md`.
 
 ---
 
@@ -8,46 +10,37 @@
 
 **RU**
 
-Wahrly — ассистент дня: задачи, счета, Google Calendar (только чтение), даты, новости и локальный AI. Free закрывает день сам (Home + Evening Clear). Pro — Plan day, утренний brief, напоминания, виджет, облачный чат, голос и Invest. Почту не читаем.
+Wahrly — ассистент дня. Free: задачи, даты и локальный чат. Pro: счета, покупки, Life, новости, Invest, Plan day, утренний/вечерний ритуал, напоминания, виджет, облачный AI и голос. Google Calendar — только чтение. Почту не читаем.
 
 **EN**
 
-Wahrly is a daily life assistant: tasks, bills, Google Calendar (readonly), dates, news, and on-device AI. Free closes the day yourself (Home + Evening Clear). Pro unlocks Plan day, morning brief, reminders, widget, cloud chat, voice, and Invest. No email access.
+Wahrly is a daily life assistant. Free: tasks, dates, and on-device chat. Pro: bills, shopping, Life, news, Invest, Plan day, morning/evening rituals, reminders, widget, cloud AI, and voice. Google Calendar is readonly. No email access.
 
 ---
 
 ## What to Test (RU) — вставить в TestFlight
 
 ```
-Wahrly 1.1.0 (build 45) — MVP life assistant
+Wahrly 1.1.0 (build 50) — Home tiles fix + Free/Pro hard split
 
 ЧТО ПРОВЕРИТЬ
-1) Onboarding / имя / язык (RU или EN) — финал ведёт на Home, не на Plan day.
-2) Tasks: создай задачу на сегодня, перенеси на завтра, отметь done.
-3) Free Home: next-задача, таймлайн, Evening Clear. Кнопка Plan day — только Pro.
-4) Open loops: добавь «я должен» и «жду» (можно с optional due).
-5) Settings → Connect with Google: только Calendar (readonly). Почта НЕ читается.
-   Если раньше подключал Gmail: Disconnect → Connect заново.
-6) Вкладки: Tasks · Home · Settings. Bills / Dates / Shopping / Life — Home → Меню.
-7) Bills: добавь счёт, отметь paid.
-8) Dates / Life: важная дата и документ с сроком.
-9) Shopping (Free): Home → ⋯ → Shopping — список, кол-во/вес, отметить купленное.
-10) News: интересы и лента «вчера» (через Quick actions / Life).
-11) Free vs Pro (Settings → Pro / IAP или demo unlock):
-    Free: задачи, календарь, Bills, локальный чат, Evening Clear (простой), Shopping.
-    Pro: Plan day, morning brief, reminders, виджет, cloud AI, голос, Invest, weekly brief.
-12) Invest (Pro): Quick actions → Invest — набери «gold» или «bitcoin», live-цена.
-13) Пуши: evening Free; morning / bills reminders — Pro. Разрешить уведомления.
-14) Виджет «Next task» (Pro) — на Lock Screen должен читаться на тёмных обоях,
-    длинные названия не обрезаются в одну строку с временем.
+1) Onboarding / имя / язык — финал на Home (не Plan day).
+2) Home: плитки с иконкой + подписью (не пустые «таблетки»).
+3) Free: Tasks + Dates + локальный чат. Плитки Bills / Shopping / Life /
+   News / Invest / Evening — Pro lock.
+4) Tasks: неделя-рейл, create/reschedule/done, Clear done.
+5) Pro unlock (Settings): Bills, Shopping, News (Open), Life, Invest, Evening.
+6) FAB «+» на Pro-экранах — над капсулой табов.
+7) Settings → Google: только Calendar readonly. Почта НЕ читается.
+8) Виджет Next task (Pro) — читается на тёмных обоях.
 
 НЕ БАГ
-• Почта / Gmail отсутствуют намеренно (без CASA).
-• Plan day / Invest / виджет закрыты на Free — это hard split, не баг.
-• Иконка в старых пушах может быть старой до перезагрузки iPhone — на Home должна быть бирюзовая W.
+• Free узкий намеренно (Tasks / Dates / local chat).
+• Почта / Gmail отсутствуют (без CASA).
+• Plan day / виджет / cloud AI / голос — только Pro.
 
 ОТЧЁТ
-Напиши: устройство + iOS, что ок / что сломано, скрин при баге.
+Устройство + iOS, что ок / что сломано, скрин при баге.
 ```
 
 ---
@@ -55,30 +48,23 @@ Wahrly 1.1.0 (build 45) — MVP life assistant
 ## What to Test (EN)
 
 ```
-Wahrly 1.1.0 (build 45) — MVP life assistant
+Wahrly 1.1.0 (build 50) — Home tiles fix + Free/Pro hard split
 
 PLEASE TRY
-1) Onboarding / name / language — ends on Home (not Plan day).
-2) Tasks: create, reschedule, complete.
-3) Free Home: next task, timeline, Evening Clear. Plan day CTA is Pro-only.
-4) Open loops: “I owe” + “Waiting” (optional due date ok).
-5) Settings → Connect with Google — Calendar readonly only (no mail).
-   If you connected Gmail before: Disconnect → Connect again.
-6) Tabs: Tasks · Home · Settings. Bills / Dates / Shopping / Life — Home → Menu.
-7) Bills / Dates / Life / News.
-8) Shopping (Free): Home → ⋯ → Shopping — list, qty/weight, check off bought.
-9) Free vs Pro (Settings → Pro / IAP or demo unlock):
-   Free = tasks, calendar, bills, on-device chat, simple Evening Clear, Shopping.
-   Pro = Plan day, morning brief, reminders, widget, cloud AI, voice, Invest, weekly brief.
-10) Invest (Pro): Quick actions → Invest — type “gold” or “bitcoin”, confirm live price.
-11) Notifications (evening Free; morning/bill reminders Pro).
-12) Lock Screen / Home “Next task” widget (Pro) — readable on dark wallpaper;
-    long titles should wrap, not cut off next to the time.
+1) Onboarding → Home (not Plan day).
+2) Home: tiles show icon + label (not empty pills).
+3) Free: Tasks + Dates + on-device chat. Bills / Shopping / Life / News /
+   Invest / Evening tiles show Pro lock.
+4) Tasks: week rail, create/reschedule/done, Clear done.
+5) Unlock Pro: Bills, Shopping, News Open, Life, Invest, Evening.
+6) “+” FABs clear the capsule tab bar.
+7) Settings → Google Calendar readonly only (no mail).
+8) Next-task widget (Pro) readable on dark wallpaper.
 
 NOT A BUG
+• Narrow Free tier is intentional.
 • No email/Gmail by design.
-• Plan day / Invest / widget locked on Free — intentional hard split.
-• Stale notification icons: reboot iPhone; Home icon should be teal W.
+• Plan day / widget / cloud AI / voice are Pro-only.
 
 Feedback: device + iOS + what broke (screenshot helps).
 ```
@@ -87,27 +73,24 @@ Feedback: device + iOS + what broke (screenshot helps).
 
 ## Free vs Pro
 
-Aligned with `lib/pro.ts` (hard split).
-
 | | Free | Pro |
 |--|:----:|:----:|
-| Tasks / Bills / Dates / News / Life | ✅ | ✅ |
-| Calendar readonly | ✅ | ✅ |
-| Open loops (manual) | ✅ | ✅ |
+| Tasks | ✅ | ✅ |
+| Dates | ✅ | ✅ |
 | Local AI chat | ✅ | ✅ |
-| Evening Clear (simple done / tomorrow + closed-today lite) | ✅ | ✅ |
-| Evening digest reflect journal | ❌ | ✅ |
-| Open loop optional due date | ✅ | ✅ |
-| Plan day (auto slots) | ❌ | ✅ |
-| Smart morning brief | ❌ | ✅ |
+| Home / Settings | ✅ | ✅ |
+| Google Calendar readonly | ✅ | ✅ |
+| Bills / Shopping / Life / News | ❌ | ✅ |
+| Invest + live quotes | ❌ | ✅ |
+| Evening Clear | ❌ | ✅ |
+| Plan day | ❌ | ✅ |
+| Morning / weekly brief | ❌ | ✅ |
 | Bill & loop reminders | ❌ | ✅ |
 | Home Screen widget | ❌ | ✅ |
 | Cloud AI chat | ❌ | ✅ (~400/day) |
 | Voice | ❌ | ✅ (~200/day) |
-| Invest + live quotes | ❌ | ✅ |
-| Weekly brief | ❌ | ✅ |
 
-Primary tabs: **Tasks · Home · Settings**. Bills, Dates, Shopping, Life (and Pro Invest) open from Home → Menu.
+Primary tabs: **Tasks · Home · Settings**. Other spaces open from Home → Menu.
 
 ---
 
@@ -124,8 +107,6 @@ Primary tabs: **Tasks · Home · Settings**. Bills, Dates, Shopping, Life (and P
 | 5 | Chat | [05-chat.png](./testflight-screens/05-chat.png) |
 | 6 | Bills | [06-bills.png](./testflight-screens/06-bills.png) |
 
-### Preview
-
 ![Home](./testflight-screens/01-home.png)
 
 ![Tasks](./testflight-screens/02-tasks.png)
@@ -140,9 +121,9 @@ Primary tabs: **Tasks · Home · Settings**. Bills, Dates, Shopping, Life (and P
 
 ---
 
-## Куда вставить в App Store Connect
+## App Store Connect checklist
 
-1. **Users and Access / TestFlight** → приложение Wahrly → build **43**  
-2. **Test Details** → *What to Test* → вставь блок RU или EN выше  
-3. *Beta App Description* → короткий абзац  
-4. Скрины из `testflight-screens/` можно приложить в письмо тестерам или во внутренний Notion/Telegram
+1. Дождись статуса **Testing** у build **50** (не только Processing / Ready to Submit)
+2. **Test Details** → *What to Test* → вставь блок RU или EN выше
+3. Добавь группы (**TE** / **OP**) — без этого Update на телефоне не появится
+4. Скрины из `testflight-screens/` можно приложить в письмо тестерам

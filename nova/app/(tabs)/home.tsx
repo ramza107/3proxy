@@ -397,7 +397,7 @@ export default function HomeScreen() {
                   ]}
                   onPress={tile.onPress}
                   disabled={tile.disabled}
-                  stretch
+                  fill
                 >
                   <LinearGradient
                     colors={toneGradient(tile.tone)}
