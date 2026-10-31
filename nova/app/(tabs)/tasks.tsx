@@ -3,7 +3,7 @@ import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { HomeSection } from '../../components/HomeSection'
@@ -143,10 +143,6 @@ export default function TasksScreen() {
     () => sortTasks(tasks.filter((t) => !t.completed && !t.date)),
     [tasks],
   )
-  const repeating = useMemo(
-    () => sortTasks(tasks.filter((t) => !t.completed && !!t.recurrence)),
-    [tasks],
-  )
   const overdue = useMemo(
     () =>
       sortTasks(
@@ -284,25 +280,6 @@ export default function TasksScreen() {
                   task={task}
                   onToggle={() => toggleTaskCompleted(task)}
                   onPress={() => setEditing(task)}
-                  onPostpone={() => postpone(task)}
-                  onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
-                />
-              ))}
-            </HomeSection>
-          ) : null}
-
-          {repeating.length > 0 && !focusDay ? (
-            <HomeSection
-              title={t('tasks.repeating')}
-              meta={t.tf('tasks.repeatingMeta', { n: repeating.length })}
-            >
-              {repeating.map((task) => (
-                <TaskCard
-                  key={`rep-${task.id}`}
-                  task={task}
-                  onToggle={() => toggleTaskCompleted(task)}
-                  onPress={() => setEditing(task)}
-                  onPostpone={() => postpone(task)}
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
               ))}
@@ -346,8 +323,14 @@ export default function TasksScreen() {
                   hideDate
                   onToggle={() => toggleTaskCompleted(task)}
                   onPress={() => setEditing(task)}
-                  onPostpone={() => postpone(task)}
-                  onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
+                  {...(day.iso === today
+                    ? {
+                        onMoveTomorrow: () =>
+                          updateTaskFields(task, { date: tomorrow }),
+                      }
+                    : {
+                        onPostpone: () => postpone(task),
+                      })}
                 />
               ))}
 
@@ -378,7 +361,6 @@ export default function TasksScreen() {
                   task={task}
                   onToggle={() => toggleTaskCompleted(task)}
                   onPress={() => setEditing(task)}
-                  onPostpone={() => postpone(task)}
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
               ))}
@@ -655,7 +637,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.sm,
-    paddingBottom: 140,
+    paddingBottom: FAB_SCROLL_INSET,
   },
   dayEmpty: {
     color: colors.textMuted,

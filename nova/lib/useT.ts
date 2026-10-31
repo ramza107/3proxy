@@ -7,5 +7,13 @@ export function useT() {
   const t = (key: string) => translate(language, key)
   const tf = (key: string, vars: Record<string, string | number>) =>
     translatef(language, key, vars)
-  return Object.assign(t, { tf, language })
+  /** Safe `life.kind.*` / `dates.kind.*` / etc. — never show raw keys. */
+  const kind = (ns: string, value: string | null | undefined) => {
+    const fallback = t(`${ns}.kind.other`)
+    if (!value) return fallback
+    const key = `${ns}.kind.${value}`
+    const label = t(key)
+    return label === key ? fallback : label
+  }
+  return Object.assign(t, { tf, kind, language })
 }

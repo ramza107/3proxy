@@ -17,6 +17,7 @@ import { BrandMark } from '../../components/BrandMark'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { SoftPressable } from '../../components/SoftPressable'
+import { FAB_SCROLL_INSET } from '../../components/ChatFab'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { fetchYesterdayNews } from '../../lib/newsApi'
 import { useIsPro } from '../../lib/pro'
@@ -366,7 +367,7 @@ export default function NewsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   content: {
-    paddingBottom: 140,
+    paddingBottom: FAB_SCROLL_INSET,
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 560 : undefined,
     alignSelf: 'center',

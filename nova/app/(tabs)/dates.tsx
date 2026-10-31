@@ -6,7 +6,7 @@ import { ImportantDateEditor } from '../../components/ImportantDateEditor'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import {
@@ -187,7 +187,7 @@ function DateRow({ date, onPress }: { date: ImportantDate; onPress: () => void }
       <View style={{ flex: 1 }}>
         <Text style={styles.rowTitle}>{date.title}</Text>
         <Text style={styles.rowMeta}>
-          {t(`dates.kind.${date.kind}`)}
+          {t.kind('dates', date.kind)}
           {date.person ? ` · ${date.person}` : ''}
           {age != null && age > 0 ? ` · ${t.tf('dates.turns', { n: age })}` : ''}
         </Text>
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   },
   statValue: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 20 },
   statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 8 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 8 },
   section: {
     marginTop: 4,
     gap: 2,

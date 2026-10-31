@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: 140,
+    paddingBottom: 48,
     gap: spacing.xl,
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 520 : undefined,

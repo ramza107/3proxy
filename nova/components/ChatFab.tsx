@@ -14,8 +14,8 @@ import { useNovaStore } from '../lib/store'
 /** Match Home/Bills circular “+” FABs. */
 export const FAB_SIZE = 54
 export const FAB_RIGHT = 22
-/** Space reserved under scroll content so last rows clear Chat / +. */
-export const FAB_SCROLL_INSET = 120
+/** Space under scroll so last rows clear stacked Chat + local “+” FABs. */
+export const FAB_SCROLL_INSET = 240
 
 const FAB_GAP = 12
 /** Floating capsule + home-indicator — keep in sync with CapsuleTabBar. */
