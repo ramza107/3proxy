@@ -6,7 +6,7 @@ Aligned with `lib/pro.ts`.
 
 ## Hard Free / Pro split
 
-| | **Free** | **Pro ($6.99/mo)** |
+| | **Free** | **Pro ($9.99/mo base; regional)** |
 |--|:--------:|:------------------:|
 | Tasks | ✅ | ✅ |
 | Dates | ✅ | ✅ |
@@ -27,7 +27,8 @@ Aligned with `lib/pro.ts`.
 
 **Formula:** Free = Tasks + Dates + local chat. Pro = spaces + autopilot + cloud AI.
 
-SKU: `com.wahrly.assistant.pro.monthly`. Net after store cut ≈ **$5.00 / Pro / month**.
+SKU: `com.wahrly.assistant.pro.monthly`. Base **$9.99/mo** (Apple/Google set local prices by region).  
+Net after store cut ≈ **$7.00 / Pro / month** at the $9.99 tier.
 
 ## Free cost model (~1–2¢)
 
@@ -51,6 +52,6 @@ SKU: `com.wahrly.assistant.pro.monthly`. Net after store cut ≈ **$5.00 / Pro /
 | Infra share | $0.03–0.08 |
 | **Total** | **~$0.30–1.10** |
 
-Contribution ≈ **$3.90–4.70 / Pro / month**.
+Contribution ≈ **$5.90–6.70 / Pro / month** (at $9.99 US; other regions scale with local price).
 
 > **Free should be almost free to run. Pro pays for AI, spaces, and autopilot.**

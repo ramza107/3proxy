@@ -1,7 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
-import { PRO_MONTHLY_SKU, purchasePro, restorePro, setProUnlocked } from '../lib/iap'
+import {
+  PRO_MONTHLY_SKU,
+  fetchProDisplayPrice,
+  purchasePro,
+  restorePro,
+  setProUnlocked,
+} from '../lib/iap'
 import { useIsPro } from '../lib/pro'
 import { useT } from '../lib/useT'
 
@@ -13,12 +19,25 @@ type Props = {
 
 /**
  * Real Pro upgrade UI — StoreKit / Play via expo-iap.
+ * Shows the store’s localized price when available (region varies).
  * Demo unlock only in __DEV__ so TestFlight / production stay honest.
  */
 export function ProPaywall({ compact, onUnlocked }: Props) {
   const t = useT()
   const isPro = useIsPro()
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null)
+  const [storePrice, setStorePrice] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const price = await fetchProDisplayPrice()
+      if (!cancelled && price) setStorePrice(price)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const afterOk = () => {
     onUnlocked?.()
@@ -56,11 +75,15 @@ export function ProPaywall({ compact, onUnlocked }: Props) {
     )
   }
 
+  const priceLine = storePrice
+    ? t.tf('pro.priceLocal', { price: storePrice })
+    : t('pro.price')
+
   return (
     <View style={[styles.wrap, compact && styles.compact]}>
       {!compact ? (
         <>
-          <Text style={styles.price}>{t('pro.price')}</Text>
+          <Text style={styles.price}>{priceLine}</Text>
           <Text style={styles.hint}>{t('pro.priceHint')}</Text>
         </>
       ) : (

@@ -45,6 +45,42 @@ export function setProUnlocked(unlocked: boolean) {
   useNovaStore.getState().updateSettings({ isPro: unlocked })
 }
 
+/**
+ * Localized store price for the Pro monthly SKU (varies by region).
+ * Falls back to null on web / when the product isn’t in the store yet.
+ */
+export async function fetchProDisplayPrice(): Promise<string | null> {
+  const iap = await loadIap()
+  if (!iap) return null
+  const ready = await ensureConnected()
+  if (!ready) return null
+  try {
+    const products = await iap.fetchProducts({
+      skus: [PRO_MONTHLY_SKU],
+      type: 'subs',
+    })
+    const p = products?.[0] as
+      | {
+          displayPrice?: string
+          localizedPriceIOS?: string | null
+          price?: number | string | null
+        }
+      | undefined
+    if (!p) return null
+    if (typeof p.displayPrice === 'string' && p.displayPrice.trim()) return p.displayPrice.trim()
+    if (typeof p.localizedPriceIOS === 'string' && p.localizedPriceIOS.trim()) {
+      return p.localizedPriceIOS.trim()
+    }
+    if (typeof p.price === 'string' && p.price.trim()) return p.price.trim()
+    if (typeof p.price === 'number' && Number.isFinite(p.price)) {
+      return `$${p.price.toFixed(2)}`
+    }
+  } catch {
+    /* store catalog unavailable */
+  }
+  return null
+}
+
 /** True when native store IAP module is available (not web / Expo Go stub). */
 export async function isIapAvailable(): Promise<boolean> {
   if (Platform.OS === 'web') return false
