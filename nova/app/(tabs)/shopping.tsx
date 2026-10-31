@@ -12,7 +12,7 @@ import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ShoppingItemEditor } from '../../components/ShoppingItemEditor'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import {
   SHOPPING_AISLES,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.md,
-    paddingBottom: 140,
+    paddingBottom: FAB_SCROLL_INSET,
   },
   headerPanel: {
     ...panel,

@@ -316,14 +316,11 @@ export default function SettingsScreen() {
 
   const connectWithGoogle = async () => {
     if (!userId) {
-      Alert.alert('Sign in', 'Sign in to Wahrly first, then connect Google Calendar.')
+      Alert.alert(tr('settings.googleSignInTitle'), tr('settings.googleSignInBody'))
       return
     }
     if (!oauthReady) {
-      Alert.alert(
-        'Almost ready',
-        'Google “Allow” login needs one-time product keys (GOOGLE_CLIENT_ID / SECRET) on the AI server. After that, every user just taps Allow — no passwords.',
-      )
+      Alert.alert(tr('settings.googleAlmostTitle'), tr('settings.googleAlmostBody'))
       return
     }
     const url = googleConnectUrl(userId)
@@ -344,10 +341,10 @@ export default function SettingsScreen() {
         if (q === 'connected') {
           await refreshGoogle()
           void track(AnalyticsEvents.googleConnect)
-          Alert.alert('Calendar linked', 'Wahrly can read Google Calendar (readonly). Gmail is never accessed.')
+          Alert.alert(tr('settings.googleLinkedTitle'), tr('settings.googleLinkedBody'))
           router.replace('/settings')
         } else if (q === 'error') {
-          Alert.alert('Google Calendar', 'Could not connect. Try Connect Google Calendar again.')
+          Alert.alert(tr('settings.google'), tr('settings.googleConnectFail'))
         }
       }
     } finally {
@@ -362,9 +359,12 @@ export default function SettingsScreen() {
       await disconnectGoogle(userId)
       setGoogleConnected(false)
       setGoogleEmail(null)
-      Alert.alert('Disconnected', 'Google Calendar was removed from Wahrly.')
+      Alert.alert(tr('settings.googleDisconnectedTitle'), tr('settings.googleDisconnectedBody'))
     } catch (e) {
-      Alert.alert('Google', e instanceof Error ? e.message : 'Disconnect failed')
+      Alert.alert(
+        tr('settings.google'),
+        e instanceof Error ? e.message : tr('settings.googleDisconnectFail'),
+      )
     } finally {
       setGoogleBusy(false)
     }
@@ -655,11 +655,19 @@ export default function SettingsScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.eveningClear')}</Text>
-                <Text style={styles.rowSub}>{tr('settings.eveningClearSub')}</Text>
+                <Text style={styles.rowSub}>
+                  {isPro ? tr('settings.eveningClearSub') : tr('pro.featureLocked')}
+                </Text>
               </View>
               <Switch
-                value={settings.eveningClearEnabled}
-                onValueChange={(v) => updateSettings({ eveningClearEnabled: v })}
+                value={isPro && settings.eveningClearEnabled}
+                onValueChange={(v) => {
+                  if (!isPro) {
+                    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                    return
+                  }
+                  updateSettings({ eveningClearEnabled: v })
+                }}
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
@@ -686,7 +694,16 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
-            <Pressable style={styles.openRitual} onPress={() => router.push('/evening')}>
+            <Pressable
+              style={styles.openRitual}
+              onPress={() => {
+                if (!isPro) {
+                  Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                  return
+                }
+                router.push('/evening')
+              }}
+            >
               <Text style={styles.openRitualText}>{tr('settings.openEvening')}</Text>
             </Pressable>
           </View>
@@ -714,6 +731,10 @@ export default function SettingsScreen() {
             <Pressable
               style={styles.openRitual}
               onPress={() => {
+                if (!isPro) {
+                  Alert.alert(tr('pro.title'), tr('pro.upgradeBody'))
+                  return
+                }
                 updateSettings({ lastWeeklyBriefDate: null })
                 setForceWeeklyBrief(true)
                 router.push('/home')
@@ -1004,7 +1025,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 140 },
+  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 120 },
   headerPanel: {
     gap: 4,
     marginBottom: 4,

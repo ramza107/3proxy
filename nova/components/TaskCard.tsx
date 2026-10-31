@@ -114,15 +114,11 @@ export function TaskCard({
   )
 }
 
+/** Calendar overdue only — past clock-time today is still “today”, not Overdue. */
 function isOverdue(task: Task) {
   if (task.completed || !task.date) return false
   const today = format(new Date(), 'yyyy-MM-dd')
-  if (task.date < today) return true
-  if (task.date > today || !task.time) return false
-  const [hh, mm] = task.time.split(':').map(Number)
-  const when = new Date()
-  when.setHours(hh, mm, 0, 0)
-  return when.getTime() < Date.now()
+  return task.date < today
 }
 
 const styles = StyleSheet.create({

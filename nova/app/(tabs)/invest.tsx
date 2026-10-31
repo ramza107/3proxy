@@ -16,7 +16,7 @@ import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { holdingPnL, normalizeInvestSymbol, portfolioSummary } from '../../lib/invest'
@@ -291,7 +291,7 @@ function HoldingRow({
           </Text>
         </View>
         <Text style={styles.rowMeta}>
-          {t(`invest.kind.${h.kind}`)}
+          {t.kind('invest', h.kind)}
           {h.name ? ` · ${h.name}` : ''}
           {` · ${h.quantity} × ${formatMoney(h.costBasisPerUnit, h.currency)}`}
         </Text>
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   },
   gain: { color: '#6EE7B7' },
   loss: { color: '#FCA5A5' },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 10 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 10 },
   panel: {
     backgroundColor: 'rgba(250,252,251,0.94)',
     borderRadius: radii.lg,

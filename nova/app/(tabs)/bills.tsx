@@ -8,7 +8,7 @@ import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { useIsPro } from '../../lib/pro'
 import {
@@ -86,7 +86,7 @@ export default function BillsScreen() {
       <ProSpaceLock
         kicker={t('bills.kicker')}
         title={t('bills.title')}
-        sub={t('bills.emptyText')}
+        sub={t('bills.due')}
         lockTitle={t('pro.spaceLockTitle')}
         lockText={t('pro.spaceLockBills')}
       />
@@ -101,7 +101,7 @@ export default function BillsScreen() {
             {Object.keys(totals).length === 0 ? (
               <View style={styles.statWide}>
                 <Text style={styles.statValue}>0</Text>
-                <Text style={styles.statLabel}>{t('bills.emptyTitle')}</Text>
+                <Text style={styles.statLabel}>{t('bills.due')}</Text>
               </View>
             ) : (
               Object.entries(totals).map(([cur, tot]) => (
@@ -109,9 +109,11 @@ export default function BillsScreen() {
                   <Text style={styles.statValue} numberOfLines={1}>
                     {formatMoney(tot.due, cur)}
                   </Text>
-                  <Text style={styles.statLabel}>Due · {cur}</Text>
+                  <Text style={styles.statLabel}>
+                    {t('bills.due')} · {cur}
+                  </Text>
                   <Text style={styles.statSub}>
-                    Paid {formatMoney(tot.paid, cur)} / {formatMoney(tot.all, cur)}
+                    {t('bills.paid')} {formatMoney(tot.paid, cur)} / {formatMoney(tot.all, cur)}
                   </Text>
                 </View>
               ))
@@ -373,7 +375,7 @@ const styles = StyleSheet.create({
   statValue: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   statSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 11, marginTop: 2 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 8 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 8 },
   section: {
     marginTop: 4,
     gap: 4,

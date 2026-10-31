@@ -8,7 +8,7 @@ import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_RIGHT, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { daysUntilExpiry, sortLifeAdmin } from '../../lib/lifeDates'
@@ -271,7 +271,7 @@ function LifeRow({ item, onPress }: { item: LifeAdminItem; onPress: () => void }
       <View style={{ flex: 1 }}>
         <Text style={styles.rowTitle}>{item.title}</Text>
         <Text style={styles.rowMeta}>
-          {t(`life.kind.${item.kind}`)}
+          {t.kind('life', item.kind)}
           {item.provider ? ` · ${item.provider}` : ''}
         </Text>
         <Text style={[styles.rowDue, urgent && styles.rowDueUrgent]}>{dueLabel}</Text>
@@ -294,7 +294,7 @@ function BodyRow({ entry, onPress }: { entry: BodyEntry; onPress: () => void }) 
       <View style={{ flex: 1 }}>
         <Text style={styles.rowTitle}>{entry.title}</Text>
         <Text style={styles.rowMeta}>
-          {t(`body.kind.${entry.kind}`)} · {dateLabel}
+          {t.kind('body', entry.kind)} · {dateLabel}
           {entry.provider ? ` · ${entry.provider}` : ''}
         </Text>
         {entry.notes ? (
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   badgeOn: { backgroundColor: colors.accent },
   badgeText: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 11 },
   badgeTextOn: { color: colors.textOnAccent },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: 140, gap: 10 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 10 },
   panel: {
     backgroundColor: 'rgba(250,252,251,0.94)',
     borderRadius: radii.lg,

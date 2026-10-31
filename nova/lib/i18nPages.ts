@@ -510,7 +510,18 @@ export const enPages: Dict = {
   'evening.reflectSaved': 'Today’s note',
 
   'settings.googleHint':
-    'Read-only calendar access — events on Home and Plan day. Wahrly never reads Gmail.',
+    'Read-only calendar — events on Home and Plan day. Mail is never opened.',
+  'settings.googleSignInTitle': 'Sign in',
+  'settings.googleSignInBody': 'Sign in to Wahrly first, then connect Google Calendar.',
+  'settings.googleAlmostTitle': 'Almost ready',
+  'settings.googleAlmostBody':
+    'Google Allow needs GOOGLE_CLIENT_ID / SECRET on the AI server once. After that, every user just taps Allow.',
+  'settings.googleLinkedTitle': 'Calendar linked',
+  'settings.googleLinkedBody': 'Wahrly can read Google Calendar (readonly).',
+  'settings.googleConnectFail': 'Could not connect. Try Connect Google Calendar again.',
+  'settings.googleDisconnectedTitle': 'Disconnected',
+  'settings.googleDisconnectedBody': 'Google Calendar was removed from Wahrly.',
+  'settings.googleDisconnectFail': 'Disconnect failed',
   'settings.disconnect': 'Disconnect calendar',
   'settings.connecting': 'Opening Google Calendar…',
   'settings.connectedAs': 'Calendar linked · {email}',
