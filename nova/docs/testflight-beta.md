@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (build 50 / 1.1.0)
+# Wahrly — TestFlight (build 51 / 1.1.0)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -21,18 +21,17 @@ Wahrly is a daily life assistant. Free: tasks, dates, and on-device chat. Pro: b
 ## What to Test (RU) — вставить в TestFlight
 
 ```
-Wahrly 1.1.0 (build 50) — Home tiles fix + Free/Pro hard split
+Wahrly 1.1.0 (build 51) — UX pass-fix: Tasks actions, Pro gates, Settings gear, FAB inset
 
 ЧТО ПРОВЕРИТЬ
-1) Onboarding / имя / язык — финал на Home (не Plan day).
-2) Home: плитки с иконкой + подписью (не пустые «таблетки»).
-3) Free: Tasks + Dates + локальный чат. Плитки Bills / Shopping / Life /
-   News / Invest / Evening — Pro lock.
-4) Tasks: неделя-рейл, create/reschedule/done, Clear done.
-5) Pro unlock (Settings): Bills, Shopping, News (Open), Life, Invest, Evening.
-6) FAB «+» на Pro-экранах — над капсулой табов.
-7) Settings → Google: только Calendar readonly. Почта НЕ читается.
-8) Виджет Next task (Pro) — читается на тёмных обоях.
+1) Onboarding → Home. Язык EN-only (переключателя нет).
+2) Home tiles + Settings gear в табах (не swirl как у Chat).
+3) Free: Tasks + Dates + local chat; Pro locks на Bills/Shopping/Life/News/Invest/Evening.
+4) Tasks: нет ложного Overdue на «сегодня»; одна кнопка Tomorrow или +1 day.
+5) Settings: Evening Clear / Weekly Show now — Pro gate.
+6) FAB «+» + Chat — списки не уходят под кнопки.
+7) Google Calendar readonly (без Gmail).
+8) Виджет Next task (Pro).
 
 НЕ БАГ
 • Free узкий намеренно (Tasks / Dates / local chat).
@@ -48,18 +47,17 @@ Wahrly 1.1.0 (build 50) — Home tiles fix + Free/Pro hard split
 ## What to Test (EN)
 
 ```
-Wahrly 1.1.0 (build 50) — Home tiles fix + Free/Pro hard split
+Wahrly 1.1.0 (build 51) — UX pass-fix: Tasks actions, Pro gates, Settings gear, FAB inset
 
 PLEASE TRY
-1) Onboarding → Home (not Plan day).
-2) Home: tiles show icon + label (not empty pills).
-3) Free: Tasks + Dates + on-device chat. Bills / Shopping / Life / News /
-   Invest / Evening tiles show Pro lock.
-4) Tasks: week rail, create/reschedule/done, Clear done.
-5) Unlock Pro: Bills, Shopping, News Open, Life, Invest, Evening.
-6) “+” FABs clear the capsule tab bar.
-7) Settings → Google Calendar readonly only (no mail).
-8) Next-task widget (Pro) readable on dark wallpaper.
+1) Onboarding → Home. English-only UI (no language picker).
+2) Home tiles + Settings gear in tab bar (not Chat swirl).
+3) Free: Tasks + Dates + local chat; Pro locks on Bills/Shopping/Life/News/Invest/Evening.
+4) Tasks: no false Overdue on today; one action — Tomorrow or +1 day.
+5) Settings: Evening Clear / Weekly Show now — Pro only.
+6) FAB “+” + Chat — lists clear the buttons.
+7) Google Calendar readonly (no mail).
+8) Next-task widget (Pro).
 
 NOT A BUG
 • Narrow Free tier is intentional.
@@ -123,7 +121,7 @@ Primary tabs: **Tasks · Home · Settings**. Other spaces open from Home → Men
 
 ## App Store Connect checklist
 
-1. Дождись статуса **Testing** у build **50** (не только Processing / Ready to Submit)
+1. Дождись статуса **Testing** у build **51** (не только Processing / Ready to Submit)
 2. **Test Details** → *What to Test* → вставь блок RU или EN выше
 3. Добавь группы (**TE** / **OP**) — без этого Update на телефоне не появится
 4. Скрины из `testflight-screens/` можно приложить в письмо тестерам
