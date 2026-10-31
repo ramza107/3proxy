@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (build 51 / 1.1.0)
+# Wahrly — TestFlight (build 52 / 1.1.0)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -21,7 +21,7 @@ Wahrly is a daily life assistant. Free: tasks, dates, and on-device chat. Pro: b
 ## What to Test (RU) — вставить в TestFlight
 
 ```
-Wahrly 1.1.0 (build 51) — UX pass-fix: Tasks actions, Pro gates, Settings gear, FAB inset
+Wahrly 1.1.0 (build 52) — UX pass-fix: Tasks actions, Pro gates, Settings gear, FAB inset
 
 ЧТО ПРОВЕРИТЬ
 1) Onboarding → Home. Язык EN-only (переключателя нет).
@@ -47,7 +47,7 @@ Wahrly 1.1.0 (build 51) — UX pass-fix: Tasks actions, Pro gates, Settings gear
 ## What to Test (EN)
 
 ```
-Wahrly 1.1.0 (build 51) — UX pass-fix: Tasks actions, Pro gates, Settings gear, FAB inset
+Wahrly 1.1.0 (build 52) — UX pass-fix: Tasks actions, Pro gates, Settings gear, FAB inset
 
 PLEASE TRY
 1) Onboarding → Home. English-only UI (no language picker).
@@ -121,7 +121,7 @@ Primary tabs: **Tasks · Home · Settings**. Other spaces open from Home → Men
 
 ## App Store Connect checklist
 
-1. Дождись статуса **Testing** у build **51** (не только Processing / Ready to Submit)
+1. Дождись статуса **Testing** у build **52** (не только Processing / Ready to Submit)
 2. **Test Details** → *What to Test* → вставь блок RU или EN выше
 3. Добавь группы (**TE** / **OP**) — без этого Update на телефоне не появится
 4. Скрины из `testflight-screens/` можно приложить в письмо тестерам
