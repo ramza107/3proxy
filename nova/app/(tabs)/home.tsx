@@ -250,7 +250,7 @@ export default function HomeScreen() {
       key: 'dates',
       icon: 'dates',
       label: t('quick.dates'),
-      meta: datesCount > 0 ? t.tf('home.openCount', { n: datesCount }) : t('quick.datesSub'),
+      meta: datesCount > 0 ? t.tf('home.openCount', { n: datesCount }) : t('home.quiet'),
       onPress: () => router.push('/dates'),
       tone: 'mist',
     },
@@ -343,7 +343,7 @@ export default function HomeScreen() {
       key: 'morning',
       icon: 'morning',
       label: t('quick.morning'),
-      meta: !isProUser ? t('pro.badge') : t('quick.morningSub'),
+      meta: !isProUser ? t('pro.badge') : t('home.today'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -408,7 +408,7 @@ export default function HomeScreen() {
           <Animated.View entering={FadeIn.duration(480)} style={styles.hero}>
             <View style={styles.heroMarkRow}>
               <View style={styles.markGlow}>
-                <BrandMark size={36} color={colors.accentStrong} />
+                <BrandMark size={30} color={colors.accentStrong} />
               </View>
               {openTaskCount > 0 ? (
                 <View style={styles.heroChip}>
@@ -477,7 +477,7 @@ export default function HomeScreen() {
                       <View pointerEvents="none" style={styles.tileWatermark}>
                         <BrushIcon
                           name={tile.icon}
-                          size={76}
+                          size={44}
                           color={ink ? 'rgba(255,255,255,0.12)' : 'rgba(15,110,102,0.1)'}
                         />
                       </View>
@@ -490,7 +490,7 @@ export default function HomeScreen() {
                               tile.proLocked && styles.iconWellLocked,
                             ]}
                           >
-                            <BrushIcon name={tile.icon} size={30} color={iconColor} />
+                            <BrushIcon name={tile.icon} size={20} color={iconColor} />
                           </View>
                           {tile.proLocked ? (
                             <View
@@ -517,10 +517,10 @@ export default function HomeScreen() {
                               toneLabel(tile.tone),
                               tile.proLocked && styles.tileLabelLocked,
                             ]}
-                            numberOfLines={2}
-                          >
-                            {tile.label}
-                          </Text>
+                        numberOfLines={2}
+                      >
+                        {tile.label}
+                      </Text>
                           {tile.meta ? (
                             <Text
                               style={[
@@ -528,7 +528,7 @@ export default function HomeScreen() {
                                 ink ? styles.tileMetaInk : styles.tileMetaLight,
                                 tile.proLocked && styles.tileMetaLocked,
                               ]}
-                              numberOfLines={2}
+                              numberOfLines={1}
                             >
                               {tile.meta}
                             </Text>
@@ -658,9 +658,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   markGlow: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.72)',
@@ -695,83 +695,81 @@ const styles = StyleSheet.create({
   brandWord: {
     color: colors.bgDeep,
     fontFamily: fonts.brand,
-    fontSize: 52,
-    letterSpacing: -1.8,
-    lineHeight: 56,
+    fontSize: 44,
+    letterSpacing: -1.5,
+    lineHeight: 48,
   },
   hello: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: fonts.bodyMedium,
     letterSpacing: -0.2,
-    marginTop: 10,
+    marginTop: 8,
   },
   date: {
     color: colors.textDim,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: fonts.body,
     letterSpacing: 0.15,
     textTransform: 'capitalize',
     marginTop: 2,
   },
   heroRule: {
-    width: 36,
+    width: 32,
     height: 3,
     borderRadius: 2,
     backgroundColor: colors.accent,
     opacity: 0.55,
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: 12,
+    marginBottom: 6,
   },
   tagline: {
     color: colors.textMuted,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: fonts.body,
     letterSpacing: -0.1,
-    lineHeight: 20,
+    lineHeight: 18,
     maxWidth: 280,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    marginHorizontal: -5,
   },
   tileWrap: {
-    width: '47%',
-    flexGrow: 1,
-    minWidth: '42%',
-    maxWidth: '48.5%',
-    aspectRatio: 0.92,
+    width: '33.333%',
+    paddingHorizontal: 5,
+    paddingBottom: 10,
+    aspectRatio: undefined,
   },
   tileShell: {
-    flex: 1,
     width: '100%',
-    height: '100%',
-    borderRadius: radii.xl,
+    aspectRatio: 1,
+    borderRadius: radii.lg,
     overflow: 'hidden',
     shadowColor: '#0F2A32',
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 7 },
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   tile: {
     flex: 1,
     width: '100%',
     height: '100%',
-    borderRadius: radii.xl,
-    padding: 15,
+    borderRadius: radii.lg,
+    padding: 10,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(15,42,50,0.08)',
     overflow: 'hidden',
   },
   tileOrb: {
     position: 'absolute',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    right: -22,
-    top: -26,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    right: -14,
+    top: -16,
   },
   tileOrbInk: {
     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -781,8 +779,8 @@ const styles = StyleSheet.create({
   },
   tileWatermark: {
     position: 'absolute',
-    right: 6,
-    bottom: 10,
+    right: 2,
+    bottom: 4,
     opacity: 1,
   },
   tileDisabled: { opacity: 0.45 },
@@ -800,12 +798,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 4,
   },
   iconWell: {
-    width: 52,
-    height: 52,
-    borderRadius: 17,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -824,8 +822,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(15,42,50,0.08)',
   },
   proBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
     borderRadius: 999,
     backgroundColor: 'rgba(15,42,50,0.1)',
     borderWidth: StyleSheet.hairlineWidth,
@@ -838,31 +836,31 @@ const styles = StyleSheet.create({
   proBadgeText: {
     color: colors.text,
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 0.4,
+    fontSize: 9,
+    letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
   proBadgeTextOnInk: {
     color: colors.textOnAccent,
   },
   tileCopy: {
-    gap: 3,
+    gap: 1,
     width: '100%',
-    paddingRight: 4,
+    paddingRight: 2,
   },
   tileLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: 17,
-    lineHeight: 21,
-    letterSpacing: -0.25,
+    fontSize: 13,
+    lineHeight: 16,
+    letterSpacing: -0.2,
   },
   tileLabelLocked: {
     color: colors.textDim,
   },
   tileMeta: {
     fontFamily: fonts.body,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 10,
+    lineHeight: 13,
     letterSpacing: -0.05,
   },
   tileMetaInk: {
