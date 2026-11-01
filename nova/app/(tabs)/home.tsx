@@ -298,7 +298,7 @@ export default function HomeScreen() {
       key: 'life',
       icon: 'life',
       label: t('quick.life'),
-      meta: t('quick.lifeSub'),
+      meta: !isProUser ? t('pro.badge') : t('home.open'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -313,7 +313,7 @@ export default function HomeScreen() {
       key: 'news',
       icon: 'news',
       label: t('tabs.news'),
-      meta: t('news.kicker'),
+      meta: !isProUser ? t('pro.badge') : t('news.kicker'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -328,7 +328,7 @@ export default function HomeScreen() {
       key: 'invest',
       icon: 'invest',
       label: t('quick.invest'),
-      meta: t('quick.investSub'),
+      meta: !isProUser ? t('pro.badge') : t('home.open'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature(t('invest.proText'))
@@ -343,7 +343,7 @@ export default function HomeScreen() {
       key: 'morning',
       icon: 'morning',
       label: t('quick.morning'),
-      meta: t('quick.morningSub'),
+      meta: !isProUser ? t('pro.badge') : t('quick.morningSub'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -359,7 +359,7 @@ export default function HomeScreen() {
       key: 'weekly',
       icon: 'weekly',
       label: t('quick.weekly'),
-      meta: t('quick.weeklySub'),
+      meta: !isProUser ? t('pro.badge') : t('home.today'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -375,7 +375,7 @@ export default function HomeScreen() {
       key: 'evening',
       icon: 'evening',
       label: t('home.eveningClear'),
-      meta: t('quick.eveningSub'),
+      meta: !isProUser ? t('pro.badge') : t('home.closeToday'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -390,7 +390,7 @@ export default function HomeScreen() {
       key: 'settings',
       icon: 'settings',
       label: t('tabs.settings'),
-      meta: t('quick.settingsSub'),
+      meta: t('home.open'),
       onPress: () => router.push('/settings'),
       tone: 'soft',
     },
@@ -474,6 +474,13 @@ export default function HomeScreen() {
                         pointerEvents="none"
                         style={[styles.tileOrb, ink ? styles.tileOrbInk : styles.tileOrbLight]}
                       />
+                      <View pointerEvents="none" style={styles.tileWatermark}>
+                        <BrushIcon
+                          name={tile.icon}
+                          size={76}
+                          color={ink ? 'rgba(255,255,255,0.12)' : 'rgba(15,110,102,0.1)'}
+                        />
+                      </View>
                       <View style={styles.tileFill}>
                         <View style={styles.tileTop}>
                           <View
@@ -483,7 +490,7 @@ export default function HomeScreen() {
                               tile.proLocked && styles.iconWellLocked,
                             ]}
                           >
-                            <BrushIcon name={tile.icon} size={28} color={iconColor} />
+                            <BrushIcon name={tile.icon} size={30} color={iconColor} />
                           </View>
                           {tile.proLocked ? (
                             <View
@@ -734,7 +741,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     minWidth: '42%',
     maxWidth: '48.5%',
-    aspectRatio: 1,
+    aspectRatio: 0.92,
   },
   tileShell: {
     flex: 1,
@@ -753,24 +760,30 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: radii.xl,
-    padding: 14,
+    padding: 15,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(15,42,50,0.08)',
     overflow: 'hidden',
   },
   tileOrb: {
     position: 'absolute',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    right: -18,
-    top: -22,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    right: -22,
+    top: -26,
   },
   tileOrbInk: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   tileOrbLight: {
-    backgroundColor: 'rgba(15,110,102,0.08)',
+    backgroundColor: 'rgba(15,110,102,0.09)',
+  },
+  tileWatermark: {
+    position: 'absolute',
+    right: 6,
+    bottom: 10,
+    opacity: 1,
   },
   tileDisabled: { opacity: 0.45 },
   tileProLocked: { opacity: 0.78 },
@@ -790,9 +803,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconWell: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },
