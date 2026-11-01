@@ -27,8 +27,8 @@ module.exports = ({ config }) => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
-      // Synced after EAS autoIncrement for TF build 53.
-      buildNumber: '53',
+      // Synced after EAS autoIncrement for TF build 54.
+      buildNumber: '54',
       // Temporarily off: provisioning profile lacks Sign In with Apple.
       // Re-enable after regenerating profiles with Apple Developer login.
       usesAppleSignIn: false,
