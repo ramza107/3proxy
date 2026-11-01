@@ -6,7 +6,6 @@ import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-nativ
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { BottomSheet } from '../../components/BottomSheet'
-import { BrandMark } from '../../components/BrandMark'
 import { MorningBrief } from '../../components/MorningBrief'
 import { PlanDaySheet } from '../../components/PlanDaySheet'
 import { SoftPressable } from '../../components/SoftPressable'
@@ -398,10 +397,10 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeIn.duration(480)} style={styles.hero}>
-            <View style={styles.heroMarkRow}>
-              <View style={styles.markGlow}>
-                <BrandMark size={30} color={colors.accentStrong} />
-              </View>
+            <View style={styles.heroTop}>
+              <Text style={styles.brandWord} accessibilityRole="header">
+                {brand.name}
+              </Text>
               {openTaskCount > 0 ? (
                 <View style={styles.heroChip}>
                   <Text style={styles.heroChipText}>
@@ -416,16 +415,12 @@ export default function HomeScreen() {
                 </View>
               )}
             </View>
-            <Text style={styles.brandWord} accessibilityRole="header">
-              {brand.name}
-            </Text>
             <Text style={styles.hello}>
               {translate(language, greetingKey())}, {name}
             </Text>
             <Text style={styles.date}>
               {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
             </Text>
-            <View style={styles.heroRule} />
             <Text style={styles.tagline}>{t('home.menuTagline')}</Text>
           </Animated.View>
 
@@ -638,48 +633,50 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: 'flex-start',
-    paddingTop: 8,
-    paddingBottom: 4,
-    gap: 2,
+    paddingTop: 6,
+    paddingBottom: 2,
   },
-  heroMarkRow: {
+  heroTop: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 14,
   },
-  markGlow: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  brandLockup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexShrink: 1,
+  },
+  markSoft: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.72)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(15,110,102,0.22)',
-    shadowColor: '#0F6E66',
-    shadowOpacity: 0.16,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
+    borderColor: 'rgba(15,110,102,0.16)',
   },
   heroChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     borderRadius: radii.full,
-    backgroundColor: 'rgba(15,110,102,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(15,110,102,0.22)',
+    borderColor: 'rgba(15,110,102,0.16)',
   },
   heroChipQuiet: {
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
     borderColor: 'rgba(15,42,50,0.1)',
   },
   heroChipText: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
     fontSize: 12,
-    letterSpacing: 0.2,
+    letterSpacing: 0.15,
   },
   heroChipTextQuiet: {
     color: colors.textMuted,
@@ -687,16 +684,16 @@ const styles = StyleSheet.create({
   brandWord: {
     color: colors.bgDeep,
     fontFamily: fonts.brand,
-    fontSize: 44,
-    letterSpacing: -1.5,
-    lineHeight: 48,
+    fontSize: 38,
+    letterSpacing: -1.3,
+    lineHeight: 42,
+    paddingBottom: 1,
   },
   hello: {
     color: colors.text,
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: fonts.bodyMedium,
     letterSpacing: -0.2,
-    marginTop: 8,
   },
   date: {
     color: colors.textDim,
@@ -704,16 +701,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     letterSpacing: 0.15,
     textTransform: 'capitalize',
-    marginTop: 2,
-  },
-  heroRule: {
-    width: 32,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: colors.accent,
-    opacity: 0.55,
-    marginTop: 12,
-    marginBottom: 6,
+    marginTop: 3,
   },
   tagline: {
     color: colors.textMuted,
@@ -721,7 +709,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     letterSpacing: -0.1,
     lineHeight: 18,
-    maxWidth: 280,
+    maxWidth: 300,
+    marginTop: 8,
   },
   grid: {
     flexDirection: 'row',
