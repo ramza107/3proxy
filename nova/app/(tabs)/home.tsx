@@ -386,14 +386,6 @@ export default function HomeScreen() {
       tone: 'ink',
       proLocked: !isProUser,
     },
-    {
-      key: 'settings',
-      icon: 'settings',
-      label: t('tabs.settings'),
-      meta: t('home.open'),
-      onPress: () => router.push('/settings'),
-      tone: 'soft',
-    },
   ]
 
   return (
