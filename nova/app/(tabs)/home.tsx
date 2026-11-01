@@ -15,6 +15,7 @@ import { WeeklyBrief } from '../../components/WeeklyBrief'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
+import { dueTotalsByCurrency } from '../../lib/bills'
 import { t as translate } from '../../lib/i18n'
 import { dateLocale } from '../../lib/dateLocale'
 import { parseHm } from '../../lib/notifications'
@@ -64,6 +65,7 @@ type Tile = {
   key: string
   icon: BrushIconName
   label: string
+  meta?: string
   onPress: () => void
   tone: Tone
   disabled?: boolean
@@ -81,6 +83,9 @@ export default function HomeScreen() {
   const language = useNovaStore((s) => s.settings.language)
   const name = useNovaStore((s) => s.settings.name) || 'there'
   const tasks = useNovaStore((s) => s.tasks)
+  const bills = useNovaStore((s) => s.bills)
+  const importantDates = useNovaStore((s) => s.importantDates)
+  const shopping = useNovaStore((s) => s.shopping)
   const settings = useNovaStore((s) => s.settings)
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const forceMorningBrief = useNovaStore((s) => s.forceMorningBrief)
@@ -104,6 +109,17 @@ export default function HomeScreen() {
     () => sortTasks(tasks.filter((x) => !x.completed && (x.date === day || !x.date))),
     [tasks, day],
   )
+  const openTaskCount = todayTasks.length
+  const untimedCount = useMemo(
+    () => todayTasks.filter((task) => !task.time).length,
+    [todayTasks],
+  )
+  const shoppingOpen = useMemo(
+    () => shopping.filter((item) => !item.bought).length,
+    [shopping],
+  )
+  const billsDueCount = useMemo(() => dueTotalsByCurrency(bills).count, [bills])
+  const datesCount = importantDates.length
 
   const showMorningBrief =
     canUseMorningBrief() &&
@@ -204,6 +220,7 @@ export default function HomeScreen() {
       key: 'tasks',
       icon: 'tasks',
       label: t('tabs.tasks'),
+      meta: openTaskCount > 0 ? t.tf('home.openCount', { n: openTaskCount }) : t('home.lightDay'),
       onPress: () => router.push('/tasks'),
       tone: 'ink',
     },
@@ -211,6 +228,7 @@ export default function HomeScreen() {
       key: 'chat',
       icon: 'chat',
       label: t('tabs.chat'),
+      meta: t('quick.chatSub'),
       onPress: () => router.push('/chat'),
       tone: 'teal',
     },
@@ -218,6 +236,11 @@ export default function HomeScreen() {
       key: 'plan',
       icon: 'plan',
       label: planning ? t('home.planning') : t('home.planDay'),
+      meta: isProUser
+        ? untimedCount > 0
+          ? t.tf('home.openCount', { n: untimedCount })
+          : t('home.clear')
+        : t('pro.badge'),
       onPress: openPlanSheet,
       tone: 'mist',
       disabled: planning,
@@ -227,6 +250,7 @@ export default function HomeScreen() {
       key: 'dates',
       icon: 'dates',
       label: t('quick.dates'),
+      meta: datesCount > 0 ? t.tf('home.openCount', { n: datesCount }) : t('quick.datesSub'),
       onPress: () => router.push('/dates'),
       tone: 'mist',
     },
@@ -234,6 +258,13 @@ export default function HomeScreen() {
       key: 'bills',
       icon: 'bills',
       label: t('quick.bills'),
+      meta: !isProUser
+        ? t('pro.badge')
+        : bills.length === 0
+          ? t('home.billsNone')
+          : billsDueCount === 0
+            ? t('home.billsClear')
+            : t.tf('home.billsLeftCount', { n: billsDueCount }),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -248,6 +279,11 @@ export default function HomeScreen() {
       key: 'shopping',
       icon: 'shopping',
       label: t('quick.shopping'),
+      meta: !isProUser
+        ? t('pro.badge')
+        : shoppingOpen > 0
+          ? t.tf('home.openCount', { n: shoppingOpen })
+          : t('home.quiet'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -262,6 +298,7 @@ export default function HomeScreen() {
       key: 'life',
       icon: 'life',
       label: t('quick.life'),
+      meta: !isProUser ? t('pro.badge') : t('home.open'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -276,6 +313,7 @@ export default function HomeScreen() {
       key: 'news',
       icon: 'news',
       label: t('tabs.news'),
+      meta: !isProUser ? t('pro.badge') : t('news.kicker'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -290,6 +328,7 @@ export default function HomeScreen() {
       key: 'invest',
       icon: 'invest',
       label: t('quick.invest'),
+      meta: !isProUser ? t('pro.badge') : t('home.open'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature(t('invest.proText'))
@@ -304,6 +343,7 @@ export default function HomeScreen() {
       key: 'morning',
       icon: 'morning',
       label: t('quick.morning'),
+      meta: !isProUser ? t('pro.badge') : t('quick.morningSub'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -319,6 +359,7 @@ export default function HomeScreen() {
       key: 'weekly',
       icon: 'weekly',
       label: t('quick.weekly'),
+      meta: !isProUser ? t('pro.badge') : t('home.today'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -334,6 +375,7 @@ export default function HomeScreen() {
       key: 'evening',
       icon: 'evening',
       label: t('home.eveningClear'),
+      meta: !isProUser ? t('pro.badge') : t('home.closeToday'),
       onPress: () => {
         if (!isProUser) {
           requireProFeature()
@@ -348,6 +390,7 @@ export default function HomeScreen() {
       key: 'settings',
       icon: 'settings',
       label: t('tabs.settings'),
+      meta: t('home.open'),
       onPress: () => router.push('/settings'),
       tone: 'soft',
     },
@@ -363,96 +406,140 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View entering={FadeIn.duration(480)} style={styles.hero}>
-            <View style={styles.heroPanel}>
+            <View style={styles.heroMarkRow}>
               <View style={styles.markGlow}>
-                <BrandMark size={40} color={colors.accentStrong} />
+                <BrandMark size={36} color={colors.accentStrong} />
               </View>
-              <Text style={styles.brandWord} accessibilityRole="header">
-                {brand.name}
-              </Text>
-              <Text style={styles.hello}>
-                {translate(language, greetingKey())}, {name}
-              </Text>
-              <Text style={styles.date}>
-                {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
-              </Text>
+              {openTaskCount > 0 ? (
+                <View style={styles.heroChip}>
+                  <Text style={styles.heroChipText}>
+                    {t.tf('home.openCount', { n: openTaskCount })}
+                  </Text>
+                </View>
+              ) : (
+                <View style={[styles.heroChip, styles.heroChipQuiet]}>
+                  <Text style={[styles.heroChipText, styles.heroChipTextQuiet]}>
+                    {t('home.lightDay')}
+                  </Text>
+                </View>
+              )}
             </View>
+            <Text style={styles.brandWord} accessibilityRole="header">
+              {brand.name}
+            </Text>
+            <Text style={styles.hello}>
+              {translate(language, greetingKey())}, {name}
+            </Text>
+            <Text style={styles.date}>
+              {format(new Date(), 'EEEE, d MMMM', { locale: dateLocale(language) })}
+            </Text>
+            <View style={styles.heroRule} />
+            <Text style={styles.tagline}>{t('home.menuTagline')}</Text>
           </Animated.View>
 
           <View style={styles.grid}>
-            {tiles.map((tile, i) => (
-              <Animated.View
-                key={tile.key}
-                entering={FadeInDown.delay(60 + Math.min(i, 8) * 45)
-                  .duration(380)
-                  .springify()
-                  .damping(18)}
-                style={styles.tileWrap}
-              >
-                <SoftPressable
-                  style={[
-                    styles.tileShell,
-                    tile.disabled && styles.tileDisabled,
-                    tile.proLocked && styles.tileProLocked,
-                  ]}
-                  onPress={tile.onPress}
-                  disabled={tile.disabled}
-                  fill
+            {tiles.map((tile, i) => {
+              const ink = tile.tone === 'ink'
+              const iconColor = tile.proLocked
+                ? colors.textMuted
+                : ink
+                  ? colors.textOnAccent
+                  : colors.accentStrong
+              return (
+                <Animated.View
+                  key={tile.key}
+                  entering={FadeInDown.delay(60 + Math.min(i, 8) * 45)
+                    .duration(380)
+                    .springify()
+                    .damping(18)}
+                  style={styles.tileWrap}
                 >
-                  <LinearGradient
-                    colors={toneGradient(tile.tone)}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.tile}
+                  <SoftPressable
+                    style={[
+                      styles.tileShell,
+                      tile.disabled && styles.tileDisabled,
+                      tile.proLocked && styles.tileProLocked,
+                    ]}
+                    onPress={tile.onPress}
+                    disabled={tile.disabled}
+                    fill
                   >
-                    <View style={styles.tileFill}>
-                      <View style={styles.tileTop}>
-                        <View style={styles.iconSlot}>
-                          <BrushIcon
-                            name={tile.icon}
-                            size={34}
-                            color={
-                              tile.proLocked
-                                ? colors.textMuted
-                                : tile.tone === 'ink'
-                                  ? colors.textOnAccent
-                                  : colors.accentStrong
-                            }
-                          />
-                        </View>
-                        {tile.proLocked ? (
+                    <LinearGradient
+                      colors={toneGradient(tile.tone)}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.tile}
+                    >
+                      <View
+                        pointerEvents="none"
+                        style={[styles.tileOrb, ink ? styles.tileOrbInk : styles.tileOrbLight]}
+                      />
+                      <View pointerEvents="none" style={styles.tileWatermark}>
+                        <BrushIcon
+                          name={tile.icon}
+                          size={76}
+                          color={ink ? 'rgba(255,255,255,0.12)' : 'rgba(15,110,102,0.1)'}
+                        />
+                      </View>
+                      <View style={styles.tileFill}>
+                        <View style={styles.tileTop}>
                           <View
                             style={[
-                              styles.proBadge,
-                              tile.tone === 'ink' && styles.proBadgeOnInk,
+                              styles.iconWell,
+                              ink ? styles.iconWellInk : styles.iconWellLight,
+                              tile.proLocked && styles.iconWellLocked,
                             ]}
                           >
-                            <Text
+                            <BrushIcon name={tile.icon} size={30} color={iconColor} />
+                          </View>
+                          {tile.proLocked ? (
+                            <View
                               style={[
-                                styles.proBadgeText,
-                                tile.tone === 'ink' && styles.proBadgeTextOnInk,
+                                styles.proBadge,
+                                ink && styles.proBadgeOnInk,
                               ]}
                             >
-                              {t('pro.badge')}
+                              <Text
+                                style={[
+                                  styles.proBadgeText,
+                                  ink && styles.proBadgeTextOnInk,
+                                ]}
+                              >
+                                {t('pro.badge')}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        <View style={styles.tileCopy}>
+                          <Text
+                            style={[
+                              styles.tileLabel,
+                              toneLabel(tile.tone),
+                              tile.proLocked && styles.tileLabelLocked,
+                            ]}
+                            numberOfLines={2}
+                          >
+                            {tile.label}
+                          </Text>
+                          {tile.meta ? (
+                            <Text
+                              style={[
+                                styles.tileMeta,
+                                ink ? styles.tileMetaInk : styles.tileMetaLight,
+                                tile.proLocked && styles.tileMetaLocked,
+                              ]}
+                              numberOfLines={2}
+                            >
+                              {tile.meta}
                             </Text>
-                          </View>
-                        ) : null}
+                          ) : null}
+                        </View>
                       </View>
-                      <Text
-                        style={[
-                          styles.tileLabel,
-                          toneLabel(tile.tone),
-                          tile.proLocked && styles.tileLabelLocked,
-                        ]}
-                        numberOfLines={2}
-                      >
-                        {tile.label}
-                      </Text>
-                    </View>
-                  </LinearGradient>
-                </SoftPressable>
-              </Animated.View>
-            ))}
+                    </LinearGradient>
+                  </SoftPressable>
+                </Animated.View>
+              )
+            })}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -530,13 +617,13 @@ export default function HomeScreen() {
 function toneGradient(tone: Tone): [string, string] {
   switch (tone) {
     case 'ink':
-      return ['#163842', '#0A5751']
+      return ['#1A4652', '#0A5751']
     case 'teal':
-      return ['#D7EDE9', '#B9DFD8']
+      return ['#CFEAE4', '#A9D8CF']
     case 'soft':
-      return ['#FFFFFF', '#F3F7F8']
+      return ['#FFFFFF', '#EEF4F5']
     default:
-      return ['#F7FBFC', '#E4EEF1']
+      return ['#F4F9FA', '#DCE9ED']
   }
 }
 
@@ -551,7 +638,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: 48,
-    gap: spacing.xl,
+    gap: spacing.lg,
     width: '100%',
     maxWidth: Platform.OS === 'web' ? 520 : undefined,
     alignSelf: 'center',
@@ -559,63 +646,102 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: 'flex-start',
-    paddingTop: 12,
-    paddingBottom: 2,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 2,
+  },
+  heroMarkRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
   },
   markGlow: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accentSoft,
+    backgroundColor: 'rgba(255,255,255,0.72)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(15,110,102,0.18)',
+    borderColor: 'rgba(15,110,102,0.22)',
+    shadowColor: '#0F6E66',
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
-  heroPanel: {
-    alignSelf: 'stretch',
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.xl,
+  heroChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: radii.full,
+    backgroundColor: 'rgba(15,110,102,0.14)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
-    gap: 4,
+    borderColor: 'rgba(15,110,102,0.22)',
+  },
+  heroChipQuiet: {
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderColor: 'rgba(15,42,50,0.1)',
+  },
+  heroChipText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  heroChipTextQuiet: {
+    color: colors.textMuted,
   },
   brandWord: {
     color: colors.bgDeep,
     fontFamily: fonts.brand,
-    fontSize: 48,
-    letterSpacing: -1.6,
-    lineHeight: 52,
-    marginTop: 10,
+    fontSize: 52,
+    letterSpacing: -1.8,
+    lineHeight: 56,
   },
   hello: {
     color: colors.text,
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: fonts.bodyMedium,
-    letterSpacing: -0.15,
-    marginTop: 8,
+    letterSpacing: -0.2,
+    marginTop: 10,
   },
   date: {
     color: colors.textDim,
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: fonts.body,
-    letterSpacing: 0.2,
+    letterSpacing: 0.15,
     textTransform: 'capitalize',
+    marginTop: 2,
+  },
+  heroRule: {
+    width: 36,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.accent,
+    opacity: 0.55,
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  tagline: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontFamily: fonts.body,
+    letterSpacing: -0.1,
+    lineHeight: 20,
+    maxWidth: 280,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 14,
+    gap: 12,
   },
   tileWrap: {
     width: '47%',
     flexGrow: 1,
     minWidth: '42%',
     maxWidth: '48.5%',
-    aspectRatio: 1,
+    aspectRatio: 0.92,
   },
   tileShell: {
     flex: 1,
@@ -624,9 +750,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     overflow: 'hidden',
     shadowColor: '#0F2A32',
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 7 },
     elevation: 3,
   },
   tile: {
@@ -634,13 +760,33 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: radii.xl,
-    padding: 16,
+    padding: 15,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(15,42,50,0.08)',
     overflow: 'hidden',
   },
+  tileOrb: {
+    position: 'absolute',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    right: -22,
+    top: -26,
+  },
+  tileOrbInk: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  tileOrbLight: {
+    backgroundColor: 'rgba(15,110,102,0.09)',
+  },
+  tileWatermark: {
+    position: 'absolute',
+    right: 6,
+    bottom: 10,
+    opacity: 1,
+  },
   tileDisabled: { opacity: 0.45 },
-  tileProLocked: { opacity: 0.72 },
+  tileProLocked: { opacity: 0.78 },
   tileFill: {
     flex: 1,
     width: '100%',
@@ -656,8 +802,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
-  iconSlot: {
-    marginTop: 2,
+  iconWell: {
+    width: 52,
+    height: 52,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWellInk: {
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.22)',
+  },
+  iconWellLight: {
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.14)',
+  },
+  iconWellLocked: {
+    backgroundColor: 'rgba(15,42,50,0.06)',
+    borderColor: 'rgba(15,42,50,0.08)',
   },
   proBadge: {
     paddingHorizontal: 8,
@@ -681,13 +845,33 @@ const styles = StyleSheet.create({
   proBadgeTextOnInk: {
     color: colors.textOnAccent,
   },
+  tileCopy: {
+    gap: 3,
+    width: '100%',
+    paddingRight: 4,
+  },
   tileLabel: {
     fontFamily: fonts.bodyBold,
     fontSize: 17,
-    lineHeight: 22,
-    letterSpacing: -0.2,
+    lineHeight: 21,
+    letterSpacing: -0.25,
   },
   tileLabelLocked: {
+    color: colors.textDim,
+  },
+  tileMeta: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: -0.05,
+  },
+  tileMetaInk: {
+    color: 'rgba(247,251,250,0.72)',
+  },
+  tileMetaLight: {
+    color: colors.textMuted,
+  },
+  tileMetaLocked: {
     color: colors.textDim,
   },
   labelOnInk: { color: colors.textOnAccent },
