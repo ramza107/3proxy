@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { dateLocale } from '../lib/dateLocale'
@@ -56,11 +56,24 @@ export function TaskCard({
     rec,
   ].filter(Boolean)
 
+  const onCheckPress = () => {
+    if (!onToggle) return
+    // Un-complete is safe to undo with one tap; completing needs a confirm.
+    if (task.completed) {
+      onToggle()
+      return
+    }
+    Alert.alert(t('tasks.confirmDoneTitle'), t.tf('tasks.confirmDoneBody', { title: task.title }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('tasks.confirmDone'), onPress: onToggle },
+    ])
+  }
+
   return (
     <View style={[styles.card, task.completed && styles.done, overdue && styles.overdueCard]}>
       <View style={styles.main}>
         <Pressable
-          onPress={onToggle}
+          onPress={onCheckPress}
           hitSlop={10}
           style={styles.checkWrap}
           accessibilityRole="checkbox"
