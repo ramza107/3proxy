@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BrandMark } from './BrandMark'
 import { colors } from '../constants/theme'
 import { t } from '../lib/i18n'
+import { useIsPro } from '../lib/pro'
 import { useNovaStore } from '../lib/store'
 
 /** Match Home/Bills circular “+” FABs. */
@@ -32,18 +33,21 @@ export function ChatFab() {
   const pathname = usePathname()
   const insets = useSafeAreaInsets()
   const language = useNovaStore((s) => s.settings.language)
+  const isPro = useIsPro()
   const scale = useSharedValue(1)
 
   const onChat = pathname.includes('/chat')
   /** Home is the launcher grid — Chat is a tile; no floating mark. */
   const onHome = pathname.includes('/home') || pathname.endsWith('/(tabs)') || pathname === '/'
+  /** Free spaces always show “+”; Pro spaces only when unlocked (no phantom stack on locks). */
   const hasLocalFab =
     pathname.includes('/tasks') ||
-    pathname.includes('/bills') ||
-    pathname.includes('/life') ||
     pathname.includes('/dates') ||
-    pathname.includes('/shopping') ||
-    pathname.includes('/invest')
+    (isPro &&
+      (pathname.includes('/bills') ||
+        pathname.includes('/life') ||
+        pathname.includes('/shopping') ||
+        pathname.includes('/invest')))
   const style = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }))
