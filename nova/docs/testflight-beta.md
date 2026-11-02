@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (1.1.0 / build 63)
+# Wahrly — TestFlight (1.1.0 / build 64)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -21,7 +21,7 @@ Wahrly — ассистент дня. Free: задачи, даты и локал
 ## What to Test (EN) — paste into TestFlight
 
 ```
-Wahrly 1.1.0 (build 63) — native Apple Sign In only on iPhone (no Safari OAuth)
+Wahrly 1.1.0 (build 64) — native Apple Sign In only on iPhone (no Safari OAuth)
 
 PLEASE TRY
 0) Login: black Continue with Apple → system Apple sheet (not Safari JSON errors). Google / email / demo still work.
