@@ -257,9 +257,10 @@ app.get('/api/invest/quotes', async (req, res) => {
     if (!symbols.length) {
       return res.status(400).json({ error: 'symbols required', quotes: [] })
     }
-    const demo =
+    const forceDemo =
       String(req.query.demo || '') === '1' || String(req.query.demo || '') === 'true'
-    const result = await fetchQuotes(symbols, { demo })
+    // Never pass demo:false — that used to disable curated fallbacks for SI=F etc.
+    const result = await fetchQuotes(symbols, forceDemo ? { forceDemo: true } : undefined)
     return res.json({
       quotes: result.quotes,
       demo: result.demo,

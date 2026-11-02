@@ -23,7 +23,7 @@ function mapYahooKind(quoteType?: string): InvestCatalogHit['kind'] {
   return 'stock'
 }
 
-async function searchYahoo(query: string, limit = 8): Promise<InvestSearchResult[]> {
+async function searchYahoo(query: string, limit = 12): Promise<InvestSearchResult[]> {
   const q = query.trim()
   if (q.length < 1) return []
   try {
@@ -61,7 +61,7 @@ async function searchYahoo(query: string, limit = 8): Promise<InvestSearchResult
 export async function searchInvest(query: string): Promise<InvestSearchResult[]> {
   const q = query.trim()
   if (!q) {
-    return searchCatalog('', 8).map((h) => ({
+    return searchCatalog('', 12).map((h) => ({
       symbol: h.symbol,
       name: h.name,
       kind: h.kind,
@@ -69,14 +69,14 @@ export async function searchInvest(query: string): Promise<InvestSearchResult[]>
     }))
   }
 
-  const catalog = searchCatalog(q, 8).map((h) => ({
+  const catalog = searchCatalog(q, 12).map((h) => ({
     symbol: h.symbol,
     name: h.name,
     kind: h.kind,
     source: 'catalog' as const,
   }))
 
-  // Exact alias / short ticker: catalog is enough for gold/bitcoin/etc.
+  // Exact alias / short ticker: catalog is enough for gold/platinum/bitcoin/etc.
   const exactAlias = resolveInvestSymbol(q)
   const catalogCovers =
     catalog.length > 0 &&
@@ -84,11 +84,11 @@ export async function searchInvest(query: string): Promise<InvestSearchResult[]>
       q.length <= 3 ||
       searchCatalog(q, 1)[0]?.aliases.includes(q.toLowerCase()))
 
-  if (catalogCovers && catalog.length >= 3) {
-    return catalog.slice(0, 8)
+  if (catalogCovers && catalog.length >= 2) {
+    return catalog.slice(0, 12)
   }
 
-  const yahoo = await searchYahoo(q, 8)
+  const yahoo = await searchYahoo(q, 12)
   const seen = new Set(catalog.map((h) => h.symbol.toUpperCase()))
   const merged = [...catalog]
   for (const hit of yahoo) {
@@ -96,7 +96,7 @@ export async function searchInvest(query: string): Promise<InvestSearchResult[]>
     if (seen.has(key)) continue
     seen.add(key)
     merged.push(hit)
-    if (merged.length >= 10) break
+    if (merged.length >= 14) break
   }
   return merged
 }

@@ -56,6 +56,14 @@ export default function InvestScreen() {
         m.set('SILVER', q)
         m.set('XAG', q)
       }
+      if (sym === 'PL=F') {
+        m.set('PLATINUM', q)
+        m.set('XPT', q)
+      }
+      if (sym === 'PA=F') {
+        m.set('PALLADIUM', q)
+        m.set('XPD', q)
+      }
     }
     return m
   }, [quotes])
