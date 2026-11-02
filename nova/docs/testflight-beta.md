@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (1.1.0 / post–#184 polish)
+# Wahrly — TestFlight (1.1.0 / build 55)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
