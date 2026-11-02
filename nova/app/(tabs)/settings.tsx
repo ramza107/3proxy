@@ -139,7 +139,17 @@ export default function SettingsScreen() {
     return () => clearTimeout(timer)
   }, [cityQuery, settings.weatherCity, tr.language])
 
+  const requirePro = () => {
+    if (isPro) return true
+    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'), [
+      { text: tr('common.cancel'), style: 'cancel' },
+      { text: tr('pro.subscribe'), onPress: () => undefined },
+    ])
+    return false
+  }
+
   const pickWeatherCity = (label: string, coords?: { lat: number; lon: number } | null) => {
+    if (!requirePro()) return
     setCityQuery(label)
     setCityHits([])
     setCitySearching(false)
@@ -151,6 +161,7 @@ export default function SettingsScreen() {
   }
 
   const clearWeatherCity = () => {
+    if (!requirePro()) return
     setCityQuery('')
     setCityHits([])
     setCitySearching(false)
@@ -260,6 +271,7 @@ export default function SettingsScreen() {
   }
 
   const applyMorningTime = (value: string) => {
+    if (!requirePro()) return
     const next = normalizeHm(value)
     if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '08:00' }))
@@ -271,6 +283,7 @@ export default function SettingsScreen() {
   }
 
   const applyEveningTime = (value: string) => {
+    if (!requirePro()) return
     const next = normalizeHm(value)
     if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '21:30' }))
@@ -282,6 +295,7 @@ export default function SettingsScreen() {
   }
 
   const applyBillRemindTime = (value: string) => {
+    if (!requirePro()) return
     const next = normalizeHm(value)
     if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
@@ -548,6 +562,10 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
+            <View
+              style={!isPro ? styles.proLockedBody : null}
+              pointerEvents={isPro ? 'auto' : 'none'}
+            >
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={morningTime}
@@ -556,6 +574,7 @@ export default function SettingsScreen() {
               placeholder="08:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
+              editable={isPro}
               keyboardType="number-pad"
               maxLength={5}
               autoCapitalize="none"
@@ -635,6 +654,7 @@ export default function SettingsScreen() {
               ) : null}
             </View>
             <Text style={styles.rowSub}>{tr('settings.weatherCityHint')}</Text>
+            </View>
             <Pressable
               style={styles.openRitual}
               onPress={() => {
@@ -671,6 +691,10 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
+            <View
+              style={!isPro ? styles.proLockedBody : null}
+              pointerEvents={isPro ? 'auto' : 'none'}
+            >
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={eveningTime}
@@ -679,6 +703,7 @@ export default function SettingsScreen() {
               placeholder="21:30"
               placeholderTextColor={colors.textDim}
               style={styles.input}
+              editable={isPro}
               keyboardType="number-pad"
               maxLength={5}
               autoCapitalize="none"
@@ -693,6 +718,7 @@ export default function SettingsScreen() {
                   <Text style={[styles.chipText, eveningTime === t && styles.chipTextOn]}>{t}</Text>
                 </Pressable>
               ))}
+            </View>
             </View>
             <Pressable
               style={styles.openRitual}
@@ -764,6 +790,10 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
+            <View
+              style={!isPro ? styles.proLockedBody : null}
+              pointerEvents={isPro ? 'auto' : 'none'}
+            >
             <Text style={styles.label}>{tr('settings.firstRemind')}</Text>
             <View style={styles.presets}>
               {BILL_LEAD_PRESETS.map((d) => {
@@ -778,7 +808,10 @@ export default function SettingsScreen() {
                   <Pressable
                     key={d}
                     style={[styles.chip, on && styles.chipOn]}
-                    onPress={() => updateSettings({ billRemindLeadDays: d })}
+                    onPress={() => {
+                      if (!requirePro()) return
+                      updateSettings({ billRemindLeadDays: d })
+                    }}
                   >
                     <Text style={[styles.chipText, on && styles.chipTextOn]}>{label}</Text>
                   </Pressable>
@@ -798,7 +831,10 @@ export default function SettingsScreen() {
                   <Pressable
                     key={opt.id}
                     style={[styles.chip, on && styles.chipOn]}
-                    onPress={() => updateSettings({ billRemindCadence: opt.id })}
+                    onPress={() => {
+                      if (!requirePro()) return
+                      updateSettings({ billRemindCadence: opt.id })
+                    }}
                   >
                     <Text style={[styles.chipText, on && styles.chipTextOn]}>{tr(opt.labelKey)}</Text>
                   </Pressable>
@@ -813,6 +849,7 @@ export default function SettingsScreen() {
               placeholder="09:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
+              editable={isPro}
               keyboardType="number-pad"
               maxLength={5}
               autoCapitalize="none"
@@ -829,6 +866,7 @@ export default function SettingsScreen() {
                   </Text>
                 </Pressable>
               ))}
+            </View>
             </View>
           </View>
 
@@ -1157,6 +1195,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   openRitualText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
+  proLockedBody: {
+    opacity: 0.42,
+    gap: 8,
+  },
   anchorBlock: {
     gap: 8,
     paddingTop: 8,

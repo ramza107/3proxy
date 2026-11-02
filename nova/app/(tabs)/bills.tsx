@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BillEditor } from '../../components/BillEditor'
+import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { MistPanel } from '../../components/MistPanel'
+import { MistScreenHero } from '../../components/MistScreenHero'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
-import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { useIsPro } from '../../lib/pro'
 import {
@@ -93,33 +94,37 @@ export default function BillsScreen() {
     )
   }
 
+  const dueChip =
+    due.length > 0
+      ? t.tf('bills.dueChip', { n: due.length })
+      : bills.length > 0
+        ? t('bills.allCaughtUp')
+        : undefined
+
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader kicker={t('bills.kicker')} title={t('bills.title')} sub={monthLabel}>
-          <View style={styles.statsRow}>
-            {Object.keys(totals).length === 0 ? (
-              <View style={styles.statWide}>
-                <Text style={styles.statValue}>0</Text>
-                <Text style={styles.statLabel}>{t('bills.due')}</Text>
-              </View>
-            ) : (
-              Object.entries(totals).map(([cur, tot]) => (
-                <View key={cur} style={styles.stat}>
-                  <Text style={styles.statValue} numberOfLines={1}>
-                    {formatMoney(tot.due, cur)}
-                  </Text>
-                  <Text style={styles.statLabel}>
-                    {t('bills.due')} · {cur}
-                  </Text>
-                  <Text style={styles.statSub}>
-                    {t('bills.paid')} {formatMoney(tot.paid, cur)} / {formatMoney(tot.all, cur)}
-                  </Text>
-                </View>
-              ))
-            )}
-          </View>
-        </ScreenHeader>
+        <MistScreenHero
+          title={t('bills.title')}
+          sub={monthLabel}
+          chip={dueChip}
+          chipQuiet={due.length === 0}
+        >
+          {Object.keys(totals).length > 0 ? (
+            <Text style={styles.statsLine}>
+              {Object.entries(totals).map(([cur, tot], i) => (
+                <Text key={cur}>
+                  {i > 0 ? ' · ' : ''}
+                  <Text style={styles.statsStrong}>{formatMoney(tot.due, cur)}</Text>
+                  {` ${t('bills.due').toLowerCase()}`}
+                  {' · '}
+                  <Text style={styles.statsStrong}>{formatMoney(tot.paid, cur)}</Text>
+                  {` ${t('bills.paid').toLowerCase()}`}
+                </Text>
+              ))}
+            </Text>
+          ) : null}
+        </MistScreenHero>
 
         <ScrollView
           contentContainerStyle={styles.list}
@@ -127,7 +132,7 @@ export default function BillsScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {bills.length === 0 ? (
-            <View style={styles.empty}>
+            <MistPanel emphasize>
               <Text style={styles.emptyTitle}>{t('bills.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('bills.emptyText')}</Text>
               <View style={styles.emptyActions}>
@@ -138,7 +143,7 @@ export default function BillsScreen() {
                   <Text style={styles.sampleBtnGhostText}>{t('bills.addSample')}</Text>
                 </Pressable>
               </View>
-            </View>
+            </MistPanel>
           ) : null}
 
           {due.length > 0 ? (
@@ -254,13 +259,9 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHead}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.sectionCount}>{count}</Text>
-      </View>
+    <MistPanel title={title} meta={String(count)}>
       {children}
-    </View>
+    </MistPanel>
   )
 }
 
@@ -328,78 +329,21 @@ function BillRow({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    gap: 4,
-    marginBottom: 10,
+  statsLine: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
   },
-  kicker: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-  },
-  title: {
+  statsStrong: {
     color: colors.text,
-    fontSize: 34,
-    fontFamily: fonts.brand,
-    letterSpacing: -0.8,
+    fontFamily: fonts.bodyBold,
+    fontVariant: ['tabular-nums'],
   },
-  sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  stat: {
-    flexGrow: 1,
-    minWidth: '46%',
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: 12,
-    gap: 2,
-  },
-  statWide: {
-    flex: 1,
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: 12,
-    alignItems: 'center',
-  },
-  statValue: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
-  statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
-  statSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 11, marginTop: 2 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 8 },
-  section: {
-    marginTop: 4,
-    gap: 4,
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  sectionHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    marginBottom: 4,
-  },
-  sectionTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
-  sectionCount: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 13 },
+  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 10 },
   row: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(15,110,102,0.12)',
     paddingBottom: 10,
     marginBottom: 4,
     gap: 6,
@@ -431,16 +375,13 @@ const styles = StyleSheet.create({
   },
   payBtn: { alignSelf: 'flex-start', marginLeft: 22, paddingVertical: 4, paddingHorizontal: 4 },
   payBtnText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 13 },
-  empty: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    gap: 8,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+  emptyTitle: {
+    color: colors.bgDeep,
+    fontFamily: fonts.brand,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    lineHeight: 26,
   },
-  emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   emptyActions: {
     flexDirection: 'row',
@@ -474,7 +415,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 22,
-    bottom: 96, // overridden at runtime via localFabBottom
+    bottom: 96,
     width: 54,
     height: 54,
     borderRadius: 27,

@@ -17,7 +17,9 @@ export default function ReadyScreen() {
       <View style={styles.screen}>
         <Text style={styles.brand}>{brand.name}</Text>
         <Text style={styles.title}>{t.tf('onboarding.readyTitle', { name })}</Text>
-        <Text style={styles.body}>{t('onboarding.trySaying')}</Text>
+        <Text style={styles.body}>{t('onboarding.readyFree')}</Text>
+        <Text style={styles.proHint}>{t('onboarding.readyPro')}</Text>
+        <Text style={styles.tryLabel}>{t('onboarding.trySaying')}</Text>
         <Text style={styles.exampleText}>&quot;{t('onboarding.example')}&quot;</Text>
         <Pressable
           accessibilityRole="button"
@@ -30,6 +32,17 @@ export default function ReadyScreen() {
         >
           <Text style={styles.btnText}>{t('onboarding.start')}</Text>
         </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => {
+            updateSettings({ onboardingComplete: true })
+            void track(AnalyticsEvents.onboardingComplete)
+            router.replace('/home')
+          }}
+          hitSlop={8}
+        >
+          <Text style={styles.secondary}>{t('onboarding.valueHomeCta')}</Text>
+        </Pressable>
       </View>
     </Screen>
   )
@@ -40,7 +53,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.xl,
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   brand: {
     color: colors.accentStrong,
@@ -56,7 +69,22 @@ const styles = StyleSheet.create({
     lineHeight: 42,
     letterSpacing: -0.5,
   },
-  body: { color: colors.textMuted, fontSize: 16, fontFamily: fonts.body },
+  body: {
+    color: colors.textMuted,
+    fontSize: 16,
+    lineHeight: 24,
+    fontFamily: fonts.body,
+    maxWidth: 340,
+  },
+  proHint: {
+    color: colors.textDim,
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: fonts.body,
+    maxWidth: 340,
+    marginBottom: 4,
+  },
+  tryLabel: { color: colors.textMuted, fontSize: 15, fontFamily: fonts.bodyMedium, marginTop: 4 },
   exampleText: {
     color: colors.accentStrong,
     fontSize: 18,
@@ -73,4 +101,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 17 },
+  secondary: {
+    color: colors.textDim,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 4,
+  },
 })
