@@ -1,18 +1,17 @@
 # Wahrly — iPhone & Android apps (Expo EAS)
 
-Wahrly is one Expo codebase (same features as the web demo on GitHub Pages). Native installs are built with [EAS Build](https://docs.expo.dev/build/introduction/).
+Wahrly is an Expo iOS/Android app built with [EAS Build](https://docs.expo.dev/build/introduction/). GitHub Pages hosts only a static privacy landing — not a web app.
 
 | Platform | Bundle ID | Deep link after Google Calendar OAuth |
 |----------|-----------|---------------------------------------|
 | iOS | `com.wahrly.assistant` | `wahrly://settings?google=connected` |
 | Android | `com.wahrly.assistant` | `wahrly://settings?google=connected` |
-| Web | GitHub Pages | `https://ramza107.github.io/3proxy/nova/settings?...` |
 
 ## Prerequisites
 
 1. [Expo account](https://expo.dev/signup) (free)
 2. **Apple Developer** account — required for TestFlight / device builds
-3. Same backend as the website: Render API + Google Calendar OAuth (`PUBLIC_NATIVE_APP_URL=wahrly://`)
+3. Render API + Google Calendar OAuth (`PUBLIC_NATIVE_APP_URL=wahrly://`)
 
 Optional:
 

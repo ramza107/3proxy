@@ -52,11 +52,10 @@ Add:
 
 ```
 wahrly://auth/callback
-https://ramza107.github.io/3proxy/nova/auth/callback
 http://localhost:8081/auth/callback
 ```
 
-Site URL can stay your production web app URL.
+Site URL can stay the privacy landing or Supabase default — native auth uses `wahrly://auth/callback`.
 
 ## 4. App env
 

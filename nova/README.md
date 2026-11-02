@@ -13,30 +13,15 @@ Personal AI assistant for everyday life. You tell Wahrly what you need to do —
 - AsyncStorage / Zustand local cache
 - Offline local AI fallback when the server or OpenAI key is missing
 
-## Quick start (website demo)
+## Product surface
 
-After deploy to GitHub Pages:
+**Wahrly ships as the iPhone / Android app** (EAS / TestFlight).  
+GitHub Pages is only a static privacy landing: https://ramza107.github.io/3proxy/nova/privacy  
 
-**https://ramza107.github.io/3proxy/nova/**
+AI backend (Groq): `https://threeproxy-x9bi.onrender.com`  
+Keys map: [`docs/keys.md`](docs/keys.md).
 
-AI backend (Groq): `https://threeproxy-x9bi.onrender.com`
-
-Locally in the browser:
-
-```bash
-cd nova
-npm install --legacy-peer-deps
-npx expo start --web
-```
-
-Or static export:
-
-```bash
-npx expo export --platform web
-npx serve dist
-```
-
-Demo mode works in the browser without OpenAI/Supabase keys (local AI fallback + AsyncStorage).
+Local Expo web (`npx expo start --web`) is optional for UI checks — it is **not** deployed.
 
 ## Installable iPhone & Android (EAS)
 
