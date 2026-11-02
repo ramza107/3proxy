@@ -4,9 +4,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BodyEntryEditor } from '../../components/BodyEntryEditor'
 import { LifeAdminEditor } from '../../components/LifeAdminEditor'
+import { MistPanel } from '../../components/MistPanel'
+import { MistScreenHero } from '../../components/MistScreenHero'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
-import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
 import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
@@ -78,7 +79,11 @@ export default function LifeScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader kicker={t('life.kicker')} title={t('life.title')} sub={t('life.sub')}>
+        <MistScreenHero
+          title={t('life.title')}
+          sub={t('life.sub')}
+          chip={soonCount > 0 ? String(soonCount) : undefined}
+        >
           <View style={styles.segRow}>
             <SegChip
               label={t('life.tabAdmin')}
@@ -93,7 +98,7 @@ export default function LifeScreen() {
               onPress={() => setSegment('body')}
             />
           </View>
-        </ScreenHeader>
+        </MistScreenHero>
 
         <ScrollView
           contentContainerStyle={styles.list}
@@ -102,15 +107,15 @@ export default function LifeScreen() {
         >
           {segment === 'admin' ? (
             sortedLife.length === 0 ? (
-              <View style={styles.empty}>
+              <MistPanel emphasize>
                 <Text style={styles.emptyTitle}>{t('life.emptyTitle')}</Text>
                 <Text style={styles.emptyText}>{t('life.emptyText')}</Text>
                 <Pressable style={styles.sampleBtn} onPress={openCreate}>
                   <Text style={styles.sampleBtnText}>{t('life.newItem')}</Text>
                 </Pressable>
-              </View>
+              </MistPanel>
             ) : (
-              <View style={styles.panel}>
+              <MistPanel>
                 {sortedLife.map((item) => (
                   <LifeRow
                     key={item.id}
@@ -121,18 +126,18 @@ export default function LifeScreen() {
                     }}
                   />
                 ))}
-              </View>
+              </MistPanel>
             )
           ) : sortedBody.length === 0 ? (
-            <View style={styles.empty}>
+            <MistPanel emphasize>
               <Text style={styles.emptyTitle}>{t('body.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('body.emptyText')}</Text>
               <Pressable style={styles.sampleBtn} onPress={openCreate}>
                 <Text style={styles.sampleBtnText}>{t('body.newEntry')}</Text>
               </Pressable>
-            </View>
+            </MistPanel>
           ) : (
-            <View style={styles.panel}>
+            <MistPanel>
               {sortedBody.map((entry) => (
                 <BodyRow
                   key={entry.id}
@@ -143,7 +148,7 @@ export default function LifeScreen() {
                   }}
                 />
               ))}
-            </View>
+            </MistPanel>
           )}
         </ScrollView>
 
@@ -340,9 +345,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.48)',
   },
   segOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   segText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 14 },
@@ -360,23 +365,6 @@ const styles = StyleSheet.create({
   badgeText: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 11 },
   badgeTextOn: { color: colors.textOnAccent },
   list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 10 },
-  panel: {
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  empty: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    gap: 8,
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
   sampleBtn: {
     alignSelf: 'flex-start',
     marginTop: 4,
@@ -393,7 +381,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 13,
   },
-  emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
+  emptyTitle: {
+    color: colors.bgDeep,
+    fontFamily: fonts.brand,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    lineHeight: 26,
+  },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   row: {
     flexDirection: 'row',
@@ -401,7 +395,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(15,110,102,0.12)',
   },
   node: {
     width: 12,

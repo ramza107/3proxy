@@ -129,7 +129,9 @@ export function ProPaywall({ compact, onUnlocked }: Props) {
         </Pressable>
       ) : null}
 
-      <Text style={styles.sku}>{PRO_MONTHLY_SKU}</Text>
+      {__DEV__ || Platform.OS === 'web' ? (
+        <Text style={styles.sku}>{PRO_MONTHLY_SKU}</Text>
+      ) : null}
     </View>
   )
 }
