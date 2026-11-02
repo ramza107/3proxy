@@ -120,7 +120,6 @@ export default function FirstValueScreen() {
               placeholder={placeholders.loop}
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              autoFocus
             />
             <TextInput
               value={loopWho}
