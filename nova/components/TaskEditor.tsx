@@ -1,5 +1,5 @@
 import { addDays, format, parseISO } from 'date-fns'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Modal,
   Pressable,
@@ -10,7 +10,9 @@ import {
   View,
 } from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
+import { dateLocale } from '../lib/dateLocale'
 import { maskHm, normalizeHm } from '../lib/notifications'
+import { useNovaStore } from '../lib/store'
 import { useT } from '../lib/useT'
 import type { Dow, Priority, Task, TaskRecurrence } from '../types'
 
@@ -53,7 +55,21 @@ export function TaskEditor({
   onDelete,
 }: Props) {
   const t = useT()
+  const language = useNovaStore((s) => s.settings.language)
   const isCreate = creating || !task
+  const weekDayChips = useMemo(() => {
+    const locale = dateLocale(language)
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(new Date(), i)
+      const dayLabel = format(d, 'EEE d', { locale })
+      const prefix =
+        i === 0 ? `${t('common.today')} · ` : i === 1 ? `${t('common.tomorrow')} · ` : ''
+      return {
+        value: format(d, 'yyyy-MM-dd'),
+        label: `${prefix}${dayLabel}`,
+      }
+    })
+  }, [language, t, visible])
   const DOW_SHORT: { key: Dow; label: string }[] = [
     { key: 1, label: t('editor.dowMon') },
     { key: 2, label: t('editor.dowTue') },
@@ -168,32 +184,47 @@ export function TaskEditor({
 
             <Text style={styles.label}>{t('editor.date')}</Text>
             <View style={styles.row}>
-              {(
-                [
-                  [t('common.today'), today()],
-                  [t('common.tomorrow'), tomorrow()],
-                  [t('editor.plus3Days'), plusDays(3)],
-                  [t('editor.plus1Week'), plusDays(7)],
-                  [t('common.clear'), ''],
-                ] as const
-              ).map(([label, value]) => (
+              {weekDayChips.map((chip) => (
                 <Pressable
-                  key={label}
-                  style={[styles.chip, date === value && styles.chipOn]}
-                  onPress={() => setDate(value)}
+                  key={chip.value}
+                  style={[styles.chip, date === chip.value && styles.chipOn]}
+                  onPress={() => setDate(chip.value)}
                 >
-                  <Text style={[styles.chipText, date === value && styles.chipTextOn]}>{label}</Text>
+                  <Text style={[styles.chipText, date === chip.value && styles.chipTextOn]}>
+                    {chip.label}
+                  </Text>
                 </Pressable>
               ))}
+              <Pressable
+                style={[styles.chip, date === plusDays(7) && styles.chipOn]}
+                onPress={() => setDate(plusDays(7))}
+              >
+                <Text style={[styles.chipText, date === plusDays(7) && styles.chipTextOn]}>
+                  {t('editor.plus1Week')}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.chip, date === '' && styles.chipOn]}
+                onPress={() => setDate('')}
+              >
+                <Text style={[styles.chipText, date === '' && styles.chipTextOn]}>
+                  {t('common.clear')}
+                </Text>
+              </Pressable>
             </View>
-            <TextInput
-              value={date}
-              onChangeText={setDate}
-              style={styles.input}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.textDim}
-              autoCapitalize="none"
-            />
+            <Text style={styles.dateHint}>
+              {date
+                ? (() => {
+                    try {
+                      return format(parseISO(`${date}T12:00:00`), 'EEEE, d MMMM', {
+                        locale: dateLocale(language),
+                      })
+                    } catch {
+                      return date
+                    }
+                  })()
+                : t('editor.noDate')}
+            </Text>
 
             <Text style={styles.label}>{t('editor.time')}</Text>
             <View style={styles.row}>
@@ -459,5 +490,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginBottom: 2,
+  },
+  dateHint: {
+    color: colors.textMuted,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    marginTop: 8,
+    marginBottom: 2,
+    textTransform: 'capitalize',
   },
 })
