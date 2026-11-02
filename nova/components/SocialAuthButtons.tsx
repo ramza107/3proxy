@@ -10,37 +10,22 @@ import {
 import { colors, fonts, radii } from '../constants/theme'
 import {
   appleSignInAvailable,
-  nativeAppleSignInEnabled,
   signInWithApple,
   signInWithGoogle,
 } from '../lib/socialAuth'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { useT } from '../lib/useT'
 
-function AppleNativeButton({
-  onPress,
-}: {
-  onPress: () => void
-}) {
-  // Lazy require keeps Metro happy when the native module is excluded on iOS.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const AppleAuthentication = require('expo-apple-authentication')
-  return (
-    <AppleAuthentication.AppleAuthenticationButton
-      buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-      cornerRadius={radii.md}
-      style={styles.appleNative}
-      onPress={onPress}
-    />
-  )
-}
-
 type Props = {
   onSuccess: () => void
   onError: (message: string) => void
 }
 
+/**
+ * Custom buttons only — avoid AppleAuthenticationButton native view.
+ * That view manager often shows "Unimplemented component" even when
+ * signInAsync + entitlement work fine in production builds.
+ */
 export function SocialAuthButtons({ onSuccess, onError }: Props) {
   const t = useT()
   const [busy, setBusy] = useState<'google' | 'apple' | null>(null)
@@ -85,13 +70,7 @@ export function SocialAuthButtons({ onSuccess, onError }: Props) {
         <Text style={styles.androidHint}>{t('auth.androidGoogleHint')}</Text>
       ) : null}
 
-      {Platform.OS === 'ios' && nativeAppleSignInEnabled() ? (
-        <AppleNativeButton onPress={() => run('apple')} />
-      ) : null}
-
-      {appleSignInAvailable() &&
-      (Platform.OS === 'web' ||
-        (Platform.OS === 'ios' && !nativeAppleSignInEnabled())) ? (
+      {appleSignInAvailable() ? (
         <Pressable
           accessibilityRole="button"
           style={[styles.btn, styles.apple]}
@@ -149,9 +128,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: fonts.bodyBold,
     fontSize: 15,
-  },
-  appleNative: {
-    width: '100%',
-    height: 48,
   },
 })
