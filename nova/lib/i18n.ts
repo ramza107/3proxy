@@ -169,6 +169,7 @@ const en: Dict = {
   'evening.digestTitle': 'Closed today',
   'pro.title': 'Wahrly Pro',
   'pro.badge': 'Pro',
+  'pro.freeBadge': 'Free',
   'pro.sub': 'Full life OS — spaces, Plan day, briefs, cloud AI, voice, invest',
   'pro.freeLimits':
     'Free: Tasks, Dates, and on-device chat. Pro unlocks Bills, Shopping, Life, News, Invest, Plan day, morning/weekly/evening, reminders, widget, cloud AI & voice.',
@@ -385,6 +386,7 @@ const ru: Dict = {
   'evening.digestTitle': 'Закрыто за сегодня',
   'pro.title': 'Wahrly Pro',
   'pro.badge': 'Pro',
+  'pro.freeBadge': 'Free',
   'pro.sub': 'Полная жизнь в приложении — разделы, план дня, обзоры, облачный AI, голос, инвестиции',
   'pro.freeLimits':
     'Free: задачидачи, Даты и чат на устройстве. Pro: Счета, Покупки, Жизнь, Новости, Инвест, план дня, утро/неделя/вечер, напоминания, виджет, облачный AI и голос.',

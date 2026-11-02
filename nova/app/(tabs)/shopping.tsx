@@ -8,11 +8,13 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { FAB_SCROLL_INSET } from '../../components/ChatFab'
+import { MistPanel } from '../../components/MistPanel'
+import { MistScreenHero } from '../../components/MistScreenHero'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ShoppingItemEditor } from '../../components/ShoppingItemEditor'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_SCROLL_INSET } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import {
   SHOPPING_AISLES,
@@ -102,16 +104,19 @@ export default function ShoppingScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
+        <MistScreenHero
+          title={t('shopping.title')}
+          sub={t('shopping.sub')}
+          chip={open.length > 0 ? t.tf('shopping.openChip', { n: open.length }) : progress || undefined}
+          chipQuiet={open.length === 0}
+        />
+
         <ScrollView
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.headerPanel}>
-            <Text style={styles.kicker}>{t('shopping.kicker')}</Text>
-            <Text style={styles.title}>{t('shopping.title')}</Text>
-            <Text style={styles.sub}>{t('shopping.sub')}</Text>
-
+          <MistPanel emphasize>
             <View style={styles.composer}>
               <TextInput
                 value={draft}
@@ -131,18 +136,13 @@ export default function ShoppingScreen() {
                 <Text style={styles.composerBtnText}>{t('shopping.add')}</Text>
               </SoftPressable>
             </View>
-
-            <View style={styles.statsRow}>
-              <View style={styles.stat}>
-                <Text style={styles.statValue}>{open.length}</Text>
-                <Text style={styles.statLabel}>{t('shopping.toBuy')}</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.stat}>
-                <Text style={styles.statValue}>{bought.length}</Text>
-                <Text style={styles.statLabel}>{t('shopping.bought')}</Text>
-              </View>
-            </View>
+            <Text style={styles.statsLine}>
+              <Text style={styles.statsStrong}>{open.length}</Text>
+              {` ${t('shopping.toBuy').toLowerCase()}`}
+              {' · '}
+              <Text style={styles.statsStrong}>{bought.length}</Text>
+              {` ${t('shopping.bought').toLowerCase()}`}
+            </Text>
             {total > 0 && progress ? (
               <View style={styles.progressBlock}>
                 <View style={styles.progressTrack}>
@@ -156,20 +156,17 @@ export default function ShoppingScreen() {
                 <Text style={styles.progressLabel}>{progress}</Text>
               </View>
             ) : null}
-          </View>
+          </MistPanel>
 
           {shopping.length === 0 ? (
-            <View style={styles.emptyPanel}>
+            <MistPanel>
               <Text style={styles.emptyTitle}>{t('shopping.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('shopping.emptyText')}</Text>
-            </View>
+            </MistPanel>
           ) : null}
 
           {open.length > 0 ? (
-            <View style={styles.panel}>
-              <Text style={styles.sectionTitle}>
-                {t('shopping.toBuy')} · {open.length}
-              </Text>
+            <MistPanel title={t('shopping.toBuy')} meta={String(open.length)}>
               {open.map((item) => (
                 <ShoppingRow
                   key={item.id}
@@ -181,19 +178,14 @@ export default function ShoppingScreen() {
                   }}
                 />
               ))}
-            </View>
+            </MistPanel>
           ) : null}
 
           {bought.length > 0 ? (
-            <View style={styles.panel}>
-              <View style={styles.sectionHead}>
-                <Text style={styles.sectionTitle}>
-                  {t('shopping.bought')} · {bought.length}
-                </Text>
-                <Pressable onPress={clearBoughtShopping} hitSlop={8}>
-                  <Text style={styles.clearBought}>{t('shopping.clearBought')}</Text>
-                </Pressable>
-              </View>
+            <MistPanel title={t('shopping.bought')} meta={String(bought.length)}>
+              <Pressable onPress={clearBoughtShopping} hitSlop={8} style={styles.clearBoughtWrap}>
+                <Text style={styles.clearBought}>{t('shopping.clearBought')}</Text>
+              </Pressable>
               {bought.map((item) => (
                 <ShoppingRow
                   key={item.id}
@@ -205,12 +197,11 @@ export default function ShoppingScreen() {
                   }}
                 />
               ))}
-            </View>
+            </MistPanel>
           ) : null}
 
           {recent.length > 0 ? (
-            <View style={styles.panel}>
-              <Text style={styles.sectionTitle}>{t('shopping.recent')}</Text>
+            <MistPanel title={t('shopping.recent')}>
               <View style={styles.chipWrap}>
                 {recent.map((title) => (
                   <Pressable
@@ -222,11 +213,10 @@ export default function ShoppingScreen() {
                   </Pressable>
                 ))}
               </View>
-            </View>
+            </MistPanel>
           ) : null}
 
-          <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>{t('shopping.aisles')}</Text>
+          <MistPanel title={t('shopping.aisles')}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -271,7 +261,7 @@ export default function ShoppingScreen() {
                 )
               })}
             </View>
-          </View>
+          </MistPanel>
         </ScrollView>
 
         <ShoppingItemEditor
@@ -346,54 +336,24 @@ function ShoppingRow({
   )
 }
 
-const panel = {
-  backgroundColor: 'rgba(250,252,251,0.94)',
-  borderRadius: radii.lg,
-  borderWidth: StyleSheet.hairlineWidth,
-  borderColor: colors.border,
-  paddingHorizontal: spacing.md,
-  paddingVertical: spacing.md,
-} as const
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
   list: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
     gap: spacing.md,
     paddingBottom: FAB_SCROLL_INSET,
   },
-  headerPanel: {
-    ...panel,
-    backgroundColor: colors.bgCardSolid,
-    gap: 6,
-  },
-  kicker: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-  },
-  title: {
-    color: colors.text,
-    fontSize: 34,
-    fontFamily: fonts.brand,
-    letterSpacing: -0.8,
-  },
-  sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
   composer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 10,
   },
   composerInput: {
     flex: 1,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderRadius: radii.full,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: 'rgba(15,110,102,0.16)',
     color: colors.text,
     fontFamily: fonts.body,
     fontSize: 15,
@@ -412,35 +372,26 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 14,
   },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+  statsLine: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
   },
-  stat: { flex: 1, alignItems: 'center', gap: 2 },
-  statDivider: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: 'stretch',
-    backgroundColor: colors.border,
-  },
-  statValue: {
+  statsStrong: {
     color: colors.text,
     fontFamily: fonts.bodyBold,
-    fontSize: 20,
     fontVariant: ['tabular-nums'],
   },
-  statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 11 },
   progressBlock: {
-    marginTop: 12,
+    marginTop: 8,
     gap: 6,
   },
   progressTrack: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.bgSoft,
+    backgroundColor: 'rgba(15,42,50,0.08)',
     overflow: 'hidden',
   },
   progressFill: {
@@ -454,23 +405,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontVariant: ['tabular-nums'],
   },
-  emptyPanel: { ...panel, gap: 6 },
-  emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
+  emptyTitle: {
+    color: colors.bgDeep,
+    fontFamily: fonts.brand,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    lineHeight: 26,
+  },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
-  panel: { ...panel, gap: 8 },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  sectionTitle: {
-    color: colors.textMuted,
-    fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
+  clearBoughtWrap: { alignSelf: 'flex-end', marginBottom: 2 },
   clearBought: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13 },
   aisleRow: { gap: 8, paddingVertical: 2 },
   aisleChip: {
@@ -478,8 +421,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: radii.full,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.bgElevated,
+    borderColor: 'rgba(15,110,102,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   aisleChipOn: {
     backgroundColor: colors.bgDeep,
@@ -490,11 +433,11 @@ const styles = StyleSheet.create({
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: 'rgba(15,110,102,0.16)',
     borderRadius: radii.full,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   chipOnList: {
     backgroundColor: 'rgba(15,42,50,0.06)',
@@ -508,7 +451,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(15,110,102,0.12)',
   },
   rowBought: { opacity: 0.55 },
   checkWrap: { paddingTop: 2 },
