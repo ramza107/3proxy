@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns'
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Task } from '../types'
 import { colors, fonts, radii, spacing } from '../constants/theme'
 import { dateLocale } from '../lib/dateLocale'
@@ -10,6 +10,8 @@ import { useT } from '../lib/useT'
 type Props = {
   task: Task
   onToggle?: () => void
+  /** Parent shows Home-style confirm before completing. */
+  onRequestComplete?: () => void
   onPress?: () => void
   onPostpone?: () => void
   onMoveTomorrow?: () => void
@@ -20,6 +22,7 @@ type Props = {
 export function TaskCard({
   task,
   onToggle,
+  onRequestComplete,
   onPress,
   onPostpone,
   onMoveTomorrow,
@@ -58,15 +61,15 @@ export function TaskCard({
 
   const onCheckPress = () => {
     if (!onToggle) return
-    // Un-complete is safe to undo with one tap; completing needs a confirm.
     if (task.completed) {
       onToggle()
       return
     }
-    Alert.alert(t('tasks.confirmDoneTitle'), t.tf('tasks.confirmDoneBody', { title: task.title }), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('tasks.confirmDone'), onPress: onToggle },
-    ])
+    if (onRequestComplete) {
+      onRequestComplete()
+      return
+    }
+    onToggle()
   }
 
   return (
@@ -136,39 +139,42 @@ function isOverdue(task: Task) {
 
 const styles = StyleSheet.create({
   card: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    paddingBottom: 8,
-    marginBottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.42)',
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.1)',
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
+    marginBottom: 6,
   },
-  /** Soften done rows without washing into the painting backdrop. */
-  done: { opacity: 0.85 },
+  done: { opacity: 0.72 },
   overdueCard: {
-    borderBottomColor: 'rgba(196,69,74,0.25)',
+    borderColor: 'rgba(196,69,74,0.28)',
+    backgroundColor: 'rgba(255,248,248,0.55)',
   },
   main: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    paddingVertical: 6,
   },
   checkWrap: { padding: 2, paddingTop: 1 },
   check: {
-    width: 20,
-    height: 20,
-    borderRadius: 99,
+    width: 22,
+    height: 22,
+    borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: colors.borderStrong,
+    borderColor: 'rgba(15,110,102,0.28)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   checkOn: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
+    backgroundColor: colors.bgDeep,
+    borderColor: colors.bgDeep,
   },
   checkOverdue: { borderColor: colors.danger },
-  checkMark: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 11 },
+  checkMark: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 12 },
   body: { flex: 1, gap: 2 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   title: { flex: 1, color: colors.text, fontSize: 15, fontFamily: fonts.bodyMedium, lineHeight: 20 },
@@ -195,8 +201,8 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 12,
-    paddingLeft: 30,
-    paddingBottom: 2,
+    paddingLeft: 32,
+    paddingTop: 6,
   },
   actionBtn: {
     paddingHorizontal: 0,

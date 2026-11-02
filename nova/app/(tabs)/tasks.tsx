@@ -4,12 +4,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { ConfirmDoneSheet } from '../../components/ConfirmDoneSheet'
 import { Screen } from '../../components/Screen'
-import { ScreenHeader } from '../../components/ScreenHeader'
-import { HomeSection } from '../../components/HomeSection'
 import { SoftPressable } from '../../components/SoftPressable'
 import { TaskCard } from '../../components/TaskCard'
 import { TaskEditor } from '../../components/TaskEditor'
+import { TasksDayBlock } from '../../components/TasksDayBlock'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { anchorsForDay, normalizeTypicalWeek, resolveDayWindow } from '../../lib/scheduleDay'
@@ -82,6 +82,7 @@ export default function TasksScreen() {
   const [createDate, setCreateDate] = useState<string | null>(null)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
+  const [pendingDone, setPendingDone] = useState<Task | null>(null)
   const listRef = useRef<ScrollView>(null)
 
   const openCreate = (date: string | null = focusDay || todayISO()) => {
@@ -189,7 +190,20 @@ export default function TasksScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader kicker={t('tasks.kicker')} title={t('tasks.title')} sub={t('tasks.sub')}>
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <Text style={styles.heroTitle} accessibilityRole="header">
+              {t('tasks.title')}
+            </Text>
+            <View style={[styles.heroChip, stats.open === 0 && styles.heroChipQuiet]}>
+              <Text style={[styles.heroChipText, stats.open === 0 && styles.heroChipTextQuiet]}>
+                {stats.open > 0
+                  ? t.tf('home.openCount', { n: stats.open })
+                  : t('home.lightDay')}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.heroSub}>{t('tasks.sub')}</Text>
           <Text style={styles.statsLine}>
             <Text style={styles.statsStrong}>{stats.open}</Text>
             {` ${t('tasks.statOpen').toLowerCase()}`}
@@ -203,53 +217,51 @@ export default function TasksScreen() {
             <Text style={styles.statsStrong}>{stats.timed}</Text>
             {` ${t('tasks.statTimed').toLowerCase()}`}
           </Text>
-        </ScreenHeader>
-
-        <View style={styles.weekStripOuter}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.weekStripScroll}
-            contentContainerStyle={styles.weekStrip}
-          >
-            <Pressable
-              onPress={() => setFocusDay(null)}
-              style={[styles.dayChip, !focusDay && styles.dayChipOn]}
-            >
-              <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]} numberOfLines={1}>
-                {t('tasks.week')}
-              </Text>
-              <Text style={styles.dayChipSub} numberOfLines={1}>
-                {' '}
-              </Text>
-              <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]} numberOfLines={1}>
-                {stats.week}
-              </Text>
-            </Pressable>
-            {week.map((d) => {
-              const on = focusDay === d.iso
-              const n = d.tasks.length + d.anchors.length
-              return (
-                <Pressable
-                  key={d.iso}
-                  onPress={() => setFocusDay(on ? null : d.iso)}
-                  style={[styles.dayChip, on && styles.dayChipOn]}
-                  accessibilityLabel={`${d.label} ${d.sub}, ${n}`}
-                >
-                  <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]} numberOfLines={1}>
-                    {d.short}
-                  </Text>
-                  <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]} numberOfLines={1}>
-                    {d.sub}
-                  </Text>
-                  <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]} numberOfLines={1}>
-                    {n}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </ScrollView>
         </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.weekStripScroll}
+          contentContainerStyle={styles.weekStrip}
+        >
+          <Pressable
+            onPress={() => setFocusDay(null)}
+            style={[styles.dayChip, !focusDay && styles.dayChipOn]}
+          >
+            <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]} numberOfLines={1}>
+              {t('tasks.week')}
+            </Text>
+            <Text style={styles.dayChipSub} numberOfLines={1}>
+              {' '}
+            </Text>
+            <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]} numberOfLines={1}>
+              {stats.week}
+            </Text>
+          </Pressable>
+          {week.map((d) => {
+            const on = focusDay === d.iso
+            const n = d.tasks.length + d.anchors.length
+            return (
+              <Pressable
+                key={d.iso}
+                onPress={() => setFocusDay(on ? null : d.iso)}
+                style={[styles.dayChip, on && styles.dayChipOn]}
+                accessibilityLabel={`${d.label} ${d.sub}, ${n}`}
+              >
+                <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]} numberOfLines={1}>
+                  {d.short}
+                </Text>
+                <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]} numberOfLines={1}>
+                  {d.sub}
+                </Text>
+                <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]} numberOfLines={1}>
+                  {n}
+                </Text>
+              </Pressable>
+            )
+          })}
+        </ScrollView>
 
         <ScrollView
           ref={listRef}
@@ -269,7 +281,7 @@ export default function TasksScreen() {
           ) : null}
 
           {overdue.length > 0 && !focusDay ? (
-            <HomeSection
+            <TasksDayBlock
               title={t('tasks.overdue')}
               meta={t.tf('tasks.overdueMeta', { n: overdue.length })}
               emphasize
@@ -279,11 +291,12 @@ export default function TasksScreen() {
                   key={task.id}
                   task={task}
                   onToggle={() => toggleTaskCompleted(task)}
+                  onRequestComplete={() => setPendingDone(task)}
                   onPress={() => setEditing(task)}
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
               ))}
-            </HomeSection>
+            </TasksDayBlock>
           ) : null}
 
           {visibleDays.map((day) => {
@@ -298,7 +311,7 @@ export default function TasksScreen() {
                 : ` · ${t.tf('tasks.anchorCount', { n: day.anchors.length })}`
               : ''
             return (
-            <HomeSection
+            <TasksDayBlock
               key={day.iso}
               title={day.label}
               meta={`${day.sub} · ${kindLabel} · ${taskMeta}${anchorMeta}`}
@@ -322,6 +335,7 @@ export default function TasksScreen() {
                   task={task}
                   hideDate
                   onToggle={() => toggleTaskCompleted(task)}
+                  onRequestComplete={() => setPendingDone(task)}
                   onPress={() => setEditing(task)}
                   {...(day.iso === today
                     ? {
@@ -346,12 +360,12 @@ export default function TasksScreen() {
               >
                 <Text style={styles.addDayBtnText}>+ {t('tasks.addTask')}</Text>
               </Pressable>
-            </HomeSection>
+            </TasksDayBlock>
             )
           })}
 
           {undated.length > 0 && !focusDay ? (
-            <HomeSection
+            <TasksDayBlock
               title={t('tasks.later')}
               meta={t.tf('tasks.laterMeta', { n: undated.length })}
             >
@@ -360,16 +374,17 @@ export default function TasksScreen() {
                   key={task.id}
                   task={task}
                   onToggle={() => toggleTaskCompleted(task)}
+                  onRequestComplete={() => setPendingDone(task)}
                   onPress={() => setEditing(task)}
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
               ))}
-            </HomeSection>
+            </TasksDayBlock>
           ) : null}
 
           {stats.done > 0 ? (
             showDone ? (
-              <HomeSection
+              <TasksDayBlock
                 title={t('tasks.completed')}
                 meta={t.tf('tasks.doneMeta', { n: stats.done })}
                 action={
@@ -411,7 +426,7 @@ export default function TasksScreen() {
                     +{stats.done - completed.length}
                   </Text>
                 ) : null}
-              </HomeSection>
+              </TasksDayBlock>
             ) : (
               <View style={styles.doneToggle}>
                 <Pressable
@@ -494,6 +509,16 @@ export default function TasksScreen() {
             if (editing) deleteTask(editing.id)
           }}
         />
+
+        <ConfirmDoneSheet
+          visible={!!pendingDone}
+          title={pendingDone?.title || ''}
+          onClose={() => setPendingDone(null)}
+          onConfirm={() => {
+            if (pendingDone) void toggleTaskCompleted(pendingDone)
+            setPendingDone(null)
+          }}
+        />
       </SafeAreaView>
     </Screen>
   )
@@ -501,41 +526,61 @@ export default function TasksScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  header: {
+  hero: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    gap: 6,
-    marginBottom: 8,
-  },
-  kicker: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-  },
-  title: {
-    color: colors.text,
-    fontSize: 32,
-    fontFamily: fonts.brand,
-    letterSpacing: -0.8,
-  },
-  headerCopy: {
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 8,
+    paddingBottom: 10,
     gap: 4,
   },
-  sub: { color: colors.text, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  statsLine: {
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 6,
+  },
+  heroTitle: {
+    color: colors.bgDeep,
+    fontFamily: fonts.brand,
+    fontSize: 44,
+    letterSpacing: -1.6,
+    lineHeight: 48,
+    flexShrink: 1,
+  },
+  heroChip: {
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: radii.full,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.16)',
+  },
+  heroChipQuiet: {
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderColor: 'rgba(15,42,50,0.1)',
+  },
+  heroChipText: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyBold,
+    fontSize: 12,
+    letterSpacing: 0.15,
+  },
+  heroChipTextQuiet: {
     color: colors.textMuted,
+  },
+  heroSub: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
+    maxWidth: 320,
+  },
+  statsLine: {
+    color: colors.textDim,
     fontFamily: fonts.body,
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 2,
+    marginTop: 6,
   },
   statsStrong: {
     color: colors.text,
@@ -547,54 +592,36 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontVariant: ['tabular-nums'],
   },
-  // Keep the strip out of the flex squeeze: list ScrollView takes remaining height,
-  // strip never shrinks — otherwise RN Web clips the chip count digits.
-  weekStripOuter: {
-    height: 96,
-    minHeight: 96,
-    maxHeight: 96,
-    flexGrow: 0,
-    flexShrink: 0,
-    marginHorizontal: spacing.lg,
-    marginBottom: 8,
-    overflow: 'hidden',
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
   weekStripScroll: {
     flexGrow: 0,
     flexShrink: 0,
-    height: 96,
-    minHeight: 96,
+    maxHeight: 92,
+    marginBottom: 4,
   },
   weekStrip: {
-    paddingHorizontal: spacing.sm,
-    gap: 6,
+    paddingHorizontal: spacing.lg,
+    gap: 8,
     alignItems: 'center',
-    height: 96,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   dayChip: {
-    width: 64,
-    height: 84,
-    minHeight: 84,
+    width: 62,
+    height: 78,
+    minHeight: 78,
     paddingTop: 8,
     paddingBottom: 8,
     paddingHorizontal: 4,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.bgElevated,
+    borderColor: 'rgba(15,110,102,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.48)',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexShrink: 0,
   },
   dayChipOn: {
-    backgroundColor: colors.accentSoft,
-    borderColor: colors.accent,
-    borderWidth: 1.5,
+    backgroundColor: 'rgba(15,110,102,0.16)',
+    borderColor: 'rgba(15,110,102,0.32)',
   },
   dayChipLabel: {
     color: colors.text,
@@ -636,20 +663,21 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    gap: spacing.sm,
+    gap: 12,
     paddingBottom: FAB_SCROLL_INSET,
   },
   dayEmpty: {
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
     fontSize: 13,
-    paddingVertical: 2,
+    paddingVertical: 6,
   },
   addDayBtn: {
     alignSelf: 'flex-start',
     marginTop: 8,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.2)',
     borderRadius: radii.full,
     paddingHorizontal: 14,
     height: 36,
@@ -684,10 +712,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    paddingVertical: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    opacity: 0.85,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    opacity: 0.9,
   },
   anchorNode: {
     width: 9,
@@ -713,16 +740,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     gap: 8,
-    marginBottom: 8,
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
+    marginBottom: 4,
+    backgroundColor: 'rgba(255,255,255,0.48)',
+    borderRadius: radii.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: 'rgba(15,110,102,0.12)',
   },
   emptyTitle: {
-    color: colors.text,
-    fontFamily: fonts.bodyBold,
-    fontSize: 16,
+    color: colors.bgDeep,
+    fontFamily: fonts.brand,
+    fontSize: 22,
+    letterSpacing: -0.4,
   },
   emptyText: {
     color: colors.textMuted,
@@ -732,8 +760,9 @@ const styles = StyleSheet.create({
   sampleBtn: {
     alignSelf: 'flex-start',
     marginTop: 4,
-    borderWidth: 1.5,
-    borderColor: colors.accent,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.2)',
     borderRadius: radii.full,
     paddingHorizontal: 14,
     height: 36,
@@ -750,12 +779,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.48)',
+    borderRadius: radii.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: 'rgba(15,110,102,0.12)',
     marginTop: 4,
   },
   doneToggleShow: { flex: 1 },
