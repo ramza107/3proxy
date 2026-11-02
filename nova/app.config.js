@@ -27,11 +27,10 @@ module.exports = ({ config }) => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
-      // Synced after EAS autoIncrement for TF build 55.
-      buildNumber: '57',
-      // Temporarily off: provisioning profile lacks Sign In with Apple.
-      // Re-enable after regenerating profiles with Apple Developer login.
-      usesAppleSignIn: false,
+      // Synced after EAS autoIncrement for TF build 57.
+      buildNumber: '60',
+      // Native Sign in with Apple — App ID capability + Supabase Apple enabled.
+      usesAppleSignIn: true,
       // Required for expo-widgets ↔ app data sharing (UserDefaults suite).
       entitlements: {
         'com.apple.security.application-groups': ['group.com.wahrly.assistant'],
@@ -71,10 +70,8 @@ module.exports = ({ config }) => {
       'expo-notifications',
       'expo-web-browser',
       'expo-iap',
-      // Removed temporarily: package auto-plugin adds Sign In with Apple
-      // entitlement the current App Store profile does not include.
-      // 'expo-apple-authentication',
-      // Last: strip entitlement if Expo auto-plugin still injects it.
+      'expo-apple-authentication',
+      // No-op while usesAppleSignIn is true; strips entitlement if turned off again.
       './plugins/withStripAppleSignInEntitlement',
       [
         'expo-audio',
