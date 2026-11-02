@@ -70,7 +70,7 @@ export function guessKind(symbol: string): InvestmentHolding['kind'] {
   if (s.endsWith('-USD') || ['BTC', 'ETH', 'SOL'].includes(s.replace('-USD', ''))) {
     return 'crypto'
   }
-  if (/^(GC|SI|HG)=F$/i.test(s) || s === 'XAUUSD=X' || s === 'XAGUSD=X') return 'metal'
+  if (/^(GC|SI|PL|PA|HG)=F$/i.test(s) || s === 'XAUUSD=X' || s === 'XAGUSD=X') return 'metal'
   if (['SPY', 'VOO', 'QQQ', 'IWM', 'VTI', 'ARKK', 'GLD', 'SLV'].includes(s)) return 'etf'
   return 'stock'
 }

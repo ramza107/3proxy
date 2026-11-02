@@ -10,11 +10,12 @@ import {
   Text,
   View,
 } from 'react-native'
-import { Screen } from '../../components/Screen'
-import { ScreenHeader } from '../../components/ScreenHeader'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { AIInput } from '../../components/AIInput'
 import { ChatBubble } from '../../components/ChatBubble'
+import { MistPanel } from '../../components/MistPanel'
+import { MistScreenHero } from '../../components/MistScreenHero'
+import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { addLocalDays, localISODate } from '../../lib/localDate'
 import { useIsPro } from '../../lib/pro'
@@ -115,16 +116,18 @@ export default function ChatScreen() {
 
   return (
     <Screen>
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={8}
-      >
-        <ScreenHeader
-          title={brand.name}
-          sub={isPro ? brand.tagline : t('pro.freeChatHint')}
-          trailing={
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={8}
+        >
+          <MistScreenHero
+            title={brand.name}
+            sub={isPro ? brand.tagline : t('pro.freeChatHint')}
+            chip={isPro ? t('pro.badge') : t('pro.freeBadge')}
+            chipQuiet={!isPro}
+          >
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('chat.done')}
@@ -133,121 +136,94 @@ export default function ChatScreen() {
             >
               <Text style={styles.doneText}>{t('chat.done')}</Text>
             </Pressable>
-          }
-        />
+          </MistScreenHero>
 
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{t.tf('chat.emptyTitle', { name })}</Text>
-              <Text style={styles.emptyText}>{t('chat.emptyText')}</Text>
-              <Pressable style={styles.chip} onPress={() => onSend(t('chat.chipRemind'))}>
-                <Text style={styles.chipText}>{t('chat.chipRemind')}</Text>
-              </Pressable>
-              <Pressable style={styles.chip} onPress={() => onSend(t('chat.chipOrganize'))}>
-                <Text style={styles.chipText}>{t('chat.chipOrganize')}</Text>
-              </Pressable>
-            </View>
-          }
-          renderItem={({ item }) => <ChatBubble role={item.role} content={item.content} />}
-        />
-
-        {saved.length > 0 && (
-          <View style={styles.savedCard}>
-            <Text style={styles.savedLabel}>{t('chat.saved')}</Text>
-            {saved.map((item, i) => (
-              <Text key={`${item.title}-${i}`} style={styles.savedItem}>
-                • {item.title}
-              </Text>
-            ))}
-            <Text style={styles.savedWhere}>{saved[0]?.where}</Text>
-            <Pressable
-              accessibilityRole="button"
-              style={styles.savedBtn}
-              onPress={() => router.push('/tasks')}
-            >
-              <Text style={styles.savedBtnText}>{t('chat.openTasks')}</Text>
-            </Pressable>
-          </View>
-        )}
-
-        <View style={styles.inputWrap}>
-          <AIInput
-            loading={loading}
-            placeholder={t('chat.placeholder')}
-            onSend={onSend}
+          <FlatList
+            ref={listRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+            ListEmptyComponent={
+              <MistPanel emphasize>
+                <Text style={styles.emptyTitle}>{t.tf('chat.emptyTitle', { name })}</Text>
+                <Text style={styles.emptyText}>{t('chat.emptyText')}</Text>
+                <Pressable style={styles.chip} onPress={() => onSend(t('chat.chipRemind'))}>
+                  <Text style={styles.chipText}>{t('chat.chipRemind')}</Text>
+                </Pressable>
+                <Pressable style={styles.chip} onPress={() => onSend(t('chat.chipOrganize'))}>
+                  <Text style={styles.chipText}>{t('chat.chipOrganize')}</Text>
+                </Pressable>
+              </MistPanel>
+            }
+            renderItem={({ item }) => <ChatBubble role={item.role} content={item.content} />}
           />
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+          {saved.length > 0 && (
+            <View style={styles.savedWrap}>
+              <MistPanel emphasize title={t('chat.saved')}>
+                {saved.map((item, i) => (
+                  <Text key={`${item.title}-${i}`} style={styles.savedItem}>
+                    • {item.title}
+                  </Text>
+                ))}
+                <Text style={styles.savedWhere}>{saved[0]?.where}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.savedBtn}
+                  onPress={() => router.push('/tasks')}
+                >
+                  <Text style={styles.savedBtnText}>{t('chat.openTasks')}</Text>
+                </Pressable>
+              </MistPanel>
+            </View>
+          )}
+
+          <View style={styles.inputWrap}>
+            <AIInput loading={loading} placeholder={t('chat.placeholder')} onSend={onSend} />
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Screen>
   )
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.sm, gap: 2 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  title: { color: colors.text, fontSize: 34, fontFamily: fonts.brand, letterSpacing: -0.8 },
-  sub: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13, letterSpacing: 0.3 },
   doneBtn: {
+    alignSelf: 'flex-start',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: radii.full,
-    backgroundColor: colors.accentSoft,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.16)',
   },
   doneText: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyBold,
     fontSize: 14,
   },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexGrow: 1 },
-  empty: {
-    gap: 12,
-    paddingTop: 12,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+  list: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexGrow: 1, gap: 8 },
+  emptyTitle: {
+    color: colors.bgDeep,
+    fontSize: 24,
+    fontFamily: fonts.brand,
+    letterSpacing: -0.4,
+    lineHeight: 28,
   },
-  emptyTitle: { color: colors.text, fontSize: 22, fontFamily: fonts.brand, letterSpacing: -0.3 },
   emptyText: { color: colors.textMuted, lineHeight: 22, marginBottom: 4, fontFamily: fonts.body },
   chip: {
     borderRadius: radii.md,
     padding: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    backgroundColor: colors.bgElevated,
+    borderColor: 'rgba(15,110,102,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
   },
   chipText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium },
-  savedCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.signal,
-    paddingLeft: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: 6,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  savedLabel: {
-    color: colors.accentStrong,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-  },
-  savedItem: { color: colors.text, fontSize: 15, lineHeight: 22 },
-  savedWhere: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  savedWrap: { marginHorizontal: spacing.lg, marginBottom: spacing.sm },
+  savedItem: { color: colors.text, fontSize: 15, lineHeight: 22, fontFamily: fonts.body },
+  savedWhere: { color: colors.textMuted, fontSize: 13, marginTop: 2, fontFamily: fonts.body },
   savedBtn: {
     marginTop: 8,
     alignSelf: 'flex-start',
@@ -257,8 +233,6 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    // @ts-expect-error web-only
-    cursor: 'pointer',
   },
   savedBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
   inputWrap: {

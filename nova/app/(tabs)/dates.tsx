@@ -2,11 +2,12 @@ import { format } from 'date-fns'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ImportantDateEditor } from '../../components/ImportantDateEditor'
-import { Screen } from '../../components/Screen'
-import { ScreenHeader } from '../../components/ScreenHeader'
-import { SoftPressable } from '../../components/SoftPressable'
 import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { ImportantDateEditor } from '../../components/ImportantDateEditor'
+import { MistPanel } from '../../components/MistPanel'
+import { MistScreenHero } from '../../components/MistScreenHero'
+import { Screen } from '../../components/Screen'
+import { SoftPressable } from '../../components/SoftPressable'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import {
@@ -36,18 +37,18 @@ export default function DatesScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader kicker={t('dates.kicker')} title={t('dates.title')} sub={t('dates.sub')}>
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{upcoming.length}</Text>
-              <Text style={styles.statLabel}>{t('dates.soon')}</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{sorted.length}</Text>
-              <Text style={styles.statLabel}>{t('dates.total')}</Text>
-            </View>
-          </View>
-        </ScreenHeader>
+        <MistScreenHero
+          title={t('dates.title')}
+          sub={t('dates.sub')}
+          chip={
+            upcoming.length > 0
+              ? t.tf('dates.soonChip', { n: upcoming.length })
+              : sorted.length > 0
+                ? t.tf('dates.totalChip', { n: sorted.length })
+                : undefined
+          }
+          chipQuiet={upcoming.length === 0}
+        />
 
         <ScrollView
           contentContainerStyle={styles.list}
@@ -55,7 +56,7 @@ export default function DatesScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {sorted.length === 0 ? (
-            <View style={styles.empty}>
+            <MistPanel emphasize>
               <Text style={styles.emptyTitle}>{t('dates.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('dates.emptyText')}</Text>
               <Pressable
@@ -67,11 +68,11 @@ export default function DatesScreen() {
               >
                 <Text style={styles.sampleBtnText}>{t('dates.newDate')}</Text>
               </Pressable>
-            </View>
+            </MistPanel>
           ) : null}
 
           {upcoming.length > 0 ? (
-            <Section title={t('dates.upcoming')} count={upcoming.length}>
+            <Section title={t('dates.upcoming')} meta={String(upcoming.length)}>
               {upcoming.map((d) => (
                 <DateRow
                   key={d.id}
@@ -86,7 +87,7 @@ export default function DatesScreen() {
           ) : null}
 
           {later.length > 0 ? (
-            <Section title={t('dates.later')} count={later.length}>
+            <Section title={t('dates.later')} meta={String(later.length)}>
               {later.map((d) => (
                 <DateRow
                   key={d.id}
@@ -102,7 +103,16 @@ export default function DatesScreen() {
         </ScrollView>
 
         <SoftPressable
-          style={[styles.fab, { bottom: localFabBottom(insets.bottom), right: FAB_RIGHT, width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2 }]}
+          style={[
+            styles.fab,
+            {
+              bottom: localFabBottom(insets.bottom),
+              right: FAB_RIGHT,
+              width: FAB_SIZE,
+              height: FAB_SIZE,
+              borderRadius: FAB_SIZE / 2,
+            },
+          ]}
           onPress={() => {
             setCreating(true)
             setEditing(null)
@@ -148,21 +158,17 @@ export default function DatesScreen() {
 
 function Section({
   title,
-  count,
+  meta,
   children,
 }: {
   title: string
-  count: number
+  meta: string
   children: ReactNode
 }) {
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHead}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.sectionCount}>{count}</Text>
-      </View>
+    <MistPanel title={title} meta={meta}>
       {children}
-    </View>
+    </MistPanel>
   )
 }
 
@@ -177,9 +183,7 @@ function DateRow({ date, onPress }: { date: ImportantDate; onPress: () => void }
   else if (days <= 14) whenLabel = t.tf('dates.inDays', { n: days })
 
   const age =
-    date.year && date.kind === 'birthday'
-      ? next.getFullYear() - date.year
-      : null
+    date.year && date.kind === 'birthday' ? next.getFullYear() - date.year : null
 
   return (
     <Pressable style={styles.row} onPress={onPress}>
@@ -201,73 +205,14 @@ function DateRow({ date, onPress }: { date: ImportantDate; onPress: () => void }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    gap: 4,
-    marginBottom: 10,
-  },
-  kicker: {
-    color: colors.accentStrong,
-    fontFamily: fonts.bodyBold,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-  },
-  title: {
-    color: colors.text,
-    fontSize: 34,
+  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 10 },
+  emptyTitle: {
+    color: colors.bgDeep,
     fontFamily: fonts.brand,
-    letterSpacing: -0.8,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    lineHeight: 26,
   },
-  sub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 14, lineHeight: 20 },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  stat: {
-    flex: 1,
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: 12,
-    gap: 2,
-  },
-  statValue: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 20 },
-  statLabel: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
-  list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 8 },
-  section: {
-    marginTop: 4,
-    gap: 2,
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  sectionHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingBottom: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    marginBottom: 4,
-  },
-  sectionTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
-  sectionCount: { color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 13 },
-  empty: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    gap: 8,
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   sampleBtn: {
     alignSelf: 'flex-start',
@@ -291,7 +236,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(15,110,102,0.12)',
   },
   node: {
     width: 12,
@@ -308,7 +253,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 22,
-    bottom: 96, // overridden at runtime via localFabBottom
+    bottom: 96,
     width: 54,
     height: 54,
     borderRadius: 27,

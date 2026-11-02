@@ -29,7 +29,7 @@ const CRYPTO_MAP: Record<string, { base: string; name: string }> = {
   'XRP-USD': { base: 'XRP', name: 'XRP' },
 }
 
-/** Metals via Coinbase spot (XAU/XAG) — more reliable than Yahoo futures here. */
+/** Metals via Coinbase spot (XAU/XAG/XPT/XPD) — more reliable than Yahoo futures here. */
 const METAL_MAP: Record<string, { base: string; name: string; display: string }> = {
   GOLD: { base: 'XAU', name: 'Gold', display: 'GC=F' },
   XAU: { base: 'XAU', name: 'Gold', display: 'GC=F' },
@@ -41,6 +41,14 @@ const METAL_MAP: Record<string, { base: string; name: string; display: string }>
   XAGUSD: { base: 'XAG', name: 'Silver', display: 'SI=F' },
   'XAG-USD': { base: 'XAG', name: 'Silver', display: 'SI=F' },
   'SI=F': { base: 'XAG', name: 'Silver', display: 'SI=F' },
+  PLATINUM: { base: 'XPT', name: 'Platinum', display: 'PL=F' },
+  XPT: { base: 'XPT', name: 'Platinum', display: 'PL=F' },
+  'XPT-USD': { base: 'XPT', name: 'Platinum', display: 'PL=F' },
+  'PL=F': { base: 'XPT', name: 'Platinum', display: 'PL=F' },
+  PALLADIUM: { base: 'XPD', name: 'Palladium', display: 'PA=F' },
+  XPD: { base: 'XPD', name: 'Palladium', display: 'PA=F' },
+  'XPD-USD': { base: 'XPD', name: 'Palladium', display: 'PA=F' },
+  'PA=F': { base: 'XPD', name: 'Palladium', display: 'PA=F' },
 }
 
 function normalizeSymbol(raw: string) {
@@ -237,7 +245,13 @@ const DEMO: Record<string, { price: number; name: string; kind: InvestQuote['kin
   GOLD: { price: 2350, name: 'Gold Futures', kind: 'metal' },
   'SI=F': { price: 28.5, name: 'Silver Futures', kind: 'metal' },
   SILVER: { price: 28.5, name: 'Silver Futures', kind: 'metal' },
+  'PL=F': { price: 980, name: 'Platinum Futures', kind: 'metal' },
+  PLATINUM: { price: 980, name: 'Platinum Futures', kind: 'metal' },
+  'PA=F': { price: 980, name: 'Palladium Futures', kind: 'metal' },
+  PALLADIUM: { price: 980, name: 'Palladium Futures', kind: 'metal' },
   GLD: { price: 215, name: 'SPDR Gold Shares', kind: 'etf' },
+  SLV: { price: 28, name: 'iShares Silver Trust', kind: 'etf' },
+  PPLT: { price: 90, name: 'abrdn Physical Platinum Shares', kind: 'etf' },
 }
 
 export async function fetchQuote(symbol: string, allowDemo = true): Promise<InvestQuote | null> {
@@ -273,7 +287,15 @@ export async function fetchQuote(symbol: string, allowDemo = true): Promise<Inve
           ? sym.includes('-')
             ? sym
             : `${sym.replace('-USD', '')}-USD`
-          : sym,
+          : sym === 'GOLD'
+            ? 'GC=F'
+            : sym === 'SILVER'
+              ? 'SI=F'
+              : sym === 'PLATINUM'
+                ? 'PL=F'
+                : sym === 'PALLADIUM'
+                  ? 'PA=F'
+                  : sym,
       name: d.name,
       price: d.price,
       currency: 'USD',
@@ -288,19 +310,20 @@ export async function fetchQuote(symbol: string, allowDemo = true): Promise<Inve
 
 export async function fetchQuotes(
   symbols: string[],
-  opts?: { demo?: boolean },
+  opts?: { /** When true, prefer demo prices even if live works. */ forceDemo?: boolean },
 ): Promise<{ quotes: InvestQuote[]; demo: boolean }> {
   const unique = [...new Set(symbols.map(normalizeSymbol).filter(Boolean))].slice(0, 40)
   const quotes: InvestQuote[] = []
   let usedDemo = false
+  // Always allow curated demo as last resort so SI=F / PL=F never show as "—".
   await Promise.all(
     unique.map(async (sym) => {
-      const q = await fetchQuote(sym, opts?.demo !== false)
+      const q = await fetchQuote(sym, true)
       if (q) {
-        if (q.source === 'demo') usedDemo = true
-        quotes.push(q)
+        if (q.source === 'demo' || opts?.forceDemo) usedDemo = true
+        quotes.push(opts?.forceDemo && DEMO[sym] ? { ...q, source: 'demo', price: DEMO[sym].price } : q)
       }
     }),
   )
-  return { quotes, demo: usedDemo || Boolean(opts?.demo) }
+  return { quotes, demo: usedDemo || Boolean(opts?.forceDemo) }
 }

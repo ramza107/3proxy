@@ -15,6 +15,8 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { MistPanel } from '../../components/MistPanel'
+import { MistScreenHero } from '../../components/MistScreenHero'
 import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
@@ -139,7 +141,17 @@ export default function SettingsScreen() {
     return () => clearTimeout(timer)
   }, [cityQuery, settings.weatherCity, tr.language])
 
+  const requirePro = () => {
+    if (isPro) return true
+    Alert.alert(tr('pro.title'), tr('pro.upgradeBody'), [
+      { text: tr('common.cancel'), style: 'cancel' },
+      { text: tr('pro.subscribe'), onPress: () => undefined },
+    ])
+    return false
+  }
+
   const pickWeatherCity = (label: string, coords?: { lat: number; lon: number } | null) => {
+    if (!requirePro()) return
     setCityQuery(label)
     setCityHits([])
     setCitySearching(false)
@@ -151,6 +163,7 @@ export default function SettingsScreen() {
   }
 
   const clearWeatherCity = () => {
+    if (!requirePro()) return
     setCityQuery('')
     setCityHits([])
     setCitySearching(false)
@@ -260,6 +273,7 @@ export default function SettingsScreen() {
   }
 
   const applyMorningTime = (value: string) => {
+    if (!requirePro()) return
     const next = normalizeHm(value)
     if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '08:00' }))
@@ -271,6 +285,7 @@ export default function SettingsScreen() {
   }
 
   const applyEveningTime = (value: string) => {
+    if (!requirePro()) return
     const next = normalizeHm(value)
     if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '21:30' }))
@@ -282,6 +297,7 @@ export default function SettingsScreen() {
   }
 
   const applyBillRemindTime = (value: string) => {
+    if (!requirePro()) return
     const next = normalizeHm(value)
     if (!next) {
       Alert.alert(tr('settings.alertTime'), tr.tf('settings.alertTimeFmt', { example: '09:00' }))
@@ -381,82 +397,36 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
+        <MistScreenHero
+          title={tr('settings.title')}
+          sub={email || tr('settings.localDemo')}
+          chip={isPro ? tr('pro.badge') : tr('pro.freeBadge')}
+          chipQuiet={!isPro}
+        />
+
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.headerPanel}>
-            <Text style={styles.title}>{tr('settings.title')}</Text>
-            <Text style={styles.sub}>{email || tr('settings.localDemo')}</Text>
-          </View>
-
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{tr('pro.title')}</Text>
-                <Text style={styles.rowSub}>{tr('pro.sub')}</Text>
-              </View>
-            </View>
+          <MistPanel emphasize title={tr('pro.title')} meta={tr('pro.sub')}>
             <ProPaywall />
-            <View style={styles.compareHead}>
-              <Text style={[styles.compareCell, styles.compareFeature]} />
-              <Text style={[styles.compareCell, styles.compareCol]}>{tr('pro.compareFree')}</Text>
-              <Text style={[styles.compareCell, styles.compareCol]}>{tr('pro.comparePro')}</Text>
-            </View>
-            {(
-              [
-                { key: 'pro.rowTasks' as const, free: true, pro: true },
-                { key: 'pro.rowDates' as const, free: true, pro: true },
-                { key: 'pro.rowLocalAi' as const, free: true, pro: true },
-                { key: 'pro.rowSpaces' as const, free: false, pro: true },
-                { key: 'pro.rowPlanDay' as const, free: false, pro: true },
-                { key: 'pro.rowMorning' as const, free: false, pro: true },
-                { key: 'pro.rowWeekly' as const, free: false, pro: true },
-                { key: 'pro.rowEveningDigest' as const, free: false, pro: true },
-                { key: 'pro.rowReminders' as const, free: false, pro: true },
-                { key: 'pro.rowWidget' as const, free: false, pro: true },
-                { key: 'pro.rowCloudAi' as const, free: false, pro: true },
-                { key: 'pro.rowVoice' as const, free: false, pro: true },
-                { key: 'pro.rowInvest' as const, free: false, pro: true },
-              ] as const
-            ).map((row) => (
-              <View key={row.key} style={styles.compareRow}>
-                <Text style={[styles.compareCell, styles.compareFeature]}>{tr(row.key)}</Text>
-                <Text
-                  style={[
-                    styles.compareCell,
-                    styles.compareCol,
-                    row.free ? styles.compareYes : styles.compareNo,
-                  ]}
-                >
-                  {row.free ? tr('pro.yes') : tr('pro.no')}
-                </Text>
-                <Text
-                  style={[
-                    styles.compareCell,
-                    styles.compareCol,
-                    row.pro ? styles.compareYes : styles.compareNo,
-                  ]}
-                >
-                  {row.pro ? tr('pro.yes') : tr('pro.no')}
-                </Text>
-              </View>
-            ))}
-            {!isPro ? <Text style={styles.rowSub}>{tr('pro.freeLimits')}</Text> : null}
-          </View>
+            {!isPro ? <Text style={styles.limitsLine}>{tr('pro.freeLimits')}</Text> : null}
+          </MistPanel>
 
-          <View style={styles.card}>
-            <Text style={styles.label}>{tr('settings.yourName')}</Text>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-              placeholderTextColor={colors.textDim}
-            />
-            <Pressable style={styles.btn} onPress={saveName}>
-              <Text style={styles.btnText}>{tr('settings.saveName')}</Text>
-            </Pressable>
-          </View>
+          <MistPanel>
+            <Text style={styles.rowTitle}>{tr('settings.yourName')}</Text>
+            <View style={styles.nameRow}>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                style={[styles.input, styles.nameInput]}
+                placeholderTextColor={colors.textDim}
+              />
+              <Pressable style={styles.btn} onPress={saveName}>
+                <Text style={styles.btnText}>{tr('settings.saveName')}</Text>
+              </Pressable>
+            </View>
+          </MistPanel>
 
           {SHIPPED_LANGUAGES.length > 1 ? (
-            <View style={styles.card}>
+            <MistPanel>
               <Text style={styles.rowTitle}>{tr('settings.language')}</Text>
               <Text style={styles.rowSub}>{tr('settings.languageSub')}</Text>
               <View style={styles.langWrap}>
@@ -475,13 +445,12 @@ export default function SettingsScreen() {
                   )
                 })}
               </View>
-            </View>
+            </MistPanel>
           ) : null}
 
-          <View style={styles.card}>
+          <MistPanel>
             <Text style={styles.rowTitle}>{tr('settings.google')}</Text>
             <Text style={styles.rowSub}>{tr('settings.googleHint')}</Text>
-
             {googleConnected ? (
               <>
                 <Text style={styles.connected}>
@@ -511,10 +480,9 @@ export default function SettingsScreen() {
                 ) : null}
               </>
             )}
+          </MistPanel>
 
-          </View>
-
-          <View style={styles.card}>
+          <MistPanel>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.notifications')}</Text>
@@ -526,9 +494,9 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
-          </View>
+          </MistPanel>
 
-          <View style={styles.card}>
+          <MistPanel>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.morningBrief')}</Text>
@@ -548,6 +516,10 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
+            <View
+              style={!isPro ? styles.proLockedBody : null}
+              pointerEvents={isPro ? 'auto' : 'none'}
+            >
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={morningTime}
@@ -556,6 +528,7 @@ export default function SettingsScreen() {
               placeholder="08:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
+              editable={isPro}
               keyboardType="number-pad"
               maxLength={5}
               autoCapitalize="none"
@@ -635,6 +608,7 @@ export default function SettingsScreen() {
               ) : null}
             </View>
             <Text style={styles.rowSub}>{tr('settings.weatherCityHint')}</Text>
+            </View>
             <Pressable
               style={styles.openRitual}
               onPress={() => {
@@ -649,9 +623,9 @@ export default function SettingsScreen() {
             >
               <Text style={styles.openRitualText}>{tr('settings.showNow')}</Text>
             </Pressable>
-          </View>
+          </MistPanel>
 
-          <View style={styles.card}>
+          <MistPanel>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.eveningClear')}</Text>
@@ -671,6 +645,10 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
+            <View
+              style={!isPro ? styles.proLockedBody : null}
+              pointerEvents={isPro ? 'auto' : 'none'}
+            >
             <Text style={styles.label}>{tr('settings.time')}</Text>
             <TextInput
               value={eveningTime}
@@ -679,6 +657,7 @@ export default function SettingsScreen() {
               placeholder="21:30"
               placeholderTextColor={colors.textDim}
               style={styles.input}
+              editable={isPro}
               keyboardType="number-pad"
               maxLength={5}
               autoCapitalize="none"
@@ -694,6 +673,7 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
+            </View>
             <Pressable
               style={styles.openRitual}
               onPress={() => {
@@ -706,9 +686,9 @@ export default function SettingsScreen() {
             >
               <Text style={styles.openRitualText}>{tr('settings.openEvening')}</Text>
             </Pressable>
-          </View>
+          </MistPanel>
 
-          <View style={styles.card}>
+          <MistPanel>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.weeklyBrief')}</Text>
@@ -742,9 +722,9 @@ export default function SettingsScreen() {
             >
               <Text style={styles.openRitualText}>{tr('settings.showNow')}</Text>
             </Pressable>
-          </View>
+          </MistPanel>
 
-          <View style={styles.card}>
+          <MistPanel>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{tr('settings.billReminders')}</Text>
@@ -764,6 +744,10 @@ export default function SettingsScreen() {
                 trackColor={{ true: colors.accent, false: colors.bgSoft }}
               />
             </View>
+            <View
+              style={!isPro ? styles.proLockedBody : null}
+              pointerEvents={isPro ? 'auto' : 'none'}
+            >
             <Text style={styles.label}>{tr('settings.firstRemind')}</Text>
             <View style={styles.presets}>
               {BILL_LEAD_PRESETS.map((d) => {
@@ -778,7 +762,10 @@ export default function SettingsScreen() {
                   <Pressable
                     key={d}
                     style={[styles.chip, on && styles.chipOn]}
-                    onPress={() => updateSettings({ billRemindLeadDays: d })}
+                    onPress={() => {
+                      if (!requirePro()) return
+                      updateSettings({ billRemindLeadDays: d })
+                    }}
                   >
                     <Text style={[styles.chipText, on && styles.chipTextOn]}>{label}</Text>
                   </Pressable>
@@ -798,7 +785,10 @@ export default function SettingsScreen() {
                   <Pressable
                     key={opt.id}
                     style={[styles.chip, on && styles.chipOn]}
-                    onPress={() => updateSettings({ billRemindCadence: opt.id })}
+                    onPress={() => {
+                      if (!requirePro()) return
+                      updateSettings({ billRemindCadence: opt.id })
+                    }}
                   >
                     <Text style={[styles.chipText, on && styles.chipTextOn]}>{tr(opt.labelKey)}</Text>
                   </Pressable>
@@ -813,6 +803,7 @@ export default function SettingsScreen() {
               placeholder="09:00"
               placeholderTextColor={colors.textDim}
               style={styles.input}
+              editable={isPro}
               keyboardType="number-pad"
               maxLength={5}
               autoCapitalize="none"
@@ -830,9 +821,10 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
-          </View>
+            </View>
+          </MistPanel>
 
-          <View style={styles.card}>
+          <MistPanel>
             <Text style={styles.rowTitle}>{tr('settings.workday')}</Text>
             <Text style={styles.rowSub}>{tr('settings.workdaySub')}</Text>
             <Text style={styles.label}>{tr('settings.start')}</Text>
@@ -881,9 +873,9 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
-          </View>
+          </MistPanel>
 
-          <View style={styles.card}>
+          <MistPanel>
             <Text style={styles.rowTitle}>{tr('settings.typicalWeek')}</Text>
             <Text style={styles.rowSub}>{tr('settings.typicalWeekSub')}</Text>
             <Text style={styles.label}>{tr('settings.workDays')}</Text>
@@ -984,26 +976,32 @@ export default function SettingsScreen() {
             >
               <Text style={styles.dismiss}>{tr('settings.resetTypicalWeek')}</Text>
             </Pressable>
-          </View>
+          </MistPanel>
 
-          <View style={styles.card}>
+          <MistPanel>
             <Text style={styles.label}>{tr('settings.aiTone')}</Text>
-            {(
-              [
-                { id: 'friendly' as const, key: 'settings.toneFriendly' as const },
-                { id: 'concise' as const, key: 'settings.toneConcise' as const },
-                { id: 'coach' as const, key: 'settings.toneCoach' as const },
-              ] as const
-            ).map((tone) => (
-              <Pressable
-                key={tone.id}
-                style={[styles.tone, settings.aiTone === tone.id && styles.toneOn]}
-                onPress={() => updateSettings({ aiTone: tone.id })}
-              >
-                <Text style={styles.toneText}>{tr(tone.key)}</Text>
-              </Pressable>
-            ))}
-          </View>
+            <View style={styles.presets}>
+              {(
+                [
+                  { id: 'friendly' as const, key: 'settings.toneFriendly' as const },
+                  { id: 'concise' as const, key: 'settings.toneConcise' as const },
+                  { id: 'coach' as const, key: 'settings.toneCoach' as const },
+                ] as const
+              ).map((tone) => (
+                <Pressable
+                  key={tone.id}
+                  style={[styles.chip, settings.aiTone === tone.id && styles.chipOn]}
+                  onPress={() => updateSettings({ aiTone: tone.id })}
+                >
+                  <Text
+                    style={[styles.chipText, settings.aiTone === tone.id && styles.chipTextOn]}
+                  >
+                    {tr(tone.key)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </MistPanel>
 
           <Pressable style={styles.signOut} onPress={signOut}>
             <Text style={styles.signOutText}>{tr('settings.signOut')}</Text>
@@ -1025,173 +1023,152 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 120 },
-  headerPanel: {
-    gap: 4,
-    marginBottom: 4,
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+  content: {
+    paddingHorizontal: spacing.lg,
+    gap: 8,
+    paddingBottom: 120,
   },
-  title: { color: colors.text, fontSize: 30, fontFamily: fonts.brand, letterSpacing: -0.5 },
-  sub: { color: colors.textMuted, fontFamily: fonts.body },
-  card: {
-    backgroundColor: colors.bgCardSolid,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    gap: 10,
+  limitsLine: {
+    color: colors.textMuted,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 18,
   },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  nameInput: { flex: 1, marginBottom: 0 },
   label: {
     color: colors.textMuted,
     fontFamily: fonts.bodyBold,
-    fontSize: 12,
-    letterSpacing: 0.8,
+    fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   input: {
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.sm,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderRadius: radii.md,
     color: colors.text,
     paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
+    paddingVertical: 10,
+    fontSize: 15,
     fontFamily: fonts.body,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.14)',
   },
   btn: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.accent,
+    backgroundColor: colors.bgDeep,
     borderRadius: radii.full,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   btnGhost: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.22)',
   },
-  btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
-  btnGhostText: { color: colors.text, fontFamily: fonts.bodyBold },
+  btnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
+  btnGhostText: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 13 },
   googleBtn: {
     backgroundColor: colors.bgDeep,
     borderRadius: radii.full,
-    paddingHorizontal: 18,
-    height: 48,
+    paddingHorizontal: 16,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  googleBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 16 },
-  connected: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 14 },
-  hint: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 13, lineHeight: 19 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
-  rowSub: { color: colors.textMuted, marginTop: 2, fontFamily: fonts.body, lineHeight: 18 },
-  compareHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+  googleBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 15 },
+  connected: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  hint: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, lineHeight: 17 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  rowTitle: { color: colors.bgDeep, fontFamily: fonts.bodyBold, fontSize: 15 },
+  rowSub: {
+    color: colors.textMuted,
+    marginTop: 1,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    lineHeight: 17,
   },
-  compareRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
-  compareCell: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18 },
-  compareFeature: { flex: 1.4, color: colors.textMuted },
-  compareCol: { flex: 0.7, textAlign: 'center', color: colors.textDim },
-  compareYes: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
-  compareNo: { color: colors.textDim },
-  presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  presets: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   cityStatus: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cityList: {
-    gap: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    backgroundColor: colors.bgElevated,
-    padding: 8,
+    gap: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.14)',
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    padding: 6,
   },
   cityRow: {
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
     borderRadius: radii.sm,
   },
   cityRowOn: { backgroundColor: colors.accentSoft },
-  cityRowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  cityRowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 14 },
   cityRowTitleOn: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
-  cityRowSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 12, marginTop: 2 },
+  cityRowSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 11, marginTop: 1 },
   chip: {
-    backgroundColor: colors.bgSoft,
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderRadius: radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.14)',
   },
   chipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
-  chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  chipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 12 },
   chipTextOn: { color: colors.accentStrong },
-  langWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  langWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
   langChip: {
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'rgba(255,255,255,0.55)',
     borderRadius: radii.full,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(15,110,102,0.14)',
   },
   langChipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
-  langChipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 13 },
+  langChipText: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 12 },
   langChipTextOn: { color: colors.accentStrong, fontFamily: fonts.bodyBold },
   openRitual: {
-    marginTop: 4,
+    marginTop: 2,
     alignSelf: 'flex-start',
     backgroundColor: colors.bgDeep,
     borderRadius: radii.full,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  openRitualText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 13 },
+  openRitualText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold, fontSize: 12 },
+  proLockedBody: {
+    opacity: 0.42,
+    gap: 6,
+  },
   anchorBlock: {
-    gap: 8,
-    paddingTop: 8,
+    gap: 6,
+    paddingTop: 6,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(15,110,102,0.12)',
   },
-  anchorTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 14, flex: 1 },
-  dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 13 },
-  tone: {
-    backgroundColor: colors.bgSoft,
-    borderRadius: radii.sm,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-  },
-  toneOn: { borderWidth: 1, borderColor: colors.accent },
-  toneText: {
-    color: colors.text,
-    textTransform: 'capitalize',
-    fontFamily: fonts.bodyMedium,
-  },
+  anchorTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 13, flex: 1 },
+  dismiss: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 12 },
   signOut: {
-    marginTop: 8,
+    marginTop: 4,
     borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.danger,
-    height: 48,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.35)',
   },
   signOutText: { color: colors.danger, fontFamily: fonts.bodyBold },
-  privacyLink: { alignItems: 'center', paddingVertical: 8 },
+  privacyLink: { alignItems: 'center', paddingVertical: 6 },
   privacyText: {
     color: colors.accentStrong,
     fontFamily: fonts.bodyMedium,
-    fontSize: 14,
+    fontSize: 13,
   },
-  mode: { color: colors.textDim, textAlign: 'center', fontSize: 12, fontFamily: fonts.body },
+  mode: { color: colors.textDim, textAlign: 'center', fontSize: 11, fontFamily: fonts.body },
 })
