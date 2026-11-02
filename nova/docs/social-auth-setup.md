@@ -26,10 +26,11 @@ Free projects pause after ~7 days idle. Dashboard → **Resume project**.
 4. Optional: add **iOS** / **Android** OAuth clients (bundle `com.wahrly.assistant` / package `com.wahrly.assistant`) and paste those Client IDs into Supabase “Client IDs” list.
 
 ### Apple
-1. Apple Developer → Identifiers → App ID with **Sign In with Apple**.
-2. Services ID (for web OAuth) if you need web Apple login.
-3. Supabase → Apple provider → enable; add Services ID / Bundle ID as Client IDs.
-4. Native iOS uses `expo-apple-authentication` → `signInWithIdToken` (no browser).
+1. Apple Developer → Identifiers → App ID `com.wahrly.assistant` → enable **Sign In with Apple**.
+2. Supabase → Apple provider → **Enable**; Client IDs: `com.wahrly.assistant`.  
+   Secret Key is optional for **native** iPhone (`signInWithIdToken`). Needed only for web OAuth (Services ID + `.p8` JWT, expires every 6 months).
+3. Services ID (for web OAuth) only if you need Apple login on the website.
+4. Native iOS: `usesAppleSignIn: true` + `expo-apple-authentication` → system sheet, no Safari.
 
 ## 3. Redirect URLs (Supabase → Authentication → URL configuration)
 
