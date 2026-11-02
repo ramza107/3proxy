@@ -97,7 +97,6 @@ export default function FirstValueScreen() {
               placeholder={placeholders.task}
               placeholderTextColor={colors.textDim}
               style={styles.input}
-              autoFocus
               onSubmitEditing={saveTask}
               returnKeyType="done"
             />
