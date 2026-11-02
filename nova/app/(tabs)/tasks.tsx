@@ -205,53 +205,51 @@ export default function TasksScreen() {
           </Text>
         </ScreenHeader>
 
-        {!emptyWeek ? (
-          <View style={styles.weekStripOuter}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.weekStripScroll}
-              contentContainerStyle={styles.weekStrip}
+        <View style={styles.weekStripOuter}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.weekStripScroll}
+            contentContainerStyle={styles.weekStrip}
+          >
+            <Pressable
+              onPress={() => setFocusDay(null)}
+              style={[styles.dayChip, !focusDay && styles.dayChipOn]}
             >
-              <Pressable
-                onPress={() => setFocusDay(null)}
-                style={[styles.dayChip, !focusDay && styles.dayChipOn]}
-              >
-                <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]} numberOfLines={1}>
-                  {t('tasks.week')}
-                </Text>
-                <Text style={styles.dayChipSub} numberOfLines={1}>
-                  {' '}
-                </Text>
-                <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]} numberOfLines={1}>
-                  {stats.week}
-                </Text>
-              </Pressable>
-              {week.map((d) => {
-                const on = focusDay === d.iso
-                const n = d.tasks.length + d.anchors.length
-                return (
-                  <Pressable
-                    key={d.iso}
-                    onPress={() => setFocusDay(on ? null : d.iso)}
-                    style={[styles.dayChip, on && styles.dayChipOn]}
-                    accessibilityLabel={`${d.label} ${d.sub}, ${n}`}
-                  >
-                    <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]} numberOfLines={1}>
-                      {d.short}
-                    </Text>
-                    <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]} numberOfLines={1}>
-                      {d.sub}
-                    </Text>
-                    <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]} numberOfLines={1}>
-                      {n}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
-          </View>
-        ) : null}
+              <Text style={[styles.dayChipLabel, !focusDay && styles.dayChipLabelOn]} numberOfLines={1}>
+                {t('tasks.week')}
+              </Text>
+              <Text style={styles.dayChipSub} numberOfLines={1}>
+                {' '}
+              </Text>
+              <Text style={[styles.dayChipCount, !focusDay && styles.dayChipCountOn]} numberOfLines={1}>
+                {stats.week}
+              </Text>
+            </Pressable>
+            {week.map((d) => {
+              const on = focusDay === d.iso
+              const n = d.tasks.length + d.anchors.length
+              return (
+                <Pressable
+                  key={d.iso}
+                  onPress={() => setFocusDay(on ? null : d.iso)}
+                  style={[styles.dayChip, on && styles.dayChipOn]}
+                  accessibilityLabel={`${d.label} ${d.sub}, ${n}`}
+                >
+                  <Text style={[styles.dayChipLabel, on && styles.dayChipLabelOn]} numberOfLines={1}>
+                    {d.short}
+                  </Text>
+                  <Text style={[styles.dayChipSub, on && styles.dayChipSubOn]} numberOfLines={1}>
+                    {d.sub}
+                  </Text>
+                  <Text style={[styles.dayChipCount, on && styles.dayChipCountOn]} numberOfLines={1}>
+                    {n}
+                  </Text>
+                </Pressable>
+              )
+            })}
+          </ScrollView>
+        </View>
 
         <ScrollView
           ref={listRef}
@@ -264,16 +262,13 @@ export default function TasksScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{t('tasks.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('tasks.emptyText')}</Text>
-              <Pressable style={styles.primaryEmptyBtn} onPress={() => openCreate(todayISO())}>
-                <Text style={styles.primaryEmptyBtnText}>+ {t('tasks.addTask')}</Text>
-              </Pressable>
               <Pressable style={styles.sampleBtn} onPress={fillSampleWeek}>
                 <Text style={styles.sampleBtnText}>{t('tasks.fillSample')}</Text>
               </Pressable>
             </View>
           ) : null}
 
-          {!emptyWeek && overdue.length > 0 && !focusDay ? (
+          {overdue.length > 0 && !focusDay ? (
             <HomeSection
               title={t('tasks.overdue')}
               meta={t.tf('tasks.overdueMeta', { n: overdue.length })}
@@ -291,7 +286,7 @@ export default function TasksScreen() {
             </HomeSection>
           ) : null}
 
-          {!emptyWeek && visibleDays.map((day) => {
+          {visibleDays.map((day) => {
             const kindLabel = day.kind === 'light' ? t('tasks.light') : t('tasks.work')
             const taskMeta =
               day.tasks.length === 1
@@ -355,7 +350,7 @@ export default function TasksScreen() {
             )
           })}
 
-          {!emptyWeek && undated.length > 0 && !focusDay ? (
+          {undated.length > 0 && !focusDay ? (
             <HomeSection
               title={t('tasks.later')}
               meta={t.tf('tasks.laterMeta', { n: undated.length })}
@@ -372,7 +367,7 @@ export default function TasksScreen() {
             </HomeSection>
           ) : null}
 
-          {!emptyWeek && stats.done > 0 ? (
+          {stats.done > 0 ? (
             showDone ? (
               <HomeSection
                 title={t('tasks.completed')}
@@ -733,22 +728,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: fonts.body,
     lineHeight: 20,
-  },
-  primaryEmptyBtn: {
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    backgroundColor: colors.bgDeep,
-    borderRadius: radii.full,
-    paddingHorizontal: 16,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryEmptyBtnText: {
-    color: colors.textOnAccent,
-    fontFamily: fonts.bodyBold,
-    fontSize: 14,
-    letterSpacing: -0.1,
   },
   sampleBtn: {
     alignSelf: 'flex-start',
