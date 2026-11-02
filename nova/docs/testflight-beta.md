@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (1.1.0 / build 56)
+# Wahrly — TestFlight (1.1.0 / build 57)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -21,7 +21,7 @@ Wahrly — ассистент дня. Free: задачи, даты и локал
 ## What to Test (EN) — paste into TestFlight
 
 ```
-Wahrly 1.1.0 (build 56) — mist polish + Supabase keys in native build
+Wahrly 1.1.0 (build 57) — mist polish + Supabase keys in native build
 
 PLEASE TRY
 0) Login: Google / Apple / email should appear (not “Resume Supabase”). Demo still works.
