@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (1.1.0 / build 55)
+# Wahrly — TestFlight (1.1.0 / build 56)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -21,9 +21,10 @@ Wahrly — ассистент дня. Free: задачи, даты и локал
 ## What to Test (EN) — paste into TestFlight
 
 ```
-Wahrly 1.1.0 — mist polish + honest Free/Pro Settings
+Wahrly 1.1.0 (build 56) — mist polish + Supabase keys in native build
 
 PLEASE TRY
+0) Login: Google / Apple / email should appear (not “Resume Supabase”). Demo still works.
 1) Onboarding → first task → Home/Tasks. Copy should say Free = Tasks/Dates/chat.
 2) Home + Tasks mist language; Dates / Bills / Shopping / Chat match (soft hero, frosted panels).
 3) Free: Tasks + Dates + on-device chat. Bills / Shopping / Life / News / Invest / Evening → Pro lock.
