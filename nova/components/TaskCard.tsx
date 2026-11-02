@@ -10,7 +10,10 @@ import { useT } from '../lib/useT'
 type Props = {
   task: Task
   onToggle?: () => void
-  /** Parent shows Home-style confirm before completing. */
+  /**
+   * Called when marking an open task done (parent shows Home-style confirm).
+   * If omitted, onToggle runs immediately.
+   */
   onRequestComplete?: () => void
   onPress?: () => void
   onPostpone?: () => void
@@ -61,6 +64,7 @@ export function TaskCard({
 
   const onCheckPress = () => {
     if (!onToggle) return
+    // Un-complete is one tap; completing goes through the soft confirm sheet.
     if (task.completed) {
       onToggle()
       return
