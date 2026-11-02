@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { ConfirmDoneSheet } from '../../components/ConfirmDoneSheet'
 import { Screen } from '../../components/Screen'
 import { ScreenHeader } from '../../components/ScreenHeader'
 import { HomeSection } from '../../components/HomeSection'
@@ -82,6 +83,7 @@ export default function TasksScreen() {
   const [createDate, setCreateDate] = useState<string | null>(null)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
+  const [pendingDone, setPendingDone] = useState<Task | null>(null)
   const listRef = useRef<ScrollView>(null)
 
   const openCreate = (date: string | null = focusDay || todayISO()) => {
@@ -279,6 +281,7 @@ export default function TasksScreen() {
                   key={task.id}
                   task={task}
                   onToggle={() => toggleTaskCompleted(task)}
+                  onRequestComplete={() => setPendingDone(task)}
                   onPress={() => setEditing(task)}
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
@@ -322,6 +325,7 @@ export default function TasksScreen() {
                   task={task}
                   hideDate
                   onToggle={() => toggleTaskCompleted(task)}
+                  onRequestComplete={() => setPendingDone(task)}
                   onPress={() => setEditing(task)}
                   {...(day.iso === today
                     ? {
@@ -360,6 +364,7 @@ export default function TasksScreen() {
                   key={task.id}
                   task={task}
                   onToggle={() => toggleTaskCompleted(task)}
+                  onRequestComplete={() => setPendingDone(task)}
                   onPress={() => setEditing(task)}
                   onMoveTomorrow={() => updateTaskFields(task, { date: tomorrow })}
                 />
@@ -492,6 +497,16 @@ export default function TasksScreen() {
           }}
           onDelete={() => {
             if (editing) deleteTask(editing.id)
+          }}
+        />
+
+        <ConfirmDoneSheet
+          visible={!!pendingDone}
+          title={pendingDone?.title || ''}
+          onClose={() => setPendingDone(null)}
+          onConfirm={() => {
+            if (pendingDone) void toggleTaskCompleted(pendingDone)
+            setPendingDone(null)
           }}
         />
       </SafeAreaView>
