@@ -165,17 +165,25 @@ export async function signInWithApple() {
         'Apple Sign-In is not enabled in this build. Update Wahrly from TestFlight.',
       )
     }
+    // Must be autolinked (do not exclude in package.json expo.autolinking).
     const AppleAuthentication = await import('expo-apple-authentication')
-    const available = await AppleAuthentication.isAvailableAsync()
-    if (!available) {
-      throw new Error('Sign in with Apple is not available on this device.')
+    let credential
+    try {
+      credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (/cancel/i.test(msg)) throw new Error('Sign-in cancelled')
+      throw new Error(
+        /not available|unsupported/i.test(msg)
+          ? 'Sign in with Apple needs an Apple ID on this iPhone (Settings → Sign in).'
+          : msg,
+      )
     }
-    const credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-    })
     if (!credential.identityToken) {
       throw new Error('Apple Sign-In did not return an identity token')
     }
