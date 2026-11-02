@@ -135,12 +135,72 @@ const DEMO: Record<string, InvestQuote> = {
     source: 'demo',
     asOf: new Date().toISOString(),
   },
+  SILVER: {
+    symbol: 'SI=F',
+    name: 'Silver Futures',
+    price: 28.5,
+    currency: 'USD',
+    changePct: -0.2,
+    kind: 'metal',
+    source: 'demo',
+    asOf: new Date().toISOString(),
+  },
+  'PL=F': {
+    symbol: 'PL=F',
+    name: 'Platinum Futures',
+    price: 980,
+    currency: 'USD',
+    changePct: 0.2,
+    kind: 'metal',
+    source: 'demo',
+    asOf: new Date().toISOString(),
+  },
+  PLATINUM: {
+    symbol: 'PL=F',
+    name: 'Platinum Futures',
+    price: 980,
+    currency: 'USD',
+    changePct: 0.2,
+    kind: 'metal',
+    source: 'demo',
+    asOf: new Date().toISOString(),
+  },
+  'PA=F': {
+    symbol: 'PA=F',
+    name: 'Palladium Futures',
+    price: 980,
+    currency: 'USD',
+    changePct: -0.1,
+    kind: 'metal',
+    source: 'demo',
+    asOf: new Date().toISOString(),
+  },
   GLD: {
     symbol: 'GLD',
     name: 'SPDR Gold Shares',
     price: 215,
     currency: 'USD',
     changePct: 0.3,
+    kind: 'etf',
+    source: 'demo',
+    asOf: new Date().toISOString(),
+  },
+  SLV: {
+    symbol: 'SLV',
+    name: 'iShares Silver Trust',
+    price: 28,
+    currency: 'USD',
+    changePct: -0.2,
+    kind: 'etf',
+    source: 'demo',
+    asOf: new Date().toISOString(),
+  },
+  PPLT: {
+    symbol: 'PPLT',
+    name: 'abrdn Physical Platinum Shares',
+    price: 90,
+    currency: 'USD',
+    changePct: 0.1,
     kind: 'etf',
     source: 'demo',
     asOf: new Date().toISOString(),
@@ -153,19 +213,39 @@ function normalizeSymbol(raw: string) {
 
 export async function searchInvestSymbols(query: string): Promise<InvestSearchHit[]> {
   const q = query.trim()
-  const local = searchLocalCatalog(q, 8)
+  const local = searchLocalCatalog(q, 12)
   try {
     const params = new URLSearchParams({ q })
     const res = await fetch(`${apiUrl}/api/invest/search?${params.toString()}`)
     if (res.ok) {
       const data = (await res.json()) as { results?: InvestSearchHit[] }
       const remote = Array.isArray(data.results) ? data.results : []
-      if (remote.length) return remote
+      if (remote.length) {
+        // Prefer curated top-100 hits first, then Yahoo/remote extras.
+        const seen = new Set(local.map((h) => h.symbol.toUpperCase()))
+        const merged = [...local]
+        for (const hit of remote) {
+          const key = hit.symbol.toUpperCase()
+          if (seen.has(key)) continue
+          seen.add(key)
+          merged.push(hit)
+          if (merged.length >= 14) break
+        }
+        return merged
+      }
     }
   } catch {
-    // offline / server down
+    // offline / server down — local catalog is enough
   }
   return local
+}
+
+async function quoteForSymbol(sym: string): Promise<{ quote: InvestQuote | null; demo: boolean }> {
+  const crypto = await fetchCoinbaseSpot(sym)
+  if (crypto) return { quote: crypto, demo: false }
+  const d = DEMO[sym] || DEMO[`${sym}-USD`]
+  if (d) return { quote: { ...d, asOf: new Date().toISOString() }, demo: true }
+  return { quote: null, demo: false }
 }
 
 async function fetchCoinbaseSpot(symbol: string): Promise<InvestQuote | null> {
@@ -175,7 +255,11 @@ async function fetchCoinbaseSpot(symbol: string): Promise<InvestQuote | null> {
       ? { base: 'XAU', symbol: 'GC=F', name: 'Gold', kind: 'metal' as const }
       : sym === 'SI=F' || sym === 'SILVER' || sym === 'XAG'
         ? { base: 'XAG', symbol: 'SI=F', name: 'Silver', kind: 'metal' as const }
-        : null
+        : sym === 'PL=F' || sym === 'PLATINUM' || sym === 'XPT'
+          ? { base: 'XPT', symbol: 'PL=F', name: 'Platinum', kind: 'metal' as const }
+          : sym === 'PA=F' || sym === 'PALLADIUM' || sym === 'XPD'
+            ? { base: 'XPD', symbol: 'PA=F', name: 'Palladium', kind: 'metal' as const }
+            : null
   if (metal) {
     try {
       const res = await fetch(`https://api.coinbase.com/v2/prices/${metal.base}-USD/spot`)
@@ -229,37 +313,56 @@ export async function fetchInvestQuotes(symbols: string[]): Promise<{
   const unique = [...new Set(symbols.map(normalizeSymbol).filter(Boolean))].slice(0, 40)
   if (!unique.length) return { quotes: [], demo: false }
 
+  let quotes: InvestQuote[] = []
+  let demo = false
+
   try {
     const q = new URLSearchParams({ symbols: unique.join(',') })
     const res = await fetch(`${apiUrl}/api/invest/quotes?${q.toString()}`)
     if (res.ok) {
       const data = (await res.json()) as { quotes?: InvestQuote[]; demo?: boolean }
-      const quotes = Array.isArray(data.quotes) ? data.quotes : []
-      if (quotes.length) {
-        return { quotes, demo: Boolean(data.demo) }
-      }
+      quotes = Array.isArray(data.quotes) ? data.quotes : []
+      demo = Boolean(data.demo)
     }
   } catch {
-    // fall through
+    // fall through to client fill
   }
 
-  // Client fallbacks: Coinbase crypto + curated demo
-  const quotes: InvestQuote[] = []
-  let demo = false
-  await Promise.all(
-    unique.map(async (sym) => {
-      const crypto = await fetchCoinbaseSpot(sym)
-      if (crypto) {
-        quotes.push(crypto)
-        return
-      }
-      const d = DEMO[sym] || DEMO[`${sym}-USD`]
-      if (d) {
-        quotes.push({ ...d, asOf: new Date().toISOString() })
-        demo = true
-      }
-    }),
-  )
+  // Always fill gaps — production may return AAPL/VOO but drop SI=F / PL=F.
+  const have = new Set(quotes.map((q) => normalizeSymbol(q.symbol).toUpperCase()))
+  const missing = unique.filter((sym) => {
+    const key = sym.toUpperCase()
+    return (
+      !have.has(key) &&
+      !have.has(key.replace('-USD', '')) &&
+      ![...have].some((h) => h === key || h.replace('-USD', '') === key.replace('-USD', ''))
+    )
+  })
+
+  if (missing.length) {
+    await Promise.all(
+      missing.map(async (sym) => {
+        const filled = await quoteForSymbol(sym)
+        if (filled.quote) {
+          quotes.push(filled.quote)
+          if (filled.demo) demo = true
+        }
+      }),
+    )
+  }
+
+  if (!quotes.length) {
+    await Promise.all(
+      unique.map(async (sym) => {
+        const filled = await quoteForSymbol(sym)
+        if (filled.quote) {
+          quotes.push(filled.quote)
+          if (filled.demo) demo = true
+        }
+      }),
+    )
+  }
+
   return { quotes, demo }
 }
 

@@ -24,10 +24,11 @@ export function ConfirmDoneSheet({ visible, title, onConfirm, onClose }: Props) 
       scroll={false}
       footer={
         <View style={styles.actions}>
-          <SoftPressable style={styles.confirm} onPress={onConfirm} stretch>
+          {/* No SoftPressable `stretch` — that left-aligns label text inside CTAs. */}
+          <SoftPressable style={styles.confirm} onPress={onConfirm}>
             <Text style={styles.confirmText}>{t('tasks.confirmDone')}</Text>
           </SoftPressable>
-          <SoftPressable style={styles.cancel} onPress={onClose} stretch>
+          <SoftPressable style={styles.cancel} onPress={onClose}>
             <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </SoftPressable>
         </View>
@@ -83,6 +84,8 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   confirm: {
+    alignSelf: 'stretch',
+    width: '100%',
     height: 52,
     borderRadius: radii.full,
     backgroundColor: colors.bgDeep,
@@ -94,8 +97,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 16,
     letterSpacing: -0.2,
+    textAlign: 'center',
   },
   cancel: {
+    alignSelf: 'stretch',
+    width: '100%',
     height: 48,
     borderRadius: radii.full,
     backgroundColor: 'rgba(255,255,255,0.55)',
@@ -108,5 +114,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: fonts.bodyMedium,
     fontSize: 15,
+    textAlign: 'center',
   },
 })

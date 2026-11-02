@@ -13,10 +13,10 @@ import { TasksDayBlock } from '../../components/TasksDayBlock'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { dateLocale } from '../../lib/dateLocale'
 import { anchorsForDay, normalizeTypicalWeek, resolveDayWindow } from '../../lib/scheduleDay'
-import { sortTasks, todayISO, uid, useNovaStore } from '../../lib/store'
+import { sortTasks, todayISO, useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 import { deleteTask, toggleTaskCompleted, updateTaskFields } from '../../services/ai'
-import type { Priority, Task } from '../../types'
+import type { Task } from '../../types'
 
 type DayBucket = {
   iso: string
@@ -28,45 +28,6 @@ type DayBucket = {
   anchors: { title: string; time: string; durationMin: number }[]
 }
 
-function sampleWeekTasks(userId: string, today: string): Task[] {
-  const now = new Date().toISOString()
-  const mk = (
-    title: string,
-    offset: number,
-    time: string | null,
-    priority: Priority,
-    description: string,
-  ): Task => ({
-    id: uid('task'),
-    user_id: userId,
-    title,
-    description,
-    date: format(addDays(new Date(`${today}T12:00:00`), offset), 'yyyy-MM-dd'),
-    time,
-    priority,
-    completed: false,
-    created_at: now,
-    updated_at: now,
-  })
-
-  return [
-    mk('Morning focus block', 0, '09:30', 'high', 'Deep work before meetings'),
-    mk('Plan afternoon focus', 0, '11:00', 'medium', 'Block deep work after standup'),
-    mk('Walk / reset', 0, '13:30', 'low', '20 minutes outside'),
-    mk('Call Mom', 1, '18:00', 'medium', 'Catch up this evening'),
-    mk('Prep weekly plan', 1, null, 'high', 'Sketch next 5 days'),
-    mk('Groceries', 2, '17:00', 'low', 'Meat, greens, coffee'),
-    mk('Send deck follow-up', 3, '10:00', 'high', 'Open loop from last week'),
-    mk('Light admin', 4, '11:30', 'low', 'Receipts + calendar hygiene'),
-    mk('Weekend planning', 5, '10:00', 'medium', 'What matters this weekend'),
-    {
-      ...mk('Book dentist', 0, null, 'medium', 'Move onto a real day'),
-      date: null,
-      title: 'Book dentist',
-    },
-  ]
-}
-
 export default function TasksScreen() {
   const t = useT()
   const insets = useSafeAreaInsets()
@@ -74,7 +35,6 @@ export default function TasksScreen() {
   const tasks = useNovaStore((s) => s.tasks)
   const settings = useNovaStore((s) => s.settings)
   const userId = useNovaStore((s) => s.sessionUserId) || 'local'
-  const setTasks = useNovaStore((s) => s.setTasks)
   const createTaskLocal = useNovaStore((s) => s.createTaskLocal)
   const clearCompletedTasks = useNovaStore((s) => s.clearCompletedTasks)
   const [editing, setEditing] = useState<Task | null>(null)
@@ -177,13 +137,6 @@ export default function TasksScreen() {
     await updateTaskFields(task, { date: next })
   }
 
-  const fillSampleWeek = () => {
-    const sample = sampleWeekTasks(userId, today)
-    // Keep existing completed; replace empty open set with sample
-    const kept = tasks.filter((t) => t.completed)
-    setTasks([...sample, ...kept])
-  }
-
   const emptyWeek =
     stats.open === 0 && week.every((d) => d.anchors.length === 0) && undated.length === 0
 
@@ -274,8 +227,8 @@ export default function TasksScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{t('tasks.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('tasks.emptyText')}</Text>
-              <Pressable style={styles.sampleBtn} onPress={fillSampleWeek}>
-                <Text style={styles.sampleBtnText}>{t('tasks.fillSample')}</Text>
+              <Pressable style={styles.sampleBtn} onPress={() => openCreate(today)}>
+                <Text style={styles.sampleBtnText}>{t('tasks.addTask')}</Text>
               </Pressable>
             </View>
           ) : null}
