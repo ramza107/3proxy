@@ -7,12 +7,12 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
 import { ShoppingItemEditor } from '../../components/ShoppingItemEditor'
 import { SoftPressable } from '../../components/SoftPressable'
-import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
+import { FAB_SCROLL_INSET } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import {
   SHOPPING_AISLES,
@@ -28,7 +28,6 @@ import type { ShoppingItem } from '../../types'
 
 export default function ShoppingScreen() {
   const t = useT()
-  const insets = useSafeAreaInsets()
   const isPro = useIsPro()
   const shopping = useNovaStore((s) => s.shopping)
   const addShoppingQuick = useNovaStore((s) => s.addShoppingQuick)
@@ -274,16 +273,6 @@ export default function ShoppingScreen() {
             </View>
           </View>
         </ScrollView>
-
-        <SoftPressable
-          style={[styles.fab, { bottom: localFabBottom(insets.bottom), right: FAB_RIGHT, width: FAB_SIZE, height: FAB_SIZE, borderRadius: FAB_SIZE / 2 }]}
-          onPress={() => {
-            setCreating(true)
-            setEditing(null)
-          }}
-        >
-          <Text style={styles.fabText}>+</Text>
-        </SoftPressable>
 
         <ShoppingItemEditor
           visible={creating || !!editing}
@@ -538,23 +527,4 @@ const styles = StyleSheet.create({
   rowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 16, lineHeight: 22 },
   rowTitleBought: { textDecorationLine: 'line-through', color: colors.textMuted },
   rowMeta: { color: colors.textDim, fontFamily: fonts.body, fontSize: 13 },
-  fab: {
-    position: 'absolute',
-    right: 22,
-    bottom: 96, // overridden at runtime via localFabBottom
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: colors.bgDeep,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 5,
-    zIndex: 40,
-  },
-  fabText: {
-    color: colors.textOnAccent,
-    fontFamily: fonts.bodyBold,
-    fontSize: 28,
-    marginTop: -2,
-  },
 })
