@@ -113,6 +113,8 @@ SUPABASE_SERVICE_ROLE_KEY=...
 
 > Never put `GROQ_API_KEY` / `OPENAI_API_KEY` in the mobile app. Only the server uses them.
 > Provider order: Groq → OpenAI → built-in local AI.
+>
+> **Where production keys live:** [`docs/keys.md`](docs/keys.md) — iPhone = EAS, website = preview only, Render = server secrets.
 
 ## Deploy AI server (Render)
 
