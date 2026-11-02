@@ -21,8 +21,8 @@ function Bullet({ children }: { children: ReactNode }) {
 }
 
 /**
- * Public Privacy Policy for Google OAuth verification and users.
- * Live URL (after Pages deploy): https://ramza107.github.io/3proxy/nova/privacy
+ * In-app Privacy Policy (same text as public-site/privacy for store / Google review).
+ * Public URL: https://ramza107.github.io/3proxy/nova/privacy
  */
 export default function PrivacyScreen() {
   const router = useRouter()

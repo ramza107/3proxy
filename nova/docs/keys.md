@@ -1,6 +1,6 @@
 # Wahrly — where keys live
 
-Split is intentional: **the iPhone app is the product**. The website is only a preview. Server secrets never ship inside the app binary.
+Split is intentional: **the iPhone app is the product**.
 
 ## 1. iOS / Android app (EAS)
 
@@ -17,15 +17,15 @@ Baked at **build time** via `eas.json` `env` + EAS project env (preview & produc
 
 Optional (off until set): `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_POSTHOG_*`.
 
-Changing these requires a **new EAS build** (TestFlight). Editing the website does **not**.
+Changing these requires a **new EAS build** (TestFlight).
 
 Google / Apple sign-in goes through **Supabase Auth** (providers in the Supabase dashboard). No Google client secret in the app.
 
-## 2. Website (GitHub Pages)
+## 2. Public site (GitHub Pages) — privacy only
 
-Preview only: https://ramza107.github.io/3proxy/nova/
+https://ramza107.github.io/3proxy/nova/
 
-Keys for the web export live in `.github/workflows/deploy-github-pages.yml`. Use the site to look at UI/flows — not as the source of truth for production config.
+Static HTML in `nova/public-site/` (not the Expo web app). Exists so App Store / Google OAuth have a privacy URL. Deploy workflow: `.github/workflows/deploy-github-pages.yml`.
 
 ## 3. API server (Render)
 

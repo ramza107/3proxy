@@ -1,10 +1,10 @@
 # Wahrly Privacy Policy
 
 **Effective date:** 3 October 2026  
-**Public URL (after GitHub Pages deploy):** https://ramza107.github.io/3proxy/nova/privacy  
+**Public URL:** https://ramza107.github.io/3proxy/nova/privacy  
 **Contact:** rr.aliev96@gmail.com  
 
-This is the same policy as the in-app `/privacy` screen. Paste this URL into Google Cloud → OAuth consent screen → Application home page / Privacy policy link.
+Static HTML in `nova/public-site/privacy/` (also mirrored in-app at `/privacy`). Paste this URL into App Store Connect and Google Cloud → OAuth consent → Privacy policy.
 
 ---
 
