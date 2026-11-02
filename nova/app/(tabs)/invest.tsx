@@ -12,9 +12,10 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { InvestmentEditor } from '../../components/InvestmentEditor'
+import { MistPanel } from '../../components/MistPanel'
+import { MistScreenHero } from '../../components/MistScreenHero'
 import { ProSpaceLock } from '../../components/ProSpaceLock'
 import { Screen } from '../../components/Screen'
-import { ScreenHeader } from '../../components/ScreenHeader'
 import { SoftPressable } from '../../components/SoftPressable'
 import { FAB_RIGHT, FAB_SCROLL_INSET, FAB_SIZE, localFabBottom } from '../../components/ChatFab'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
@@ -141,7 +142,11 @@ export default function InvestScreen() {
   return (
     <Screen>
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ScreenHeader kicker={t('invest.kicker')} title={t('invest.title')} sub={t('invest.sub')} />
+        <MistScreenHero
+          title={t('invest.title')}
+          sub={t('invest.sub')}
+          chip={loading ? '…' : t('pro.badge')}
+        />
 
         <Animated.View entering={FadeInDown.duration(420)} style={styles.hero}>
           <Text style={styles.heroLabel}>{t('invest.portfolio')}</Text>
@@ -169,7 +174,7 @@ export default function InvestScreen() {
           }
         >
           {investments.length === 0 ? (
-            <View style={styles.empty}>
+            <MistPanel emphasize>
               <Text style={styles.emptyTitle}>{t('invest.emptyTitle')}</Text>
               <Text style={styles.emptyText}>{t('invest.emptyText')}</Text>
               <Pressable
@@ -203,9 +208,9 @@ export default function InvestScreen() {
               >
                 <Text style={styles.sampleBtnText}>{t('invest.addSample')}</Text>
               </Pressable>
-            </View>
+            </MistPanel>
           ) : (
-            <View style={styles.panel}>
+            <MistPanel>
               {rows.map((row, i) => (
                 <Animated.View key={row.holding.id} entering={FadeInDown.delay(i * 50).duration(320)}>
                   <HoldingRow
@@ -217,7 +222,7 @@ export default function InvestScreen() {
                   />
                 </Animated.View>
               ))}
-            </View>
+            </MistPanel>
           )}
           {loading && investments.length > 0 ? (
             <View style={styles.loadingRow}>
@@ -394,24 +399,13 @@ const styles = StyleSheet.create({
   gain: { color: '#6EE7B7' },
   loss: { color: '#FCA5A5' },
   list: { paddingHorizontal: spacing.lg, paddingBottom: FAB_SCROLL_INSET, gap: 10 },
-  panel: {
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  emptyTitle: {
+    color: colors.bgDeep,
+    fontFamily: fonts.brand,
+    fontSize: 22,
+    letterSpacing: -0.4,
+    lineHeight: 26,
   },
-  empty: {
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    gap: 8,
-    backgroundColor: 'rgba(250,252,251,0.94)',
-    borderRadius: radii.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-  },
-  emptyTitle: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16 },
   emptyText: { color: colors.textMuted, fontFamily: fonts.body, lineHeight: 20 },
   sampleBtn: {
     alignSelf: 'flex-start',
