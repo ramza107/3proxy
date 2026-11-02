@@ -26,11 +26,25 @@ Free projects pause after ~7 days idle. Dashboard → **Resume project**.
 4. Optional: add **iOS** / **Android** OAuth clients (bundle `com.wahrly.assistant` / package `com.wahrly.assistant`) and paste those Client IDs into Supabase “Client IDs” list.
 
 ### Apple
-1. Apple Developer → Identifiers → App ID `com.wahrly.assistant` → enable **Sign In with Apple**.
-2. Supabase → Apple provider → **Enable**; Client IDs: `com.wahrly.assistant`.  
-   Secret Key is optional for **native** iPhone (`signInWithIdToken`). Needed only for web OAuth (Services ID + `.p8` JWT, expires every 6 months).
-3. Services ID (for web OAuth) only if you need Apple login on the website.
-4. Native iOS: `usesAppleSignIn: true` + `expo-apple-authentication` → system sheet, no Safari.
+1. Apple Developer → Identifiers → App ID `com.wahrly.assistant` → enable **Sign In with Apple** (Primary App ID).
+2. Supabase → Apple → **Enable**; Client IDs: `com.wahrly.assistant` (native).
+3. **iPhone native** (preferred): system sheet + `signInWithIdToken` — no Safari.  
+   Build must have `usesAppleSignIn: true` (TestFlight **62+**).
+4. **Secret Key** (required if Safari/OAuth opens — web or old fallback):
+   1. Identifiers → **Services IDs** → + → `com.wahrly.assistant.web`  
+      Configure Sign In with Apple → Domains: `whvcsbxbizuychqclxcx.supabase.co`  
+      Return URL: `https://whvcsbxbizuychqclxcx.supabase.co/auth/v1/callback`
+   2. **Keys** → + → Sign In with Apple → download `.p8`, note **Key ID**
+   3. Generate JWT (expires every 6 months):
+      ```bash
+      node scripts/apple-client-secret.mjs \
+        --team 7TLP9FNRJB \
+        --key-id YOUR_KEY_ID \
+        --client-id com.wahrly.assistant.web \
+        --p8 ./AuthKey_XXXXX.p8
+      ```
+   4. Paste JWT into Supabase Apple → **Secret Key**.  
+      Client IDs: `com.wahrly.assistant,com.wahrly.assistant.web`
 
 ## 3. Redirect URLs (Supabase → Authentication → URL configuration)
 

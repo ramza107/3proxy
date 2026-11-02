@@ -153,13 +153,22 @@ export async function signInWithGoogle() {
 
 /** Apple — native sheet on iOS when enabled; OAuth on web. Hidden on Android. */
 export async function signInWithApple() {
-  if (Platform.OS === 'ios' && nativeAppleSignInEnabled()) {
-    // Dynamic import so the app still bundles when the native module is excluded
-    // from iOS autolinking (until Sign In with Apple is on the provisioning profile).
+  if (Platform.OS === 'android') {
+    throw new Error('On Android use Google Sign-In')
+  }
+
+  // iOS: always prefer native id_token. Do NOT fall back to browser OAuth —
+  // that path needs a Supabase Apple OAuth secret and opens Safari errors.
+  if (Platform.OS === 'ios') {
+    if (!nativeAppleSignInEnabled()) {
+      throw new Error(
+        'Apple Sign-In is not enabled in this build. Update Wahrly from TestFlight.',
+      )
+    }
     const AppleAuthentication = await import('expo-apple-authentication')
     const available = await AppleAuthentication.isAvailableAsync()
     if (!available) {
-      return signInWithOAuthProvider('apple')
+      throw new Error('Sign in with Apple is not available on this device.')
     }
     const credential = await AppleAuthentication.signInAsync({
       requestedScopes: [
@@ -205,11 +214,7 @@ export async function signInWithApple() {
     return { redirected: false as const }
   }
 
-  if (Platform.OS === 'android') {
-    throw new Error('On Android use Google Sign-In')
-  }
-
-  // iOS without native entitlement, or web: browser OAuth
+  // Web only: browser OAuth (requires Supabase Apple Secret Key).
   return signInWithOAuthProvider('apple')
 }
 
