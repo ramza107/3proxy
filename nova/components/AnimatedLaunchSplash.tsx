@@ -1,5 +1,6 @@
+import { LinearGradient } from 'expo-linear-gradient'
 import { useEffect } from 'react'
-import { Image, StyleSheet, View } from 'react-native'
+import { Dimensions, Image, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
   cancelAnimation,
@@ -9,11 +10,11 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated'
 
 const ART = require('../assets/splash/launch-mist-glass.png')
+const { width: SCREEN_W } = Dimensions.get('window')
 
 type Props = {
   /** When true, play exit fade then call onFinished. */
@@ -22,125 +23,94 @@ type Props = {
 }
 
 /**
- * Brand launch overlay — mist glass orb art with a soft breathe + load pulse.
- * Native splash hands off into this; keep visible until fonts/store hydrate.
+ * Calm brand launch — mist glass art with a slow settle, soft light sweep,
+ * and a thin progress hairline. No bouncing dots / radar rings.
  */
 export function AnimatedLaunchSplash({ ready, onFinished }: Props) {
   const enter = useSharedValue(0)
-  const breathe = useSharedValue(0)
-  const pulse = useSharedValue(0)
+  const drift = useSharedValue(0)
+  const shimmer = useSharedValue(0)
+  const progress = useSharedValue(0)
   const exit = useSharedValue(1)
 
   useEffect(() => {
-    enter.value = withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) })
-    breathe.value = withDelay(
-      400,
+    enter.value = withTiming(1, { duration: 1400, easing: Easing.out(Easing.cubic) })
+    drift.value = withTiming(1, { duration: 5200, easing: Easing.inOut(Easing.sin) })
+    shimmer.value = withDelay(
+      700,
       withRepeat(
-        withSequence(
-          withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
-        ),
+        withTiming(1, { duration: 2800, easing: Easing.inOut(Easing.quad) }),
         -1,
         false,
       ),
     )
-    pulse.value = withDelay(
-      550,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: 1100, easing: Easing.out(Easing.quad) }),
-          withTiming(0, { duration: 0 }),
-        ),
-        -1,
-        false,
-      ),
-    )
+    progress.value = withTiming(0.72, { duration: 2400, easing: Easing.out(Easing.cubic) })
     return () => {
-      cancelAnimation(breathe)
-      cancelAnimation(pulse)
+      cancelAnimation(drift)
+      cancelAnimation(shimmer)
     }
-  }, [breathe, enter, pulse])
+  }, [drift, enter, progress, shimmer])
 
   useEffect(() => {
     if (!ready) return
+    progress.value = withTiming(1, { duration: 420, easing: Easing.out(Easing.cubic) })
     const t = setTimeout(() => {
-      exit.value = withTiming(0, { duration: 520, easing: Easing.in(Easing.cubic) }, (finished) => {
+      exit.value = withTiming(0, { duration: 680, easing: Easing.inOut(Easing.cubic) }, (finished) => {
         if (finished && onFinished) runOnJS(onFinished)()
       })
-    }, 280)
+    }, 380)
     return () => clearTimeout(t)
-  }, [ready, exit, onFinished])
+  }, [ready, exit, onFinished, progress])
 
   const sceneStyle = useAnimatedStyle(() => {
-    const s = interpolate(enter.value, [0, 1], [1.08, 1]) + interpolate(breathe.value, [0, 1], [0, 0.018])
+    const scale = interpolate(enter.value, [0, 1], [1.06, 1]) + interpolate(drift.value, [0, 1], [0, 0.025])
+    const ty = interpolate(drift.value, [0, 1], [0, -10])
     return {
-      opacity: enter.value * exit.value,
-      transform: [{ scale: s }],
+      opacity: interpolate(enter.value, [0, 0.2, 1], [0, 1, 1]) * exit.value,
+      transform: [{ scale }, { translateY: ty }],
     }
   })
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(pulse.value, [0, 0.15, 1], [0, 0.45, 0]) * exit.value,
-    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.92, 1.18]) }],
+  const veilStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(enter.value, [0, 1], [0.35, 0]) * exit.value,
   }))
 
-  const dotsStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(enter.value, [0.4, 1], [0, 0.9]) * exit.value,
+  const shimmerStyle = useAnimatedStyle(() => {
+    const x = interpolate(shimmer.value, [0, 1], [-SCREEN_W * 0.6, SCREEN_W * 0.85])
+    return {
+      opacity: interpolate(enter.value, [0.5, 1], [0, 0.55]) * exit.value,
+      transform: [{ translateX: x }, { rotate: '-18deg' }],
+    }
+  })
+
+  const barWrapStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(enter.value, [0.55, 1], [0, 1]) * exit.value,
+  }))
+
+  const barFillStyle = useAnimatedStyle(() => ({
+    width: 148 * Math.max(0.08, progress.value),
   }))
 
   return (
     <View style={styles.root} pointerEvents="none">
       <Animated.View style={[styles.scene, sceneStyle]}>
         <Image source={ART} style={styles.art} resizeMode="cover" />
-        {/* Soft ring pulse around the glass orb region */}
-        <Animated.View style={[styles.orbPulse, pulseStyle]} />
+        <Animated.View style={[styles.veil, veilStyle]} />
+        <Animated.View style={[styles.shimmerSweep, shimmerStyle]}>
+          <LinearGradient
+            colors={['transparent', 'rgba(255,255,255,0.18)', 'transparent']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
       </Animated.View>
 
-      <Animated.View style={[styles.dotsRow, dotsStyle]}>
-        <LoadingDots />
+      <Animated.View style={[styles.barWrap, barWrapStyle]}>
+        <View style={styles.barTrack}>
+          <Animated.View style={[styles.barFill, barFillStyle]} />
+        </View>
       </Animated.View>
-    </View>
-  )
-}
-
-function LoadingDots() {
-  const a = useSharedValue(0)
-  const b = useSharedValue(0)
-  const c = useSharedValue(0)
-
-  useEffect(() => {
-    const beat = (v: typeof a, delay: number) => {
-      v.value = withDelay(
-        delay,
-        withRepeat(
-          withSequence(
-            withTiming(1, { duration: 360, easing: Easing.out(Easing.quad) }),
-            withTiming(0.25, { duration: 360, easing: Easing.in(Easing.quad) }),
-          ),
-          -1,
-          false,
-        ),
-      )
-    }
-    beat(a, 0)
-    beat(b, 140)
-    beat(c, 280)
-    return () => {
-      cancelAnimation(a)
-      cancelAnimation(b)
-      cancelAnimation(c)
-    }
-  }, [a, b, c])
-
-  const sa = useAnimatedStyle(() => ({ opacity: 0.25 + a.value * 0.75, transform: [{ scale: 0.85 + a.value * 0.25 }] }))
-  const sb = useAnimatedStyle(() => ({ opacity: 0.25 + b.value * 0.75, transform: [{ scale: 0.85 + b.value * 0.25 }] }))
-  const sc = useAnimatedStyle(() => ({ opacity: 0.25 + c.value * 0.75, transform: [{ scale: 0.85 + c.value * 0.25 }] }))
-
-  return (
-    <View style={styles.dots}>
-      <Animated.View style={[styles.dot, sa]} />
-      <Animated.View style={[styles.dot, sb]} />
-      <Animated.View style={[styles.dot, sc]} />
     </View>
   )
 }
@@ -148,7 +118,7 @@ function LoadingDots() {
 const styles = StyleSheet.create({
   root: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#0F6E66',
+    backgroundColor: '#6E868C',
     zIndex: 100,
   },
   scene: {
@@ -158,33 +128,35 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  orbPulse: {
-    position: 'absolute',
-    alignSelf: 'center',
-    top: '34%',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.55)',
-    backgroundColor: 'transparent',
+  veil: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#0F2A32',
   },
-  dotsRow: {
+  shimmerSweep: {
+    position: 'absolute',
+    top: '-10%',
+    bottom: '-10%',
+    width: SCREEN_W * 0.42,
+  },
+  barWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: '12%',
+    bottom: '11%',
     alignItems: 'center',
+    paddingHorizontal: 72,
   },
-  dots: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
+  barTrack: {
+    width: '100%',
+    maxWidth: 148,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: 'rgba(15, 42, 50, 0.14)',
+    overflow: 'hidden',
   },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: 'rgba(15, 42, 50, 0.55)',
+  barFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: 'rgba(15, 42, 50, 0.42)',
   },
 })

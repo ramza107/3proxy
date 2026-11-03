@@ -65,7 +65,7 @@ function RootLayout() {
   // Keep the brand splash on screen long enough for the entrance motion.
   useEffect(() => {
     if (!bootReady) return
-    const minMs = 1600
+    const minMs = 2400
     const wait = Math.max(0, minMs - (Date.now() - splashStartedAt.current))
     const t = setTimeout(() => setSplashReady(true), wait)
     return () => clearTimeout(t)
