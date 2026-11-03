@@ -20,8 +20,9 @@ module.exports = ({ config }) => {
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     splash: {
-      image: './assets/splash-icon.png',
-      resizeMode: 'contain',
+      // Full-bleed mist glass art — JS AnimatedLaunchSplash continues the motion after hydrate.
+      image: './assets/splash/launch-mist-glass.png',
+      resizeMode: 'cover',
       backgroundColor: '#0F6E66',
     },
     ios: {

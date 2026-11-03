@@ -158,6 +158,7 @@ if (missing.length) {
 for (const rel of [
   'assets/icon.png',
   'assets/splash-icon.png',
+  'assets/splash/launch-mist-glass.png',
   'assets/adaptive-icon.png',
 ]) {
   assertTealBrandAsset(rel)
