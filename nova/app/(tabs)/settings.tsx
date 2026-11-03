@@ -21,6 +21,7 @@ import { Screen } from '../../components/Screen'
 import { colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
 import { SHIPPED_LANGUAGES, type AppLanguage } from '../../lib/i18n'
+import { deleteCloudAccount } from '../../lib/accountApi'
 import { disconnectGoogle, fetchGoogleStatus, googleConnectUrl } from '../../lib/googleApi'
 import {
   ensureNotificationPermissions,
@@ -409,16 +410,16 @@ export default function SettingsScreen() {
                 await disconnectGoogle(userId).catch(() => undefined)
               }
               if (isSupabaseConfigured) {
-                const supabase = getSupabase()
-                if (supabase) {
-                  const { error } = await supabase.auth.deleteUser()
-                  if (error) cloudFailed = true
-                }
+                const result = await deleteCloudAccount()
+                if (!result.ok) cloudFailed = true
+                // Drop local auth session after (or even if) remote delete.
+                await getSupabase()?.auth.signOut().catch(() => undefined)
               }
             } catch {
               cloudFailed = true
             }
             wipeLocalData()
+            clearSession()
             if (cloudFailed && isSupabaseConfigured) {
               Alert.alert(tr('settings.deleteAccount'), tr('settings.deleteAccountFail'))
             }

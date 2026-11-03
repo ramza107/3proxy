@@ -389,6 +389,44 @@ app.post('/api/google/disconnect', async (req, res) => {
   }
 })
 
+/**
+ * App Store 5.1.1(v) account deletion.
+ * Client JS has no auth.deleteUser() — only admin API with service role.
+ * Verifies the caller's Supabase access token, then deletes that user only.
+ */
+app.post('/api/account/delete', async (req, res) => {
+  try {
+    const auth = String(req.headers.authorization || '')
+    const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+    if (!token) return res.status(401).json({ error: 'missing bearer token' })
+
+    const { getSupabaseAdmin } = await import('./supabaseAdmin.js')
+    const admin = await getSupabaseAdmin()
+    if (!admin) {
+      return res.status(503).json({ error: 'account deletion unavailable' })
+    }
+
+    const { data: userData, error: userError } = await admin.auth.getUser(token)
+    if (userError || !userData.user?.id) {
+      return res.status(401).json({ error: 'invalid session' })
+    }
+    const userId = userData.user.id
+
+    await deleteConnection(userId).catch(() => undefined)
+
+    const { error: deleteError } = await admin.auth.admin.deleteUser(userId)
+    if (deleteError) {
+      return res.status(500).json({ error: deleteError.message || 'delete failed' })
+    }
+
+    return res.json({ ok: true, user_id: userId })
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'delete failed',
+    })
+  }
+})
+
 /** Google Calendar events (primary) for a time range. */
 app.get('/api/calendar/events', async (req, res) => {
   try {
