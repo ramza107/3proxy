@@ -7,8 +7,9 @@ import { SourceSans3_700Bold } from '@expo-google-fonts/source-sans-3/700Bold'
 import { useFonts as useSourceSans } from '@expo-google-fonts/source-sans-3/useFonts'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { useEffect } from 'react'
-import { ActivityIndicator, AppState, Platform, View } from 'react-native'
+import { useEffect, useRef, useState } from 'react'
+import { AppState, Platform, View } from 'react-native'
+import { AnimatedLaunchSplash } from '../components/AnimatedLaunchSplash'
 import { colors } from '../constants/theme'
 import { AnalyticsEvents, identify as analyticsIdentify, track } from '../lib/analytics'
 import {
@@ -56,14 +57,27 @@ function RootLayout() {
   const updateSettings = useNovaStore((s) => s.updateSettings)
   const clearSession = useNovaStore((s) => s.clearSession)
   const sessionEmail = useNovaStore((s) => s.sessionEmail)
+  const bootReady = hydrated && fontsReady
+  const [splashVisible, setSplashVisible] = useState(true)
+  const [splashReady, setSplashReady] = useState(false)
+  const splashStartedAt = useRef(Date.now())
+
+  // Keep the brand splash on screen long enough for the entrance motion.
+  useEffect(() => {
+    if (!bootReady) return
+    const minMs = 2400
+    const wait = Math.max(0, minMs - (Date.now() - splashStartedAt.current))
+    const t = setTimeout(() => setSplashReady(true), wait)
+    return () => clearTimeout(t)
+  }, [bootReady])
 
   useEffect(() => {
-    if (!hydrated || !fontsReady) return
+    if (!bootReady) return
     track(AnalyticsEvents.appOpen, {
       onboarded: onboardingComplete,
       signed_in: Boolean(sessionUserId),
     })
-  }, [hydrated, fontsReady]) // once per cold start after ready
+  }, [bootReady]) // once per cold start after ready
 
   useEffect(() => {
     if (!sessionUserId) {
@@ -243,18 +257,19 @@ function RootLayout() {
     return () => sub?.remove()
   }, [hydrated, fontsReady, sessionUserId, onboardingComplete, router])
 
-  if (!hydrated || !fontsReady) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    )
-  }
-
   return (
     <RootView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+      {bootReady ? (
+        <>
+          <StatusBar style="dark" />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
+        </>
+      ) : (
+        <View style={{ flex: 1, backgroundColor: '#0F6E66' }} />
+      )}
+      {splashVisible ? (
+        <AnimatedLaunchSplash ready={splashReady} onFinished={() => setSplashVisible(false)} />
+      ) : null}
     </RootView>
   )
 }

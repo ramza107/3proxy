@@ -9,14 +9,14 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/splash/launch-mist-glass.png",
+      "resizeMode": "cover",
       "backgroundColor": "#0F6E66"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wahrly.assistant",
-      "buildNumber": "66",
+      "buildNumber": "68",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Wahrly uses the microphone so you can dictate tasks and reminders.",
         "ITSAppUsesNonExemptEncryption": false

@@ -20,15 +20,16 @@ module.exports = ({ config }) => {
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     splash: {
-      image: './assets/splash-icon.png',
-      resizeMode: 'contain',
+      // Full-bleed mist glass art — JS AnimatedLaunchSplash continues the motion after hydrate.
+      image: './assets/splash/launch-mist-glass.png',
+      resizeMode: 'cover',
       backgroundColor: '#0F6E66',
     },
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
       // Synced after EAS autoIncrement for TF build 57.
-      buildNumber: '66',
+      buildNumber: '68',
       // Native Sign in with Apple — App ID capability + Supabase Apple enabled.
       usesAppleSignIn: true,
       // Required for expo-widgets ↔ app data sharing (UserDefaults suite).
