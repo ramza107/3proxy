@@ -5,27 +5,26 @@
   if (reduce) {
     reveals.forEach((el) => el.classList.add('in'))
   } else {
-    // Hero reveals on load
     requestAnimationFrame(() => {
       reveals.forEach((el) => el.classList.add('in'))
     })
   }
 
-  // Soft parallax on hero phone
-  const phone = document.querySelector('.hero .phone')
-  if (phone && !reduce) {
+  // Soft parallax on a wrapper so it never fights the float animation.
+  const stage = document.querySelector('.hero-stage .phone-hero')
+  if (stage && !reduce) {
     window.addEventListener(
       'pointermove',
       (e) => {
-        const x = (e.clientX / window.innerWidth - 0.5) * 10
-        const y = (e.clientY / window.innerHeight - 0.5) * 8
-        phone.style.transform = `translate3d(${x}px, ${y}px, 0)`
+        const x = (e.clientX / window.innerWidth - 0.5) * 8
+        const y = (e.clientY / window.innerHeight - 0.5) * 6
+        stage.style.setProperty('--px', `${x.toFixed(2)}px`)
+        stage.style.setProperty('--py', `${y.toFixed(2)}px`)
       },
       { passive: true },
     )
   }
 
-  // Drag-to-scroll for the screens rail on desktop
   const rail = document.querySelector('[data-rail]')
   if (!rail) return
   let down = false
@@ -40,8 +39,12 @@
   rail.addEventListener('pointerup', () => {
     down = false
   })
+  rail.addEventListener('pointerleave', () => {
+    down = false
+  })
   rail.addEventListener('pointermove', (e) => {
     if (!down) return
+    e.preventDefault()
     const x = e.pageX - rail.offsetLeft
     rail.scrollLeft = scrollLeft - (x - startX)
   })

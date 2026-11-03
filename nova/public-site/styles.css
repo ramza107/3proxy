@@ -198,21 +198,22 @@ a {
 
 .hero-stage {
   margin-top: auto;
-  width: min(1200px, 100%);
+  width: min(1100px, 100%);
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 20px;
+  grid-template-columns: 1fr auto;
+  gap: 36px;
   align-items: end;
-  padding-bottom: 28px;
+  padding-bottom: 36px;
 }
 
-.hero-stage .phone {
-  justify-self: start;
-  margin-bottom: -48px;
+.hero-stage .phone-hero {
+  justify-self: end;
+  margin-bottom: -64px;
+  width: min(300px, 58vw);
 }
 
 .hero-copy {
-  padding-bottom: 56px;
+  padding-bottom: 72px;
 }
 
 .hero-copy p {
@@ -267,16 +268,23 @@ a {
 
 /* —— Phone —— */
 .phone {
-  width: min(320px, 72vw);
+  width: min(300px, 68vw);
   margin-inline: auto;
   filter: drop-shadow(var(--shadow));
 }
 
 .phone-sm {
-  width: min(240px, 58vw);
+  width: min(228px, 56vw);
 }
 
-.phone.float {
+.phone-hero {
+  --px: 0px;
+  --py: 0px;
+  transform: translate3d(var(--px), var(--py), 0);
+  will-change: transform;
+}
+
+.phone.float .phone-bezel {
   animation: floaty 5.5s ease-in-out infinite;
 }
 
@@ -291,18 +299,42 @@ a {
 }
 
 .phone-bezel {
-  border-radius: 36px;
-  padding: 10px;
-  background: linear-gradient(160deg, #1a333a, #0b1c22);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  border-radius: 48px;
+  padding: 9px;
+  background: #0c161a;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
-.phone-bezel img {
-  border-radius: 28px;
+.phone-screen {
+  position: relative;
+  /* Matches media/* screenshots (780×1688) */
+  aspect-ratio: 780 / 1688;
+  border-radius: 39px;
+  overflow: hidden;
+  background: #0c161a;
+}
+
+.phone-screen img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 9 / 19.5;
-  object-fit: cover;
-  background: #0f2a32;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  display: block;
+}
+
+.phone-sm .phone-bezel {
+  border-radius: 40px;
+  padding: 8px;
+}
+
+.phone-sm .phone-screen {
+  border-radius: 32px;
 }
 
 /* —— Sections —— */
@@ -521,15 +553,17 @@ a {
     justify-items: center;
     text-align: center;
     padding-bottom: 12px;
+    gap: 18px;
   }
-  .hero-stage .phone {
+  .hero-stage .phone-hero {
     justify-self: center;
-    margin-bottom: -28px;
+    margin-bottom: -36px;
     order: 2;
+    width: min(260px, 72vw);
   }
   .hero-copy {
     order: 1;
-    padding-bottom: 8px;
+    padding-bottom: 4px;
   }
   .hero-copy p {
     margin-inline: auto;
