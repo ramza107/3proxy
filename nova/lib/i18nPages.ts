@@ -544,6 +544,14 @@ export const enPages: Dict = {
   'settings.openEvening': 'Open Evening Clear',
   'settings.aiTone': 'AI preferences',
   'settings.privacy': 'Privacy Policy',
+  'settings.terms': 'Terms of Use',
+  'settings.deleteAccount': 'Delete account',
+  'settings.deleteAccountTitle': 'Delete account?',
+  'settings.deleteAccountBody':
+    'This removes your Wahrly account and clears tasks, bills, shopping, and settings on this device. Google Calendar disconnects. Pro stays with your Apple ID — Restore purchases after you sign in again.',
+  'settings.deleteAccountConfirm': 'Delete',
+  'settings.deleteAccountFail':
+    'Could not delete the cloud account. Local data was still cleared. Email rr.aliev96@gmail.com if you need server cleanup.',
   'settings.demoMode': 'Demo mode (local AsyncStorage)',
   'settings.workday': 'Workday',
   'settings.typicalWeek': 'Typical week',

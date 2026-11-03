@@ -1,0 +1,211 @@
+import { type ReactNode } from 'react'
+import { ScrollView, StyleSheet, Text, View, Pressable, Linking } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { Screen } from '../components/Screen'
+import { brand, colors, fonts, radii, spacing } from '../constants/theme'
+
+const EFFECTIVE = '3 November 2026'
+const CONTACT = 'rr.aliev96@gmail.com'
+const APP_URL = 'https://ramza107.github.io/3proxy/nova/'
+const TERMS_URL = 'https://ramza107.github.io/3proxy/nova/terms'
+const PRIVACY_URL = 'https://ramza107.github.io/3proxy/nova/privacy'
+const SKU = 'com.wahrly.assistant.pro.monthly'
+
+function H({ children }: { children: ReactNode }) {
+  return <Text style={styles.h}>{children}</Text>
+}
+function P({ children }: { children: ReactNode }) {
+  return <Text style={styles.p}>{children}</Text>
+}
+function Bullet({ children }: { children: ReactNode }) {
+  return <Text style={styles.bullet}>• {children}</Text>
+}
+
+/**
+ * In-app Terms of Use (auto-renewable Pro) — Apple Guideline 3.1.2.
+ * Public URL: https://ramza107.github.io/3proxy/nova/terms
+ */
+export default function TermsScreen() {
+  const router = useRouter()
+
+  return (
+    <Screen>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
+            <Text style={styles.backText}>← Back</Text>
+          </Pressable>
+
+          <View style={styles.panel}>
+            <Text style={styles.brand}>{brand.name}</Text>
+            <Text style={styles.title}>Terms of Use</Text>
+            <Text style={styles.meta}>Effective date: {EFFECTIVE}</Text>
+
+            <P>
+              These Terms of Use (“Terms”) govern your use of the Wahrly mobile application and related
+              services operated by the Wahrly developer (“we”, “us”). By downloading or using Wahrly,
+              you agree to these Terms. If you do not agree, do not use the app.
+            </P>
+
+            <H>1. The service</H>
+            <P>
+              Wahrly is a personal life assistant for tasks, reminders, calendar-aware planning, and
+              related tools. Some features are free; others require a paid Wahrly Pro subscription.
+            </P>
+            <Bullet>{`Public site: ${APP_URL}`}</Bullet>
+            <Bullet>{`Privacy Policy: ${PRIVACY_URL}`}</Bullet>
+            <Bullet>{`Contact: ${CONTACT}`}</Bullet>
+
+            <H>2. Accounts</H>
+            <P>
+              You may use Wahrly with a local demo session or by signing in (email, Google, or Apple
+              where available). You are responsible for activity under your account. You can delete
+              your account in Settings → Delete account.
+            </P>
+
+            <H>3. Wahrly Pro subscription (auto-renewable)</H>
+            <P>
+              Wahrly Pro is an auto-renewable monthly subscription purchased through the Apple App
+              Store (or Google Play where offered).
+            </P>
+            <Bullet>{`Product ID: ${SKU}`}</Bullet>
+            <Bullet>Title: Wahrly Pro Monthly</Bullet>
+            <Bullet>Length: 1 month</Bullet>
+            <Bullet>Price: shown in the store for your region (USD list price $9.99 / month)</Bullet>
+            <Bullet>
+              Payment is charged to your Apple ID (or Google account) at confirmation of purchase.
+            </Bullet>
+            <Bullet>
+              Subscription renews automatically unless canceled at least 24 hours before the end of
+              the current period.
+            </Bullet>
+            <Bullet>
+              Your account will be charged for renewal within 24 hours prior to the end of the current
+              period.
+            </Bullet>
+            <Bullet>
+              Manage or cancel in device Settings → Apple ID → Subscriptions (or the Play Store
+              subscriptions page).
+            </Bullet>
+            <P>
+              Pro unlocks autopilot features such as Plan day, Bills, Shopping, Life, News, Invest,
+              morning/evening/weekly rituals, Home Screen widget, cloud AI chat, and voice dictation
+              (subject to fair-use limits). Free features (Tasks, Dates, on-device chat, Home) stay
+              available without a subscription.
+            </P>
+
+            <H>4. Restoring purchases</H>
+            <P>
+              Use Restore purchases in Settings after reinstalling or signing in on a new device.
+              Entitlement follows your store account, not only your Wahrly login.
+            </P>
+
+            <H>5. Acceptable use</H>
+            <P>
+              Do not misuse Wahrly (abuse APIs, attempt unauthorized access, or paste secrets into
+              chat). We may suspend access that harms the service or other users.
+            </P>
+
+            <H>6. AI features</H>
+            <P>
+              Cloud AI replies may be generated by third-party providers. Outputs can be wrong — verify
+              important decisions yourself. Do not share passwords or bank codes in chat.
+            </P>
+
+            <H>7. Disclaimer</H>
+            <P>
+              Wahrly is provided “as is” without warranties of uninterrupted or error-free operation.
+              To the fullest extent permitted by law, we are not liable for indirect or consequential
+              damages arising from use of the app.
+            </P>
+
+            <H>8. Changes</H>
+            <P>
+              We may update these Terms. The effective date above will change when we do. Continued
+              use after an update means you accept the revised Terms.
+            </P>
+
+            <H>9. Contact</H>
+            <P>Questions about these Terms or Pro billing: {CONTACT}</P>
+            <Pressable
+              onPress={() => Linking.openURL(`mailto:${CONTACT}?subject=Wahrly%20Terms`)}
+              style={styles.mailBtn}
+            >
+              <Text style={styles.mailBtnText}>Email us</Text>
+            </Pressable>
+
+            <Text style={styles.foot}>Also published at {TERMS_URL}</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </Screen>
+  )
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: 'transparent' },
+  scroll: {
+    padding: spacing.lg,
+    paddingBottom: 48,
+    maxWidth: 720,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  back: { marginBottom: 10 },
+  backText: { color: colors.accentStrong, fontFamily: fonts.bodyMedium, fontSize: 14 },
+  panel: {
+    backgroundColor: colors.bgCardSolid,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    gap: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  brand: {
+    color: colors.accentStrong,
+    fontFamily: fonts.brand,
+    fontSize: 18,
+  },
+  title: {
+    color: colors.text,
+    fontFamily: fonts.brand,
+    fontSize: 32,
+    letterSpacing: -0.6,
+  },
+  meta: { color: colors.textDim, fontFamily: fonts.body, fontSize: 13, marginBottom: 8 },
+  h: {
+    color: colors.text,
+    fontFamily: fonts.bodyBold,
+    fontSize: 16,
+    marginTop: spacing.md,
+  },
+  p: {
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 23,
+  },
+  bullet: {
+    color: colors.text,
+    fontFamily: fonts.body,
+    fontSize: 15,
+    lineHeight: 23,
+    paddingLeft: 4,
+  },
+  mailBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.bgDeep,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radii.full,
+    marginTop: 8,
+  },
+  mailBtnText: { color: colors.textOnAccent, fontFamily: fonts.bodyBold },
+  foot: {
+    color: colors.textDim,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    marginTop: spacing.lg,
+  },
+})

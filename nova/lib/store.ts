@@ -80,6 +80,8 @@ type NovaState = {
   setHydrated: (v: boolean) => void
   setDemoSession: (email: string, name?: string) => void
   clearSession: () => void
+  /** Full local wipe after account deletion (session + Pro + content). */
+  wipeLocalData: () => void
   updateSettings: (patch: Partial<UserSettings>) => void
   setForceMorningBrief: (v: boolean) => void
   setForceWeeklyBrief: (v: boolean) => void
@@ -276,6 +278,28 @@ export const useNovaStore = create<NovaState>()(
           forceMorningBrief: false,
           forceWeeklyBrief: false,
           settings: defaultSettings,
+        }),
+      wipeLocalData: () =>
+        set({
+          demoMode: false,
+          sessionUserId: null,
+          sessionEmail: null,
+          tasks: [],
+          bills: [],
+          lifeAdmin: [],
+          bodyEntries: [],
+          importantDates: [],
+          shopping: [],
+          investments: [],
+          reminders: [],
+          messages: [],
+          dismissedPromiseIds: [],
+          notifiedMeetingIds: [],
+          snoozedLoops: {},
+          lastPlanDayUndo: null,
+          forceMorningBrief: false,
+          forceWeeklyBrief: false,
+          settings: { ...defaultSettings, isPro: false },
         }),
       updateSettings: (patch) =>
         set({

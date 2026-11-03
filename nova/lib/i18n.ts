@@ -194,6 +194,11 @@ const en: Dict = {
   'pro.priceLocal': '{price} / month',
   'pro.priceHint':
     'All spaces + autopilot: Plan day, briefs, reminders, widget, cloud AI & voice. Price varies by region — App Store shows yours. Cancel anytime.',
+  'pro.renewHint':
+    'Auto-renewable monthly subscription. Payment is charged to your Apple ID. Renews unless canceled at least 24 hours before the end of the period. Manage or cancel in Settings → Apple ID → Subscriptions.',
+  'pro.legalLinks': 'Terms of Use · Privacy Policy',
+  'pro.termsLink': 'Terms of Use',
+  'pro.privacyLink': 'Privacy Policy',
   'pro.subscribe': 'Subscribe to Pro',
   'pro.restore': 'Restore purchases',
   'pro.active': 'Pro is active',
@@ -264,6 +269,14 @@ const en: Dict = {
   'settings.languageSub': 'App interface — all screens and tabs.',
   'settings.google': 'Google Calendar',
   'settings.signOut': 'Sign out',
+  'settings.deleteAccount': 'Delete account',
+  'settings.deleteAccountTitle': 'Delete account?',
+  'settings.deleteAccountBody':
+    'This removes your Wahrly account and clears tasks, bills, shopping, and settings on this device. Google Calendar disconnects. Pro stays with your Apple ID — Restore purchases after you sign in again.',
+  'settings.deleteAccountConfirm': 'Delete',
+  'settings.deleteAccountFail':
+    'Could not delete the cloud account. Local data was still cleared. Email rr.aliev96@gmail.com if you need server cleanup.',
+  'settings.terms': 'Terms of Use',
 }
 
 const ru: Dict = {

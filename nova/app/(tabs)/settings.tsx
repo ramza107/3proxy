@@ -76,6 +76,7 @@ export default function SettingsScreen() {
   const setForceMorningBrief = useNovaStore((s) => s.setForceMorningBrief)
   const setForceWeeklyBrief = useNovaStore((s) => s.setForceWeeklyBrief)
   const clearSession = useNovaStore((s) => s.clearSession)
+  const wipeLocalData = useNovaStore((s) => s.wipeLocalData)
   const [name, setName] = useState(settings.name)
   const [morningTime, setMorningTime] = useState(settings.morningBriefTime || '08:00')
   const [eveningTime, setEveningTime] = useState(settings.eveningClearTime || '21:30')
@@ -392,6 +393,40 @@ export default function SettingsScreen() {
     }
     clearSession()
     router.replace('/login')
+  }
+
+  const deleteAccount = () => {
+    Alert.alert(tr('settings.deleteAccountTitle'), tr('settings.deleteAccountBody'), [
+      { text: tr('common.cancel'), style: 'cancel' },
+      {
+        text: tr('settings.deleteAccountConfirm'),
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            let cloudFailed = false
+            try {
+              if (userId) {
+                await disconnectGoogle(userId).catch(() => undefined)
+              }
+              if (isSupabaseConfigured) {
+                const supabase = getSupabase()
+                if (supabase) {
+                  const { error } = await supabase.auth.deleteUser()
+                  if (error) cloudFailed = true
+                }
+              }
+            } catch {
+              cloudFailed = true
+            }
+            wipeLocalData()
+            if (cloudFailed && isSupabaseConfigured) {
+              Alert.alert(tr('settings.deleteAccount'), tr('settings.deleteAccountFail'))
+            }
+            router.replace('/login')
+          })()
+        },
+      },
+    ])
   }
 
   return (
@@ -1007,9 +1042,18 @@ export default function SettingsScreen() {
             <Text style={styles.signOutText}>{tr('settings.signOut')}</Text>
           </Pressable>
 
-          <Pressable onPress={() => router.push('/privacy')} style={styles.privacyLink}>
-            <Text style={styles.privacyText}>{tr('settings.privacy')}</Text>
+          <Pressable style={styles.deleteAccount} onPress={deleteAccount}>
+            <Text style={styles.deleteAccountText}>{tr('settings.deleteAccount')}</Text>
           </Pressable>
+
+          <View style={styles.legalLinks}>
+            <Pressable onPress={() => router.push('/terms')} style={styles.privacyLink}>
+              <Text style={styles.privacyText}>{tr('settings.terms')}</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/privacy')} style={styles.privacyLink}>
+              <Text style={styles.privacyText}>{tr('settings.privacy')}</Text>
+            </Pressable>
+          </View>
 
           <Text style={styles.mode}>
             {isSupabaseConfigured ? tr('settings.supabaseConnected') : tr('settings.demoMode')}
@@ -1164,6 +1208,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.35)',
   },
   signOutText: { color: colors.danger, fontFamily: fonts.bodyBold },
+  deleteAccount: {
+    marginTop: 8,
+    borderRadius: radii.full,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  deleteAccountText: {
+    color: colors.danger,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  legalLinks: { gap: 2, marginTop: 4 },
   privacyLink: { alignItems: 'center', paddingVertical: 6 },
   privacyText: {
     color: colors.accentStrong,
