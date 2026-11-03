@@ -150,8 +150,9 @@ export default function PrivacyScreen() {
 
             <H>10. Your choices</H>
             <Bullet>Disconnect Google Calendar in Settings at any time.</Bullet>
+            <Bullet>Delete your account in Settings → Delete account (clears local data too).</Bullet>
             <Bullet>Delete local data by clearing app storage / uninstalling.</Bullet>
-            <Bullet>Email us to request account or server-side token deletion.</Bullet>
+            <Bullet>Email us if you need extra server-side cleanup after delete.</Bullet>
 
             <H>11. Changes</H>
             <P>

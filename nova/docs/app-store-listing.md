@@ -57,6 +57,12 @@ https://ramza107.github.io/3proxy/nova/privacy
 
 https://ramza107.github.io/3proxy/nova/privacy
 
+## Terms of Use (EULA) URL
+
+https://ramza107.github.io/3proxy/nova/terms
+
+Required for auto-renewable Pro (`com.wahrly.assistant.pro.monthly`). Also linked in-app next to Subscribe.
+
 ## Category
 
 Primary: **Productivity**  

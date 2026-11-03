@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { colors, fonts, radii, spacing } from '../constants/theme'
@@ -24,6 +25,7 @@ type Props = {
  */
 export function ProPaywall({ compact, onUnlocked }: Props) {
   const t = useT()
+  const router = useRouter()
   const isPro = useIsPro()
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null)
   const [storePrice, setStorePrice] = useState<string | null>(null)
@@ -85,6 +87,7 @@ export function ProPaywall({ compact, onUnlocked }: Props) {
         <>
           <Text style={styles.price}>{priceLine}</Text>
           <Text style={styles.hint}>{t('pro.priceHint')}</Text>
+          <Text style={styles.hint}>{t('pro.renewHint')}</Text>
         </>
       ) : (
         <Text style={styles.hint}>{t('pro.upgradeBody')}</Text>
@@ -102,6 +105,16 @@ export function ProPaywall({ compact, onUnlocked }: Props) {
           <Text style={styles.buyText}>{t('pro.subscribe')}</Text>
         )}
       </Pressable>
+
+      <View style={styles.legalRow}>
+        <Pressable onPress={() => router.push('/terms')} hitSlop={8}>
+          <Text style={styles.legalLink}>{t('pro.termsLink')}</Text>
+        </Pressable>
+        <Text style={styles.legalSep}>·</Text>
+        <Pressable onPress={() => router.push('/privacy')} hitSlop={8}>
+          <Text style={styles.legalLink}>{t('pro.privacyLink')}</Text>
+        </Pressable>
+      </View>
 
       <Pressable
         style={[styles.restore, busy && styles.disabled]}
@@ -157,6 +170,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   restoreText: { color: colors.accentStrong, fontFamily: fonts.bodyBold, fontSize: 14 },
+  legalRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  legalLink: {
+    color: colors.accentStrong,
+    fontFamily: fonts.bodyMedium,
+    fontSize: 12,
+    textDecorationLine: 'underline',
+  },
+  legalSep: { color: colors.textDim, fontFamily: fonts.body, fontSize: 12 },
   disabled: { opacity: 0.55 },
   dev: { alignSelf: 'center', paddingVertical: 4 },
   devText: { color: colors.textDim, fontFamily: fonts.bodyMedium, fontSize: 12 },

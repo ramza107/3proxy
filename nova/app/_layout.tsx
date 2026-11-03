@@ -116,11 +116,11 @@ function RootLayout() {
     const root = segments[0]
     const inAuth = root === '(auth)'
     const inOnboarding = root === '(onboarding)'
-    const isPublic = root === 'privacy'
+    const isPublic = root === 'privacy' || root === 'terms'
     // OAuth return (Google / Apple) before session is written to the store.
     const inAuthCallback = root === 'auth'
 
-    // Privacy Policy must be reachable without login (Google OAuth verification).
+    // Privacy / Terms must be reachable without login (store + Google review).
     if (isPublic || inAuthCallback) return
 
     if (!sessionUserId) {
