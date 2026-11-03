@@ -28,11 +28,8 @@ export async function deleteConnection(userId: string): Promise<void> {
 }
 
 async function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL || ''
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  if (!url || !key || key.includes('your_supabase')) return null
-  const { createClient } = await import('@supabase/supabase-js')
-  return createClient(url, key, { auth: { persistSession: false } })
+  const { getSupabaseAdmin: admin } = await import('../supabaseAdmin.js')
+  return admin()
 }
 
 async function getFromSupabase(userId: string): Promise<GoogleConnection | null> {
