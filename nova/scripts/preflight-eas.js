@@ -155,13 +155,21 @@ if (missing.length) {
 }
 
 // --- brand icons (the build-32 regression) ---
-for (const rel of [
-  'assets/icon.png',
-  'assets/splash-icon.png',
-  'assets/splash/launch-mist-glass.png',
-  'assets/adaptive-icon.png',
-]) {
+for (const rel of ['assets/icon.png', 'assets/splash-icon.png', 'assets/adaptive-icon.png']) {
   assertTealBrandAsset(rel)
+}
+
+// Full-bleed mist launch art (animated splash) — not a teal-corner icon.
+const launchSplash = 'assets/splash/launch-mist-glass.png'
+const launchPath = path.join(root, launchSplash)
+if (!fs.existsSync(launchPath)) {
+  fail(`${launchSplash} missing — required for animated launch splash`)
+}
+{
+  const size = fs.statSync(launchPath).size
+  if (size < 200_000) {
+    fail(`${launchSplash} is only ${size} bytes — expected full-bleed mist art`)
+  }
 }
 
 // --- widget layout invariants (the black-card regression) ---
