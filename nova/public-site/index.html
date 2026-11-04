@@ -26,8 +26,8 @@
     <header class="nav">
       <div class="nav-left">
         <a class="nav-pill" href="#get">Get app</a>
-        <a class="nav-link" href="#product">Product</a>
-        <a class="nav-link" href="#screens">Screens</a>
+        <a class="nav-link" href="#story">Story</a>
+        <a class="nav-link" href="#more">More</a>
       </div>
       <a class="nav-brand" href="#top">Wahrly</a>
       <div class="nav-right">
@@ -37,70 +37,121 @@
     </header>
 
     <main>
-      <!-- Cinematic hero: atmosphere + floating product -->
-      <section class="hero" id="top">
-        <div class="hero-stage" aria-hidden="true">
-          <img class="hero-mist" src="./media/mist.jpg" alt="" />
-          <div class="hero-glow"></div>
-          <div class="hero-veil"></div>
-        </div>
+      <!-- Scroll-scrub cinematic scene (Higgsfield-style product story) -->
+      <section class="cine" id="top" data-cine>
+        <div class="cine-sticky">
+          <div class="cine-stage" aria-hidden="true">
+            <video
+              class="cine-video"
+              src="./media/mist-drift.mp4"
+              poster="./media/mist.jpg"
+              muted
+              playsinline
+              loop
+              autoplay
+              preload="auto"
+            ></video>
+            <div class="cine-glow"></div>
+            <div class="cine-veil"></div>
+            <div class="cine-sweep" data-sweep></div>
+          </div>
 
-        <div class="hero-product">
-          <img
-            class="hero-device"
-            src="./media/devices/home.png"
-            width="912"
-            height="1836"
-            alt="Wahrly on iPhone"
-          />
-        </div>
+          <div class="cine-product" data-product>
+            <div class="cine-stack" data-stack>
+              <img
+                class="cine-shot is-active"
+                data-shot="0"
+                src="./media/devices/home.png"
+                width="912"
+                height="1836"
+                alt=""
+              />
+              <img
+                class="cine-shot"
+                data-shot="1"
+                src="./media/devices/tasks.png"
+                width="912"
+                height="1836"
+                alt=""
+              />
+              <img
+                class="cine-shot"
+                data-shot="2"
+                src="./media/devices/chat.png"
+                width="912"
+                height="1836"
+                alt=""
+              />
+              <img
+                class="cine-shot"
+                data-shot="3"
+                src="./media/devices/dates.png"
+                width="912"
+                height="1836"
+                alt=""
+              />
+              <img
+                class="cine-shot"
+                data-shot="4"
+                src="./media/devices/bills.png"
+                width="912"
+                height="1836"
+                alt=""
+              />
+            </div>
+          </div>
 
-        <div class="hero-foot">
-          <p class="hero-line">Your life, clearly.</p>
-          <a class="hero-cta" id="get" href="https://testflight.apple.com/" rel="noopener"
-            >Open TestFlight</a
-          >
+          <div class="cine-copy">
+            <p class="cine-chapter" data-chapter>Home</p>
+            <p class="cine-line" data-line>Your life, clearly.</p>
+          </div>
+
+          <div class="cine-hint" data-hint>Scroll</div>
         </div>
       </section>
 
-      <section class="quiet" id="product">
-        <p class="quiet-kicker">One quiet place</p>
-        <h2 class="quiet-title">
+      <section class="quiet" id="story">
+        <p class="quiet-kicker reveal">One quiet place</p>
+        <h2 class="quiet-title reveal">
           Tasks, dates, and calm rituals —<br />
           instead of five noisy apps.
         </h2>
       </section>
 
-      <section class="showcase" id="screens">
-        <div class="showcase-row">
-          <figure class="show">
+      <section class="orbit" id="more">
+        <div class="orbit-track" data-orbit>
+          <figure class="orbit-card" data-orbit-card>
             <img src="./media/devices/tasks.png" width="912" height="1836" alt="Tasks" />
             <figcaption>Tasks</figcaption>
           </figure>
-          <figure class="show show-lift">
+          <figure class="orbit-card" data-orbit-card>
             <img src="./media/devices/chat.png" width="912" height="1836" alt="Chat" />
             <figcaption>Chat</figcaption>
           </figure>
-          <figure class="show">
-            <img src="./media/devices/dates.png" width="912" height="1836" alt="Dates" />
-            <figcaption>Dates</figcaption>
+          <figure class="orbit-card" data-orbit-card>
+            <img src="./media/devices/settings.png" width="912" height="1836" alt="Settings" />
+            <figcaption>Pro</figcaption>
           </figure>
         </div>
       </section>
 
       <section class="strip">
         <div class="strip-copy">
-          <p class="quiet-kicker">Free + Pro</p>
-          <h2 class="strip-title">Start free. Grow when ready.</h2>
-          <p class="strip-body">
+          <p class="quiet-kicker reveal">Free + Pro</p>
+          <h2 class="strip-title reveal">Start free. Grow when ready.</h2>
+          <p class="strip-body reveal">
             Free covers Tasks, Dates, on-device chat, and Home. Pro unlocks Plan day, Bills,
             Shopping, rituals, and cloud AI.
           </p>
-          <a class="nav-pill nav-pill-dark" href="https://testflight.apple.com/" rel="noopener"
+          <a
+            class="nav-pill nav-pill-dark reveal"
+            id="get"
+            href="https://testflight.apple.com/"
+            rel="noopener"
             >Try Wahrly</a
           >
         </div>
-        <div class="strip-visual">
+        <div class="strip-visual reveal">
           <img src="./media/devices/settings.png" width="912" height="1836" alt="Settings" />
         </div>
       </section>
@@ -110,9 +161,11 @@
           <img src="./media/splash.png" alt="" />
         </div>
         <div class="finale-inner">
-          <p class="finale-brand">Wahrly</p>
-          <p class="finale-line">A softer way to hold the day.</p>
-          <a class="nav-pill" href="https://testflight.apple.com/" rel="noopener">Get the app</a>
+          <p class="finale-brand reveal">Wahrly</p>
+          <p class="finale-line reveal">A softer way to hold the day.</p>
+          <a class="nav-pill reveal" href="https://testflight.apple.com/" rel="noopener"
+            >Get the app</a
+          >
         </div>
       </section>
     </main>
