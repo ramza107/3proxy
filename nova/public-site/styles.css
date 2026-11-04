@@ -321,37 +321,32 @@ a {
   letter-spacing: -0.03em;
 }
 
-/* —— Orbit showcase —— */
+/* —— Showcase rail —— */
 .orbit {
   background: linear-gradient(180deg, var(--cream), #e4eef0);
-  padding: 40px 0 120px;
+  padding: 48px 0 96px;
   overflow: hidden;
 }
 
 .orbit-track {
   display: flex;
-  gap: 28px;
+  gap: 22px;
   width: max-content;
-  padding: 40px 8vw;
-  will-change: transform;
+  padding: 24px 8vw 12px;
+  /* Desktop: JS translates. Mobile: native scroll, no 3D. */
 }
 
 .orbit-card {
   margin: 0;
-  width: min(260px, 70vw);
+  width: 240px;
   flex: 0 0 auto;
-  transform: rotateY(-18deg) rotateX(4deg);
-  transform-style: preserve-3d;
-  transition: transform 0.5s ease;
-}
-
-.orbit-card.is-near {
-  transform: rotateY(0deg) rotateX(0deg) scale(1.04);
 }
 
 .orbit-card img {
   width: 100%;
-  filter: drop-shadow(0 28px 40px rgba(10, 28, 34, 0.2));
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 24px 36px rgba(10, 28, 34, 0.18));
 }
 
 .orbit-card figcaption {
@@ -362,6 +357,21 @@ a {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(19, 42, 49, 0.55);
+}
+
+@media (min-width: 901px) {
+  .orbit-track {
+    will-change: transform;
+  }
+  .orbit-card {
+    width: 260px;
+    transform: rotateY(-14deg) rotateX(3deg);
+    transform-style: preserve-3d;
+    transition: transform 0.45s ease;
+  }
+  .orbit-card.is-near {
+    transform: rotateY(0deg) rotateX(0deg) scale(1.03);
+  }
 }
 
 /* —— Strip / finale / foot —— */
@@ -548,11 +558,24 @@ a {
   .cine-copy {
     bottom: max(28px, env(safe-area-inset-bottom));
   }
+  .orbit {
+    overflow: visible;
+  }
   .orbit-track {
-    padding-left: 16vw;
+    width: auto;
+    max-width: 100%;
+    padding: 8px 5vw 4px;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    transform: none !important;
   }
   .orbit-card {
-    transform: none;
+    width: min(260px, 72vw);
+    transform: none !important;
+    scroll-snap-align: center;
   }
   .strip {
     grid-template-columns: 1fr;

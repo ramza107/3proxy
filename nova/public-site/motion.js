@@ -169,6 +169,15 @@
 
   function updateOrbit() {
     if (!orbit) return
+    // Mobile uses native horizontal scroll — never apply 3D / translate hacks.
+    if (isMobile()) {
+      orbit.style.transform = ''
+      orbitCards.forEach((card) => {
+        card.style.transform = ''
+        card.classList.remove('is-near')
+      })
+      return
+    }
     const section = orbit.closest('.orbit')
     if (!section) return
     const rect = section.getBoundingClientRect()
@@ -180,15 +189,15 @@
     const maxX = Math.max(0, orbit.scrollWidth - window.innerWidth + 80)
     orbit.style.transform = `translate3d(${(-maxX * p).toFixed(1)}px, 0, 0)`
 
-    const mid = window.innerWidth / 2
+    const midX = window.innerWidth / 2
     orbitCards.forEach((card) => {
       const r = card.getBoundingClientRect()
       const c = r.left + r.width / 2
-      const dist = Math.abs(c - mid) / (window.innerWidth * 0.45)
+      const dist = Math.abs(c - midX) / (window.innerWidth * 0.45)
       card.classList.toggle('is-near', dist < 0.55)
-      const tilt = clamp((c - mid) / mid, -1, 1)
+      const tilt = clamp((c - midX) / midX, -1, 1)
       if (!card.classList.contains('is-near')) {
-        card.style.transform = `rotateY(${(-18 - tilt * 8).toFixed(1)}deg) rotateX(4deg) scale(0.96)`
+        card.style.transform = `rotateY(${(-14 - tilt * 6).toFixed(1)}deg) rotateX(3deg) scale(0.97)`
       } else {
         card.style.transform = ''
       }
