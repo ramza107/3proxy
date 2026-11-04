@@ -18,12 +18,12 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,480;9..144,600&family=Outfit:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=2d-phones" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
 
-    <header class="nav">
+    <header class="nav" data-nav>
       <div class="nav-left">
         <a class="nav-pill" href="#get">Get app</a>
         <a class="nav-link" href="#story">Story</a>
@@ -37,7 +37,7 @@
     </header>
 
     <main>
-      <!-- Scroll-scrub cinematic scene (Higgsfield-style product story) -->
+      <!-- Scroll-scrub cinematic scene -->
       <section class="cine" id="top" data-cine>
         <div class="cine-sticky">
           <div class="cine-stage" aria-hidden="true">
@@ -102,15 +102,21 @@
           </div>
 
           <div class="cine-copy">
+            <div class="cine-dots" data-dots aria-hidden="true">
+              <span class="is-on"></span><span></span><span></span><span></span><span></span>
+            </div>
             <p class="cine-chapter" data-chapter>Home</p>
             <p class="cine-line" data-line>Your life, clearly.</p>
           </div>
 
-          <div class="cine-hint" data-hint>Scroll</div>
+          <div class="cine-hint" data-hint>
+            <span class="cine-hint-chevron" aria-hidden="true"></span>
+            Scroll
+          </div>
         </div>
       </section>
 
-      <section class="quiet" id="story">
+      <section class="quiet" id="story" data-light>
         <p class="quiet-kicker reveal">One quiet place</p>
         <h2 class="quiet-title reveal">
           Tasks, dates, and calm rituals —<br />
@@ -118,8 +124,17 @@
         </h2>
       </section>
 
-      <section class="orbit" id="more">
+      <section class="orbit" id="more" data-light>
+        <div class="orbit-head">
+          <p class="quiet-kicker reveal">Inside the app</p>
+          <h2 class="orbit-title reveal">Swipe through the quiet.</h2>
+        </div>
+        <div class="orbit-fade" aria-hidden="true"></div>
         <div class="orbit-track" data-orbit>
+          <figure class="orbit-card" data-orbit-card>
+            <img src="./media/devices/home.png" width="912" height="1836" alt="Home" />
+            <figcaption>Home</figcaption>
+          </figure>
           <figure class="orbit-card" data-orbit-card>
             <img src="./media/devices/tasks.png" width="912" height="1836" alt="Tasks" />
             <figcaption>Tasks</figcaption>
@@ -129,13 +144,18 @@
             <figcaption>Chat</figcaption>
           </figure>
           <figure class="orbit-card" data-orbit-card>
-            <img src="./media/devices/settings.png" width="912" height="1836" alt="Settings" />
-            <figcaption>Pro</figcaption>
+            <img src="./media/devices/dates.png" width="912" height="1836" alt="Dates" />
+            <figcaption>Dates</figcaption>
+          </figure>
+          <figure class="orbit-card" data-orbit-card>
+            <img src="./media/devices/bills.png" width="912" height="1836" alt="Bills" />
+            <figcaption>Bills</figcaption>
           </figure>
         </div>
+        <p class="orbit-hint reveal" aria-hidden="true">Drag or swipe</p>
       </section>
 
-      <section class="strip">
+      <section class="strip" id="get">
         <div class="strip-copy">
           <p class="quiet-kicker reveal">Free + Pro</p>
           <h2 class="strip-title reveal">Start free. Grow when ready.</h2>
@@ -143,22 +163,29 @@
             Free covers Tasks, Dates, on-device chat, and Home. Pro unlocks Plan day, Bills,
             Shopping, rituals, and cloud AI.
           </p>
+          <ul class="strip-pills reveal">
+            <li>Tasks</li>
+            <li>Dates</li>
+            <li>Chat</li>
+            <li class="is-pro">Plan day</li>
+            <li class="is-pro">Bills</li>
+            <li class="is-pro">Cloud AI</li>
+          </ul>
           <a
             class="nav-pill nav-pill-dark reveal"
-            id="get"
             href="https://testflight.apple.com/"
             rel="noopener"
             >Try Wahrly</a
           >
         </div>
         <div class="strip-visual reveal">
-          <img src="./media/devices/settings.png" width="912" height="1836" alt="Settings" />
+          <img src="./media/devices/home.png" width="912" height="1836" alt="Wahrly Home" />
         </div>
       </section>
 
       <section class="finale">
         <div class="finale-bg" aria-hidden="true">
-          <img src="./media/splash.png" alt="" />
+          <img src="./media/mist.jpg" alt="" />
         </div>
         <div class="finale-inner">
           <p class="finale-brand reveal">Wahrly</p>
@@ -179,6 +206,6 @@
       </div>
     </footer>
 
-    <script src="./motion.js" defer></script>
+    <script src="./motion.js?v=2d-phones" defer></script>
   </body>
 </html>

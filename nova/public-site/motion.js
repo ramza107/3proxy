@@ -23,7 +23,7 @@
           }
         })
       },
-      { threshold: 0.16, rootMargin: '0px 0px -6% 0px' },
+      { threshold: 0.08, rootMargin: '0px 0px -4% 0px' },
     )
     reveals.forEach((el) => io.observe(el))
   } else {
@@ -32,7 +32,7 @@
 
   if (reduce) return
 
-  // —— Cinematic scroll scrub ——
+  // —— Cinematic scroll scrub (2D only — no rotateX/Y; those crush phones on iOS) ——
   const cine = document.querySelector('[data-cine]')
   const product = document.querySelector('[data-product]')
   const shots = [...document.querySelectorAll('[data-shot]')]
@@ -41,12 +41,16 @@
   const hint = document.querySelector('[data-hint]')
   const sweep = document.querySelector('[data-sweep]')
   const video = document.querySelector('.cine-video')
+  const dots = [...document.querySelectorAll('[data-dots] span')]
+  const nav = document.querySelector('[data-nav]')
 
   let target = 0
   let current = 0
   let activeShot = -1
   let ticking = false
   let copyGen = 0
+
+  const narrow = () => window.matchMedia('(max-width: 900px)').matches
 
   function clamp(n, a, b) {
     return Math.max(a, Math.min(b, n))
@@ -68,6 +72,7 @@
     if (index === activeShot) return
     activeShot = index
     shots.forEach((img, i) => img.classList.toggle('is-active', i === index))
+    dots.forEach((d, i) => d.classList.toggle('is-on', i === index))
     const ch = CHAPTERS[index] || CHAPTERS[0]
     const gen = ++copyGen
     if (chapterEl) {
@@ -90,8 +95,8 @@
         lineEl.style.transform = 'translateY(0)'
       }, 180)
     }
-    // light sweep when chapter changes
-    if (sweep) {
+    // Light sweep only on wide screens — never touches the product phone
+    if (sweep && !narrow()) {
       sweep.style.transition = 'none'
       sweep.style.opacity = '0'
       sweep.style.transform = 'translateX(-40%) skewX(-12deg)'
@@ -106,36 +111,38 @@
     }
   }
 
-  const isMobile = () => window.matchMedia('(max-width: 900px)').matches
+  function updateNavTone() {
+    if (!nav) return
+    const y = 48
+    const onLight = [...document.querySelectorAll('[data-light]')].some((sec) => {
+      const r = sec.getBoundingClientRect()
+      return r.top <= y && r.bottom > y + 24
+    })
+    nav.classList.toggle('on-light', onLight)
+  }
 
   function applyCine(p) {
-    // Entrance → orbit → settle
     const enter = clamp(p / 0.15, 0, 1)
     const mid = clamp((p - 0.15) / 0.7, 0, 1)
     const exit = clamp((p - 0.85) / 0.15, 0, 1)
-    const mobile = isMobile()
+    const small = narrow()
 
-    // Mobile: upright + float only. 3D rotateY made iOS look crushed/left-skewed.
-    const scale = mobile ? lerp(0.94, 1, enter) : lerp(0.78, 1, enter)
-    const y = mobile
-      ? lerp(18, 0, enter) + lerp(0, -8, exit)
-      : lerp(70, 0, enter) + lerp(0, -18, exit)
-    const rotY = mobile ? 0 : lerp(-22, 0, enter) + Math.sin(mid * Math.PI * 2) * 14 * (1 - exit)
-    const rotX = mobile ? 0 : lerp(8, 0, enter) + Math.sin(mid * Math.PI) * -3
+    // Upright phone only: translate + scale. Never rotateX/Y (iOS squash).
+    const scale = small ? lerp(0.94, 1, enter) : lerp(0.86, 1, enter)
+    const y = small
+      ? lerp(16, 0, enter) + lerp(0, -6, exit)
+      : lerp(40, 0, enter) + lerp(0, -14, exit)
 
     if (product) {
-      product.style.transform = mobile
-        ? `translate3d(0, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`
-        : `translate3d(0, ${y.toFixed(1)}px, 0) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(
-            2,
-          )}deg) scale(${scale.toFixed(3)})`
+      product.classList.toggle('is-idle', p < 0.1 || (p > 0.2 && p < 0.85))
+      product.style.transform = `translate3d(0, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`
     }
 
     const shotIndex = clamp(Math.floor(mid * CHAPTERS.length), 0, CHAPTERS.length - 1)
     setShot(p < 0.12 ? 0 : shotIndex)
 
     if (hint) {
-      hint.style.opacity = String(clamp(1 - p * 3, 0, 1) * 0.7)
+      hint.style.opacity = String(clamp(1 - p * 3.2, 0, 1) * 0.75)
     }
 
     if (video) {
@@ -149,11 +156,12 @@
       ticking = true
       requestAnimationFrame(frame)
     }
-    updateOrbit()
+    updateNavTone()
+    markNearOrbitCard()
   }
 
   function frame() {
-    current = lerp(current, target, 0.12)
+    current = lerp(current, target, 0.14)
     if (Math.abs(current - target) < 0.0008) current = target
     applyCine(current)
     if (Math.abs(current - target) > 0.0008) {
@@ -163,70 +171,37 @@
     }
   }
 
-  // —— Horizontal orbit section ——
+  // —— Orbit: native horizontal snap on every device (no 3D, no JS translate) ——
   const orbit = document.querySelector('[data-orbit]')
   const orbitCards = [...document.querySelectorAll('[data-orbit-card]')]
 
-  function updateOrbit() {
-    if (!orbit) return
-    // Mobile uses native horizontal scroll — never apply 3D / translate hacks.
-    if (isMobile()) {
-      orbit.style.transform = ''
-      orbitCards.forEach((card) => {
-        card.style.transform = ''
-        card.classList.remove('is-near')
-      })
-      return
-    }
-    const section = orbit.closest('.orbit')
-    if (!section) return
-    const rect = section.getBoundingClientRect()
-    const view = window.innerHeight
-    const start = view * 0.85
-    const end = -rect.height * 0.2
-    const raw = (start - rect.top) / (start - end)
-    const p = clamp(raw, 0, 1)
-    const maxX = Math.max(0, orbit.scrollWidth - window.innerWidth + 80)
-    orbit.style.transform = `translate3d(${(-maxX * p).toFixed(1)}px, 0, 0)`
-
+  function markNearOrbitCard() {
+    if (!orbit || !orbitCards.length) return
     const midX = window.innerWidth / 2
+    let best = null
+    let bestDist = Infinity
     orbitCards.forEach((card) => {
       const r = card.getBoundingClientRect()
       const c = r.left + r.width / 2
-      const dist = Math.abs(c - midX) / (window.innerWidth * 0.45)
-      card.classList.toggle('is-near', dist < 0.55)
-      const tilt = clamp((c - midX) / midX, -1, 1)
-      if (!card.classList.contains('is-near')) {
-        card.style.transform = `rotateY(${(-14 - tilt * 6).toFixed(1)}deg) rotateX(3deg) scale(0.97)`
-      } else {
-        card.style.transform = ''
+      const dist = Math.abs(c - midX)
+      card.classList.toggle('is-near', false)
+      if (dist < bestDist) {
+        bestDist = dist
+        best = card
       }
     })
+    if (best && bestDist < window.innerWidth * 0.55) best.classList.add('is-near')
   }
 
-  // Pointer parallax on product (subtle, layered on scroll transform via CSS vars)
-  let px = 0
-  let py = 0
-  window.addEventListener(
-    'pointermove',
-    (e) => {
-      px = (e.clientX / window.innerWidth - 0.5) * 10
-      py = (e.clientY / window.innerHeight - 0.5) * 6
-      if (product && !cine?.matches(':hover')) {
-        // Applied as additional translate in a child would fight scroll — skip while scrubbing hard.
-      }
-      void px
-      void py
-    },
-    { passive: true },
-  )
+  if (orbit) {
+    orbit.addEventListener('scroll', markNearOrbitCard, { passive: true })
+  }
 
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onScroll, { passive: true })
   onScroll()
   applyCine(0)
 
-  // Ensure video plays
   if (video) {
     video.play?.().catch(() => undefined)
   }
