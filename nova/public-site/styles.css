@@ -206,9 +206,9 @@ a {
   padding-bottom: 36px;
 }
 
-.hero-stage .phone-hero {
+.hero-stage .device-hero {
   justify-self: end;
-  margin-bottom: -64px;
+  margin-bottom: -72px;
   width: min(300px, 58vw);
 }
 
@@ -266,25 +266,30 @@ a {
   padding-bottom: 2px;
 }
 
-/* —— Phone —— */
-.phone {
-  width: min(300px, 68vw);
+/* —— Device mockups (pre-composited PNGs — no CSS crop/mask) —— */
+.device {
+  width: min(240px, 58vw);
+  height: auto;
+  display: block;
   margin-inline: auto;
-  filter: drop-shadow(var(--shadow));
 }
 
-.phone-sm {
-  width: min(228px, 56vw);
+.device-wrap {
+  line-height: 0;
 }
 
-.phone-hero {
+.device-hero {
   --px: 0px;
   --py: 0px;
   transform: translate3d(var(--px), var(--py), 0);
   will-change: transform;
 }
 
-.phone.float .phone-bezel {
+.device-hero .device {
+  width: 100%;
+}
+
+.float .device {
   animation: floaty 5.5s ease-in-out infinite;
 }
 
@@ -296,45 +301,6 @@ a {
   50% {
     transform: translateY(-14px);
   }
-}
-
-.phone-bezel {
-  position: relative;
-  border-radius: 48px;
-  padding: 9px;
-  background: #0c161a;
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 0 0 1px rgba(0, 0, 0, 0.35);
-}
-
-.phone-screen {
-  position: relative;
-  /* Matches media/* screenshots (780×1688) */
-  aspect-ratio: 780 / 1688;
-  border-radius: 39px;
-  overflow: hidden;
-  background: #0c161a;
-}
-
-.phone-screen img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  object-fit: fill;
-  display: block;
-}
-
-.phone-sm .phone-bezel {
-  border-radius: 40px;
-  padding: 8px;
-}
-
-.phone-sm .phone-screen {
-  border-radius: 32px;
 }
 
 /* —— Sections —— */
@@ -416,10 +382,15 @@ a {
 .shot {
   margin: 0;
   scroll-snap-align: center;
+  width: min(240px, 58vw);
+}
+
+.shot .device {
+  width: 100%;
 }
 
 .shot figcaption {
-  margin-top: 12px;
+  margin-top: 4px;
   text-align: center;
   font-size: 13px;
   font-weight: 600;
@@ -555,9 +526,9 @@ a {
     padding-bottom: 12px;
     gap: 18px;
   }
-  .hero-stage .phone-hero {
+  .hero-stage .device-hero {
     justify-self: center;
-    margin-bottom: -36px;
+    margin-bottom: -40px;
     order: 2;
     width: min(260px, 72vw);
   }
