@@ -106,39 +106,39 @@
     }
   }
 
+  const isMobile = () => window.matchMedia('(max-width: 900px)').matches
+
   function applyCine(p) {
     // Entrance → orbit → settle
-    // 0–0.15: rise + scale in
-    // 0.15–0.85: rotate & cycle screens
-    // 0.85–1: straighten
     const enter = clamp(p / 0.15, 0, 1)
     const mid = clamp((p - 0.15) / 0.7, 0, 1)
     const exit = clamp((p - 0.85) / 0.15, 0, 1)
+    const mobile = isMobile()
 
-    const scale = lerp(0.72, 1, enter)
-    const y = lerp(80, 0, enter) + lerp(0, -20, exit)
-    const rotY = lerp(-28, 0, enter) + Math.sin(mid * Math.PI * 2) * 16 * (1 - exit)
-    const rotX = lerp(12, 0, enter) + Math.sin(mid * Math.PI) * -4
+    // Mobile: upright + float only. 3D rotateY made iOS look crushed/left-skewed.
+    const scale = mobile ? lerp(0.94, 1, enter) : lerp(0.78, 1, enter)
+    const y = mobile
+      ? lerp(18, 0, enter) + lerp(0, -8, exit)
+      : lerp(70, 0, enter) + lerp(0, -18, exit)
+    const rotY = mobile ? 0 : lerp(-22, 0, enter) + Math.sin(mid * Math.PI * 2) * 14 * (1 - exit)
+    const rotX = mobile ? 0 : lerp(8, 0, enter) + Math.sin(mid * Math.PI) * -3
 
     if (product) {
-      product.style.transform = `translate3d(0, ${y.toFixed(1)}px, 0) rotateX(${rotX.toFixed(
-        2,
-      )}deg) rotateY(${rotY.toFixed(2)}deg) scale(${scale.toFixed(3)})`
+      product.style.transform = mobile
+        ? `translate3d(0, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`
+        : `translate3d(0, ${y.toFixed(1)}px, 0) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(
+            2,
+          )}deg) scale(${scale.toFixed(3)})`
     }
 
     const shotIndex = clamp(Math.floor(mid * CHAPTERS.length), 0, CHAPTERS.length - 1)
-    // Hold first shot during entrance
     setShot(p < 0.12 ? 0 : shotIndex)
 
     if (hint) {
       hint.style.opacity = String(clamp(1 - p * 3, 0, 1) * 0.7)
     }
 
-    // Subtle video scrub for depth (also keep looping)
-    if (video && video.duration && Number.isFinite(video.duration)) {
-      const t = (video.duration * 0.15 + mid * video.duration * 0.7) % video.duration
-      // Only nudge when paused path — keep autoplay; soft currentTime can hitch.
-      // Instead scale video slightly with progress:
+    if (video) {
       video.style.transform = `scale(${(1.06 + mid * 0.04).toFixed(3)})`
     }
   }
@@ -169,6 +169,15 @@
 
   function updateOrbit() {
     if (!orbit) return
+    // Mobile uses native horizontal scroll — never apply 3D / translate hacks.
+    if (isMobile()) {
+      orbit.style.transform = ''
+      orbitCards.forEach((card) => {
+        card.style.transform = ''
+        card.classList.remove('is-near')
+      })
+      return
+    }
     const section = orbit.closest('.orbit')
     if (!section) return
     const rect = section.getBoundingClientRect()
@@ -180,15 +189,15 @@
     const maxX = Math.max(0, orbit.scrollWidth - window.innerWidth + 80)
     orbit.style.transform = `translate3d(${(-maxX * p).toFixed(1)}px, 0, 0)`
 
-    const mid = window.innerWidth / 2
+    const midX = window.innerWidth / 2
     orbitCards.forEach((card) => {
       const r = card.getBoundingClientRect()
       const c = r.left + r.width / 2
-      const dist = Math.abs(c - mid) / (window.innerWidth * 0.45)
+      const dist = Math.abs(c - midX) / (window.innerWidth * 0.45)
       card.classList.toggle('is-near', dist < 0.55)
-      const tilt = clamp((c - mid) / mid, -1, 1)
+      const tilt = clamp((c - midX) / midX, -1, 1)
       if (!card.classList.contains('is-near')) {
-        card.style.transform = `rotateY(${(-18 - tilt * 8).toFixed(1)}deg) rotateX(4deg) scale(0.96)`
+        card.style.transform = `rotateY(${(-14 - tilt * 6).toFixed(1)}deg) rotateX(3deg) scale(0.97)`
       } else {
         card.style.transform = ''
       }

@@ -129,19 +129,30 @@ a {
 .cine-sticky {
   position: sticky;
   top: 0;
-  height: 100svh;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100svh;
   overflow: hidden;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Perspective MUST live on parent of the rotating product */
+  perspective: 1400px;
+  perspective-origin: 50% 45%;
 }
 
 .cine-stage {
   position: absolute;
   inset: 0;
   z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .cine-video {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -182,9 +193,10 @@ a {
 .cine-product {
   position: relative;
   z-index: 2;
-  width: min(320px, 56vw);
+  width: min(320px, 72vw);
+  max-width: 340px;
+  margin: 0 auto;
   transform-style: preserve-3d;
-  perspective: 1200px;
   will-change: transform;
   filter: drop-shadow(0 40px 70px rgba(6, 18, 24, 0.48));
 }
@@ -192,8 +204,11 @@ a {
 .cine-stack {
   position: relative;
   width: 100%;
+  /* Explicit ratio + fallback so absolute shots can't collapse the box */
   aspect-ratio: 912 / 1836;
+  height: auto;
   transform-style: preserve-3d;
+  overflow: hidden;
 }
 
 .cine-shot {
@@ -203,15 +218,25 @@ a {
   height: 100%;
   object-fit: contain;
   opacity: 0;
-  transform: translateZ(0) scale(0.96);
-  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  visibility: hidden;
   pointer-events: none;
+  z-index: 0;
 }
 
 .cine-shot.is-active {
   opacity: 1;
-  transform: translateZ(0) scale(1);
+  visibility: visible;
   z-index: 1;
+}
+
+@media (min-width: 901px) {
+  .cine-shot {
+    transform: translate3d(0, 0, 0) scale(0.98);
+    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.4s;
+  }
+  .cine-shot.is-active {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
 .cine-copy {
@@ -296,37 +321,32 @@ a {
   letter-spacing: -0.03em;
 }
 
-/* —— Orbit showcase —— */
+/* —— Showcase rail —— */
 .orbit {
   background: linear-gradient(180deg, var(--cream), #e4eef0);
-  padding: 40px 0 120px;
+  padding: 48px 0 96px;
   overflow: hidden;
 }
 
 .orbit-track {
   display: flex;
-  gap: 28px;
+  gap: 22px;
   width: max-content;
-  padding: 40px 8vw;
-  will-change: transform;
+  padding: 24px 8vw 12px;
+  /* Desktop: JS translates. Mobile: native scroll, no 3D. */
 }
 
 .orbit-card {
   margin: 0;
-  width: min(260px, 70vw);
+  width: 240px;
   flex: 0 0 auto;
-  transform: rotateY(-18deg) rotateX(4deg);
-  transform-style: preserve-3d;
-  transition: transform 0.5s ease;
-}
-
-.orbit-card.is-near {
-  transform: rotateY(0deg) rotateX(0deg) scale(1.04);
 }
 
 .orbit-card img {
   width: 100%;
-  filter: drop-shadow(0 28px 40px rgba(10, 28, 34, 0.2));
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 24px 36px rgba(10, 28, 34, 0.18));
 }
 
 .orbit-card figcaption {
@@ -337,6 +357,21 @@ a {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(19, 42, 49, 0.55);
+}
+
+@media (min-width: 901px) {
+  .orbit-track {
+    will-change: transform;
+  }
+  .orbit-card {
+    width: 260px;
+    transform: rotateY(-14deg) rotateX(3deg);
+    transform-style: preserve-3d;
+    transition: transform 0.45s ease;
+  }
+  .orbit-card.is-near {
+    transform: rotateY(0deg) rotateX(0deg) scale(1.03);
+  }
 }
 
 /* —— Strip / finale / foot —— */
@@ -503,16 +538,44 @@ a {
 @media (max-width: 900px) {
   .nav {
     grid-template-columns: 1fr auto;
+    inset: 14px 14px auto;
   }
   .nav-left .nav-link,
   .nav-right {
     display: none;
   }
   .cine {
-    height: 360vh;
+    height: 320vh;
+  }
+  .cine-sticky {
+    /* Avoid 100svh quirks leaving a short strip of video on iOS */
+    height: 100vh;
+    height: 100dvh;
   }
   .cine-product {
-    width: min(270px, 70vw);
+    width: min(300px, 78vw);
+  }
+  .cine-copy {
+    bottom: max(28px, env(safe-area-inset-bottom));
+  }
+  .orbit {
+    overflow: visible;
+  }
+  .orbit-track {
+    width: auto;
+    max-width: 100%;
+    padding: 8px 5vw 4px;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    transform: none !important;
+  }
+  .orbit-card {
+    width: min(260px, 72vw);
+    transform: none !important;
+    scroll-snap-align: center;
   }
   .strip {
     grid-template-columns: 1fr;
@@ -529,8 +592,10 @@ a {
   .cine-sticky {
     position: relative;
     height: auto;
-    min-height: 100svh;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 100px 0 60px;
+    perspective: none;
   }
   .cine-hint,
   .cine-sweep,
@@ -538,13 +603,11 @@ a {
   .finale-bg img {
     animation: none;
   }
-  .cine-shot {
-    position: relative;
-    opacity: 1;
-    transform: none;
+  .cine-product {
+    transform: none !important;
   }
-  .cine-stack {
-    aspect-ratio: auto;
+  .cine-shot {
+    position: absolute;
   }
   .cine-shot:not(.is-active) {
     display: none;
