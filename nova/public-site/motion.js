@@ -41,12 +41,17 @@
   const hint = document.querySelector('[data-hint]')
   const sweep = document.querySelector('[data-sweep]')
   const video = document.querySelector('.cine-video')
+  const dots = [...document.querySelectorAll('[data-dots] span')]
+  const nav = document.querySelector('[data-nav]')
+  const lightSections = [...document.querySelectorAll('[data-light]')]
 
   let target = 0
   let current = 0
   let activeShot = -1
   let ticking = false
   let copyGen = 0
+
+  const isMobile = () => window.matchMedia('(max-width: 900px)').matches
 
   function clamp(n, a, b) {
     return Math.max(a, Math.min(b, n))
@@ -68,6 +73,7 @@
     if (index === activeShot) return
     activeShot = index
     shots.forEach((img, i) => img.classList.toggle('is-active', i === index))
+    dots.forEach((d, i) => d.classList.toggle('is-on', i === index))
     const ch = CHAPTERS[index] || CHAPTERS[0]
     const gen = ++copyGen
     if (chapterEl) {
@@ -90,8 +96,8 @@
         lineEl.style.transform = 'translateY(0)'
       }, 180)
     }
-    // light sweep when chapter changes
-    if (sweep) {
+    // light sweep when chapter changes (desktop only — quieter on phones)
+    if (sweep && !isMobile()) {
       sweep.style.transition = 'none'
       sweep.style.opacity = '0'
       sweep.style.transform = 'translateX(-40%) skewX(-12deg)'
@@ -106,7 +112,15 @@
     }
   }
 
-  const isMobile = () => window.matchMedia('(max-width: 900px)').matches
+  function updateNavTone() {
+    if (!nav) return
+    const y = 28
+    const overLight = lightSections.some((sec) => {
+      const r = sec.getBoundingClientRect()
+      return r.top <= y && r.bottom >= y + 40
+    })
+    nav.classList.toggle('on-light', overLight)
+  }
 
   function applyCine(p) {
     // Entrance → orbit → settle
@@ -124,6 +138,7 @@
     const rotX = mobile ? 0 : lerp(8, 0, enter) + Math.sin(mid * Math.PI) * -3
 
     if (product) {
+      product.classList.toggle('is-idle', p < 0.08 || (mobile && p > 0.2 && p < 0.85))
       product.style.transform = mobile
         ? `translate3d(0, ${y.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`
         : `translate3d(0, ${y.toFixed(1)}px, 0) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(
@@ -150,6 +165,7 @@
       requestAnimationFrame(frame)
     }
     updateOrbit()
+    updateNavTone()
   }
 
   function frame() {

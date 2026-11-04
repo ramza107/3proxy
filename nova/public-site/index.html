@@ -23,7 +23,7 @@
   <body>
     <div class="grain" aria-hidden="true"></div>
 
-    <header class="nav">
+    <header class="nav" data-nav>
       <div class="nav-left">
         <a class="nav-pill" href="#get">Get app</a>
         <a class="nav-link" href="#story">Story</a>
@@ -102,6 +102,9 @@
           </div>
 
           <div class="cine-copy">
+            <div class="cine-dots" data-dots aria-hidden="true">
+              <span class="is-on"></span><span></span><span></span><span></span><span></span>
+            </div>
             <p class="cine-chapter" data-chapter>Home</p>
             <p class="cine-line" data-line>Your life, clearly.</p>
           </div>
@@ -110,7 +113,7 @@
         </div>
       </section>
 
-      <section class="quiet" id="story">
+      <section class="quiet" id="story" data-light>
         <p class="quiet-kicker reveal">One quiet place</p>
         <h2 class="quiet-title reveal">
           Tasks, dates, and calm rituals —<br />
@@ -118,7 +121,11 @@
         </h2>
       </section>
 
-      <section class="orbit" id="more">
+      <section class="orbit" id="more" data-light>
+        <div class="orbit-head">
+          <p class="quiet-kicker reveal">Inside the app</p>
+          <h2 class="orbit-title reveal">Swipe through the quiet.</h2>
+        </div>
         <div class="orbit-track" data-orbit>
           <figure class="orbit-card" data-orbit-card>
             <img src="./media/devices/tasks.png" width="912" height="1836" alt="Tasks" />
@@ -129,13 +136,17 @@
             <figcaption>Chat</figcaption>
           </figure>
           <figure class="orbit-card" data-orbit-card>
+            <img src="./media/devices/dates.png" width="912" height="1836" alt="Dates" />
+            <figcaption>Dates</figcaption>
+          </figure>
+          <figure class="orbit-card" data-orbit-card>
             <img src="./media/devices/settings.png" width="912" height="1836" alt="Settings" />
             <figcaption>Pro</figcaption>
           </figure>
         </div>
       </section>
 
-      <section class="strip">
+      <section class="strip" id="get">
         <div class="strip-copy">
           <p class="quiet-kicker reveal">Free + Pro</p>
           <h2 class="strip-title reveal">Start free. Grow when ready.</h2>
@@ -145,14 +156,13 @@
           </p>
           <a
             class="nav-pill nav-pill-dark reveal"
-            id="get"
             href="https://testflight.apple.com/"
             rel="noopener"
             >Try Wahrly</a
           >
         </div>
         <div class="strip-visual reveal">
-          <img src="./media/devices/settings.png" width="912" height="1836" alt="Settings" />
+          <img src="./media/devices/settings.png" width="912" height="1836" alt="Wahrly Pro" />
         </div>
       </section>
 
