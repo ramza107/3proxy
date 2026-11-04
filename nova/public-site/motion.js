@@ -10,8 +10,8 @@
     })
   }
 
-  // Soft parallax on a wrapper so it never fights the float animation.
-  const stage = document.querySelector('.hero-stage .phone-hero')
+  // Soft parallax on hero device wrapper (never fights float animation on .device).
+  const stage = document.querySelector('.hero-stage .device-hero')
   if (stage && !reduce) {
     window.addEventListener(
       'pointermove',
