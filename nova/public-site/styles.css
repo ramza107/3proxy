@@ -155,9 +155,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Perspective MUST live on parent of the rotating product */
-  perspective: 1400px;
-  perspective-origin: 50% 45%;
+  /* No perspective / preserve-3d — rotateY crushed phones on real iOS Safari */
 }
 
 .cine-stage {
@@ -215,7 +213,6 @@ a {
   width: min(320px, 72vw);
   max-width: 340px;
   margin: 0 auto 72px;
-  transform-style: preserve-3d;
   will-change: transform;
   filter: drop-shadow(0 40px 70px rgba(6, 18, 24, 0.48));
 }
@@ -225,8 +222,8 @@ a {
   width: 100%;
   aspect-ratio: 912 / 1836;
   height: auto;
-  transform-style: preserve-3d;
   overflow: hidden;
+  border-radius: 36px;
 }
 
 .cine-shot {
@@ -239,22 +236,13 @@ a {
   visibility: hidden;
   pointer-events: none;
   z-index: 0;
+  transition: opacity 0.35s ease, visibility 0.35s;
 }
 
 .cine-shot.is-active {
   opacity: 1;
   visibility: visible;
   z-index: 1;
-}
-
-@media (min-width: 901px) {
-  .cine-shot {
-    transform: translate3d(0, 0, 0) scale(0.98);
-    transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.4s;
-  }
-  .cine-shot.is-active {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
 }
 
 .cine-copy {
@@ -408,23 +396,48 @@ a {
 
 .orbit-track {
   display: flex;
-  gap: 28px;
-  width: max-content;
-  padding: 28px max(8vw, calc(50vw - 280px)) 16px;
+  gap: 22px;
+  width: auto;
+  max-width: 100%;
+  padding: 28px max(20px, calc(50vw - 140px)) 16px;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: max(20px, calc(50vw - 140px));
+  scrollbar-width: none;
+  transform: none !important;
+}
+
+.orbit-track::-webkit-scrollbar {
+  display: none;
 }
 
 .orbit-card {
   margin: 0;
-  width: 248px;
+  width: min(280px, 72vw);
   flex: 0 0 auto;
+  scroll-snap-align: center;
+  transform: none !important;
+  transition: opacity 0.35s ease, filter 0.35s ease;
+  opacity: 0.72;
+  filter: none;
+}
+
+.orbit-card.is-near {
+  opacity: 1;
 }
 
 .orbit-card img {
   width: 100%;
   height: auto;
+  aspect-ratio: 912 / 1836;
+  object-fit: contain;
   display: block;
   border-radius: 28px;
   filter: drop-shadow(0 24px 36px rgba(10, 28, 34, 0.18));
+  /* Prevent iOS from inventing a weird replaced-element size */
+  max-width: 100%;
 }
 
 .orbit-card figcaption {
@@ -438,7 +451,7 @@ a {
 }
 
 .orbit-hint {
-  display: none;
+  display: block;
   margin: 4px auto 0;
   text-align: center;
   font-size: 11px;
@@ -449,23 +462,13 @@ a {
 }
 
 @media (min-width: 901px) {
-  .orbit {
-    perspective: 1200px;
-  }
   .orbit-track {
-    will-change: transform;
-    transform-style: preserve-3d;
+    gap: 28px;
+    padding: 32px max(40px, calc(50vw - 150px)) 20px;
+    scroll-padding-inline: max(40px, calc(50vw - 150px));
   }
   .orbit-card {
-    width: 268px;
-    transform: rotateY(-12deg) rotateX(2deg);
-    transform-style: preserve-3d;
-    transition: transform 0.45s ease, filter 0.45s ease;
-    filter: brightness(0.92);
-  }
-  .orbit-card.is-near {
-    transform: rotateY(0deg) rotateX(0deg) scale(1.04);
-    filter: brightness(1);
+    width: 300px;
   }
 }
 
@@ -707,34 +710,15 @@ a {
       linear-gradient(270deg, #e6eff1 0%, transparent 8%);
   }
   .orbit-track {
-    width: auto;
-    max-width: 100%;
-    padding: 12px max(16px, calc(50vw - 130px)) 8px;
+    padding: 12px max(16px, calc(50vw - 124px)) 8px;
     gap: 18px;
-    overflow-x: auto;
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: max(16px, calc(50vw - 130px));
-    transform: none !important;
-    scrollbar-width: none;
-  }
-  .orbit-track::-webkit-scrollbar {
-    display: none;
+    scroll-padding-inline: max(16px, calc(50vw - 124px));
   }
   .orbit-card {
     width: min(248px, 68vw);
-    transform: none !important;
-    scroll-snap-align: center;
-    filter: none !important;
-  }
-  .orbit-hint {
-    display: block;
   }
   .strip {
     grid-template-columns: 1fr;
-  }
-  .strip {
     min-height: 0;
   }
   .strip-copy {
@@ -776,7 +760,6 @@ a {
     min-height: 100vh;
     min-height: 100dvh;
     padding: 100px 0 60px;
-    perspective: none;
   }
   .cine-hint,
   .cine-sweep,
@@ -793,4 +776,13 @@ a {
   .cine-shot:not(.is-active) {
     display: none;
   }
+}
+
+/* Hard belt: never allow 3D phone transforms (iOS Safari desktop-site / bugs) */
+.cine-product,
+.cine-stack,
+.orbit-track,
+.orbit-card {
+  transform-style: flat !important;
+  perspective: none !important;
 }
