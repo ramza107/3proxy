@@ -197,8 +197,35 @@
     orbit.addEventListener('scroll', markNearOrbitCard, { passive: true })
   }
 
+  // Explicit px ratio lock — iOS Safari flex/aspect-ratio was stretching phones ~2.5× tall
+  const ratioBoxes = () => [
+    ...document.querySelectorAll('.cine-stack, .orbit-frame'),
+  ]
+
+  function lockPhoneRatio() {
+    ratioBoxes().forEach((el) => {
+      const w = el.clientWidth || el.getBoundingClientRect().width
+      if (!w) return
+      el.style.height = '0px'
+      el.style.paddingBottom = `${((w * 1836) / 912).toFixed(2)}px`
+    })
+  }
+
   window.addEventListener('scroll', onScroll, { passive: true })
-  window.addEventListener('resize', onScroll, { passive: true })
+  window.addEventListener('resize', () => {
+    lockPhoneRatio()
+    onScroll()
+  }, { passive: true })
+  lockPhoneRatio()
+  // After device images decode, width is stable
+  Promise.all(
+    [...document.querySelectorAll('.cine-shot, .orbit-frame img')].map(
+      (img) => (img.decode ? img.decode().catch(() => undefined) : Promise.resolve()),
+    ),
+  ).then(lockPhoneRatio)
+  window.setTimeout(lockPhoneRatio, 100)
+  window.setTimeout(lockPhoneRatio, 600)
+
   onScroll()
   applyCine(0)
 
