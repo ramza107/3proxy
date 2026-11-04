@@ -1,51 +1,43 @@
 (() => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-  const reveals = document.querySelectorAll('.reveal')
+  // Mark key blocks for reveal
+  const targets = document.querySelectorAll(
+    '.quiet-kicker, .quiet-title, .show, .strip-copy > *, .finale-inner > *',
+  )
+  targets.forEach((el) => el.classList.add('reveal'))
+
   if (reduce) {
-    reveals.forEach((el) => el.classList.add('in'))
+    targets.forEach((el) => el.classList.add('in'))
+  } else if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('in')
+            io.unobserve(e.target)
+          }
+        })
+      },
+      { threshold: 0.18, rootMargin: '0px 0px -8% 0px' },
+    )
+    targets.forEach((el) => io.observe(el))
   } else {
-    requestAnimationFrame(() => {
-      reveals.forEach((el) => el.classList.add('in'))
-    })
+    targets.forEach((el) => el.classList.add('in'))
   }
 
-  // Soft parallax on a wrapper so it never fights the float animation.
-  const stage = document.querySelector('.hero-stage .phone-hero')
-  if (stage && !reduce) {
+  // Soft pointer parallax on hero product
+  const product = document.querySelector('.hero-product')
+  if (product && !reduce) {
     window.addEventListener(
       'pointermove',
       (e) => {
-        const x = (e.clientX / window.innerWidth - 0.5) * 8
-        const y = (e.clientY / window.innerHeight - 0.5) * 6
-        stage.style.setProperty('--px', `${x.toFixed(2)}px`)
-        stage.style.setProperty('--py', `${y.toFixed(2)}px`)
+        const x = (e.clientX / window.innerWidth - 0.5) * 12
+        const y = (e.clientY / window.innerHeight - 0.5) * 8
+        product.style.setProperty('--tx', `${x.toFixed(2)}px`)
+        product.style.setProperty('--ty', `${y.toFixed(2)}px`)
       },
       { passive: true },
     )
   }
-
-  const rail = document.querySelector('[data-rail]')
-  if (!rail) return
-  let down = false
-  let startX = 0
-  let scrollLeft = 0
-  rail.addEventListener('pointerdown', (e) => {
-    down = true
-    startX = e.pageX - rail.offsetLeft
-    scrollLeft = rail.scrollLeft
-    rail.setPointerCapture(e.pointerId)
-  })
-  rail.addEventListener('pointerup', () => {
-    down = false
-  })
-  rail.addEventListener('pointerleave', () => {
-    down = false
-  })
-  rail.addEventListener('pointermove', (e) => {
-    if (!down) return
-    e.preventDefault()
-    const x = e.pageX - rail.offsetLeft
-    rail.scrollLeft = scrollLeft - (x - startX)
-  })
 })()
