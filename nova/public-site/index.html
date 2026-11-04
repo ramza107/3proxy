@@ -37,7 +37,7 @@
     </header>
 
     <main>
-      <!-- Scroll-scrub cinematic scene (Higgsfield-style product story) -->
+      <!-- Scroll-scrub cinematic scene -->
       <section class="cine" id="top" data-cine>
         <div class="cine-sticky">
           <div class="cine-stage" aria-hidden="true">
@@ -109,7 +109,10 @@
             <p class="cine-line" data-line>Your life, clearly.</p>
           </div>
 
-          <div class="cine-hint" data-hint>Scroll</div>
+          <div class="cine-hint" data-hint>
+            <span class="cine-hint-chevron" aria-hidden="true"></span>
+            Scroll
+          </div>
         </div>
       </section>
 
@@ -126,7 +129,12 @@
           <p class="quiet-kicker reveal">Inside the app</p>
           <h2 class="orbit-title reveal">Swipe through the quiet.</h2>
         </div>
+        <div class="orbit-fade" aria-hidden="true"></div>
         <div class="orbit-track" data-orbit>
+          <figure class="orbit-card" data-orbit-card>
+            <img src="./media/devices/home.png" width="912" height="1836" alt="Home" />
+            <figcaption>Home</figcaption>
+          </figure>
           <figure class="orbit-card" data-orbit-card>
             <img src="./media/devices/tasks.png" width="912" height="1836" alt="Tasks" />
             <figcaption>Tasks</figcaption>
@@ -140,10 +148,11 @@
             <figcaption>Dates</figcaption>
           </figure>
           <figure class="orbit-card" data-orbit-card>
-            <img src="./media/devices/settings.png" width="912" height="1836" alt="Settings" />
-            <figcaption>Pro</figcaption>
+            <img src="./media/devices/bills.png" width="912" height="1836" alt="Bills" />
+            <figcaption>Bills</figcaption>
           </figure>
         </div>
+        <p class="orbit-hint reveal" aria-hidden="true">Drag or swipe</p>
       </section>
 
       <section class="strip" id="get">
@@ -154,6 +163,14 @@
             Free covers Tasks, Dates, on-device chat, and Home. Pro unlocks Plan day, Bills,
             Shopping, rituals, and cloud AI.
           </p>
+          <ul class="strip-pills reveal">
+            <li>Tasks</li>
+            <li>Dates</li>
+            <li>Chat</li>
+            <li class="is-pro">Plan day</li>
+            <li class="is-pro">Bills</li>
+            <li class="is-pro">Cloud AI</li>
+          </ul>
           <a
             class="nav-pill nav-pill-dark reveal"
             href="https://testflight.apple.com/"
@@ -162,13 +179,13 @@
           >
         </div>
         <div class="strip-visual reveal">
-          <img src="./media/devices/settings.png" width="912" height="1836" alt="Wahrly Pro" />
+          <img src="./media/devices/home.png" width="912" height="1836" alt="Wahrly Home" />
         </div>
       </section>
 
       <section class="finale">
         <div class="finale-bg" aria-hidden="true">
-          <img src="./media/splash.png" alt="" />
+          <img src="./media/mist.jpg" alt="" />
         </div>
         <div class="finale-inner">
           <p class="finale-brand reveal">Wahrly</p>

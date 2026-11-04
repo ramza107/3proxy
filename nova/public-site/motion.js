@@ -23,7 +23,7 @@
           }
         })
       },
-      { threshold: 0.16, rootMargin: '0px 0px -6% 0px' },
+      { threshold: 0.08, rootMargin: '0px 0px -4% 0px' },
     )
     reveals.forEach((el) => io.observe(el))
   } else {
@@ -43,13 +43,14 @@
   const video = document.querySelector('.cine-video')
   const dots = [...document.querySelectorAll('[data-dots] span')]
   const nav = document.querySelector('[data-nav]')
-  const lightSections = [...document.querySelectorAll('[data-light]')]
 
   let target = 0
   let current = 0
   let activeShot = -1
   let ticking = false
   let copyGen = 0
+  let ptrX = 0
+  let ptrY = 0
 
   const isMobile = () => window.matchMedia('(max-width: 900px)').matches
 
@@ -96,7 +97,6 @@
         lineEl.style.transform = 'translateY(0)'
       }, 180)
     }
-    // light sweep when chapter changes (desktop only — quieter on phones)
     if (sweep && !isMobile()) {
       sweep.style.transition = 'none'
       sweep.style.opacity = '0'
@@ -114,28 +114,31 @@
 
   function updateNavTone() {
     if (!nav) return
-    const y = 28
-    const overLight = lightSections.some((sec) => {
+    // Geometry under the fixed nav band (avoid elementFromPoint — nav children stay clickable).
+    const y = 48
+    const onLight = [...document.querySelectorAll('[data-light]')].some((sec) => {
       const r = sec.getBoundingClientRect()
-      return r.top <= y && r.bottom >= y + 40
+      return r.top <= y && r.bottom > y + 24
     })
-    nav.classList.toggle('on-light', overLight)
+    nav.classList.toggle('on-light', onLight)
   }
 
   function applyCine(p) {
-    // Entrance → orbit → settle
     const enter = clamp(p / 0.15, 0, 1)
     const mid = clamp((p - 0.15) / 0.7, 0, 1)
     const exit = clamp((p - 0.85) / 0.15, 0, 1)
     const mobile = isMobile()
 
-    // Mobile: upright + float only. 3D rotateY made iOS look crushed/left-skewed.
     const scale = mobile ? lerp(0.94, 1, enter) : lerp(0.78, 1, enter)
     const y = mobile
       ? lerp(18, 0, enter) + lerp(0, -8, exit)
       : lerp(70, 0, enter) + lerp(0, -18, exit)
-    const rotY = mobile ? 0 : lerp(-22, 0, enter) + Math.sin(mid * Math.PI * 2) * 14 * (1 - exit)
-    const rotX = mobile ? 0 : lerp(8, 0, enter) + Math.sin(mid * Math.PI) * -3
+    const rotY = mobile
+      ? 0
+      : lerp(-22, 0, enter) + Math.sin(mid * Math.PI * 2) * 14 * (1 - exit) + ptrX * 0.35 * (1 - exit)
+    const rotX = mobile
+      ? 0
+      : lerp(8, 0, enter) + Math.sin(mid * Math.PI) * -3 + ptrY * 0.25 * (1 - exit)
 
     if (product) {
       product.classList.toggle('is-idle', p < 0.08 || (mobile && p > 0.2 && p < 0.85))
@@ -150,7 +153,7 @@
     setShot(p < 0.12 ? 0 : shotIndex)
 
     if (hint) {
-      hint.style.opacity = String(clamp(1 - p * 3, 0, 1) * 0.7)
+      hint.style.opacity = String(clamp(1 - p * 3.2, 0, 1) * 0.75)
     }
 
     if (video) {
@@ -185,7 +188,6 @@
 
   function updateOrbit() {
     if (!orbit) return
-    // Mobile uses native horizontal scroll — never apply 3D / translate hacks.
     if (isMobile()) {
       orbit.style.transform = ''
       orbitCards.forEach((card) => {
@@ -213,26 +215,22 @@
       card.classList.toggle('is-near', dist < 0.55)
       const tilt = clamp((c - midX) / midX, -1, 1)
       if (!card.classList.contains('is-near')) {
-        card.style.transform = `rotateY(${(-14 - tilt * 6).toFixed(1)}deg) rotateX(3deg) scale(0.97)`
+        card.style.transform = `rotateY(${(-12 - tilt * 6).toFixed(1)}deg) rotateX(2deg) scale(0.97)`
       } else {
         card.style.transform = ''
       }
     })
   }
 
-  // Pointer parallax on product (subtle, layered on scroll transform via CSS vars)
-  let px = 0
-  let py = 0
   window.addEventListener(
     'pointermove',
     (e) => {
-      px = (e.clientX / window.innerWidth - 0.5) * 10
-      py = (e.clientY / window.innerHeight - 0.5) * 6
-      if (product && !cine?.matches(':hover')) {
-        // Applied as additional translate in a child would fight scroll — skip while scrubbing hard.
+      if (isMobile()) return
+      ptrX = (e.clientX / window.innerWidth - 0.5) * 10
+      ptrY = (e.clientY / window.innerHeight - 0.5) * 6
+      if (!ticking && cineProgress() < 0.9) {
+        applyCine(current)
       }
-      void px
-      void py
     },
     { passive: true },
   )
@@ -242,7 +240,6 @@
   onScroll()
   applyCine(0)
 
-  // Ensure video plays
   if (video) {
     video.play?.().catch(() => undefined)
   }
