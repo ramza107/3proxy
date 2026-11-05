@@ -96,9 +96,12 @@ function RootLayout() {
     const supabase = getSupabase()
     if (!supabase) return
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       const session = data.session
       if (session?.user) {
+        const { hydrateOnboardingFromUser } = await import('../lib/onboardingProfile')
+        // Hydrate before sessionUserId so gate doesn't flash Welcome
+        hydrateOnboardingFromUser(session.user)
         setDemoSession(session.user.email || 'user@wahrly.app', session.user.user_metadata?.name)
         useNovaStore.setState({
           demoMode: false,
@@ -109,14 +112,17 @@ function RootLayout() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        useNovaStore.setState({
-          demoMode: false,
-          sessionUserId: session.user.id,
-          sessionEmail: session.user.email || null,
+        void import('../lib/onboardingProfile').then(({ hydrateOnboardingFromUser }) => {
+          hydrateOnboardingFromUser(session.user)
+          useNovaStore.setState({
+            demoMode: false,
+            sessionUserId: session.user.id,
+            sessionEmail: session.user.email || null,
+          })
+          if (session.user.user_metadata?.name) {
+            updateSettings({ name: session.user.user_metadata.name })
+          }
         })
-        if (session.user.user_metadata?.name) {
-          updateSettings({ name: session.user.user_metadata.name })
-        }
       } else if (!useNovaStore.getState().demoMode) {
         clearSession()
       }

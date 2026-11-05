@@ -15,7 +15,6 @@ import { useT } from '../../lib/useT'
 export default function AuthCallbackScreen() {
   const t = useT()
   const router = useRouter()
-  const onboardingComplete = useNovaStore((s) => s.settings.onboardingComplete)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -34,7 +33,9 @@ export default function AuthCallbackScreen() {
           await createSessionFromUrl(url)
         }
         if (cancelled) return
-        router.replace(onboardingComplete ? '/tasks' : '/welcome')
+        // Read after hydrateOnboardingFromUser inside createSessionFromUrl
+        const onboarded = useNovaStore.getState().settings.onboardingComplete
+        router.replace(onboarded ? '/tasks' : '/welcome')
       } catch (e) {
         if (cancelled) return
         setError(e instanceof Error ? e.message : t('auth.socialFailed'))
@@ -44,7 +45,7 @@ export default function AuthCallbackScreen() {
     return () => {
       cancelled = true
     }
-  }, [onboardingComplete, router, t])
+  }, [router, t])
 
   return (
     <Screen>
