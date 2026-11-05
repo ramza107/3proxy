@@ -1,6 +1,6 @@
-name: Deploy Wahrly privacy site to GitHub Pages
+name: Deploy Wahrly site to GitHub Pages
 
-# Static landing + privacy only — not the Expo web app.
+# Static landing + privacy/terms only — not the Expo app.
 # Needed for App Store / Google OAuth privacy URLs.
 # iPhone builds do not depend on this deploy.
 
@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'nova/public-site/**'
+      - 'site/**'
       - '.github/workflows/deploy-github-pages.yml'
   workflow_dispatch:
 
@@ -29,20 +29,22 @@ jobs:
 
       - name: Assemble static site
         run: |
-          mkdir -p site/nova
-          cp -R nova/public-site/. site/nova/
-          # Repo root → /nova/
-          cat > site/index.html <<'HTML'
+          mkdir -p pages
+          cp -R site/. pages/
+          # Old /nova/ bookmarks → site root (survives 3proxy → wahrly rename)
+          mkdir -p pages/nova
+          cat > pages/nova/index.html <<'HTML'
           <!doctype html>
           <meta charset="utf-8" />
-          <meta http-equiv="refresh" content="0; url=nova/" />
+          <meta http-equiv="refresh" content="0; url=../" />
+          <link rel="canonical" href="../" />
           <title>Wahrly</title>
-          <p><a href="nova/">Wahrly</a></p>
+          <p><a href="../">Wahrly</a></p>
           HTML
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: pages
 
   deploy:
     needs: build

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wahrly Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #0f2a32;
+        --muted: #5a6f76;
+        --accent: #0f6e66;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        background: #f4f7f8;
+        color: var(--ink);
+        line-height: 1.55;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid rgba(15, 110, 102, 0.12);
+        border-radius: 20px;
+        padding: 28px 24px;
+      }
+      .brand { color: var(--accent); font-family: Georgia, serif; font-size: 18px; margin: 0 0 4px; }
+      h1 { margin: 0 0 8px; font-family: Georgia, serif; font-size: 34px; letter-spacing: -0.03em; }
+      .meta { color: var(--muted); font-size: 13px; margin: 0 0 20px; }
+      h2 { font-size: 16px; margin: 22px 0 8px; }
+      p, li { font-size: 15px; margin: 0 0 10px; }
+      ul { padding-left: 18px; margin: 0 0 10px; }
+      a { color: var(--accent); }
+      .back { display: inline-block; margin-bottom: 14px; color: var(--accent); font-weight: 600; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="../">← Wahrly</a>
+      <article class="card">
+        <p class="brand">Wahrly</p>
+        <h1>Privacy Policy</h1>
+        <p class="meta">Effective date: 18 September 2026 · Contact: rr.aliev96@gmail.com</p>
+
+        <p>
+          This Privacy Policy explains how Wahrly (“we”, “us”) handles information when you use the
+          Wahrly mobile application and related API. By using Wahrly, you agree to this policy. If you
+          do not agree, please do not use the service or connect your Google account.
+        </p>
+
+        <h2>1. Who we are</h2>
+        <p>
+          Wahrly is a personal AI life assistant that helps you organize tasks, reminders, and a calm
+          daily plan. The product is operated by the Wahrly developer (contact below).
+        </p>
+        <ul>
+          <li>Public site: https://ramza107.github.io/wahrly/</li>
+          <li>AI / API server: https://threeproxy-x9bi.onrender.com</li>
+          <li>Contact: rr.aliev96@gmail.com</li>
+        </ul>
+
+        <h2>2. Information we collect</h2>
+        <p>Depending on how you use Wahrly, we may process:</p>
+        <ul>
+          <li>Account information — email address and name you provide when signing in (including via Supabase Auth when configured).</li>
+          <li>App content you create — tasks, checklists, reminders, chat messages with Wahrly, and settings (stored on your device and/or in your Supabase project when connected).</li>
+          <li>Google account data (only after you tap “Connect with Google” and grant permission) — limited Calendar access described in section 3.</li>
+          <li>Technical data — basic server logs (timestamps, error messages) needed to keep the service running. We do not sell advertising profiles.</li>
+        </ul>
+
+        <h2>3. Google Calendar access</h2>
+        <p>
+          If you connect Google, Wahrly requests only calendar.readonly (plus basic account email for
+          the connected-account label). Wahrly does not request Gmail scopes and does not read your
+          mail. Reconnect in Settings if you connected earlier with mail scopes so Google drops them.
+        </p>
+        <p>With those permissions, Wahrly may:</p>
+        <ul>
+          <li>Read today’s events from your primary Google Calendar to show them on the Home signal timeline and to avoid those times when packing Plan day.</li>
+        </ul>
+        <p>Wahrly does not:</p>
+        <ul>
+          <li>Read, send, draft, delete, or modify your email.</li>
+          <li>Create, edit, or delete Google Calendar events.</li>
+          <li>Read your calendar without your explicit Connect / Allow step.</li>
+          <li>Sell your Google content to third parties.</li>
+        </ul>
+        <p>
+          Google OAuth tokens (access / refresh) are stored on our API server so calendar events can
+          refresh without asking you to Allow every day. You can disconnect Google at any time in
+          Settings; we then delete the stored tokens for your account.
+        </p>
+        <p>
+          Wahrly’s use of information received from Google APIs will adhere to the Google API Services
+          User Data Policy, including the Limited Use requirements.
+        </p>
+
+        <h2>4. How we use information</h2>
+        <ul>
+          <li>Provide and improve Wahrly features (tasks, chat, morning brief, calendar).</li>
+          <li>Authenticate you and keep your session secure.</li>
+          <li>Call AI providers (for example Groq or OpenAI) with the text needed to answer your chat — not for unrelated advertising.</li>
+          <li>Comply with law if required.</li>
+        </ul>
+
+        <h2>5. AI processing</h2>
+        <p>
+          When you chat with Wahrly, message text may be sent to our API server and then to the
+          configured AI provider to generate a reply. Do not paste secrets (passwords, bank codes)
+          into chat.
+        </p>
+
+        <h2>6. Storage and retention</h2>
+        <p>
+          Local app data stays on your device until you clear app storage or delete the account data.
+          Server-side Google tokens are kept while your Google connection is active and removed on
+          disconnect. Logs are kept only as long as needed for operations and abuse prevention.
+        </p>
+
+        <h2>7. Sharing</h2>
+        <p>
+          We do not sell your personal information. We share data only with processors needed to run
+          Wahrly (hosting, auth, AI APIs) under their terms, or when required by law.
+        </p>
+
+        <h2>8. Security</h2>
+        <p>
+          We use HTTPS and industry-standard practices to protect tokens and accounts. No method of
+          transmission is 100% secure; please use a strong password for your Wahrly account.
+        </p>
+
+        <h2>9. Children’s privacy</h2>
+        <p>
+          Wahrly is not directed at children under 13. We do not knowingly collect personal
+          information from children under 13.
+        </p>
+
+        <h2>10. Your choices</h2>
+        <ul>
+          <li>Disconnect Google Calendar in Settings at any time.</li>
+          <li>Delete your account in Settings → Delete account (clears local data too).</li>
+          <li>Delete local data by clearing app storage / uninstalling.</li>
+          <li>Email us if you need extra server-side cleanup after delete.</li>
+        </ul>
+
+        <h2>11. Changes</h2>
+        <p>
+          We may update this policy. The effective date above will change when we do. Continued use
+          after an update means you accept the revised policy.
+        </p>
+
+        <h2>12. Contact</h2>
+        <p>Questions about privacy or Google data: <a href="mailto:rr.aliev96@gmail.com?subject=Wahrly%20Privacy">rr.aliev96@gmail.com</a></p>
+      </article>
+    </main>
+  </body>
+</html>
