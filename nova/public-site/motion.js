@@ -54,6 +54,14 @@
   let cTarget = 0
   let cCurrent = 0
 
+  // —— Quiet: white band expands + Morning/Evening phones ——
+  const quiet = document.querySelector('[data-quiet]')
+  const qBand = document.querySelector('[data-qband]')
+  const qPhoneL = document.querySelector('[data-qphone-l]')
+  const qPhoneR = document.querySelector('[data-qphone-r]')
+  let qTarget = 0
+  let qCurrent = 0
+
   let target = 0
   let current = 0
   let activeShot = -1
@@ -88,6 +96,10 @@
 
   function convergeProgress() {
     return sectionProgress(converge)
+  }
+
+  function quietProgress() {
+    return sectionProgress(quiet)
   }
 
   function setShot(index) {
@@ -222,9 +234,36 @@
     }
   }
 
+  function applyQuiet(p) {
+    if (!quiet) return
+    const small = narrow()
+    // Band grows from a mid stripe (copy fits inside) to full viewport
+    const expand = easeInOut(clamp(p / 0.48, 0, 1))
+    const startH = small ? 54 : 52
+    const bandH = lerp(startH, 100, expand)
+    if (qBand) {
+      qBand.style.height = `${bandH.toFixed(2)}vh`
+      qBand.style.top = `${((100 - bandH) / 2).toFixed(2)}vh`
+      qBand.style.transform = 'none'
+    }
+
+    // Phones arrive from the sides as the band opens
+    const phoneIn = easeInOut(clamp((p - 0.22) / 0.42, 0, 1))
+    const slide = small ? 40 : 88
+    if (qPhoneL) {
+      qPhoneL.style.opacity = phoneIn.toFixed(3)
+      qPhoneL.style.transform = `translate3d(${lerp(-slide, 0, phoneIn).toFixed(1)}px, ${lerp(22, 0, phoneIn).toFixed(1)}px, 0)`
+    }
+    if (qPhoneR) {
+      qPhoneR.style.opacity = phoneIn.toFixed(3)
+      qPhoneR.style.transform = `translate3d(${lerp(slide, 0, phoneIn).toFixed(1)}px, ${lerp(22, 0, phoneIn).toFixed(1)}px, 0)`
+    }
+  }
+
   function onScroll() {
     target = cineProgress()
     cTarget = convergeProgress()
+    qTarget = quietProgress()
     if (!ticking) {
       ticking = true
       requestAnimationFrame(frame)
@@ -236,11 +275,18 @@
   function frame() {
     current = lerp(current, target, 0.14)
     cCurrent = lerp(cCurrent, cTarget, 0.16)
+    qCurrent = lerp(qCurrent, qTarget, 0.16)
     if (Math.abs(current - target) < 0.0008) current = target
     if (Math.abs(cCurrent - cTarget) < 0.0008) cCurrent = cTarget
+    if (Math.abs(qCurrent - qTarget) < 0.0008) qCurrent = qTarget
     applyCine(current)
     applyConverge(cCurrent)
-    if (Math.abs(current - target) > 0.0008 || Math.abs(cCurrent - cTarget) > 0.0008) {
+    applyQuiet(qCurrent)
+    if (
+      Math.abs(current - target) > 0.0008 ||
+      Math.abs(cCurrent - cTarget) > 0.0008 ||
+      Math.abs(qCurrent - qTarget) > 0.0008
+    ) {
       requestAnimationFrame(frame)
     } else {
       ticking = false
@@ -275,7 +321,9 @@
 
   // Explicit px ratio lock — iOS Safari flex/aspect-ratio was stretching phones ~2.5× tall
   const ratioBoxes = () => [
-    ...document.querySelectorAll('.cine-stack, .orbit-frame, .converge-phone .orbit-frame'),
+    ...document.querySelectorAll(
+      '.cine-stack, .orbit-frame, .converge-phone .orbit-frame, .quiet-phone .orbit-frame',
+    ),
   ]
 
   function lockPhoneRatio() {
@@ -305,6 +353,7 @@
   onScroll()
   applyCine(0)
   applyConverge(0)
+  applyQuiet(0)
 
   if (video) {
     video.play?.().catch(() => undefined)

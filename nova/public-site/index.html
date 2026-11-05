@@ -18,7 +18,7 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,480;9..144,600&family=Outfit:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=sharp34" />
+    <link rel="stylesheet" href="./styles.css?v=quiet-expand-v1" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -119,12 +119,44 @@
         </div>
       </section>
 
-      <section class="quiet" id="story" data-light>
-        <p class="quiet-kicker reveal">One quiet place</p>
-        <h2 class="quiet-title reveal">
-          Tasks, dates, and calm rituals —<br />
-          instead of five noisy apps.
-        </h2>
+      <!-- White band expands → Morning + Evening phones -->
+      <section class="quiet" id="story" data-quiet data-light>
+        <div class="quiet-sticky">
+          <div class="quiet-band" data-qband aria-hidden="true"></div>
+          <div class="quiet-layout">
+            <figure class="quiet-phone quiet-phone-l" data-qphone-l>
+              <div class="orbit-frame">
+                <img
+                  src="./media/devices/morning.png?v=sharp34"
+                  width="912"
+                  height="1836"
+                  alt="Morning ritual"
+                />
+              </div>
+              <figcaption>Morning</figcaption>
+            </figure>
+
+            <div class="quiet-copy">
+              <p class="quiet-kicker">One quiet place</p>
+              <h2 class="quiet-title">
+                Tasks, dates, and calm rituals —<br />
+                instead of five noisy apps.
+              </h2>
+            </div>
+
+            <figure class="quiet-phone quiet-phone-r" data-qphone-r>
+              <div class="orbit-frame">
+                <img
+                  src="./media/devices/evening.png?v=sharp34"
+                  width="912"
+                  height="1836"
+                  alt="Evening ritual"
+                />
+              </div>
+              <figcaption>Evening</figcaption>
+            </figure>
+          </div>
+        </div>
       </section>
 
       <!-- Many tasks → one phone → Wahrly lights -->
@@ -330,6 +362,6 @@
       </div>
     </footer>
 
-    <script src="./motion.js?v=sharp34" defer></script>
+    <script src="./motion.js?v=quiet-expand-v1" defer></script>
   </body>
 </html>

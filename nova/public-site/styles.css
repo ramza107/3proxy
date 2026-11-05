@@ -365,11 +365,52 @@ a {
   }
 }
 
-/* —— Quiet —— */
+/* —— Quiet: white band expands, Morning + Evening appear —— */
 .quiet {
+  position: relative;
+  height: 260vh;
+  background: #0a1519;
+}
+
+.quiet-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100svh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.quiet-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  /* Tall enough to hold the centered copy from the first frame */
+  height: 52vh;
+  transform: translateY(-50%);
   background: var(--cream);
-  padding: clamp(80px, 13vw, 150px) 24px;
+  z-index: 0;
+  will-change: height, top;
+}
+
+.quiet-layout {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, calc(100% - 32px));
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-items: center;
+  gap: 28px;
+  pointer-events: none;
+}
+
+.quiet-copy {
   text-align: center;
+  max-width: 22ch;
 }
 
 .quiet-kicker {
@@ -383,12 +424,128 @@ a {
 
 .quiet-title {
   margin: 0 auto;
-  max-width: 18ch;
+  max-width: 22ch;
   font-family: var(--font-brand);
   font-weight: 480;
-  font-size: clamp(28px, 5vw, 52px);
-  line-height: 1.15;
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 1.18;
   letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.quiet-phone {
+  margin: 0;
+  width: min(168px, 38vw);
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+  will-change: transform, opacity;
+  filter: drop-shadow(0 22px 36px rgba(10, 28, 34, 0.2));
+}
+
+.quiet-phone .orbit-frame {
+  border-radius: 0;
+  background: transparent;
+}
+
+.quiet-phone figcaption {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(19, 42, 49, 0.5);
+}
+
+@media (max-width: 900px) {
+  .quiet-layout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'copy copy'
+      'left right';
+    gap: 20px 16px;
+    width: min(420px, calc(100% - 28px));
+  }
+
+  .quiet-copy {
+    grid-area: copy;
+    max-width: 20ch;
+  }
+
+  .quiet-phone-l {
+    grid-area: left;
+    justify-self: end;
+  }
+
+  .quiet-phone-r {
+    grid-area: right;
+    justify-self: start;
+  }
+
+  .quiet-phone {
+    width: min(148px, 42vw);
+  }
+
+  .quiet-title {
+    font-size: clamp(26px, 7vw, 36px);
+  }
+}
+
+@media (min-width: 901px) {
+  .quiet {
+    height: 240vh;
+  }
+
+  .quiet-layout {
+    grid-template-columns: minmax(180px, 220px) minmax(280px, 1fr) minmax(180px, 220px);
+    gap: clamp(28px, 4vw, 56px);
+    width: min(1080px, calc(100% - 64px));
+  }
+
+  .quiet-copy {
+    max-width: 22ch;
+  }
+
+  .quiet-title {
+    font-size: clamp(32px, 3.6vw, 48px);
+    max-width: 22ch;
+  }
+
+  .quiet-phone {
+    width: 100%;
+    max-width: 220px;
+  }
+
+  .quiet-phone-l {
+    justify-self: end;
+  }
+
+  .quiet-phone-r {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiet {
+    height: auto;
+    background: var(--cream);
+  }
+  .quiet-sticky {
+    position: relative;
+    height: auto;
+    min-height: 100svh;
+    padding: 72px 20px;
+  }
+  .quiet-band {
+    inset: 0;
+    top: 0;
+    height: 100% !important;
+    transform: none !important;
+  }
+  .quiet-phone {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* —— Converge: many tasks → one phone → Wahrly lights —— */
@@ -1093,7 +1250,8 @@ a {
 .orbit-track,
 .orbit-card,
 .converge-phone,
-.converge-chip {
+.converge-chip,
+.quiet-phone {
   transform-style: flat !important;
   perspective: none !important;
 }
@@ -1165,15 +1323,6 @@ a {
 
   .cine-hint {
     bottom: 28px;
-  }
-
-  .quiet {
-    padding: clamp(96px, 12vw, 140px) 24px;
-  }
-
-  .quiet-title {
-    max-width: 16ch;
-    font-size: clamp(36px, 4.2vw, 52px);
   }
 
   .orbit {
