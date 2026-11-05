@@ -11,7 +11,8 @@
     "splash": {
       "image": "./assets/splash/launch-mist-glass.png",
       "resizeMode": "cover",
-      "backgroundColor": "#0F6E66"
+      "backgroundColor": "#0F6E66",
+      "enableFullScreenImage_legacy": true
     },
     "ios": {
       "supportsTablet": true,
