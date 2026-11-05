@@ -30,12 +30,17 @@ jobs:
       - name: Assemble static site
         run: |
           mkdir -p pages
-          # Canonical site at repo Pages root: /wahrly/
+          # Canonical site at repo Pages root: /wahrly/ (and custom domain apex)
           cp -R site/. pages/
+          # Custom domain CNAME must live only at Pages root (not under /nova/).
+          # DNS: apex A → GitHub Pages; www CNAME → ramza107.github.io
+          # After DNS: Settings → Pages → Custom domain = wahrly.com → Enforce HTTPS
+          printf 'wahrly.com\n' > pages/CNAME
           # Also mirror under /nova/ with NO redirect.
           # Old bookmarks and cached "go to /nova/" index files must not loop.
           mkdir -p pages/nova
           cp -R site/. pages/nova/
+          rm -f pages/nova/CNAME
 
       - uses: actions/upload-pages-artifact@v3
         with:
