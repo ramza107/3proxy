@@ -1,0 +1,52 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2026 Roman Aliiev",
+    "categories": [
+      "PRODUCTIVITY",
+      "LIFESTYLE"
+    ],
+    "version": "1.1.0",
+    "release": {
+      "automaticRelease": false
+    },
+    "info": {
+      "en-US": {
+        "title": "Wahrly",
+        "subtitle": "Close the day, clearly",
+        "privacyPolicyUrl": "https://ramza107.github.io/wahrly/privacy"
+      }
+    },
+    "review": {
+      "firstName": "Roman",
+      "lastName": "Aliiev",
+      "email": "rr.aliev96@gmail.com",
+      "demoRequired": false,
+      "notes": "Demo account not required \u2014 Free works fully offline for Tasks / Dates / Chat.\nPro uses StoreKit product com.wahrly.assistant.pro.monthly.\nGoogle Calendar is optional and read-only. No Gmail access.\nSign in with Apple is available on device."
+    },
+    "keywords": {
+      "en-US": [
+        "tasks",
+        "daily planner",
+        "reminders",
+        "bills",
+        "shopping list",
+        "life assistant",
+        "evening routine",
+        "calendar"
+      ]
+    },
+    "description": {
+      "en-US": "Wahrly is a daily life assistant \u2014 say it once, see it on Home, close the day at night.\n\nFree\n\u2022 Tasks with a week rail and confirm-before-done\n\u2022 Important Dates with gentle nudges\n\u2022 On-device chat that creates and moves tasks\n\u2022 Home timeline + Settings\n\nWahrly Pro\n\u2022 Bills and Shopping\n\u2022 Life, News, Invest\n\u2022 Plan day (auto free gaps)\n\u2022 Morning brief, Evening Clear, weekly brief\n\u2022 Reminders, Home Screen widget\n\u2022 Cloud AI chat and voice\n\nGoogle Calendar is read-only when you connect it. Wahrly never opens your email.\n\nDesigned for a calm day: add what matters, see what\u2019s next, finish the evening."
+    },
+    "promoText": {
+      "en-US": "Wahrly turns what you say into tasks. Free: Tasks, Dates, on-device chat. Pro: bills, shopping, rituals, Plan day, cloud AI & voice."
+    },
+    "supportUrl": {
+      "en-US": "https://ramza107.github.io/wahrly/privacy"
+    },
+    "marketingUrl": {
+      "en-US": "https://ramza107.github.io/wahrly/"
+    }
+  }
+}
