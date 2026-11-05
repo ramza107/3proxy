@@ -30,17 +30,12 @@ jobs:
       - name: Assemble static site
         run: |
           mkdir -p pages
+          # Canonical site at repo Pages root: /wahrly/
           cp -R site/. pages/
-          # Old /nova/ bookmarks → site root (survives 3proxy → wahrly rename)
+          # Also mirror under /nova/ with NO redirect.
+          # Old bookmarks and cached "go to /nova/" index files must not loop.
           mkdir -p pages/nova
-          cat > pages/nova/index.html <<'HTML'
-          <!doctype html>
-          <meta charset="utf-8" />
-          <meta http-equiv="refresh" content="0; url=../" />
-          <link rel="canonical" href="../" />
-          <title>Wahrly</title>
-          <p><a href="../">Wahrly</a></p>
-          HTML
+          cp -R site/. pages/nova/
 
       - uses: actions/upload-pages-artifact@v3
         with:
