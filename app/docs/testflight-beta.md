@@ -1,4 +1,4 @@
-# Wahrly — TestFlight (1.1.0 / build 69)
+# Wahrly — TestFlight (1.1.0 / build 70)
 
 Материалы для App Store Connect → TestFlight: описание, What to Test, Free/Pro, скрины.
 
@@ -21,7 +21,7 @@ Wahrly — ассистент дня. Free: задачи, даты и локал
 ## What to Test (EN) — paste into TestFlight
 
 ```
-Wahrly 1.1.0 (build 69) — native Apple Sign In (autolinked module)
+Wahrly 1.1.0 (build 70) — native Apple Sign In (autolinked module)
 
 PLEASE TRY
 0) Login: Continue with Apple → system sheet. Needs Apple ID on the phone. Not Safari / not “not available on this device”.
