@@ -44,6 +44,16 @@
   const dots = [...document.querySelectorAll('[data-dots] span')]
   const nav = document.querySelector('[data-nav]')
 
+  // —— Converge: tasks → phone → Wahrly glow ——
+  const converge = document.querySelector('[data-converge]')
+  const chips = [...document.querySelectorAll('[data-chip]')]
+  const cPhone = document.querySelector('[data-cphone]')
+  const cAura = document.querySelector('[data-caura]')
+  const cBrand = document.querySelector('[data-cbrand]')
+  const cTag = document.querySelector('[data-ctag]')
+  let cTarget = 0
+  let cCurrent = 0
+
   let target = 0
   let current = 0
   let activeShot = -1
@@ -60,12 +70,24 @@
     return a + (b - a) * t
   }
 
-  function cineProgress() {
-    if (!cine) return 0
-    const rect = cine.getBoundingClientRect()
-    const total = cine.offsetHeight - window.innerHeight
+  function easeInOut(t) {
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+  }
+
+  function sectionProgress(el) {
+    if (!el) return 0
+    const rect = el.getBoundingClientRect()
+    const total = el.offsetHeight - window.innerHeight
     if (total <= 0) return 0
     return clamp(-rect.top / total, 0, 1)
+  }
+
+  function cineProgress() {
+    return sectionProgress(cine)
+  }
+
+  function convergeProgress() {
+    return sectionProgress(converge)
   }
 
   function setShot(index) {
@@ -150,8 +172,59 @@
     }
   }
 
+  function applyConverge(p) {
+    if (!converge) return
+    const small = narrow()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    // Scatter radius in px — chips start far, fly to center
+    const rx = small ? vw * 0.42 : Math.min(vw * 0.38, 460)
+    const ry = small ? vh * 0.36 : Math.min(vh * 0.34, 320)
+
+    chips.forEach((chip, i) => {
+      const ox = parseFloat(chip.dataset.ox || '0') / 50 // -1..1-ish
+      const oy = parseFloat(chip.dataset.oy || '0') / 50
+      const stagger = (i / Math.max(chips.length - 1, 1)) * 0.28
+      const local = clamp((p - 0.04 - stagger) / 0.52, 0, 1)
+      const e = easeInOut(local)
+      const x = ox * rx * (1 - e)
+      const y = oy * ry * (1 - e)
+      const s = lerp(1, 0.28, e)
+      const fade = local < 0.78 ? 1 : clamp(1 - (local - 0.78) / 0.22, 0, 1)
+      chip.style.transform = `translate3d(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px), 0) scale(${s.toFixed(3)})`
+      chip.style.opacity = fade.toFixed(3)
+    })
+
+    // Phone rises as chips arrive
+    const phoneIn = easeInOut(clamp((p - 0.12) / 0.45, 0, 1))
+    if (cPhone) {
+      const ps = lerp(0.78, 1, phoneIn)
+      const po = lerp(0.18, 1, phoneIn)
+      cPhone.style.transform = `scale(${ps.toFixed(3)})`
+      cPhone.style.opacity = po.toFixed(3)
+    }
+
+    // Aura + brand light after gather
+    const light = easeInOut(clamp((p - 0.58) / 0.28, 0, 1))
+    if (cAura) {
+      cAura.style.opacity = (light * 0.95).toFixed(3)
+      cAura.style.transform = `translate(-50%, -50%) scale(${lerp(0.55, 1.12, light).toFixed(3)})`
+    }
+    if (cBrand) {
+      cBrand.style.opacity = light.toFixed(3)
+      cBrand.style.transform = `translateY(${lerp(14, 0, light).toFixed(1)}px)`
+      cBrand.classList.toggle('is-lit', light > 0.55)
+    }
+    if (cTag) {
+      const tag = easeInOut(clamp((p - 0.72) / 0.2, 0, 1))
+      cTag.style.opacity = (tag * 0.9).toFixed(3)
+      cTag.style.transform = `translateY(${lerp(10, 0, tag).toFixed(1)}px)`
+    }
+  }
+
   function onScroll() {
     target = cineProgress()
+    cTarget = convergeProgress()
     if (!ticking) {
       ticking = true
       requestAnimationFrame(frame)
@@ -162,9 +235,12 @@
 
   function frame() {
     current = lerp(current, target, 0.14)
+    cCurrent = lerp(cCurrent, cTarget, 0.16)
     if (Math.abs(current - target) < 0.0008) current = target
+    if (Math.abs(cCurrent - cTarget) < 0.0008) cCurrent = cTarget
     applyCine(current)
-    if (Math.abs(current - target) > 0.0008) {
+    applyConverge(cCurrent)
+    if (Math.abs(current - target) > 0.0008 || Math.abs(cCurrent - cTarget) > 0.0008) {
       requestAnimationFrame(frame)
     } else {
       ticking = false
@@ -199,7 +275,7 @@
 
   // Explicit px ratio lock — iOS Safari flex/aspect-ratio was stretching phones ~2.5× tall
   const ratioBoxes = () => [
-    ...document.querySelectorAll('.cine-stack, .orbit-frame'),
+    ...document.querySelectorAll('.cine-stack, .orbit-frame, .converge-phone .orbit-frame'),
   ]
 
   function lockPhoneRatio() {
@@ -228,6 +304,7 @@
 
   onScroll()
   applyCine(0)
+  applyConverge(0)
 
   if (video) {
     video.play?.().catch(() => undefined)
