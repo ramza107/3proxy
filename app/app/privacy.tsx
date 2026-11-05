@@ -7,7 +7,7 @@ import { brand, colors, fonts, radii, spacing } from '../constants/theme'
 
 const EFFECTIVE = '18 September 2026'
 const CONTACT = 'rr.aliev96@gmail.com'
-const APP_URL = 'https://ramza107.github.io/3proxy/nova/'
+const APP_URL = 'https://ramza107.github.io/wahrly/'
 const API_HOST = 'threeproxy-x9bi.onrender.com'
 
 function H({ children }: { children: ReactNode }) {
@@ -22,7 +22,7 @@ function Bullet({ children }: { children: ReactNode }) {
 
 /**
  * In-app Privacy Policy (same text as public-site/privacy for store / Google review).
- * Public URL: https://ramza107.github.io/3proxy/nova/privacy
+ * Public URL: https://ramza107.github.io/wahrly/privacy
  */
 export default function PrivacyScreen() {
   const router = useRouter()

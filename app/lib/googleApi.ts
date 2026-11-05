@@ -73,4 +73,4 @@ export async function fetchCalendarEvents(
 export const publicAppUrl =
   (extra.publicAppUrl as string) ||
   process.env.EXPO_PUBLIC_APP_URL ||
-  'https://ramza107.github.io/3proxy/nova/'
+  'https://ramza107.github.io/wahrly/'

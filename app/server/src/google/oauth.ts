@@ -27,7 +27,7 @@ export function getRedirectUri() {
 }
 
 export function getAppReturnUrl() {
-  return process.env.PUBLIC_APP_URL || 'https://ramza107.github.io/3proxy/nova/'
+  return process.env.PUBLIC_APP_URL || 'https://ramza107.github.io/wahrly/'
 }
 
 /** Deep link used after OAuth on installed iOS/Android apps. */

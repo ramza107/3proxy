@@ -1,6 +1,6 @@
 /**
  * Dynamic Expo config.
- * - Web (Pages): experiments.baseUrl = /3proxy/nova
+ * - Web (Pages): experiments.baseUrl = /wahrly
  * - Native (EAS ios/android): no baseUrl; deep link scheme wahrly://
  */
 const IS_NATIVE_EAS =
@@ -104,12 +104,12 @@ module.exports = ({ config }) => {
     ],
     experiments: IS_NATIVE_EAS
       ? { typedRoutes: true }
-      : { typedRoutes: true, baseUrl: '/3proxy/nova' },
+      : { typedRoutes: true, baseUrl: '/wahrly' },
     extra: {
       ...(config.extra || {}),
       apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://threeproxy-x9bi.onrender.com',
       publicAppUrl:
-        process.env.EXPO_PUBLIC_APP_URL || 'https://ramza107.github.io/3proxy/nova/',
+        process.env.EXPO_PUBLIC_APP_URL || 'https://ramza107.github.io/wahrly/',
       /** Google OAuth Web client ID (also used for Android/iOS via Supabase). */
       googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || '',

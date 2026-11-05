@@ -3,7 +3,7 @@ services:
     name: nova-ai
     runtime: node
     plan: free
-    rootDir: nova/server
+    rootDir: app/server
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
@@ -31,6 +31,6 @@ services:
       - key: PUBLIC_API_URL
         value: https://threeproxy-x9bi.onrender.com
       - key: PUBLIC_APP_URL
-        value: https://ramza107.github.io/3proxy/nova/
+        value: https://ramza107.github.io/wahrly/
       - key: PUBLIC_NATIVE_APP_URL
         value: wahrly://

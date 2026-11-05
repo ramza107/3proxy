@@ -34,9 +34,10 @@ function authRedirectTo() {
       return `${configured}/auth/callback`
     }
     const parts = window.location.pathname.split('/').filter(Boolean)
-    // GitHub Pages: /3proxy/nova/...
-    const basePath =
-      parts[0] === '3proxy' && parts[1] === 'nova' ? '/3proxy/nova' : ''
+    // GitHub Pages project site: /wahrly/... (legacy /3proxy/nova still accepted)
+    let basePath = ''
+    if (parts[0] === 'wahrly') basePath = '/wahrly'
+    else if (parts[0] === '3proxy' && parts[1] === 'nova') basePath = '/3proxy/nova'
     return `${window.location.origin}${basePath}/auth/callback`
   }
 

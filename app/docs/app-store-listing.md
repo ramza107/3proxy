@@ -51,15 +51,15 @@ tasks,daily planner,reminders,bills,shopping list,life assistant,evening routine
 
 ## Support URL
 
-https://ramza107.github.io/3proxy/nova/privacy
+https://ramza107.github.io/wahrly/privacy
 
 ## Privacy Policy URL
 
-https://ramza107.github.io/3proxy/nova/privacy
+https://ramza107.github.io/wahrly/privacy
 
 ## Terms of Use (EULA) URL
 
-https://ramza107.github.io/3proxy/nova/terms
+https://ramza107.github.io/wahrly/terms
 
 Required for auto-renewable Pro (`com.wahrly.assistant.pro.monthly`). Also linked in-app next to Subscribe.
 

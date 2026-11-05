@@ -16,7 +16,7 @@ Personal AI assistant for everyday life. You tell Wahrly what you need to do —
 ## Product surface
 
 **Wahrly ships as the iPhone / Android app** (EAS / TestFlight).  
-GitHub Pages is only a static privacy landing: https://ramza107.github.io/3proxy/nova/privacy  
+GitHub Pages is only a static privacy landing: https://ramza107.github.io/wahrly/privacy  
 
 AI backend (Groq): `https://threeproxy-x9bi.onrender.com`  
 Keys map: [`docs/keys.md`](docs/keys.md).
@@ -106,13 +106,13 @@ SUPABASE_SERVICE_ROLE_KEY=...
 Самый простой вариант для продакшена — [Render](https://render.com) (есть free tier).
 
 ### 1. Запушь репозиторий на GitHub
-Убедись, что ветка с `nova/server` уже на GitHub.
+Убедись, что ветка с `app/server` уже на GitHub.
 
 ### 2. Создай Web Service на Render
 1. [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**
 2. Подключи репозиторий `ramza107/3proxy`
 3. Настройки:
-   - **Root Directory:** `nova/server`
+   - **Root Directory:** `app/server`
    - **Runtime:** Node
    - **Build Command:** `npm ci`
    - **Start Command:** `npm start`
@@ -150,7 +150,7 @@ EXPO_PUBLIC_API_URL=https://YOUR-SERVICE.onrender.com
 ### Docker (любой хост)
 
 ```bash
-cd nova/server
+cd app/server
 docker build -t nova-ai .
 docker run -p 8787:8787 -e OPENAI_API_KEY=sk-... nova-ai
 ```

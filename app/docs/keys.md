@@ -23,9 +23,9 @@ Google / Apple sign-in goes through **Supabase Auth** (providers in the Supabase
 
 ## 2. Public site (GitHub Pages) — privacy only
 
-https://ramza107.github.io/3proxy/nova/
+https://ramza107.github.io/wahrly/
 
-Static HTML in `nova/public-site/` (not the Expo web app). Exists so App Store / Google OAuth have a privacy URL. Deploy workflow: `.github/workflows/deploy-github-pages.yml`.
+Static HTML in `site/` (not the Expo web app). Exists so App Store / Google OAuth have a privacy URL. Deploy workflow: `.github/workflows/deploy-github-pages.yml`.
 
 ## 3. API server (Render)
 

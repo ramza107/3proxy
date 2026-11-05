@@ -7,9 +7,9 @@ import { brand, colors, fonts, radii, spacing } from '../constants/theme'
 
 const EFFECTIVE = '3 November 2026'
 const CONTACT = 'rr.aliev96@gmail.com'
-const APP_URL = 'https://ramza107.github.io/3proxy/nova/'
-const TERMS_URL = 'https://ramza107.github.io/3proxy/nova/terms'
-const PRIVACY_URL = 'https://ramza107.github.io/3proxy/nova/privacy'
+const APP_URL = 'https://ramza107.github.io/wahrly/'
+const TERMS_URL = 'https://ramza107.github.io/wahrly/terms'
+const PRIVACY_URL = 'https://ramza107.github.io/wahrly/privacy'
 const SKU = 'com.wahrly.assistant.pro.monthly'
 
 function H({ children }: { children: ReactNode }) {
@@ -24,7 +24,7 @@ function Bullet({ children }: { children: ReactNode }) {
 
 /**
  * In-app Terms of Use (auto-renewable Pro) — Apple Guideline 3.1.2.
- * Public URL: https://ramza107.github.io/3proxy/nova/terms
+ * Public URL: https://ramza107.github.io/wahrly/terms
  */
 export default function TermsScreen() {
   const router = useRouter()

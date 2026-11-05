@@ -19,7 +19,7 @@ Wahrly does **not** use Gmail or any mail APIs. Scope is Calendar read-only only
 3. App name: `Wahrly`  
 4. Support email: your email  
 5. **Privacy policy link** (required for verification):  
-   `https://ramza107.github.io/3proxy/nova/privacy`  
+   `https://ramza107.github.io/wahrly/privacy`  
 6. Scopes → Add:
    - `https://www.googleapis.com/auth/calendar.readonly`
    - `https://www.googleapis.com/auth/userinfo.email` (connected-account label)
@@ -44,7 +44,7 @@ Environment variables:
 - `GOOGLE_CLIENT_ID` = (Client ID)
 - `GOOGLE_CLIENT_SECRET` = (Client Secret)
 - `GOOGLE_REDIRECT_URI` = `https://threeproxy-x9bi.onrender.com/api/google/callback`
-- `PUBLIC_APP_URL` = `https://ramza107.github.io/3proxy/nova/`
+- `PUBLIC_APP_URL` = `https://ramza107.github.io/wahrly/`
 - `PUBLIC_NATIVE_APP_URL` = `wahrly://`
 - `PUBLIC_API_URL` = `https://threeproxy-x9bi.onrender.com`
 
