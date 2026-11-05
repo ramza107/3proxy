@@ -94,14 +94,15 @@ export function AnimatedLaunchSplash({ ready, onFinished }: Props) {
   return (
     <View style={styles.root} pointerEvents="none">
       <Animated.View style={[styles.scene, sceneStyle]}>
-        <Image source={ART} style={styles.art} resizeMode="cover" />
+        {/* cover (not stretch) — asset is portrait; crop on shorter phones, never squash the orb */}
+        <Image source={ART} style={styles.art} resizeMode="cover" accessibilityIgnoresInvertColors />
         <Animated.View style={[styles.veil, veilStyle]} />
         <Animated.View style={[styles.shimmerSweep, shimmerStyle]}>
           <LinearGradient
             colors={['transparent', 'rgba(255,255,255,0.18)', 'transparent']}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
-            style={StyleSheet.absoluteFill}
+            style={StyleSheet.absoluteFillObject}
           />
         </Animated.View>
       </Animated.View>
@@ -117,19 +118,22 @@ export function AnimatedLaunchSplash({ ready, onFinished }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#6E868C',
     zIndex: 100,
+    overflow: 'hidden',
   },
   scene: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
   },
   art: {
+    ...StyleSheet.absoluteFillObject,
+    // Explicit dimensions + cover keep the glass orb circular across aspect ratios.
     width: '100%',
     height: '100%',
   },
   veil: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0F2A32',
   },
   shimmerSweep: {

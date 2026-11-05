@@ -20,10 +20,11 @@ module.exports = ({ config }) => {
     userInterfaceStyle: 'light',
     newArchEnabled: true,
     splash: {
-      // Full-bleed mist glass art — JS AnimatedLaunchSplash continues the motion after hydrate.
+      // Full-bleed mist + true circle glass. Legacy full-screen avoids iOS logo-slot stretch.
       image: './assets/splash/launch-mist-glass.png',
       resizeMode: 'cover',
       backgroundColor: '#0F6E66',
+      enableFullScreenImage_legacy: true,
     },
     ios: {
       supportsTablet: true,
