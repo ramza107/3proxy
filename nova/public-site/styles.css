@@ -225,7 +225,8 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 */
   overflow: hidden;
-  border-radius: 48px;
+  /* Framed PNG ~52px @ 912 → ~23 @ 400 — keep CSS at/under that */
+  border-radius: 22px;
   background: transparent;
 }
 
@@ -723,7 +724,8 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 — locks ratio on iOS */
   overflow: hidden;
-  border-radius: 44px;
+  /* ~52px @ 912 → ~10 @ 168 — avoid capsule clip on small orbit cards */
+  border-radius: 10px;
   background: transparent;
 }
 
