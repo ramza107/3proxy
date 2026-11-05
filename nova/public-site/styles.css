@@ -225,8 +225,8 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 */
   overflow: hidden;
-  border-radius: 36px;
-  background: #0a1518;
+  border-radius: 48px;
+  background: transparent;
 }
 
 .cine-shot {
@@ -499,8 +499,8 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 — locks ratio on iOS */
   overflow: hidden;
-  border-radius: 28px;
-  background: #0a1518;
+  border-radius: 44px;
+  background: transparent;
 }
 
 .orbit-frame img {
