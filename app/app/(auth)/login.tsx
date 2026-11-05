@@ -43,6 +43,10 @@ export default function LoginScreen() {
           password,
         })
         if (err) throw err
+        if (data.user) {
+          const { hydrateOnboardingFromUser } = await import('../../lib/onboardingProfile')
+          hydrateOnboardingFromUser(data.user)
+        }
         useNovaStore.setState({
           demoMode: false,
           sessionUserId: data.user?.id || null,
@@ -52,7 +56,8 @@ export default function LoginScreen() {
         setDemoSession(email.trim())
       }
       void track(AnalyticsEvents.login)
-      router.replace('/tasks')
+      const onboarded = useNovaStore.getState().settings.onboardingComplete
+      router.replace(onboarded ? '/tasks' : '/welcome')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Login failed')
     } finally {
@@ -77,7 +82,8 @@ export default function LoginScreen() {
           <SocialAuthButtons
             onSuccess={() => {
               void track(AnalyticsEvents.login, { method: 'social' })
-              router.replace('/tasks')
+              const onboarded = useNovaStore.getState().settings.onboardingComplete
+              router.replace(onboarded ? '/tasks' : '/welcome')
             }}
             onError={setError}
           />

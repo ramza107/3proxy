@@ -60,6 +60,10 @@ async function applySessionUser(user: {
     (typeof meta.given_name === 'string' && meta.given_name) ||
     null
 
+  const { hydrateOnboardingFromUser } = await import('./onboardingProfile')
+  // Hydrate before session so login/callback routing sees the flag
+  hydrateOnboardingFromUser(user)
+
   useNovaStore.setState({
     demoMode: false,
     sessionUserId: user.id,

@@ -70,7 +70,9 @@ export default function FirstValueScreen() {
   }
 
   const finish = (openHome: boolean) => {
-    updateSettings({ onboardingComplete: true })
+    void import('../../lib/onboardingProfile').then(({ persistOnboardingComplete }) => {
+      void persistOnboardingComplete()
+    })
     void track(AnalyticsEvents.onboardingComplete)
     // High-intent end of first value — evening reminder needs OS permission.
     void ensureNotificationPermissions()

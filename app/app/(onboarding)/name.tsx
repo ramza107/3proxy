@@ -21,6 +21,7 @@ export default function NameScreen() {
     if (isSupabaseConfigured && sessionUserId) {
       const supabase = getSupabase()
       await supabase?.from('users').update({ name: value }).eq('id', sessionUserId)
+      await supabase?.auth.updateUser({ data: { name: value } })
     }
     router.push('/week')
   }

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { Screen } from '../../components/Screen'
 import { brand, colors, fonts, radii, spacing } from '../../constants/theme'
 import { AnalyticsEvents, track } from '../../lib/analytics'
+import { persistOnboardingComplete } from '../../lib/onboardingProfile'
 import { useNovaStore } from '../../lib/store'
 import { useT } from '../../lib/useT'
 
@@ -10,7 +11,12 @@ export default function ReadyScreen() {
   const t = useT()
   const router = useRouter()
   const name = useNovaStore((s) => s.settings.name) || 'there'
-  const updateSettings = useNovaStore((s) => s.updateSettings)
+
+  const finish = (to: '/tasks' | '/home') => {
+    void persistOnboardingComplete()
+    void track(AnalyticsEvents.onboardingComplete)
+    router.replace(to)
+  }
 
   return (
     <Screen>
@@ -24,21 +30,13 @@ export default function ReadyScreen() {
         <Pressable
           accessibilityRole="button"
           style={styles.btn}
-          onPress={() => {
-            updateSettings({ onboardingComplete: true })
-            void track(AnalyticsEvents.onboardingComplete)
-            router.replace('/tasks')
-          }}
+          onPress={() => finish('/tasks')}
         >
           <Text style={styles.btnText}>{t('onboarding.start')}</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={() => {
-            updateSettings({ onboardingComplete: true })
-            void track(AnalyticsEvents.onboardingComplete)
-            router.replace('/home')
-          }}
+          onPress={() => finish('/home')}
           hitSlop={8}
         >
           <Text style={styles.secondary}>{t('onboarding.valueHomeCta')}</Text>
