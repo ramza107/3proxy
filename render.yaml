@@ -3,13 +3,20 @@ services:
     name: nova-ai
     runtime: node
     plan: free
+    # Repo restructure (#217): server lives under app/server (was nova/server).
+    # If a deploy fails with "directory not found", set Root Directory to app/server
+    # in the Render dashboard (Blueprint sync does not always rewrite it).
     rootDir: app/server
-    buildCommand: npm ci
+    # Match Dockerfile — omit devDeps to cut free-tier OOM / opaque build kills.
+    # Fail loudly if Root Directory is still pointed at the old nova/server path.
+    buildCommand: test -f package.json && test -f package-lock.json && npm ci --omit=dev
     startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "22.12.0"
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
