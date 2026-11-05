@@ -225,8 +225,8 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 */
   overflow: hidden;
-  /* Framed PNG ~52px @ 912 → ~23 @ 400 — keep CSS at/under that */
-  border-radius: 22px;
+  /* Shape comes from the PNG alpha — CSS must not re-round into a capsule */
+  border-radius: 0;
   background: transparent;
 }
 
@@ -724,8 +724,8 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 — locks ratio on iOS */
   overflow: hidden;
-  /* ~52px @ 912 → ~10 @ 168 — avoid capsule clip on small orbit cards */
-  border-radius: 10px;
+  /* PNG owns the silhouette; zero CSS radius so small cards stay rectangular */
+  border-radius: 0;
   background: transparent;
 }
 
@@ -1201,7 +1201,7 @@ a {
   }
 
   .orbit-card {
-    width: 168px;
+    width: 200px;
     opacity: 1;
   }
 
