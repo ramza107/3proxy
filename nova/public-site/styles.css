@@ -250,6 +250,24 @@ a {
   z-index: 1;
 }
 
+.cine-brand {
+  display: none;
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: clamp(48px, 6vw, 78px);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: #f7fcfc;
+  text-shadow: 0 12px 40px rgba(6, 18, 24, 0.4);
+}
+
+.cine-cta {
+  display: none;
+  pointer-events: auto;
+  margin-top: 10px;
+  width: fit-content;
+}
+
 .cine-copy {
   position: absolute;
   left: 0;
@@ -477,25 +495,16 @@ a {
   color: rgba(19, 42, 49, 0.4);
 }
 
-@media (min-width: 901px) {
-  .orbit-track {
-    gap: 28px;
-    padding: 32px max(40px, calc(50vw - 150px)) 20px;
-    scroll-padding-inline: max(40px, calc(50vw - 150px));
-  }
-  .orbit-card {
-    width: 300px;
-  }
-}
-
 /* —— Strip / finale / foot —— */
 .strip {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  min-height: 100vh;
-  min-height: 100dvh;
   background: #0f242a;
   color: #f4fafa;
+}
+
+.strip-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 }
 
 .strip-copy {
@@ -562,7 +571,7 @@ a {
 .strip-visual {
   display: grid;
   place-items: center;
-  padding: 48px 24px;
+  padding: 40px 24px;
   background:
     linear-gradient(180deg, rgba(12, 32, 38, 0.72), rgba(10, 26, 32, 0.88)),
     url('./media/mist.jpg') center / cover;
@@ -737,9 +746,11 @@ a {
   .orbit-card {
     width: min(248px, 68vw);
   }
-  .strip {
-    grid-template-columns: 1fr;
-    min-height: 0;
+  .strip-inner {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border-radius: 0;
   }
   .strip-copy {
     order: 1;
@@ -761,6 +772,8 @@ a {
     min-height: 0;
     padding: 4px 24px 72px;
     background: #10262d;
+    display: grid;
+    place-items: center;
   }
   .strip-phone {
     width: min(200px, 52vw);
@@ -806,3 +819,166 @@ a {
   transform-style: flat !important;
   perspective: none !important;
 }
+
+/* —— Desktop composition (mobile stays as-is above) —— */
+@media (min-width: 901px) {
+  .nav {
+    top: 24px;
+    left: max(28px, calc(50vw - 560px));
+    right: max(28px, calc(50vw - 560px));
+    width: auto;
+  }
+
+  .cine-sticky {
+    display: grid;
+    grid-template-columns: minmax(240px, 340px) minmax(360px, 400px);
+    justify-content: center;
+    align-items: center;
+    column-gap: clamp(36px, 4vw, 64px);
+    padding: 0 48px;
+  }
+
+  .cine-product {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    width: min(400px, 100%);
+    max-width: 420px;
+    margin: 0;
+    justify-self: center;
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .cine-copy {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    grid-column: 1;
+    grid-row: 1;
+    text-align: left;
+    justify-items: start;
+    align-content: center;
+    gap: 14px;
+    padding: 0;
+    max-width: 18ch;
+    pointer-events: auto;
+    justify-self: end;
+  }
+
+  .cine-brand {
+    display: block;
+  }
+
+  .cine-cta {
+    display: inline-flex;
+  }
+
+  .cine-line {
+    font-size: clamp(28px, 3.2vw, 44px);
+    max-width: 14ch;
+  }
+
+  .cine-chapter {
+    font-size: 12px;
+  }
+
+  .cine-hint {
+    bottom: 28px;
+  }
+
+  .quiet {
+    padding: clamp(96px, 12vw, 140px) 24px;
+  }
+
+  .quiet-title {
+    max-width: 16ch;
+    font-size: clamp(36px, 4.2vw, 52px);
+  }
+
+  .orbit {
+    padding: 56px 0 88px;
+  }
+
+  .orbit-track {
+    justify-content: center;
+    gap: 26px;
+    padding: 36px 48px 20px;
+    scroll-padding-inline: 48px;
+    /* Don’t shove the first card to mid-screen — that left a huge empty left void */
+  }
+
+  .orbit-card {
+    width: 220px;
+    opacity: 0.88;
+  }
+
+  .orbit-card.is-near {
+    opacity: 1;
+  }
+
+  .orbit-hint {
+    margin-top: 12px;
+  }
+
+  .strip {
+    min-height: 0;
+    padding: 80px 48px;
+    display: flex;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(15, 110, 102, 0.18), transparent 50%),
+      #0c1e24;
+  }
+
+  .strip-copy,
+  .strip-visual {
+    border-radius: 0;
+  }
+
+  .strip-inner {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    width: min(980px, 100%);
+    border-radius: 28px;
+    overflow: hidden;
+    background: #10262d;
+  }
+
+  .strip-copy {
+    padding: 56px 48px;
+    background:
+      radial-gradient(ellipse at 10% 0%, rgba(15, 110, 102, 0.28), transparent 55%),
+      #10262d;
+  }
+
+  .strip-visual {
+    min-height: 480px;
+    background:
+      linear-gradient(180deg, rgba(12, 32, 38, 0.55), rgba(10, 26, 32, 0.82)),
+      url('./media/mist.jpg') center / cover;
+  }
+
+  .strip-phone {
+    width: min(280px, 26vw);
+  }
+
+  .strip-title {
+    font-size: clamp(36px, 3.6vw, 48px);
+  }
+
+  .finale {
+    min-height: 72vh;
+  }
+
+  .finale-brand {
+    font-size: clamp(56px, 7vw, 84px);
+  }
+
+  .foot {
+    padding: 22px max(28px, calc(50vw - 560px)) 32px;
+  }
+}
+
