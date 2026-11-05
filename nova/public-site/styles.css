@@ -225,7 +225,7 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 */
   overflow: hidden;
-  border-radius: 42px;
+  border-radius: 48px;
   background: transparent;
 }
 
@@ -499,7 +499,7 @@ a {
   height: 0;
   padding-bottom: 201.315789%; /* 1836 / 912 — locks ratio on iOS */
   overflow: hidden;
-  border-radius: 34px;
+  border-radius: 44px;
   background: transparent;
 }
 
