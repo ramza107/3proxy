@@ -30,7 +30,7 @@ module.exports = ({ config }) => {
       supportsTablet: true,
       bundleIdentifier: 'com.wahrly.assistant',
       // Synced after EAS autoIncrement for TF build 57.
-      buildNumber: '68',
+      buildNumber: '69',
       // Native Sign in with Apple — App ID capability + Supabase Apple enabled.
       usesAppleSignIn: true,
       // Required for expo-widgets ↔ app data sharing (UserDefaults suite).
